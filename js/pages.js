@@ -1607,7 +1607,7 @@ function buildContractFormHTML(type,step,splitMode){
     +'</div>';
 }
 function buildContractTypeSelectHTML(){
-  const icoStyle='width:44px;height:44px;border-radius:12px;background:#fff8f0;border:1px solid #fed7aa;display:flex;align-items:center;justify-content:center;flex-shrink:0';
+  const icoStyle='width:44px;height:44px;border-radius:12px;background:#f1f5f9;border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;flex-shrink:0';
   const peoBag='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="12"/></svg>';
   const eorBuild='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V10h8v11"/><path d="M12 7h.01"/></svg>';
   const card=function(ico,type,title,desc,onclick){
@@ -4008,7 +4008,7 @@ function cfgMapRow(unified,source,type){
     +'</div>';
 }
 function cfgEnrichRow(e){
-  return '<div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px dashed rgba(222,121,9,.25)">'
+  return '<div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px dashed rgba(26,26,26,.25)">'
     +'<div style="flex:1;font-size:13px;font-weight:600;color:var(--orange)">'+e.name+'</div>'
     +'<div style="color:#f1c27a">&larr;</div>'
     +'<div style="flex:1;font-size:12px;color:var(--gray)">added in Data Foundation</div>'
@@ -4171,9 +4171,9 @@ function buildCfgModelDetailHTML(){
       +'</div>';
   const enrichSection=editing
     ?'<div class="ep-form-card" style="margin-bottom:18px;border-color:#f1c27a">'
-      +'<div class="ep-form-title" style="color:var(--orange);border-bottom-color:rgba(222,121,9,.25)">Enrichment &middot; extra fields held in Data Foundation</div>'
+      +'<div class="ep-form-title" style="color:var(--orange);border-bottom-color:rgba(26,26,26,.25)">Enrichment &middot; extra fields held in Data Foundation</div>'
       +dm.enrichment.map(function(e,i){
-        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(222,121,9,.25);flex-wrap:wrap">'
+        return '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed rgba(26,26,26,.25);flex-wrap:wrap">'
           +'<input class="ep-form-input" style="flex:1;min-width:160px" id="cfg-enr-n-'+i+'" value="'+attrSafe(e.name)+'" placeholder="Enrichment field name">'
           +cfgTypeSelect('cfg-enr-t-'+i,e.type)
           +'<button type="button" class="ep-cancel-btn" style="padding:4px 9px" onclick="removeCfgEnrichRow('+i+')">Remove</button>'
@@ -4182,7 +4182,7 @@ function buildCfgModelDetailHTML(){
       +'<button type="button" class="btn btn-secondary btn-sm" style="margin-top:14px;border:1px dashed #f1c27a;color:var(--orange);background:transparent" onclick="addCfgEnrichRow()">+ Add enrichment field</button>'
       +'</div>'
     :'<div class="ep-form-card" style="margin-bottom:18px;border-color:#f1c27a">'
-      +'<div class="ep-form-title" style="color:var(--orange);border-bottom-color:rgba(222,121,9,.25)">Enrichment &middot; extra fields held in Data Foundation</div>'
+      +'<div class="ep-form-title" style="color:var(--orange);border-bottom-color:rgba(26,26,26,.25)">Enrichment &middot; extra fields held in Data Foundation</div>'
       +(m.enrichment.length?m.enrichment.map(function(e){return cfgEnrichRow(e);}).join(''):'<div style="padding:12px 0;font-size:12.5px;color:var(--gray)">No enrichment fields yet.</div>')
       +'</div>';
   const rulesSection=editing
