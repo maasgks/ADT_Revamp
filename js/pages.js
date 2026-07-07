@@ -1988,7 +1988,9 @@ function buildContractTemplatesHTML(){
     +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
     +'</div></div>'
     +'<div class="lp-split-sb'+(ctpSelectedId?' open':'')+'" id="ctp-split-sb"><div class="lp-isb" id="ctp-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +(ctpModalOpen?buildCreateTemplateModalHTML():'')
+    +(ctpSuccessName?buildCtpSuccessModalHTML():'');
 }
 function applyCtpFilters(){
   ctpCountryFilter=getCSValue('ctp-f-country');
@@ -1999,6 +2001,67 @@ function applyCtpFilters(){
 function resetCtpFilters(){
   ctpCountryFilter='';ctpCategoryFilter='';ctpStatusFilter='';
   renderADTPage();
+}
+function closeCtpModal(){ctpModalOpen=false;renderADTPage();}
+function closeCtpSuccess(){ctpSuccessName='';renderADTPage();}
+function flashFieldError(el){if(!el)return;el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);}
+function saveTemplate(){
+  const nameEl=document.getElementById('ctp-new-name');
+  const name=nameEl?nameEl.value.trim():'';
+  const country=getCustomSelectValue('ctp-new-country');
+  const employmentType=getCustomSelectValue('ctp-new-emptype');
+  const category=getCustomSelectValue('ctp-new-category');
+  const status=getCustomSelectValue('ctp-new-status')||'Active';
+  let ok=true;
+  if(!name){flashFieldError(nameEl);ok=false;}
+  if(!country){flashFieldError(document.querySelector('#ctp-new-country .custom-select-trigger'));ok=false;}
+  if(!employmentType){flashFieldError(document.querySelector('#ctp-new-emptype .custom-select-trigger'));ok=false;}
+  if(!category){flashFieldError(document.querySelector('#ctp-new-category .custom-select-trigger'));ok=false;}
+  if(!ok)return;
+  const fileEl=document.getElementById('ctp-new-file');
+  const fileName=fileEl&&fileEl.files&&fileEl.files[0]?fileEl.files[0].name:'';
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  contractTemplatesData.push({id:ctpNextId,templateName:name,employmentType,templateId:String(ctpNextId),status,country,category,createdBy:'Shaun Test1',createdAt,
+    attachments:fileName?[{name:fileName}]:[],logs:[]});
+  ctpNextId++;
+  ctpModalOpen=false;
+  ctpSuccessName=name;
+  renderADTPage();
+  setTimeout(function(){if(ctpSuccessName===name){ctpSuccessName='';renderADTPage();}},2600);
+}
+function buildCreateTemplateModalHTML(){
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const req='<span style="color:#ef4444">*</span>';
+  return '<div class="ct-modal-overlay" onclick="closeCtpModal()">'
+    +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group"><label class="ep-form-label">Template Name '+req+'</label><input type="text" class="ep-form-input" id="ctp-new-name" placeholder="e.g. NL EOR Proposal"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Country '+req+'</label>'+customSelect('ctp-new-country','',['Netherlands','India','Germany','Belgium','Spain'],'Select Country')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label>'+customSelect('ctp-new-emptype','',['EOR','PEO','Direct'],'Select')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label>'+customSelect('ctp-new-category','',['Proposal','Contract','Onboarding'],'Select')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Status</label>'+customSelect('ctp-new-status','Active',['Active','Inactive'],'Select Status')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Template File (PDF only)</label><input type="file" class="ep-form-input" id="ctp-new-file" accept=".pdf"><span style="font-size:11px;color:var(--gray);margin-top:2px">Upload a PDF file &mdash; it will be stored as the template document.</span></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">'
+    +'<button class="ep-cancel-btn" onclick="closeCtpModal()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="saveTemplate()">Create Template</button>'
+    +'</div>'
+    +'</div></div>';
+}
+function buildCtpSuccessModalHTML(){
+  const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeCtpSuccess()">'
+    +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
+    +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeCtpSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
+    +'<div class="rr-success-title">Template Created</div>'
+    +'<div class="rr-success-sub">&ldquo;'+ctpSuccessName+'&rdquo; has been added to Contract Templates.</div>'
+    +'</div></div>';
 }
 
 function buildEORContractHTML(){return buildContractFormHTML('EOR',eorStep);}
