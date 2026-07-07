@@ -897,7 +897,7 @@ function resetAlFilters(){
   renderADTPage();
 }
 function openPmSidebar(id){
-  pmSelectedId=id;pmTab='basic-details';
+  pmSelectedId=id;pmTab='basic-details';pmUserSubTab='company-details';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.add('open');
   const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='pm-row-'+id));
@@ -908,9 +908,29 @@ function closePmSidebar(){
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navPmTab(tab){pmTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner){inner.innerHTML=renderPmSidebar();requestAnimationFrame(function(){const nt=document.getElementById('pm-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function pmSetUserSubTab(tab){pmUserSubTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();}
+function pmCancelLog(){const sel=document.getElementById('pm-log-status-sel');const inp=document.getElementById('pm-log-comment-inp');if(sel)sel.value='';if(inp)inp.value='';}
+function pmSaveLog(orderId){
+  const sel=document.getElementById('pm-log-status-sel');
+  const inp=document.getElementById('pm-log-comment-inp');
+  if(!sel||!inp)return;
+  const status=sel.value;
+  const comment=inp.value.trim();
+  if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  if(!pmLogsData[orderId])pmLogsData[orderId]=[];
+  pmLogsData[orderId].unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status,action:comment});
+  const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();
+}
 function renderPmSidebar(){
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'invoice',label:'Invoice'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'sales-details',label:'Sales Details'},{id:'taxes-details',label:'Taxes Details'},{id:'user',label:'User'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'timesheets',label:'Timesheets'},{id:'receivable',label:'Receivable'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'pm-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="pm-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(pmTab===t.id?' active':'')+'" onclick="navPmTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -926,8 +946,11 @@ function renderPmSidebar(){
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
   const iPhone='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.2.73.43 1.44.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.9-.87a2 2 0 0 1 2.11-.45c1.37.27 2.08.5 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>';
   const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const iDollar='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+  const iPin='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const pmEmptyTab=(label)=>'<div style="display:flex;align-items:center;justify-content:center;padding:48px 20px;color:#9ca3af;font-size:13px">'+label+' content coming soon.</div>';
   let body='';
   if(pmTab==='basic-details'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Order #'+p.orderId+'</span>'+editBtn+'</div>'
@@ -939,6 +962,45 @@ function renderPmSidebar(){
       +fc(iCal,'Start From','<span style="color:var(--orange)">'+p.startFrom+'</span>')+fc(iCal,'End To','<span style="color:var(--orange)">'+p.endTo+'</span>')
       +fc(iGlobe,'Working Country','<strong>'+p.workingCountry+'</strong>')+fc(iTag,'Order Category','<span style="color:var(--orange)">'+p.orderCategory+'</span>')
       +'</div>';
+  }else if(pmTab==='sales-details'){
+    const s=p.sales||{};
+    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iId,'Company ID',s.companyId)+fc(iDoc,'Company Name',s.companyName)
+      +fc(iId,'Contact Person ID',s.contactPersonId)+fc(iUser,'Contact Person Name',s.contactPersonName)
+      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Days',s.days)
+      +fc(iDollar,'Rate',s.rate)+fc(iDollar,'Total Amount',s.totalAmount)
+      +fc(iCal,'Contract Period',s.contractPeriod)+fc(iPin,'Work Location',s.workLocation)
+      +fc(iCal,'Timesheet Period Date',s.tsPeriodDate)+fc(iDoc,'Payment Term',s.paymentTerm)
+      +'</div>';
+  }else if(pmTab==='taxes-details'){
+    body=pmEmptyTab('Taxes Details');
+  }else if(pmTab==='user'){
+    const u=p.user||{};
+    const subTabs=[{id:'company-details',label:'Company Details'},{id:'concern-person',label:'Company Concern Person'}];
+    const subTabBar='<div class="pm-user-subtabs">'+subTabs.map(t=>'<button class="pm-user-subtab'+(pmUserSubTab===t.id?' active':'')+'" onclick="pmSetUserSubTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>';
+    let subBody='';
+    if(pmUserSubTab==='concern-person'){
+      const c=u.concern||{};
+      subBody='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+        +'<div class="lp-sb-detail-grid">'
+        +fc(iId,'Key',c.key)+fc(iUser,'Name',c.name)
+        +fc(iPhone,'Mobile',c.mobile)+fc(iMail,'Email',c.email)
+        +fc(iCal,'Date',c.date)+fc(iUser,'Create By',c.createBy)
+        +fc(iPin,'Address',c.address)
+        +'</div>';
+    }else{
+      const co=u.company||{};
+      subBody='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+        +'<div class="lp-sb-detail-grid">'
+        +fc(iId,'User ID',co.userId)+fc(iUser,'Concern Person Name',co.concernPersonName)
+        +fc(iDoc,'Company Name',co.companyName)+fc(iUser,'User First Name',co.firstName)
+        +fc(iUser,'User Last Name',co.lastName)+fc(iMail,'User Email',co.email)
+        +fc(iPhone,'User Mobile',co.mobile)+fc(iPhone,'User Alt Mobile',co.altMobile)
+        +fc(iDoc,'Users Company Website',co.website)+fc(iPin,'User Address',co.address)
+        +'</div>';
+    }
+    body=subTabBar+subBody;
   }else if(pmTab==='employee'){
     const emp=p.emp;
     body='<div class="lp-sb-detail-grid">'
@@ -949,8 +1011,10 @@ function renderPmSidebar(){
   }else if(pmTab==='attachments'){
     const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
     const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-    body='<div style="display:flex;justify-content:flex-end;padding:4px 0 12px">'
+    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
       +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
       +'</div>'
       +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
       +'<thead><tr>'
@@ -958,13 +1022,56 @@ function renderPmSidebar(){
       +'</tr></thead>'
       +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
       +'</table>';
-  }else if(pmTab==='invoice'){
+  }else if(pmTab==='timesheets'){
+    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
+    const statCard=(label,val,color)=>'<div class="pm-ts-stat"><div class="pm-ts-stat-val" style="color:'+color+'">'+val+'</div><div class="pm-ts-stat-lbl">'+label+'</div></div>';
+    body='<div class="pm-ts-stats">'
+      +statCard('Total','0','var(--navy)')+statCard('Pending','0','var(--gray)')+statCard('Approved','0','var(--green)')+statCard('Rejected','0','var(--red)')
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      +'<thead><tr>'
+      +'<th style="'+thS+'">TIMESHEET</th><th style="'+thS+'">PERIOD</th><th style="'+thS+'">DAYS</th><th style="'+thS+'">TOTAL HOURS</th><th style="'+thS+'">RATE</th><th style="'+thS+'">PAY TYPE</th><th style="'+thS+'">STATUS</th><th style="'+thS+'">ACTIONS</th>'
+      +'</tr></thead>'
+      +'<tbody><tr><td colspan="8" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No timesheet entries for this order.</td></tr></tbody>'
+      +'</table>';
+  }else if(pmTab==='receivable'){
     const yrOpts=[2026,2025,2024].map(y=>'<option'+(y===2026?' selected':'')+'>'+y+'</option>').join('');
-    body='<div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">'
+    const plusIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    body='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:13px;font-weight:600;color:var(--navy)">Select Year :</span>'
       +'<select style="border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:13px;color:var(--navy);cursor:pointer;outline:none">'+yrOpts+'</select>'
       +'</div>'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Create Invoice</button>'
+      +'</div>'
       +'<p style="font-size:13px;color:#9ca3af">No receivables found.</p>';
+  }else if(pmTab==='logs'){
+    const logs=pmLogsData[p.id]||[];
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const timelineHTML=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>'<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--default">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-card">'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--default"></span><span class="lp-log-status-text lp-log-status-text--default">'+l.status+'</span></div>'
+          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +'</div></div>').join('')+'</div>'
+      :'<div class="lp-logs-empty">No logs yet.</div>';
+    const statusOpts=pmLogStatusOptions.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-label">Status</div>'
+      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="pm-log-status-sel"><option value="">None - Please Select Status</option>'+statusOpts+'</select>'+chevSvg+'</div>'
+      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<textarea class="lp-logs-form-textarea" id="pm-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">'
+      +'<button class="ep-cancel-btn" onclick="pmCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="background:var(--navy)" onclick="pmSaveLog('+p.id+')">Save</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }else if(pmTab==='workflow'){
     const wf=pmWorkflowData[p.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -2252,6 +2359,24 @@ function buildTsSidebarHTML(dateStr) {
     + '</div>';
 }
 
+function buildTsMonthPickerHTML() {
+  const mShortAll = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthsHtml = mShortAll.map(function(lbl, idx) {
+    const isSel = tsMpYear === tsMonth.year && idx === tsMonth.month;
+    return '<button class="ts-mp-month'+(isSel?' sel':'')+'" onclick="tsMpSelectMonth('+idx+',event)">'+lbl+'</button>';
+  }).join('');
+  return '<div class="ts-mp-overlay" onclick="tsCloseMonthPicker()"></div>'
+    + '<div class="ts-mp-panel" onclick="event.stopPropagation()">'
+    + '<div class="ts-mp-head">'
+    + '<button class="ts-mp-nav" onclick="tsMpNavYear(-1,event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="15 18 9 12 15 6"/></svg></button>'
+    + '<span class="ts-mp-year">'+tsMpYear+'</span>'
+    + '<button class="ts-mp-nav" onclick="tsMpNavYear(1,event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg></button>'
+    + '</div>'
+    + '<div class="ts-mp-grid">'+monthsHtml+'</div>'
+    + '<button class="ts-mp-this-month" onclick="tsMpThisMonth(event)">This month</button>'
+    + '</div>';
+}
+
 function buildMyTimesheetHTML() {
   const y = tsMonth.year, m = tsMonth.month;
   const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -2285,7 +2410,10 @@ function buildMyTimesheetHTML() {
     + '<div><div class="ts-user-name">'+tsEmp.name+'</div><div class="ts-user-role">'+tsEmp.role+'</div></div></div>'
     + '<div class="ts-user-right">'
     + '<button class="ts-refresh-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>'
-    + '<button class="ts-month-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+mName+' '+y+'<svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+    + '<div class="ts-month-wrap">'
+    + '<button class="ts-month-btn" onclick="tsToggleMonthPicker(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+mName+' '+y+'<svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+    + (tsMpOpen ? buildTsMonthPickerHTML() : '')
+    + '</div>'
     + '</div></div>';
 
   // ── Stats ──

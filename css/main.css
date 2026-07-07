@@ -732,6 +732,18 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ts-user-right{display:flex;align-items:center;gap:8px}
 .ts-month-btn{display:flex;align-items:center;gap:7px;padding:0 13px;height:32px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer}
 .ts-month-btn svg{width:13px;height:13px;stroke:var(--gray);fill:none;flex-shrink:0}
+.ts-month-wrap{position:relative}
+.ts-mp-overlay{position:fixed;inset:0;z-index:400}
+.ts-mp-panel{position:absolute;top:calc(100% + 8px);right:0;width:216px;background:#fff;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:16px;z-index:401;animation:fadeUp .15s ease}
+.ts-mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ts-mp-year{font-size:14px;font-weight:800;color:var(--navy)}
+.ts-mp-nav{width:24px;height:24px;border:none;background:none;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--gray);cursor:pointer;transition:.12s}
+.ts-mp-nav:hover{background:#f1f5f9;color:var(--navy)}
+.ts-mp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ts-mp-month{border:1px solid var(--border);background:#fff;border-radius:10px;padding:9px 0;font-size:12.5px;font-weight:600;color:var(--navy);cursor:pointer;text-align:center;transition:.12s;font-family:inherit}
+.ts-mp-month:hover{border-color:var(--orange)}
+.ts-mp-month.sel{background:var(--orange);border-color:var(--orange);color:#fff}
+.ts-mp-this-month{display:block;width:100%;margin-top:14px;padding:2px 0 0;border:none;background:none;color:var(--orange);font-size:12.5px;font-weight:700;text-align:center;cursor:pointer;font-family:inherit}
 .ts-refresh-btn{width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .ts-refresh-btn:hover{background:var(--light)}
 .ts-refresh-btn svg{width:14px;height:14px;stroke:var(--gray);fill:none}
@@ -771,7 +783,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ts-day-cell.st-absent{border-left-color:#fca5a5}
 .ts-day-cell.st-inprog{border-left-color:#fdba74}
 .ts-empty{background:transparent;cursor:default}
-.ts-day-num{font-size:13px;font-weight:700;color:var(--navy);line-height:1}
+.ts-day-num{font-size:13px;font-weight:700;color:#9ca3af;line-height:1}
 .ts-day-num.today{color:var(--orange)}
 .ts-day-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;width:fit-content;margin-top:2px}
 .ts-day-pill.present{background:#dcfce7;color:#15803d}

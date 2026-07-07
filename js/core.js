@@ -1402,18 +1402,30 @@ const paymentsData=[
   {id:1,orderId:'1116',name:'TestEmp Antar',amountDue:'INR 0.00',type:'EOR - Employee',orderStatus:'Onboarding',invoiceStatus:'Unpaid',
    key:'1116',dealId:'94130',entityName:'Closedhi',addedFrom:'agency',createdTime:'02 Jun 2026 | 10:43 am',courseId:'2981',courseName:'JIRA',lastUpdated:'--',startFrom:'01 Jun 2026',endTo:'01 Aug 2026',workingCountry:'Belgium',orderCategory:'international',
    emp:{empId:'8691456',name:'TestEmp Antar',email:'antar@testemp.com',mobile:'+91 9999999996',status:'Pending Onboarding',createdOn:'01 Jun 2026 | 02:54 pm'},
+   sales:{companyId:'27659',companyName:'Closedhi',contactPersonId:'46518',contactPersonName:'shaun test1',rateType:'Monthly',days:'0',rate:'INR 1,00,000.00',totalAmount:'INR 1,00,000.00',contractPeriod:'61',workLocation:'Belgium',tsPeriodDate:'—',paymentTerm:'0'},
+   user:{
+     company:{userId:'27659',concernPersonName:'shaun test1',companyName:'Closedhi',firstName:'shaun',lastName:'test1',email:'shaun.varghese@opendhi.com',mobile:'+91 9949860707',altMobile:'—',website:'—',address:'Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India'},
+     concern:{key:'46518',name:'shaun test1',mobile:'+91 9949860707',email:'shaun.varghese@opendhi.com',date:'12 Apr 2026 | 08:53 pm',createBy:'shaun test1',address:'—'}
+   },
    attachments:[]},
   {id:2,orderId:'1114',name:'Elon Musk',amountDue:'EUR 0.00',type:'EOR - Employee',orderStatus:'Onboarding',invoiceStatus:'Unpaid',
    key:'1114',dealId:'94128',entityName:'SpaceX EOR Ltd.',addedFrom:'agency',createdTime:'01 Jun 2026 | 09:00 am',courseId:'2975',courseName:'Python',lastUpdated:'--',startFrom:'01 Jun 2026',endTo:'31 Dec 2026',workingCountry:'USA',orderCategory:'international',
    emp:{empId:'8691455',name:'Elon Musk',email:'elon@spacex.com',mobile:'+1 555 000 0000',status:'Pending Onboarding',createdOn:'01 Jun 2026 | 09:30 am'},
+   sales:{companyId:'27660',companyName:'SpaceX EOR Ltd.',contactPersonId:'46520',contactPersonName:'Gwynne Shotwell',rateType:'Monthly',days:'0',rate:'EUR 8,500.00',totalAmount:'EUR 8,500.00',contractPeriod:'184',workLocation:'USA',tsPeriodDate:'—',paymentTerm:'0'},
+   user:{
+     company:{userId:'27660',concernPersonName:'Gwynne Shotwell',companyName:'SpaceX EOR Ltd.',firstName:'Gwynne',lastName:'Shotwell',email:'gwynne@spacex.com',mobile:'+1 555 000 0001',altMobile:'—',website:'—',address:'1 Rocket Rd, Hawthorne, CA 90250, United States'},
+     concern:{key:'46520',name:'Gwynne Shotwell',mobile:'+1 555 000 0001',email:'gwynne@spacex.com',date:'03 Jun 2026 | 11:20 am',createBy:'Gwynne Shotwell',address:'—'}
+   },
    attachments:[]}
 ];
 const pmWorkflowData={
   1:[{title:'Order Created',user:'Admin',date:'02 Jun 2026',time:'10:43 am',description:'EOR order created for TestEmp Antar in Belgium.'}],
   2:[{title:'Order Created',user:'Admin',date:'01 Jun 2026',time:'09:00 am',description:'EOR order created for Elon Musk in USA.'}]
 };
+const pmLogsData={1:[],2:[]};
+const pmLogStatusOptions=['Follow Up','Onboarding','Closed','Inactive','Logistic Terminated','Logistic Completed','Offboarding','Finance Termination','Finance Completed','Confirmation Vendor','initial discussion done','Order Extension','Revision'];
 const pmInvoiceFlow=['Unpaid','Pending','Paid','Closed'];
-let pmSelectedId=null,pmTab='basic-details';
+let pmSelectedId=null,pmTab='basic-details',pmUserSubTab='company-details';
 
 // ── SUPPORT: TICKETS & CHATS DATA ──
 const ticketsData=[
@@ -1469,6 +1481,15 @@ const tsAttendance={
 };
 function tsOpenDay(d){tsSelectedDay=d;renderADTPage();}
 function tsCloseDay(){tsSelectedDay=null;renderADTPage();}
+
+// ── TIMESHEET MONTH PICKER ──
+let tsMpOpen=false;
+let tsMpYear=tsMonth.year;
+function tsToggleMonthPicker(ev){if(ev)ev.stopPropagation();tsMpOpen=!tsMpOpen;tsMpYear=tsMonth.year;renderADTPage();}
+function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;renderADTPage();}
+function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;renderADTPage();}
+function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMpOpen=false;tsSelectedDay=null;renderADTPage();}
+function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMpOpen=false;tsSelectedDay=null;renderADTPage();}
 
 // ── ALL TIMESHEET DATA & ACTIONS ──
 const allTsData=[
