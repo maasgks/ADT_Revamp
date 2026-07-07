@@ -2324,33 +2324,37 @@ function buildMyTimesheetHTML() {
       if (isToday) cellCls += ' is-today';
       if (isSel) cellCls += ' is-selected';
       if (isFuture) cellCls += ' future';
+      if (att) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
+      else if (!isWe && !isFuture) cellCls += ' st-absent';
 
       const clickH = (!isWe && !isFuture) ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
 
-      let pillHtml = '';
-      let hrsHtml = '';
+      let midHtml = '';
       let viewHtml = '';
       let srcHtml = '';
 
       if (isWe) {
-        pillHtml = '<span class="ts-day-pill we">Weekend</span>';
+        midHtml = '<span class="ts-day-pill we">Weekend</span>';
       } else if (isFuture) {
-        pillHtml = '';
+        midHtml = '';
       } else if (att) {
-        const pillCls = att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent';
-        const pillLabel = att.status === 'inprog' ? 'In Progress' : att.status === 'present' ? 'Present' : 'Absent';
-        pillHtml = '<span class="ts-day-pill '+pillCls+'">'+pillLabel+'</span>';
-        if (att.hours !== '--') hrsHtml = '<span class="ts-day-hrs">'+att.hours+'</span>';
+        if (att.status === 'inprog') {
+          midHtml = '<span class="ts-day-pill inprog">In Progress</span>'
+            + (att.hours !== '--' ? '<span class="ts-day-hrs">'+att.hours+'</span>' : '');
+        } else if (att.status === 'absent') {
+          midHtml = '<span class="ts-day-pill absent">Absent</span>';
+        } else {
+          midHtml = '<div class="ts-day-status"><span class="ts-status-dot present"></span><span class="ts-day-hrs">'+att.hours+'</span></div>';
+        }
         viewHtml = '<span class="ts-day-view-btn">'+eyeSvg+'View</span>';
         srcHtml = '<span class="ts-day-src">'+att.src+'</span>';
       } else {
-        pillHtml = '<span class="ts-day-pill absent">Absent</span>';
+        midHtml = '<span class="ts-day-pill absent">Absent</span>';
       }
 
       calRows += '<div class="'+cellCls+'"'+clickH+'>'
         + '<span class="ts-day-num'+(isToday?' today':'')+'">'+(isToday?'<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--orange);border-radius:50%;color:#fff;font-size:12px">'+dd+'</span>':dd)+'</span>'
-        + pillHtml
-        + hrsHtml
+        + midHtml
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto">'
         + viewHtml + srcHtml
         + '</div>'

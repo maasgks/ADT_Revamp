@@ -761,12 +761,15 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 4px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}
 .ts-wk-cb{width:14px;height:14px;accent-color:var(--orange);cursor:pointer}
-.ts-day-cell{padding:10px 12px;border-right:1px solid var(--border);min-height:76px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .12s}
+.ts-day-cell{padding:10px 12px 10px 10px;border-right:1px solid var(--border);border-left:3px solid transparent;min-height:76px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .12s}
 .ts-day-cell:last-child{border-right:none}
 .ts-day-cell.we{background:rgba(254,243,226,.3);cursor:default}
 .ts-day-cell.is-today{background:rgba(26,26,26,.06)}
 .ts-day-cell.is-selected{background:rgba(26,26,26,.1)}
 .ts-day-cell:not(.we):not(.ts-empty):hover{background:rgba(26,26,26,.05)}
+.ts-day-cell.st-present{border-left-color:#86efac}
+.ts-day-cell.st-absent{border-left-color:#fca5a5}
+.ts-day-cell.st-inprog{border-left-color:#fdba74}
 .ts-empty{background:transparent;cursor:default}
 .ts-day-num{font-size:13px;font-weight:700;color:var(--navy);line-height:1}
 .ts-day-num.today{color:var(--orange)}
@@ -776,7 +779,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ts-day-pill.inprog{background:#fff7ed;color:#ea580c}
 .ts-day-pill.we{background:#f3f4f6;color:#9ca3af}
 .ts-day-pill.future{color:#cbd5e1}
-.ts-day-hrs{font-size:10px;color:var(--gray);margin-top:2px}
+.ts-day-status{display:flex;align-items:center;gap:6px;margin-top:3px}
+.ts-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ts-status-dot.present{background:#22c55e}
+.ts-day-hrs{font-size:13px;font-weight:700;color:var(--navy);margin-top:2px}
 .ts-day-view-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--orange);margin-top:auto;cursor:pointer}
 .ts-day-view-btn svg{width:10px;height:10px;stroke:var(--orange);fill:none}
 .ts-day-src{font-size:9px;color:#94a3b8;font-weight:500;margin-left:auto;margin-top:auto}
