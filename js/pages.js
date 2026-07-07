@@ -1414,6 +1414,593 @@ function aiCaptureCurrentStep(){
 }
 function eorNext(){aiCaptureCurrentStep();eorStep=Math.min(2,eorStep+1);if(aiAssistedFlow)aiCtPushStepMessage(eorStep);page='contract-eor';renderADTPage();}
 function eorBack(){aiCaptureCurrentStep();if(eorStep===0){eorStep=0;page='contract-type-select';renderADTPage();}else{eorStep--;page='contract-eor';renderADTPage();}}
+// ── COMPLIANCE ITEMS PAGE ──
+function applyComplianceFilters(){
+  complianceCountryFilter=getCSValue('cmp-f-country');
+  complianceModelFilter=getCSValue('cmp-f-model');
+  complianceStatusFilter=getCSValue('cmp-f-status');
+  renderADTPage();
+}
+function resetComplianceFilters(){
+  complianceCountryFilter='';complianceModelFilter='';complianceStatusFilter='';
+  renderADTPage();
+}
+function closeComplianceModal(){complianceModalOpen=false;renderADTPage();}
+function saveComplianceItem(){
+  const nameEl=document.getElementById('cmp-new-name');
+  const name=nameEl?nameEl.value.trim():'';
+  if(!name)return;
+  const model=getCustomSelectValue('cmp-new-model')||'EOR';
+  const country=getCustomSelectValue('cmp-new-country')||'Netherlands';
+  const category=getCustomSelectValue('cmp-new-category')||'Onboarding';
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  complianceItemsData.push({id:complianceNextId++,country,item:name,model,status:'Active',category,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
+  complianceModalOpen=false;
+  renderADTPage();
+}
+function buildCreateComplianceModalHTML(){
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeComplianceModal()">'
+    +'<div class="ct-modal" style="width:min(620px,92vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group"><label class="ep-form-label">Compliance Item Name</label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="Enter name"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model</label>'+customSelect('cmp-new-model','',['EOR','PEO','Direct'],'Select Model')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('cmp-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Category</label>'+customSelect('cmp-new-category','',['Onboarding','Payroll','Offboarding','Statutory'],'Select Category')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Mandatory</label>'+customSelect('cmp-new-mandatory','',['Yes','No'],'Select')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Payroll Blocking</label>'+customSelect('cmp-new-blocking','',['Yes','No'],'Select')+'</div>'
+    +'</div>'
+    +'<label class="cmp-evidence-check"><input type="checkbox" id="cmp-new-evidence"> Evidence Required</label>'
+    +'<div style="display:flex;justify-content:flex-end;gap:10px">'
+    +'<button class="ep-cancel-btn" onclick="closeComplianceModal()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="saveComplianceItem()">Save</button>'
+    +'</div>'
+    +'</div></div>';
+}
+// ── COMPLIANCE ITEM DETAIL SIDEBAR ──
+function openComplianceSidebar(id){
+  complianceSelectedId=id;complianceTab='basic-details';
+  const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.add('open');
+  const inner=document.getElementById('cmp-isb-inner');if(inner)inner.innerHTML=renderComplianceSidebar();
+  document.querySelectorAll('.cmp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='cmp-row-'+id));
+}
+function closeComplianceSidebar(){
+  complianceSelectedId=null;
+  const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.remove('open');
+  document.querySelectorAll('.cmp-row').forEach(r=>r.classList.remove('lp-row-selected'));
+}
+function navComplianceTab(tab){complianceTab=tab;const inner=document.getElementById('cmp-isb-inner');if(inner){inner.innerHTML=renderComplianceSidebar();requestAnimationFrame(function(){const nt=document.getElementById('cmp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function complianceCancelLog(){const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';}
+function complianceSaveLog(id){
+  const item=complianceItemsData.find(x=>x.id===id);if(!item)return;
+  const inp=document.getElementById('cmp-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
+  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  if(!item.logs)item.logs=[];
+  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
+  const inner=document.getElementById('cmp-isb-inner');if(inner)inner.innerHTML=renderComplianceSidebar();
+}
+function renderComplianceSidebar(){
+  const item=complianceItemsData.find(x=>x.id===complianceSelectedId);if(!item)return'';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<div class="lp-isb-tabs" id="cmp-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(complianceTab===t.id?' active':'')+'" onclick="navComplianceTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'cmp-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeComplianceSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iGlobe='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  let body='';
+  if(complianceTab==='basic-details'){
+    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iUser,'Compliance Name',item.item)+fc(iGlobe,'Country',item.country)
+      +fc(iDoc,'Employment Model',item.model)+fc(iTag,'Category',item.category)
+      +fc(iCheck,'Status',item.status)+fc(iCal,'Created By',item.createdBy+' ( '+item.createdAt+' )')
+      +'</div>';
+  }else if(complianceTab==='attachments'){
+    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
+    const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      +'<thead><tr>'
+      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th><th style="'+thS+'">DOCUMENT TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
+      +'</tr></thead>'
+      +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments found.</td></tr></tbody>'
+      +'</table>';
+  }else if(complianceTab==='logs'){
+    const logs=item.logs||[];
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
+    const timelineHTML=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+        const sk=logStatusKey(l.status);
+        return '<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-card">'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +'</div></div>';
+      }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No status change logs found.</div>';
+    const csk=logStatusKey(item.status);
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
+      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
+      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<textarea class="lp-logs-form-textarea" id="cmp-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="complianceCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="complianceSaveLog('+item.id+')">Submit</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+  }else if(complianceTab==='workflow'){
+    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
+      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
+      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>'+item.createdAt+'</span></span></div>'
+      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Compliance item created.</span></div>'
+      +'</div></div></div>';
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+function buildComplianceItemsHTML(){
+  const countryOpts=['Netherlands','Belgium','India','Germany','Spain'];
+  const modelOpts=['EOR','PEO','Direct'];
+  const statusOpts=['Active','Inactive'];
+  let rows=complianceItemsData;
+  if(complianceCountryFilter)rows=rows.filter(r=>r.country===complianceCountryFilter);
+  if(complianceModelFilter)rows=rows.filter(r=>r.model===complianceModelFilter);
+  if(complianceStatusFilter)rows=rows.filter(r=>r.status===complianceStatusFilter);
+  if(complianceSelectedId&&!rows.some(r=>r.id===complianceSelectedId))complianceSelectedId=null;
+  const totalActive=complianceItemsData.filter(r=>r.status==='Active').length;
+  const totalInactive=complianceItemsData.filter(r=>r.status==='Inactive').length;
+  const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+  const tableRows=rows.length?rows.map((r,i)=>'<tr class="cmp-row'+(complianceSelectedId===r.id?' lp-row-selected':'')+'" id="cmp-row-'+r.id+'" style="cursor:pointer" onclick="openComplianceSidebar('+r.id+')">'
+    +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
+    +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
+    +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
+    +'<td>'+r.model+'</td>'
+    +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
+    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openComplianceSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'</tr>').join('')
+    :'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+  const sbInner=complianceSelectedId?renderComplianceSidebar():'';
+  return '<div class="lp-page">'
+    +'<div class="at-top">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('cmp-f-country',countryOpts,complianceCountryFilter,'Country')
+    +apCS('cmp-f-model',modelOpts,complianceModelFilter,'Model')
+    +apCS('cmp-f-status',statusOpts,complianceStatusFilter,'Status')
+    +'<button class="lp-pill-reset" onclick="resetComplianceFilters()">Reset</button>'
+    +'<button class="lp-pill-search" onclick="applyComplianceFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="cmp-stats">'
+    +'<div class="cmp-stat"><div class="cmp-stat-val" style="color:#2563eb">'+totalActive+'</div><div class="cmp-stat-lbl">Total Active</div></div>'
+    +'<div class="cmp-stat"><div class="cmp-stat-val" style="color:var(--orange)">'+totalInactive+'</div><div class="cmp-stat-lbl">Total Inactive</div></div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr>'
+    +'<th>S. NO</th><th>COUNTRY</th><th>COMPLIANCE ITEM</th><th>EMPLOYMENT MODEL</th><th>STATUS</th><th>ACTION</th>'
+    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(complianceSelectedId?' open':'')+'" id="cmp-split-sb"><div class="lp-isb" id="cmp-isb-inner">'+sbInner+'</div></div>'
+    +'</div>'
+    +(complianceModalOpen?buildCreateComplianceModalHTML():'');
+}
+
+// ── RATES & RULES PAGE ──
+function openRatesRuleSidebar(id){
+  ratesRuleSelectedId=id;ratesRuleTab='basic-details';
+  const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.add('open');
+  const inner=document.getElementById('rr-isb-inner');if(inner)inner.innerHTML=renderRatesRuleSidebar();
+  document.querySelectorAll('.rr-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='rr-row-'+id));
+}
+function closeRatesRuleSidebar(){
+  ratesRuleSelectedId=null;
+  const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.remove('open');
+  document.querySelectorAll('.rr-row').forEach(r=>r.classList.remove('lp-row-selected'));
+}
+function navRatesRuleTab(tab){ratesRuleTab=tab;const inner=document.getElementById('rr-isb-inner');if(inner){inner.innerHTML=renderRatesRuleSidebar();requestAnimationFrame(function(){const nt=document.getElementById('rr-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function ratesRuleCancelLog(){const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';}
+function ratesRuleSaveLog(id){
+  const item=ratesRulesData.find(x=>x.id===id);if(!item)return;
+  const inp=document.getElementById('rr-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
+  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  if(!item.logs)item.logs=[];
+  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
+  const inner=document.getElementById('rr-isb-inner');if(inner)inner.innerHTML=renderRatesRuleSidebar();
+}
+function renderRatesRuleSidebar(){
+  const item=ratesRulesData.find(x=>x.id===ratesRuleSelectedId);if(!item)return'';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<div class="lp-isb-tabs" id="rr-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(ratesRuleTab===t.id?' active':'')+'" onclick="navRatesRuleTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'rr-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeRatesRuleSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const iFlag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2V4S16 4 12 4 4 6 4 6z"/><line x1="4" y1="22" x2="4" y2="4"/></svg>';
+  const iId='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>';
+  const iBars='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iDollar='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
+  const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  let body='';
+  if(ratesRuleTab==='basic-details'){
+    const statusVal=item.status==='Active'?'<span style="color:#16a34a;font-weight:600">Active</span>':'<span style="color:#dc2626;font-weight:600">Inactive</span>';
+    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iDoc,'Rule Name',item.ruleName)+fc(iFlag,'Country',item.country)
+      +fc(iId,'Applicable To',item.applicableTo)+fc(iBars,'Category',item.category)
+      +fc(iCheck,'Status',statusVal)+fc(iUser,'Created By',item.createdBy+' ( '+item.createdAt+' )')
+      +fc(iDollar,'Value/Rate',item.valueRate)
+      +'</div>';
+  }else if(ratesRuleTab==='logs'){
+    const logs=item.logs||[];
+    const personSvg=iUser;
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
+    const timelineHTML=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+        const sk=logStatusKey(l.status);
+        return '<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-card">'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +'</div></div>';
+      }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No status change logs found.</div>';
+    const csk=logStatusKey(item.status);
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
+      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
+      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<textarea class="lp-logs-form-textarea" id="rr-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="ratesRuleCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="ratesRuleSaveLog('+item.id+')">Submit</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+  }else if(ratesRuleTab==='workflow'){
+    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
+      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
+      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
+      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Rate rule created.</span></div>'
+      +'</div></div></div>';
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+function buildRatesRulesHTML(){
+  const countryOpts=['Netherlands'];
+  const categoryOpts=['General','Income Tax','Social Security','Benefits','Health Ins.'];
+  const statusOpts=['Active','Inactive'];
+  let rows=ratesRulesData;
+  if(ratesRuleCountryFilter)rows=rows.filter(r=>r.country===ratesRuleCountryFilter);
+  if(ratesRuleCategoryFilter)rows=rows.filter(r=>r.category===ratesRuleCategoryFilter);
+  if(ratesRuleStatusFilter)rows=rows.filter(r=>r.status===ratesRuleStatusFilter);
+  if(ratesRuleSelectedId&&!rows.some(r=>r.id===ratesRuleSelectedId))ratesRuleSelectedId=null;
+  const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+  const tableRows=rows.length?rows.map((r,i)=>'<tr class="rr-row'+(ratesRuleSelectedId===r.id?' lp-row-selected':'')+'" id="rr-row-'+r.id+'" style="cursor:pointer" onclick="openRatesRuleSidebar('+r.id+')">'
+    +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
+    +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
+    +'<td><span style="color:var(--orange);font-weight:500">'+r.ruleName+'</span></td>'
+    +'<td>'+r.category+'</td>'
+    +'<td>'+r.applicableTo+'</td>'
+    +'<td style="font-weight:600;color:var(--navy)">'+r.valueRate+'</td>'
+    +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
+    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openRatesRuleSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'</tr>').join('')
+    :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+  const sbInner=ratesRuleSelectedId?renderRatesRuleSidebar():'';
+  return '<div class="lp-page">'
+    +'<div class="lp-filter-bar">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('rr-f-country',countryOpts,ratesRuleCountryFilter,'Country')
+    +apCS('rr-f-category',categoryOpts,ratesRuleCategoryFilter,'Category')
+    +apCS('rr-f-status',statusOpts,ratesRuleStatusFilter,'Status')
+    +'<button class="lp-pill-reset" onclick="resetRatesRuleFilters()">Reset</button>'
+    +'<button class="lp-pill-search" onclick="applyRatesRuleFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr>'
+    +'<th>S. No</th><th>Country</th><th>Rule Name</th><th>Category</th><th>Applicable To</th><th>Value / Rate</th><th>Status</th><th>Action</th>'
+    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(ratesRuleSelectedId?' open':'')+'" id="rr-split-sb"><div class="lp-isb" id="rr-isb-inner">'+sbInner+'</div></div>'
+    +'</div></div>'
+    +(ratesRuleModalOpen?buildCreateRuleModalHTML():'')
+    +(ratesRuleSuccessName?buildRuleSuccessModalHTML():'');
+}
+function applyRatesRuleFilters(){
+  ratesRuleCountryFilter=getCSValue('rr-f-country');
+  ratesRuleCategoryFilter=getCSValue('rr-f-category');
+  ratesRuleStatusFilter=getCSValue('rr-f-status');
+  renderADTPage();
+}
+function resetRatesRuleFilters(){
+  ratesRuleCountryFilter='';ratesRuleCategoryFilter='';ratesRuleStatusFilter='';
+  renderADTPage();
+}
+function closeRatesRuleModal(){ratesRuleModalOpen=false;renderADTPage();}
+function closeRuleSuccess(){ratesRuleSuccessName='';renderADTPage();}
+function saveRule(){
+  const gv=(id)=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+  const name=gv('rr-new-name');
+  if(!name)return;
+  const category=getCustomSelectValue('rr-new-category')||'General';
+  const employmentType=getCustomSelectValue('rr-new-emptype')||'EOR';
+  const country=getCustomSelectValue('rr-new-country')||'Netherlands';
+  const applicableTo=getCustomSelectValue('rr-new-applicable')||employmentType;
+  const currency=getCustomSelectValue('rr-new-currency')||'EUR';
+  const valueType=getCustomSelectValue('rr-new-valuetype')||'Fixed Amount';
+  const ruleType=getCustomSelectValue('rr-new-type')||'Statutory';
+  const conditionOperator=getCustomSelectValue('rr-new-condop');
+  const conditionValue=gv('rr-new-condval');
+  const value=gv('rr-new-value');
+  const minLimit=gv('rr-new-minlimit');
+  const maxLimit=gv('rr-new-maxlimit');
+  const effectiveFrom=gv('rr-new-efffrom');
+  const effectiveTo=gv('rr-new-effto');
+  const status=getCustomSelectValue('rr-new-status')||'Active';
+  const valueRate=valueType==='Percentage'?(value||'0')+'%':currency+' '+(value||'0');
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  ratesRulesData.push({id:ratesRuleNextId++,country,ruleName:name,category,applicableTo,valueRate,status,createdBy:'Shaun Test1',createdAt,logs:[],
+    ruleType,employmentType,currency,valueType,conditionOperator,conditionValue,minLimit,maxLimit,effectiveFrom,effectiveTo});
+  ratesRuleModalOpen=false;
+  ratesRuleSuccessName=name;
+  renderADTPage();
+  setTimeout(function(){if(ratesRuleSuccessName===name){ratesRuleSuccessName='';renderADTPage();}},2600);
+}
+function buildCreateRuleModalHTML(){
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeRatesRuleModal()">'
+    +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Rule</span><button class="ct-modal-close" onclick="closeRatesRuleModal()">'+xSvg+'</button></div>'
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group"><label class="ep-form-label">Rule Name</label><input type="text" class="ep-form-input" id="rr-new-name" placeholder="Enter name"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Rule Type</label>'+customSelect('rr-new-type','',['Statutory','Tax','Contribution','Allowance','Benefit'],'Select Type')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Rule Category</label>'+customSelect('rr-new-category','',['General','Income Tax','Social Security','Benefits','Health Ins.'],'Select Category')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label>'+customSelect('rr-new-emptype','',['EOR','PEO','Direct'],'Select Type')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('rr-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Applicable on</label>'+customSelect('rr-new-applicable','',['EOR','PEO','EOR / PEO','Direct'],'Select')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Currency</label>'+customSelect('rr-new-currency','',['EUR','USD','INR','GBP'],'Select Currency')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Value Type</label>'+customSelect('rr-new-valuetype','',['Fixed Amount','Percentage'],'Select Type')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Condition Operator</label>'+customSelect('rr-new-condop','',['Equals','Greater Than','Less Than','Between'],'Select Operator')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Condition Value</label><input type="text" class="ep-form-input" id="rr-new-condval" placeholder="Enter value"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Value</label><input type="text" class="ep-form-input" id="rr-new-value" placeholder="Enter value"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Minimum Limit</label><input type="text" class="ep-form-input" id="rr-new-minlimit" placeholder="Enter value"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Maximum Limit</label><input type="text" class="ep-form-input" id="rr-new-maxlimit" placeholder="Enter value"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective From</label><input type="date" class="ep-form-input" id="rr-new-efffrom"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective To</label><input type="date" class="ep-form-input" id="rr-new-effto"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Status</label>'+customSelect('rr-new-status','',['Active','Inactive'],'Select Status')+'</div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">'
+    +'<button class="ep-cancel-btn" onclick="closeRatesRuleModal()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="saveRule()">Save</button>'
+    +'</div>'
+    +'</div></div>';
+}
+function buildRuleSuccessModalHTML(){
+  const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeRuleSuccess()">'
+    +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
+    +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeRuleSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
+    +'<div class="rr-success-title">Rule Created</div>'
+    +'<div class="rr-success-sub">&ldquo;'+ratesRuleSuccessName+'&rdquo; has been added to Rates &amp; Rules.</div>'
+    +'</div></div>';
+}
+
+// ── CONTRACT TEMPLATES PAGE ──
+function openCtpSidebar(id){
+  ctpSelectedId=id;ctpTab='basic-details';
+  const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.add('open');
+  const inner=document.getElementById('ctp-isb-inner');if(inner)inner.innerHTML=renderCtpSidebar();
+  document.querySelectorAll('.ctp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ctp-row-'+id));
+}
+function closeCtpSidebar(){
+  ctpSelectedId=null;
+  const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.remove('open');
+  document.querySelectorAll('.ctp-row').forEach(r=>r.classList.remove('lp-row-selected'));
+}
+function navCtpTab(tab){ctpTab=tab;const inner=document.getElementById('ctp-isb-inner');if(inner){inner.innerHTML=renderCtpSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ctp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function ctpCancelLog(){const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';}
+function ctpSaveLog(id){
+  const item=contractTemplatesData.find(x=>x.id===id);if(!item)return;
+  const inp=document.getElementById('ctp-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
+  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  if(!item.logs)item.logs=[];
+  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
+  const inner=document.getElementById('ctp-isb-inner');if(inner)inner.innerHTML=renderCtpSidebar();
+}
+function renderCtpSidebar(){
+  const item=contractTemplatesData.find(x=>x.id===ctpSelectedId);if(!item)return'';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ctp-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
+    +'<div class="lp-isb-tabs" id="ctp-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(ctpTab===t.id?' active':'')+'" onclick="navCtpTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'ctp-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeCtpSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iBag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
+  const iId='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const iFlag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2V4S16 4 12 4 4 6 4 6z"/><line x1="4" y1="22" x2="4" y2="4"/></svg>';
+  const iBars='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>';
+  const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  let body='';
+  if(ctpTab==='basic-details'){
+    const statusVal=item.status==='Active'?'<span style="color:#16a34a;font-weight:600">Active</span>':'<span style="color:#dc2626;font-weight:600">Inactive</span>';
+    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iUser,'Template Name',item.templateName)+fc(iBag,'Employment Type',item.employmentType)
+      +fc(iId,'Template ID',item.templateId)+fc(iCheck,'Status',statusVal)
+      +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
+      +'</div>';
+  }else if(ctpTab==='attachments'){
+    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
+    const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
+      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
+      +'</div>'
+      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
+      +'<thead><tr>'
+      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th><th style="'+thS+'">TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
+      +'</tr></thead>'
+      +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
+      +'</table>';
+  }else if(ctpTab==='logs'){
+    const logs=item.logs||[];
+    const personSvg=iUser;
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
+    const timelineHTML=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+        const sk=logStatusKey(l.status);
+        return '<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-card">'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +'</div></div>';
+      }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No logs yet.</div>';
+    const csk=logStatusKey(item.status);
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
+      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
+      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<textarea class="lp-logs-form-textarea" id="ctp-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="ctpCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="ctpSaveLog('+item.id+')">Submit</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+  }else if(ctpTab==='workflow'){
+    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
+      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
+      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
+      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Contract template created.</span></div>'
+      +'</div></div></div>';
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+function buildContractTemplatesHTML(){
+  const countryOpts=['Netherlands','India','Germany'];
+  const categoryOpts=['Proposal','Contract','Onboarding'];
+  const statusOpts=['Active','Inactive'];
+  let rows=contractTemplatesData;
+  if(ctpCountryFilter)rows=rows.filter(r=>r.country===ctpCountryFilter);
+  if(ctpCategoryFilter)rows=rows.filter(r=>r.category===ctpCategoryFilter);
+  if(ctpStatusFilter)rows=rows.filter(r=>r.status===ctpStatusFilter);
+  if(ctpSelectedId&&!rows.some(r=>r.id===ctpSelectedId))ctpSelectedId=null;
+  const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+  const tableRows=rows.length?rows.map((r,i)=>'<tr class="ctp-row'+(ctpSelectedId===r.id?' lp-row-selected':'')+'" id="ctp-row-'+r.id+'" style="cursor:pointer" onclick="openCtpSidebar('+r.id+')">'
+    +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
+    +'<td><span style="color:var(--orange);font-weight:500">'+r.templateName+'</span></td>'
+    +'<td>'+r.employmentType+'</td>'
+    +'<td style="color:var(--navy)">'+r.templateId+'</td>'
+    +'<td>'+r.country+'</td>'
+    +'<td>'+r.category+'</td>'
+    +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
+    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openCtpSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'</tr>').join('')
+    :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+  const sbInner=ctpSelectedId?renderCtpSidebar():'';
+  return '<div class="lp-page">'
+    +'<div class="lp-filter-bar">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('ctp-f-country',countryOpts,ctpCountryFilter,'Country')
+    +apCS('ctp-f-category',categoryOpts,ctpCategoryFilter,'Category')
+    +apCS('ctp-f-status',statusOpts,ctpStatusFilter,'Status')
+    +'<button class="lp-pill-reset" onclick="resetCtpFilters()">Reset</button>'
+    +'<button class="lp-pill-search" onclick="applyCtpFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr>'
+    +'<th>S. No</th><th>Template Name</th><th>Employment Type</th><th>Template ID</th><th>Country</th><th>Category</th><th>Status</th><th>Action</th>'
+    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(ctpSelectedId?' open':'')+'" id="ctp-split-sb"><div class="lp-isb" id="ctp-isb-inner">'+sbInner+'</div></div>'
+    +'</div></div>';
+}
+function applyCtpFilters(){
+  ctpCountryFilter=getCSValue('ctp-f-country');
+  ctpCategoryFilter=getCSValue('ctp-f-category');
+  ctpStatusFilter=getCSValue('ctp-f-status');
+  renderADTPage();
+}
+function resetCtpFilters(){
+  ctpCountryFilter='';ctpCategoryFilter='';ctpStatusFilter='';
+  renderADTPage();
+}
+
 function buildEORContractHTML(){return buildContractFormHTML('EOR',eorStep);}
 function buildPEOContractHTML(){return buildContractFormHTML('PEO',peoStep);}
 function peoSelectRadio(groupClass,clickedEl){

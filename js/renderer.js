@@ -52,6 +52,9 @@ function renderPageContent(id){
   if(page==='leave-add'){el.innerHTML=buildAddLeaveHTML();return;}
   if(page==='team-add'){el.innerHTML=buildAddTeamHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
+  if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
+  if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
+  if(page==='contract-templates'){el.innerHTML=buildContractTemplatesHTML();return;}
   if(page==='my-timesheet'){el.innerHTML=buildMyTimesheetHTML();return;}
   if(page==='all-timesheet'){el.innerHTML=buildAllTimesheetHTML();return;}
   if(page==='settings'){el.innerHTML=buildCompanySettingsHTML();return;}
