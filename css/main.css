@@ -71,7 +71,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:inset 3px 0 0 var(--orange)}
 .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
 /* -- Icon wrap -- */
-.sb-ico-wrap{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:transparent;color:#94a3b8;transition:background .14s ease,color .14s ease,transform .14s ease}
+.sb-ico-wrap{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:transparent;color:#64748b;transition:background .14s ease,color .14s ease,transform .14s ease}
 .sb-ico-wrap svg{width:15px;height:15px}
 /* -- Dropdown parents -- */
 .sb-parent{display:flex;align-items:center;gap:9px;padding:7px 10px;margin:1px 8px;cursor:pointer;font-size:13px;font-weight:500;color:#4b5563;transition:background .14s ease,color .14s ease;background:transparent;border:none;border-radius:9px;text-align:left;flex-shrink:0;width:calc(100% - 16px)}
@@ -83,14 +83,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-parent.has-active{color:#111827;font-weight:600}
 .sb-parent.has-active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
 .sb-parent.has-active:not(.open){background:transparent}
-.sb-parent .sb-chev{width:13px;height:13px;transition:transform .28s cubic-bezier(.4,0,.2,1);color:#cbd5e1;flex-shrink:0;margin-left:auto}
+.sb-parent .sb-chev{width:13px;height:13px;transition:transform .28s cubic-bezier(.4,0,.2,1);color:#64748b;flex-shrink:0;margin-left:auto}
 .sb-parent.open .sb-chev{transform:rotate(180deg);color:var(--orange)}
 /* -- Section labels -- */
 .sb-section{font-size:10px;font-weight:700;color:#c4c9d4;text-transform:uppercase;letter-spacing:.9px;padding:16px 18px 5px;flex-shrink:0}
 /* -- Children -- */
 .sb-children{display:flex;flex-direction:column;overflow:hidden;background:transparent;margin:2px 8px 4px 20px;padding:0;border-left:2px solid #edf0f4;flex-shrink:0;transition:max-height .32s cubic-bezier(.4,0,.2,1)}
 .sb-children .sb-item{padding:6px 8px;margin:1px 4px;font-size:12.5px;color:#64748b;border-radius:7px;gap:8px;flex-shrink:0;width:calc(100% - 8px);box-shadow:none}
-.sb-children .sb-item .sb-ico-wrap{width:22px;height:22px;border-radius:5px;background:transparent;color:#94a3b8}
+.sb-children .sb-item .sb-ico-wrap{width:22px;height:22px;border-radius:5px;background:transparent;color:#64748b}
 .sb-children .sb-item .sb-ico-wrap svg{width:12px;height:12px}
 .sb-children .sb-item:hover{background:#f1f5f9;color:#111827}
 .sb-children .sb-item:hover .sb-ico-wrap{background:#e2e8f0;color:#475569;transform:scale(1.08)}
@@ -715,6 +715,8 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .fcmp-footer-btn:hover{background:#1e293b}
 
 /* ── My Timesheet Page ── */
+.ts-back-bar{margin-bottom:18px}
+.ts-back-bar .ep-back{margin-top:0}
 .ts-filter-bar{display:flex;align-items:center;gap:10px;padding:0 0 18px;flex-shrink:0}
 .ts-filter-label{font-size:12px;font-weight:600;color:var(--gray);margin-right:2px}
 .ts-date-btn{display:flex;align-items:center;gap:8px;padding:0 14px;height:34px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:500;color:var(--navy);cursor:pointer;white-space:nowrap}

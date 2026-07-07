@@ -62,6 +62,11 @@
 .cmp-evidence-check{display:flex;align-items:center;gap:8px;margin:16px 0 22px;font-size:13px;color:var(--navy);cursor:pointer}
 .cmp-evidence-check input{width:15px;height:15px;accent-color:var(--orange);cursor:pointer}
 .cmp-wf-icon{width:22px;height:22px;border-radius:50%;background:#dcfce7;color:#16a34a;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ep-file-input{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:#fff;cursor:pointer;transition:border-color .15s;width:100%;box-sizing:border-box}
+.ep-file-input:hover{border-color:#c7ccd6}
+.ep-file-btn{flex-shrink:0;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--orange);color:#fff;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.ep-file-name{font-size:13px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ep-file-name.chosen{color:var(--navy);font-weight:600}
 .rr-success-modal{background:#fff;border-radius:20px;padding:38px 32px 34px;width:min(360px,90vw);box-shadow:0 24px 60px rgba(15,23,42,.25);text-align:center;position:relative;animation:rr-modal-pop .25s cubic-bezier(.34,1.56,.64,1)}
 .rr-success-ring{width:76px;height:76px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;position:relative}
 .rr-success-ring::before,.rr-success-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid #86efac;opacity:0;animation:rr-ring-pulse 1.5s ease-out infinite}

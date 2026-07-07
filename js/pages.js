@@ -2005,6 +2005,11 @@ function resetCtpFilters(){
 function closeCtpModal(){ctpModalOpen=false;renderADTPage();}
 function closeCtpSuccess(){ctpSuccessName='';renderADTPage();}
 function flashFieldError(el){if(!el)return;el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);}
+function updateFileLabel(input,labelId){
+  const el=document.getElementById(labelId);if(!el)return;
+  if(input.files&&input.files[0]){el.textContent=input.files[0].name;el.classList.add('chosen');}
+  else{el.textContent='No file chosen';el.classList.remove('chosen');}
+}
 function saveTemplate(){
   const nameEl=document.getElementById('ctp-new-name');
   const name=nameEl?nameEl.value.trim():'';
@@ -2035,6 +2040,7 @@ function saveTemplate(){
 }
 function buildCreateTemplateModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   const req='<span style="color:#ef4444">*</span>';
   return '<div class="ct-modal-overlay" onclick="closeCtpModal()">'
     +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
@@ -2045,7 +2051,10 @@ function buildCreateTemplateModalHTML(){
     +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label>'+customSelect('ctp-new-emptype','',['EOR','PEO','Direct'],'Select')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label>'+customSelect('ctp-new-category','',['Proposal','Contract','Onboarding'],'Select')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Status</label>'+customSelect('ctp-new-status','Active',['Active','Inactive'],'Select Status')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Template File (PDF only)</label><input type="file" class="ep-form-input" id="ctp-new-file" accept=".pdf"><span style="font-size:11px;color:var(--gray);margin-top:2px">Upload a PDF file &mdash; it will be stored as the template document.</span></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Template File (PDF only)</label>'
+    +'<label class="ep-file-input" for="ctp-new-file"><span class="ep-file-btn">'+uploadIco+'Choose PDF</span><span class="ep-file-name" id="ctp-new-file-name">No file chosen</span></label>'
+    +'<input type="file" id="ctp-new-file" accept=".pdf" style="display:none" onchange="updateFileLabel(this,\'ctp-new-file-name\')">'
+    +'<span style="font-size:11px;color:var(--gray);margin-top:2px">Upload a PDF file &mdash; it will be stored as the template document.</span></div>'
     +'</div>'
     +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">'
     +'<button class="ep-cancel-btn" onclick="closeCtpModal()">Cancel</button>'
@@ -3027,7 +3036,8 @@ function buildTsMonthPickerHTML() {
     + '</div>';
 }
 
-function buildMyTimesheetHTML() {
+function buildMyTimesheetHTML(viewingOther) {
+  const emp = (viewingOther && atViewedEmp) ? atViewedEmp : tsEmp;
   const y = tsMonth.year, m = tsMonth.month;
   const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const mShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -3056,8 +3066,8 @@ function buildMyTimesheetHTML() {
 
   // ── User bar ──
   const userBar = '<div class="ts-user-bar">'
-    + '<div class="ts-user-left"><div class="ts-user-av">'+tsEmp.initials+'</div>'
-    + '<div><div class="ts-user-name">'+tsEmp.name+'</div><div class="ts-user-role">'+tsEmp.role+'</div></div></div>'
+    + '<div class="ts-user-left"><div class="ts-user-av">'+emp.initials+'</div>'
+    + '<div><div class="ts-user-name">'+emp.name+'</div><div class="ts-user-role">'+emp.role+'</div></div></div>'
     + '<div class="ts-user-right">'
     + '<button class="ts-refresh-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></button>'
     + '<div class="ts-month-wrap">'
@@ -3162,7 +3172,12 @@ function buildMyTimesheetHTML() {
       + '</div>'
     : '';
 
+  const backBar = viewingOther
+    ? '<div class="ts-back-bar"><button class="ep-back" onclick="atBackToAllTimesheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to All Timesheet</button></div>'
+    : '';
+
   return '<div class="ts-main">'
+    + backBar
     + filterBar
     + userBar
     + statsHtml
