@@ -1430,15 +1430,23 @@ function saveComplianceItem(){
   const nameEl=document.getElementById('cmp-new-name');
   const name=nameEl?nameEl.value.trim():'';
   if(!name)return;
-  const model=getCustomSelectValue('cmp-new-model')||'EOR';
+  const modelSeg=document.querySelector('#cmp-new-model-seg .seg-btn.active');
+  const model=modelSeg?modelSeg.textContent:'EOR';
   const country=getCustomSelectValue('cmp-new-country')||'Netherlands';
-  const category=getCustomSelectValue('cmp-new-category')||'Onboarding';
+  const categorySeg=document.querySelector('#cmp-new-category-seg .seg-btn.active');
+  const category=categorySeg?categorySeg.textContent:'Onboarding';
+  const mandatoryEl=document.getElementById('cmp-new-mandatory');
+  const blockingEl=document.getElementById('cmp-new-blocking');
+  const evidenceEl=document.getElementById('cmp-new-evidence');
+  const mandatory=mandatoryEl?mandatoryEl.checked:true;
+  const payrollBlocking=blockingEl?blockingEl.checked:false;
+  const evidenceRequired=evidenceEl?evidenceEl.checked:false;
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  complianceItemsData.push({id:complianceNextId++,country,item:name,model,status:'Active',category,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
+  complianceItemsData.push({id:complianceNextId++,country,item:name,model,status:'Active',category,mandatory,payrollBlocking,evidenceRequired,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
   complianceModalOpen=false;
   renderADTPage();
 }
@@ -1448,14 +1456,16 @@ function buildCreateComplianceModalHTML(){
     +'<div class="ct-modal" style="width:min(620px,92vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Compliance Item Name</label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="Enter name"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model</label>'+customSelect('cmp-new-model','',['EOR','PEO','Direct'],'Select Model')+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Compliance Item Name</label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="e.g. Right to Work Check"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model</label><div class="segmented" id="cmp-new-model-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('cmp-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Category</label>'+customSelect('cmp-new-category','',['Onboarding','Payroll','Offboarding','Statutory'],'Select Category')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Mandatory</label>'+customSelect('cmp-new-mandatory','',['Yes','No'],'Select')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Payroll Blocking</label>'+customSelect('cmp-new-blocking','',['Yes','No'],'Select')+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Category</label><div class="segmented" id="cmp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Onboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Payroll</button><button type="button" class="seg-btn" onclick="selSeg(this)">Offboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Statutory</button></div></div>'
     +'</div>'
-    +'<label class="cmp-evidence-check"><input type="checkbox" id="cmp-new-evidence"> Evidence Required</label>'
+    +'<div class="ep-form-card cmp-rules-card">'
+    +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Mandatory</div><div class="cmp-rule-hint">Employees must complete this item</div></div><label class="cs-toggle"><input type="checkbox" id="cmp-new-mandatory" checked><span class="cs-toggle-slider"></span></label></div>'
+    +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Payroll Blocking</div><div class="cmp-rule-hint">Payroll is blocked until this item is resolved</div></div><label class="cs-toggle"><input type="checkbox" id="cmp-new-blocking"><span class="cs-toggle-slider"></span></label></div>'
+    +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Evidence Required</div><div class="cmp-rule-hint">A supporting document must be uploaded</div></div><label class="cs-toggle"><input type="checkbox" id="cmp-new-evidence"><span class="cs-toggle-slider"></span></label></div>'
+    +'</div>'
     +'<div style="display:flex;justify-content:flex-end;gap:10px">'
     +'<button class="ep-cancel-btn" onclick="closeComplianceModal()">Cancel</button>'
     +'<button class="ep-save-btn" onclick="saveComplianceItem()">Save</button>'
@@ -1768,25 +1778,44 @@ function resetRatesRuleFilters(){
 }
 function closeRatesRuleModal(){ratesRuleModalOpen=false;renderADTPage();}
 function closeRuleSuccess(){ratesRuleSuccessName='';renderADTPage();}
+function segActive(id,fallback){const el=document.querySelector('#'+id+' .seg-btn.active');return el?el.textContent:fallback;}
+function ruleCurrencySelectHTML(selected){return customSelect('rr-new-currency',selected||'','EUR,USD,INR,GBP'.split(','),'');}
+function toggleRuleValueField(btn){
+  selSeg(btn);
+  const wrap=document.getElementById('rr-value-field-wrap');if(!wrap)return;
+  const isPercentage=btn.textContent.trim()==='Percentage';
+  const valEl=document.getElementById('rr-new-value');
+  const currentVal=valEl?valEl.value:'';
+  const label=document.getElementById('rr-value-field-label');
+  if(isPercentage){
+    const cur=getCustomSelectValue('rr-new-currency');
+    if(cur)wrap.dataset.savedCurrency=cur;
+    wrap.innerHTML='<div class="input-suffix" style="max-width:100%"><input type="text" id="rr-new-value" placeholder="0" value="'+attrSafe(currentVal)+'"><span class="sfx">%</span></div>';
+    if(label)label.textContent='Value';
+  }else{
+    wrap.innerHTML='<div class="pay-group">'+ruleCurrencySelectHTML(wrap.dataset.savedCurrency)+'<input type="text" id="rr-new-value" placeholder="0.00" value="'+attrSafe(currentVal)+'"></div>';
+    if(label)label.textContent='Currency & Value';
+  }
+}
 function saveRule(){
   const gv=(id)=>{const el=document.getElementById(id);return el?el.value.trim():'';};
   const name=gv('rr-new-name');
   if(!name)return;
   const category=getCustomSelectValue('rr-new-category')||'General';
-  const employmentType=getCustomSelectValue('rr-new-emptype')||'EOR';
+  const employmentType=segActive('rr-new-emptype-seg','EOR');
   const country=getCustomSelectValue('rr-new-country')||'Netherlands';
   const applicableTo=getCustomSelectValue('rr-new-applicable')||employmentType;
   const currency=getCustomSelectValue('rr-new-currency')||'EUR';
-  const valueType=getCustomSelectValue('rr-new-valuetype')||'Fixed Amount';
-  const ruleType=getCustomSelectValue('rr-new-type')||'Statutory';
-  const conditionOperator=getCustomSelectValue('rr-new-condop');
+  const valueType=segActive('rr-new-valuetype-seg','Fixed Amount');
+  const ruleType=segActive('rr-new-type-seg','Statutory');
+  const conditionOperator=segActive('rr-new-condop-seg','');
   const conditionValue=gv('rr-new-condval');
   const value=gv('rr-new-value');
   const minLimit=gv('rr-new-minlimit');
   const maxLimit=gv('rr-new-maxlimit');
   const effectiveFrom=gv('rr-new-efffrom');
   const effectiveTo=gv('rr-new-effto');
-  const status=getCustomSelectValue('rr-new-status')||'Active';
+  const status=document.getElementById('rr-new-status')&&document.getElementById('rr-new-status').checked?'Active':'Inactive';
   const valueRate=valueType==='Percentage'?(value||'0')+'%':currency+' '+(value||'0');
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1802,28 +1831,39 @@ function saveRule(){
 }
 function buildCreateRuleModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const seg=(id,options,activeIdx)=>'<div class="segmented" id="'+id+'">'+options.map((o,i)=>'<button type="button" class="seg-btn'+(i===(activeIdx||0)?' active':'')+'" onclick="selSeg(this)">'+o+'</button>').join('')+'</div>';
   return '<div class="ct-modal-overlay" onclick="closeRatesRuleModal()">'
     +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Rule</span><button class="ct-modal-close" onclick="closeRatesRuleModal()">'+xSvg+'</button></div>'
+    +'<div class="ep-form-card" style="margin-bottom:16px">'
+    +'<div class="ep-form-title">Rule Details</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Rule Name</label><input type="text" class="ep-form-input" id="rr-new-name" placeholder="Enter name"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Rule Type</label>'+customSelect('rr-new-type','',['Statutory','Tax','Contribution','Allowance','Benefit'],'Select Type')+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Name</label><input type="text" class="ep-form-input" id="rr-new-name" placeholder="Enter name"></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Type</label>'+seg('rr-new-type-seg',['Statutory','Tax','Contribution','Allowance','Benefit'])+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Rule Category</label>'+customSelect('rr-new-category','',['General','Income Tax','Social Security','Benefits','Health Ins.'],'Select Category')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label>'+customSelect('rr-new-emptype','',['EOR','PEO','Direct'],'Select Type')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label>'+seg('rr-new-emptype-seg',['EOR','PEO','Direct'])+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('rr-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Applicable on</label>'+customSelect('rr-new-applicable','',['EOR','PEO','EOR / PEO','Direct'],'Select')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Currency</label>'+customSelect('rr-new-currency','',['EUR','USD','INR','GBP'],'Select Currency')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Value Type</label>'+customSelect('rr-new-valuetype','',['Fixed Amount','Percentage'],'Select Type')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Condition Operator</label>'+customSelect('rr-new-condop','',['Equals','Greater Than','Less Than','Between'],'Select Operator')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Condition Value</label><input type="text" class="ep-form-input" id="rr-new-condval" placeholder="Enter value"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Value</label><input type="text" class="ep-form-input" id="rr-new-value" placeholder="Enter value"></div>'
+    +'</div></div>'
+    +'<div class="ep-form-card" style="margin-bottom:16px">'
+    +'<div class="ep-form-title">Value &amp; Conditions</div>'
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Value Type</label><div class="segmented" id="rr-new-valuetype-seg"><button type="button" class="seg-btn active" onclick="toggleRuleValueField(this)">Fixed Amount</button><button type="button" class="seg-btn" onclick="toggleRuleValueField(this)">Percentage</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" id="rr-value-field-label">Currency &amp; Value</label><div id="rr-value-field-wrap"><div class="pay-group">'+ruleCurrencySelectHTML('')+'<input type="text" id="rr-new-value" placeholder="0.00"></div></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Operator</label>'+seg('rr-new-condop-seg',['Equals','Greater Than','Less Than','Between'])+'<span class="cmp-rule-hint">Optional &middot; narrows when this rule applies</span></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Value</label><input type="text" class="ep-form-input" id="rr-new-condval" placeholder="Enter value"></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Minimum Limit</label><input type="text" class="ep-form-input" id="rr-new-minlimit" placeholder="Enter value"></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Maximum Limit</label><input type="text" class="ep-form-input" id="rr-new-maxlimit" placeholder="Enter value"></div>'
+    +'</div></div>'
+    +'<div class="ep-form-card">'
+    +'<div class="ep-form-title">Validity</div>'
+    +'<div class="ep-form-grid">'
     +'<div class="ep-form-group"><label class="ep-form-label">Effective From</label><input type="date" class="ep-form-input" id="rr-new-efffrom"></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Effective To</label><input type="date" class="ep-form-input" id="rr-new-effto"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Status</label>'+customSelect('rr-new-status','',['Active','Inactive'],'Select Status')+'</div>'
     +'</div>'
-    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">'
+    +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Status</div><div class="cmp-rule-hint">Rule is applied to payroll calculations when active</div></div><label class="cs-toggle"><input type="checkbox" id="rr-new-status" checked><span class="cs-toggle-slider"></span></label></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">'
     +'<button class="ep-cancel-btn" onclick="closeRatesRuleModal()">Cancel</button>'
     +'<button class="ep-save-btn" onclick="saveRule()">Save</button>'
     +'</div>'
@@ -2014,14 +2054,12 @@ function saveTemplate(){
   const nameEl=document.getElementById('ctp-new-name');
   const name=nameEl?nameEl.value.trim():'';
   const country=getCustomSelectValue('ctp-new-country');
-  const employmentType=getCustomSelectValue('ctp-new-emptype');
-  const category=getCustomSelectValue('ctp-new-category');
-  const status=getCustomSelectValue('ctp-new-status')||'Active';
+  const employmentType=segActive('ctp-new-emptype-seg','EOR');
+  const category=segActive('ctp-new-category-seg','Proposal');
+  const status=document.getElementById('ctp-new-status')&&document.getElementById('ctp-new-status').checked?'Active':'Inactive';
   let ok=true;
   if(!name){flashFieldError(nameEl);ok=false;}
   if(!country){flashFieldError(document.querySelector('#ctp-new-country .custom-select-trigger'));ok=false;}
-  if(!employmentType){flashFieldError(document.querySelector('#ctp-new-emptype .custom-select-trigger'));ok=false;}
-  if(!category){flashFieldError(document.querySelector('#ctp-new-category .custom-select-trigger'));ok=false;}
   if(!ok)return;
   const fileEl=document.getElementById('ctp-new-file');
   const fileName=fileEl&&fileEl.files&&fileEl.files[0]?fileEl.files[0].name:'';
@@ -2046,16 +2084,16 @@ function buildCreateTemplateModalHTML(){
     +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Template Name '+req+'</label><input type="text" class="ep-form-input" id="ctp-new-name" placeholder="e.g. NL EOR Proposal"></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template Name '+req+'</label><input type="text" class="ep-form-input" id="ctp-new-name" placeholder="e.g. NL EOR Proposal"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label><div class="segmented" id="ctp-new-emptype-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country '+req+'</label>'+customSelect('ctp-new-country','',['Netherlands','India','Germany','Belgium','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label>'+customSelect('ctp-new-emptype','',['EOR','PEO','Direct'],'Select')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label>'+customSelect('ctp-new-category','',['Proposal','Contract','Onboarding'],'Select')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Status</label>'+customSelect('ctp-new-status','Active',['Active','Inactive'],'Select Status')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Template File (PDF only)</label>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label><div class="segmented" id="ctp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Proposal</button><button type="button" class="seg-btn" onclick="selSeg(this)">Contract</button><button type="button" class="seg-btn" onclick="selSeg(this)">Onboarding</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template File (PDF only)</label>'
     +'<label class="ep-file-input" for="ctp-new-file"><span class="ep-file-btn">'+uploadIco+'Choose PDF</span><span class="ep-file-name" id="ctp-new-file-name">No file chosen</span></label>'
     +'<input type="file" id="ctp-new-file" accept=".pdf" style="display:none" onchange="updateFileLabel(this,\'ctp-new-file-name\')">'
     +'<span style="font-size:11px;color:var(--gray);margin-top:2px">Upload a PDF file &mdash; it will be stored as the template document.</span></div>'
     +'</div>'
+    +'<div class="ep-form-card cmp-rules-card" style="margin-top:16px"><div class="cs-toggle-row"><div><div class="cs-toggle-label">Status</div><div class="cmp-rule-hint">Template is available for use when active</div></div><label class="cs-toggle"><input type="checkbox" id="ctp-new-status" checked><span class="cs-toggle-slider"></span></label></div></div>'
     +'<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">'
     +'<button class="ep-cancel-btn" onclick="closeCtpModal()">Cancel</button>'
     +'<button class="ep-save-btn" onclick="saveTemplate()">Create Template</button>'
