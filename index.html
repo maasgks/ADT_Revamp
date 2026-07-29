@@ -25,7 +25,6 @@
       <button class="tb-cost-calc" id="tb-cost-calc-btn" style="display:none" onclick="openCostCalculator()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg> Cost Calculator</button>
     </div>
     <div class="topbar-right" style="position:relative">
-      <button class="agent-btn" id="adt-agent-btn" onclick="openAgent()"><span class="spark"><svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.8'><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg></span> Agent Mode</button>
       <button class="tb-icon" onclick="openSearch()" title="Search (Ctrl+K)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
       <button class="tb-icon" onclick="toggleNotif(event)" id="notif-trigger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
       <!-- Entity dropdown -->
@@ -163,7 +162,6 @@
         <div class="hr-section" style="margin-bottom:14px">
           <div class="hr-section-header">
             <div class="hr-section-title">Action Required</div>
-            <a class="hr-section-link" href="#">View All</a>
           </div>
           <table class="hr-leave-table" style="width:100%">
             <thead>
@@ -206,9 +204,9 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Payroll</div>
-              <a class="hr-section-link" href="#">View All</a>
+              <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('payroll',true)">View All</a>
             </div>
-            <div class="emp-payslip-row">
+            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
               <div>
                 <div class="emp-payslip-month">April 2025</div>
                 <div class="emp-payslip-sub">Processed 01 May 2025</div>
@@ -218,7 +216,7 @@
                 <span class="hr-leave-badge approved">Paid</span>
               </div>
             </div>
-            <div class="emp-payslip-row">
+            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
               <div>
                 <div class="emp-payslip-month">March 2025</div>
                 <div class="emp-payslip-sub">Processed 01 Apr 2025</div>
@@ -228,7 +226,7 @@
                 <span class="hr-leave-badge approved">Paid</span>
               </div>
             </div>
-            <div class="emp-payslip-row">
+            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
               <div>
                 <div class="emp-payslip-month">February 2025</div>
                 <div class="emp-payslip-sub">Processed 01 Mar 2025</div>
@@ -242,7 +240,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Leave Requests</div>
-              <a class="hr-section-link" href="#">Apply Leave</a>
+              <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('all-leaves',true)">Apply Leave</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -254,19 +252,19 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td><span class="hr-emp-name">Casual Leave</span></td>
                   <td style="color:var(--gray)">22–24 May</td>
                   <td style="color:var(--gray)">3</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td><span class="hr-emp-name">Sick Leave</span></td>
                   <td style="color:var(--gray)">10 Apr</td>
                   <td style="color:var(--gray)">1</td>
                   <td><span class="hr-leave-badge approved">Approved</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td><span class="hr-emp-name">Earned Leave</span></td>
                   <td style="color:var(--gray)">2–6 Mar</td>
                   <td style="color:var(--gray)">5</td>
@@ -282,45 +280,44 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Documents &amp; Compliance</div>
-              <a class="hr-section-link" href="#">View All</a>
+              <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('compliance',true)">View All</a>
             </div>
-            <div class="emp-doc-row">
+            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Form 16 — FY 2024–25</div>
                 <div class="emp-doc-date">Issued 15 Apr 2025</div>
               </div>
-              <button class="hr-action-btn neutral">Download</button>
+              <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
             </div>
-            <div class="emp-doc-row">
+            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Offer Letter</div>
                 <div class="emp-doc-date">Issued 10 Jan 2022</div>
               </div>
-              <button class="hr-action-btn neutral">Download</button>
+              <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
             </div>
-            <div class="emp-doc-row">
+            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">IT Policy Acknowledgement</div>
                 <div class="emp-doc-date" style="color:var(--orange)">Action needed by 20 May</div>
               </div>
-              <button class="hr-action-btn neutral">Sign</button>
+              <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Sign</button>
             </div>
-            <div class="emp-doc-row">
+            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Apr 2025 Payslip</div>
                 <div class="emp-doc-date">Generated 01 May 2025</div>
               </div>
-              <button class="hr-action-btn neutral">Download</button>
+              <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
             </div>
           </div>
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Upcoming</div>
-              <a class="hr-section-link" href="#">View Calendar</a>
             </div>
             <div class="emp-upcoming-row">
               <div class="emp-upcoming-date">
@@ -449,7 +446,7 @@
               <div class="hr-action-desc">Onboard a new team member</div>
             </div>
           </div>
-          <div class="hr-action-card">
+          <div class="hr-action-card" style="cursor:pointer" onclick="navigatePage('compliance',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Upload Policy</div>
@@ -471,7 +468,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Leave Requests</div>
-              <a href="#" class="hr-section-link">View all</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('all-leaves',true)">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -483,25 +480,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Ramesh Patel</td>
                   <td>Sick Leave</td>
                   <td>20 May</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Priya Sharma</td>
                   <td>Casual Leave</td>
                   <td>22 May</td>
                   <td><span class="hr-leave-badge approved">Approved</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Aishi Verma</td>
                   <td>Earned Leave</td>
                   <td>23-25 May</td>
                   <td><span class="hr-leave-badge approved">Approved</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Arjun Desai</td>
                   <td>Sick Leave</td>
                   <td>28 May</td>
@@ -571,7 +568,6 @@
         <div class="hr-section">
           <div class="hr-section-header">
             <div class="hr-section-title">Birthdays &amp; Anniversaries</div>
-            <a href="#" class="hr-section-link">View more</a>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0">
             <div class="hr-birthday-item" style="padding-right:20px">
@@ -637,7 +633,7 @@
         </div>
 
         <div class="hr-actions" style="grid-template-columns:repeat(2,1fr)">
-          <div class="hr-action-card">
+          <div class="hr-action-card" style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Approve Leaves</div>
@@ -657,7 +653,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Team Leave Requests</div>
-              <a href="#" class="hr-section-link">View all</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('all-leaves',true)">View all</a>
             </div>
             <table class="hr-leave-table manager-leave-table">
               <thead>
@@ -670,40 +666,40 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Utkarsh Shukla</td>
                   <td>Casual Leave</td>
                   <td>15 - 16 May</td>
                   <td class="manager-days">2</td>
-                  <td><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Ashneet Kaur</td>
                   <td>Sick Leave</td>
                   <td>18 May</td>
                   <td class="manager-days">1</td>
-                  <td><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Sneha Kulkarni</td>
                   <td>Earned Leave</td>
                   <td>22 - 23 May</td>
                   <td class="manager-days">2</td>
-                  <td><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Diksha Kumari</td>
                   <td>Casual Leave</td>
                   <td>26 May</td>
                   <td class="manager-days">1</td>
-                  <td><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Pardeep Verga</td>
                   <td>Sick Leave</td>
                   <td>28 - 29 May</td>
                   <td class="manager-days">2</td>
-                  <td><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
                 </tr>
               </tbody>
             </table>
@@ -711,7 +707,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Holidays</div>
-              <a href="#" class="hr-section-link">View calendar</a>
             </div>
             <div class="hr-holiday-list">
               <div class="hr-holiday-item">
@@ -772,7 +767,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Pending Expense Claims</div>
-              <a href="#" class="hr-section-link">View all</a>
             </div>
             <div class="manager-expense-list">
               <a href="#" class="manager-expense-item">
@@ -816,7 +810,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Birthdays &amp; Work Anniversaries</div>
-              <a href="#" class="hr-section-link">This week</a>
             </div>
             <div class="hr-birthday-list">
               <div class="hr-birthday-item">
@@ -945,14 +938,14 @@
               <div class="hr-action-desc">View and resolve support tickets</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('compliance',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Compliance Hub</div>
               <div class="hr-action-desc">Track statutory, document, and policy compliance</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('all-users',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Users &amp; Roles</div>
@@ -1032,24 +1025,23 @@
         <div class="hr-section">
           <div class="hr-section-header">
             <div class="hr-section-title">Support &amp; Compliance Activity</div>
-            <a href="#" class="hr-section-link">Open console</a>
           </div>
           <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px">
-            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0">
+            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0;cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Support ticket escalation</div>
                 <div class="manager-expense-desc">5 high-priority tickets require Super Admin review and resolution.</div>
                 <span class="manager-expense-tag">Support</span>
               </div>
             </div>
-            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0">
+            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0;cursor:pointer" onclick="navigatePage('compliance',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Compliance document pending</div>
                 <div class="manager-expense-desc">3 employee compliance documents are awaiting verification.</div>
                 <span class="manager-expense-tag">Compliance</span>
               </div>
             </div>
-            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0">
+            <div class="manager-expense-item" style="border-radius:12px;border:1px solid #e5e7eb;margin:0;cursor:pointer" onclick="navigatePage('payments',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Pending invoice follow-up</div>
                 <div class="manager-expense-desc">7 invoices are awaiting client payment.</div>
@@ -1119,28 +1111,28 @@
 
         <!-- Action cards — 4 in one row -->
         <div class="hr-actions" style="grid-template-columns:repeat(4,1fr)">
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">View Invoices</div>
               <div class="hr-action-desc">All generated invoices and current status</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Raise Invoice</div>
               <div class="hr-action-desc">Generate a new invoice for a contract or entity</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Payment Reports</div>
               <div class="hr-action-desc">Trends, summaries, and payment cycle analytics</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Contract Billing</div>
@@ -1154,7 +1146,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Invoice Overview</div>
-              <a href="#" class="hr-section-link">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1167,21 +1158,21 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2040</td>
                   <td>ADT Spain S.L.</td>
                   <td>₹2,10,000</td>
                   <td>22 May</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2039</td>
                   <td>ADT Singapore Pte.</td>
                   <td>₹6,10,000</td>
                   <td>25 May</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
@@ -1195,7 +1186,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Paid Invoices</div>
-              <a href="#" class="hr-section-link">View all paid</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1207,31 +1197,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td>12 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
                   <td>08 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2027</td>
                   <td>ADT Singapore Pte.</td>
                   <td>₹3,40,000</td>
                   <td>02 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2021</td>
                   <td>ADT Spain S.L.</td>
                   <td>₹5,25,000</td>
                   <td>25 Apr</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2018</td>
                   <td>ADT Brazil Ltda.</td>
                   <td>₹1,60,000</td>
@@ -1317,21 +1307,21 @@
         </div>
 
         <div class="hr-actions finance-action-grid">
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">View Invoices</div>
               <div class="hr-action-desc">All generated invoices and status</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Paid Invoices</div>
               <div class="hr-action-desc">View cleared and settled invoices</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('payments',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Invoice Reports</div>
@@ -1344,7 +1334,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Invoice Overview</div>
-              <a href="#" class="hr-section-link">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1356,25 +1345,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2041</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹4,20,000</td>
                   <td><span class="hr-leave-badge pending">Unpaid</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td><span class="hr-leave-badge approved">Paid</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2035</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹6,10,000</td>
                   <td><span class="hr-leave-badge pending">Unpaid</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
@@ -1387,7 +1376,6 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Paid Invoices</div>
-              <a href="#" class="hr-section-link">View paid</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1399,25 +1387,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td>12 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
                   <td>08 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2027</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹3,40,000</td>
                   <td>02 May</td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
                   <td class="hr-emp-name">INV-2021</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹5,25,000</td>
@@ -1463,9 +1451,9 @@
           <div class="csm-panel">
             <div class="csm-panel-header">
               <div class="csm-panel-title">Tickets</div>
-              <a href="#" class="csm-panel-link">View All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></a>
+              <a href="javascript:void(0)" class="csm-panel-link" onclick="navigatePage('support-tickets',true)">View All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></a>
             </div>
-            <div class="csm-ticket-row">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div>
                 <div class="csm-ticket-meta">#TCK-1021 John Doe 🇳🇱</div>
                 <div class="csm-ticket-title">Payroll Blocked</div>
@@ -1474,7 +1462,7 @@
               </div>
               <span class="csm-status-pill blocked">Blocked</span>
             </div>
-            <div class="csm-ticket-row">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div>
                 <div class="csm-ticket-meta">#TCK-1025 Thijs Verbeek 🇧🇪</div>
                 <div class="csm-ticket-title">Document Pending</div>
@@ -1483,7 +1471,7 @@
               </div>
               <span class="csm-status-pill pending">Pending</span>
             </div>
-            <div class="csm-ticket-row">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div>
                 <div class="csm-ticket-meta">#TCK-1019 Alice Smith 🇮🇹</div>
                 <div class="csm-ticket-title">Contract Pending</div>
@@ -1492,7 +1480,7 @@
               </div>
               <span class="csm-status-pill pending">Pending</span>
             </div>
-            <div class="csm-ticket-row">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div>
                 <div class="csm-ticket-meta">#TCK-1010 Mark Lee 🇩🇪</div>
                 <div class="csm-ticket-title">Tax Registration</div>
@@ -1507,7 +1495,7 @@
             <div class="csm-panel-header">
               <div class="csm-panel-title">Chats</div>
             </div>
-            <div class="csm-chat-row">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">JD</div>
                 <span class="csm-chat-dot online"></span>
@@ -1518,7 +1506,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">TV</div>
                 <span class="csm-chat-dot online"></span>
@@ -1529,7 +1517,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">AS</div>
                 <span class="csm-chat-dot"></span>
@@ -1540,7 +1528,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">ML</div>
                 <span class="csm-chat-dot online"></span>
@@ -1551,7 +1539,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">JD</div>
                 <span class="csm-chat-dot online"></span>
@@ -1617,14 +1605,14 @@
         </div>
 
         <div class="hr-actions" style="grid-template-columns:repeat(2,1fr)">
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('contracts',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Review Contracts</div>
               <div class="hr-action-desc">Check missing clauses, signatures, and document readiness</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('compliance',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Compliance Hub</div>
@@ -1637,7 +1625,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Contract Compliance Queue</div>
-              <a href="#" class="hr-section-link">View all</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('contracts',true)">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1649,29 +1637,29 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Ramesh Patel</td>
                   <td>Missing signature</td>
                   <td><span class="hr-leave-badge rejected">Blocking</span></td>
-                  <td><button class="hr-action-btn neutral">Review</button></td>
+                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Review</button></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Priya Sharma</td>
                   <td>Work permit pending</td>
                   <td><span class="hr-leave-badge rejected">Blocking</span></td>
-                  <td><button class="hr-action-btn neutral">Review</button></td>
+                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Review</button></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Arjun Desai</td>
                   <td>Clause update required</td>
                   <td><span class="hr-leave-badge pending">Needs Review</span></td>
-                  <td><button class="hr-action-btn neutral">Open</button></td>
+                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Open</button></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Aishi Verma</td>
                   <td>Contract verified</td>
                   <td><span class="hr-leave-badge approved">Ready</span></td>
-                  <td><button class="hr-action-btn neutral">View</button></td>
+                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">View</button></td>
                 </tr>
               </tbody>
             </table>
@@ -1680,7 +1668,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Compliance Hub Items</div>
-              <a href="#" class="hr-section-link">Open hub</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('compliance',true)">Open hub</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1692,25 +1680,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Employee KYC review</td>
                   <td>Documents</td>
                   <td>Today</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Local tax registration</td>
                   <td>Payroll</td>
                   <td>24 May</td>
                   <td><span class="hr-leave-badge rejected">Blocking</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Policy acknowledgement</td>
                   <td>Policy</td>
                   <td>26 May</td>
                   <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Statutory filing check</td>
                   <td>Entity</td>
                   <td>31 May</td>
@@ -1724,24 +1712,24 @@
         <div class="hr-section">
           <div class="hr-section-header">
             <div class="hr-section-title">Assigned Support Items</div>
-            <a href="#" class="hr-section-link">View assigned</a>
+            <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('support-tickets',true)">View assigned</a>
           </div>
           <div class="manager-expense-list">
-            <div class="manager-expense-item">
+            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('payments',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Payroll blocked by missing Tax ID</div>
                 <div class="manager-expense-desc">John Doe's payroll readiness is blocked until Tax ID verification is completed.</div>
                 <span class="manager-expense-tag">Payroll Compliance</span>
               </div>
             </div>
-            <div class="manager-expense-item">
+            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('contracts',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Work permit document pending</div>
                 <div class="manager-expense-desc">Thijs Verbeek has a pending work authorization document for review.</div>
                 <span class="manager-expense-tag">Contract Compliance</span>
               </div>
             </div>
-            <div class="manager-expense-item">
+            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
               <div class="manager-expense-body">
                 <div class="manager-expense-name">Compliance exception escalated</div>
                 <div class="manager-expense-desc">Client support escalated an exception related to statutory onboarding checks.</div>
@@ -1816,25 +1804,25 @@
         <div class="hr-section" style="margin-bottom:20px">
           <div class="hr-section-header">
             <div class="hr-section-title">Contract Pipeline</div>
-            <a href="#" class="hr-section-link">View all contracts</a>
+            <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('contracts',true)">View all contracts</a>
           </div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px">
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'" onclick="navigatePage('contracts',true)">
               <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Proposal Sent</div>
               <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">8</div>
               <div style="font-size:10px;color:#de7909;font-weight:500;margin-top:6px">Pending client action</div>
             </div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'" onclick="navigatePage('contracts',true)">
               <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Proposal Approved</div>
               <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">5</div>
               <div style="font-size:10px;color:#22c55e;font-weight:500;margin-top:6px">Client approved</div>
             </div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'" onclick="navigatePage('contracts',true)">
               <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contract Sent</div>
               <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">6</div>
               <div style="font-size:10px;color:#de7909;font-weight:500;margin-top:6px">Awaiting countersign</div>
             </div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:.2s;border-top:3px solid #e5e7eb" onmouseover="this.style.borderColor='#de7909';this.style.borderTopColor='#de7909'" onmouseout="this.style.borderColor='#e5e7eb';this.style.borderTopColor='#e5e7eb'" onclick="navigatePage('contracts',true)">
               <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contract Approved</div>
               <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">3</div>
               <div style="font-size:10px;color:#22c55e;font-weight:500;margin-top:6px">Signed &amp; approved</div>
@@ -1847,7 +1835,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Active Contracts</div>
-              <a href="#" class="hr-section-link">View all</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('contracts',true)">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1859,26 +1847,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Netherlands EOR – Anika</td>
                   <td>Netherlands</td>
                   <td>EOR</td>
                   <td><span class="hr-leave-badge approved">Ready for Payroll</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">India Contractor – Rahul</td>
                   <td>India</td>
                   <td>Contractor</td>
                   <td><span class="hr-leave-badge approved">Ready for Payroll</span></td>
                 </tr>
 
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">UK EOR – Owen</td>
                   <td>United Kingdom</td>
                   <td>EOR</td>
                   <td><span class="hr-leave-badge pending">Contract Sent</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
                   <td class="hr-emp-name">Germany PEO – Nora</td>
                   <td>Germany</td>
                   <td>PEO</td>
@@ -1891,7 +1879,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Compliance Items</div>
-              <a href="#" class="hr-section-link">View all</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('compliance',true)">View all</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -1903,31 +1891,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Employee KYC Review</td>
                   <td>Documents</td>
                   <td>Yes</td>
                   <td><span class="hr-leave-badge rejected">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Work Authorization</td>
                   <td>Statutory</td>
                   <td>Yes</td>
                   <td><span class="hr-leave-badge pending">Evidence Uploaded</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Tax Registration</td>
                   <td>Payroll</td>
                   <td>Yes</td>
                   <td><span class="hr-leave-badge rejected">Pending</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Policy Acknowledgement</td>
                   <td>Policy</td>
                   <td>No</td>
                   <td><span class="hr-leave-badge pending">Reopened</span></td>
                 </tr>
-                <tr>
+                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Statutory Filing Check</td>
                   <td>Entity</td>
                   <td>No</td>
@@ -2125,21 +2113,21 @@
               <div class="hr-action-desc">Update entity profile, locations, and business settings</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('support-tickets',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Support Center</div>
               <div class="hr-action-desc">View and resolve support tickets for your entity</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('compliance',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Compliance Hub</div>
               <div class="hr-action-desc">Track statutory, document, and policy compliance</div>
             </div>
           </a>
-          <a href="#" class="hr-action-card" style="text-decoration:none;color:inherit">
+          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('all-users',true)">
             <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div class="hr-action-text">
               <div class="hr-action-name">Users &amp; Roles</div>

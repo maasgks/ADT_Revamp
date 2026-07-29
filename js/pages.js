@@ -835,6 +835,7 @@ function buildAllLeavesHTML(){
   const pendingCount=allLeavesData.filter(l=>l.status==='Pending').length;
   const sbInner=alSelectedId?renderAlSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
@@ -1118,6 +1119,7 @@ function buildPaymentsHTML(){
   }).join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No payments match this filter.</td></tr>';
   const sbInner=pmSelectedId?renderPmSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
@@ -1602,6 +1604,7 @@ function buildComplianceItemsHTML(){
     :'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
   const sbInner=complianceSelectedId?renderComplianceSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div class="at-top">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
@@ -2487,6 +2490,7 @@ function buildContractsListingHTML(){
   }).join('')||'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No contracts match this filter.</td></tr>';
   const sbInner=ctSelectedId?renderCtSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
@@ -4190,6 +4194,7 @@ function buildTicketsPageHTML(){
   )).join('')||'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>';
   const sbInner=tkSelectedId?renderTkSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
@@ -4317,6 +4322,7 @@ function buildChatsPageHTML(){
   )).join('')||'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No chats match this filter.</td></tr>';
   const sbInner=chatSelectedId?renderChatSidebar():'';
   return '<div class="lp-page">'
+    +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
