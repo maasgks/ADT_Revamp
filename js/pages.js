@@ -1392,6 +1392,10 @@ function renderCtSidebar(){
 }
 var peoStep=0;
 var peoData={};
+var contractModalOpen=false;
+var contractModalType='';
+var manualContractFormData={};
+var contractSuccessName='';
 function peoGoStep(s){peoStep=s;page='contract-peo';renderADTPage();}
 function peoNext(){peoStep=Math.min(2,peoStep+1);page='contract-peo';renderADTPage();}
 function peoBack(){if(peoStep===0){peoStep=0;page='contract-type-select';renderADTPage();}else{peoStep--;page='contract-peo';renderADTPage();}}
@@ -1416,6 +1420,53 @@ function aiCaptureCurrentStep(){
 }
 function eorNext(){aiCaptureCurrentStep();eorStep=Math.min(2,eorStep+1);if(aiAssistedFlow)aiCtPushStepMessage(eorStep);page='contract-eor';renderADTPage();}
 function eorBack(){aiCaptureCurrentStep();if(eorStep===0){eorStep=0;page='contract-type-select';renderADTPage();}else{eorStep--;page='contract-eor';renderADTPage();}}
+// ── MANUAL CONTRACT CREATION MODAL (mirrors the Rates & Rules / Compliance modal pattern) ──
+function openContractModal(type){contractModalType=type;manualContractFormData={};if(type==='PEO')peoStep=0;else eorStep=0;contractModalOpen=true;renderADTPage();}
+function closeContractModal(){contractModalOpen=false;contractModalType='';manualContractFormData={};renderADTPage();}
+function captureManualContractStep(){
+  const gv=function(id){const el=document.getElementById(id);return el?el.value:undefined;};
+  const merge=function(k,v){if(v!==undefined&&v!=='')manualContractFormData[k]=v;};
+  merge('fname',gv('peo-fname'));merge('lname',gv('peo-lname'));merge('gender',gv('peo-gender'));
+  merge('email',gv('peo-email'));merge('mobile',gv('peo-mobile'));merge('dob',gv('peo-dob'));
+  merge('address',gv('peo-address'));merge('country',gv('peo-work-country'));
+  const wpEl=document.querySelector('.peo-wp-radio.selected span');
+  if(wpEl)manualContractFormData.workPermit=wpEl.textContent.indexOf('has work permit')!==-1;
+  merge('jobTitle',gv('peo-jobtitle'));merge('skill',gv('peo-skill'));merge('jobDesc',gv('peo-jobdesc'));
+  merge('fromDate',gv('peo-from'));merge('toDate',gv('peo-to'));merge('hours',gv('peo-hours'));merge('pay',gv('peo-pay'));
+  const termEl=document.querySelector('.peo-radio-term.selected span');
+  if(termEl)manualContractFormData.employmentTerm=termEl.textContent;
+  const typeEl=document.querySelector('.peo-radio-emptype.selected span');
+  if(typeEl)manualContractFormData.employeeType=typeEl.textContent;
+  merge('probation',gv('peo-prob'));merge('notice',gv('peo-notice'));
+}
+function contractModalNext(){captureManualContractStep();if(contractModalType==='PEO')peoStep=Math.min(2,peoStep+1);else eorStep=Math.min(2,eorStep+1);renderADTPage();}
+function contractModalBack(){captureManualContractStep();const step=contractModalType==='PEO'?peoStep:eorStep;if(step===0){closeContractModal();return;}if(contractModalType==='PEO')peoStep--;else eorStep--;renderADTPage();}
+function contractModalGoStep(s){captureManualContractStep();if(contractModalType==='PEO')peoStep=s;else eorStep=s;renderADTPage();}
+function saveManualContract(){
+  captureManualContractStep();
+  const p=manualContractFormData;
+  const fullName=((p.fname||'')+' '+(p.lname||'')).trim();
+  if(!fullName)return;
+  const type=contractModalType;
+  const now=aiFormatNow();
+  const newId=contractsData.reduce(function(m,c){return Math.max(m,c.id);},0)+1;
+  const contractId=String(90000+Math.floor(Math.random()*9999));
+  const from=p.fromDate||now.date;
+  const record={id:newId,contractId:contractId,empName:fullName,empDesig:p.jobTitle||'—',country:p.country||'—',type:type,date:now.date+' '+now.time,status:'Submitted',
+    nationality:p.country||'—',countryOfOp:p.country||'—',workPermit:p.workPermit===true,gender:(p.gender||'').toUpperCase()||'—',
+    email:p.email||'—',contact:p.mobile||'—',dob:p.dob||'—',jobTitle:p.jobTitle||'—',skill:p.skill||'—',
+    empDuration:from+(p.toDate?' – '+p.toDate:''),empType:type,workSchedule:p.hours||'—',payAmount:p.pay||'—',currency:'INR',
+    jobDesc:p.jobDesc||'—',payFrequency:'Monthly',commercial:aiGenCommercial(p.pay),
+    complianceItems:[{item:type+' '+(p.country||'')+' Proposal',note:'Optional',status:'Pending',doc:null}]};
+  contractsData.push(record);
+  ctLogsData[newId]=[{date:now.date,time:now.time,user:'Shaun Test1',status:'Submitted',action:'Contract submitted for review and quotation.'}];
+  ctWorkflowData[newId]=[{title:'Contract Submitted',user:'Shaun Test1',date:now.date,time:now.time,description:type+' contract for '+fullName+' submitted for quotation and review.'}];
+  contractModalOpen=false;contractModalType='';manualContractFormData={};
+  contractSuccessName=fullName;
+  renderADTPage();
+  setTimeout(function(){if(contractSuccessName===fullName){contractSuccessName='';page='contracts';renderADTPage();}},2600);
+}
+function closeContractSuccess(){contractSuccessName='';page='contracts';renderADTPage();}
 // ── COMPLIANCE ITEMS PAGE ──
 function applyComplianceFilters(){
   complianceCountryFilter=getCSValue('cmp-f-country');
@@ -2142,36 +2193,10 @@ function peoSelectWorkPermit(el){
   var outer=el.querySelector('.peo-radio-outer');
   if(outer){outer.style.borderColor='var(--orange)';}
 }
-function buildContractFormHTML(type,step,splitMode){
-  const tl=type.toLowerCase();
+function buildContractStepCards(includeStep,prefill){
   const countries=['Afghanistan','Australia','Austria','Bangladesh','Belgium','Brazil','Canada','China','Denmark','Egypt','Finland','France','Germany','Ghana','Greece','India','Indonesia','Iran','Iraq','Ireland','Italy','Japan','Jordan','Kenya','Malaysia','Mexico','Morocco','Nepal','Netherlands','New Zealand','Nigeria','Norway','Pakistan','Philippines','Poland','Portugal','Qatar','Romania','Russia','Saudi Arabia','Singapore','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland','Thailand','Turkey','Ukraine','United Arab Emirates','United Kingdom','United States','Vietnam'];
   const countryOpts='<option value="">Select Country</option>'+countries.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
   const countryOptsSel=function(sel){return '<option value="">Select Country</option>'+countries.map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+c+'</option>';}).join('');};
-  const prefill=aiAssistedFlow?Object.assign({},aiContractPrefill||{},aiWizardFormData||{}):{};
-  const isAssistedReview=aiAssistedFlow&&splitMode;
-  const includeStep=function(s){return isAssistedReview||step===s;};
-  const steps=['Basic Details','Job Details','Other Details'];
-
-  // Stepper bar
-  const stepper=isAssistedReview?'':'<div style="display:flex;align-items:center;gap:0;margin-bottom:28px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;padding:20px 30px">'
-    +steps.map(function(s,i){
-      const active=i===step;
-      const done=i<step;
-      const circleStyle='width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;'
-        +(done?'background:var(--orange);color:#fff;':active?'background:transparent;color:var(--orange);border:2px solid var(--orange);':'background:transparent;color:#d1d5db;border:2px solid #d1d5db;');
-      const labelColor=active?'var(--orange)':done?'var(--navy)':'#9ca3af';
-      const circleContent=done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
-      let html='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="'+(type==='PEO'?'peoGoStep':'eorGoStep')+'('+i+')">'
-        +'<div style="'+circleStyle+'">'+circleContent+'</div>'
-        +'<span style="font-size:13px;font-weight:600;color:'+labelColor+'">'+s+'</span>'
-        +'</div>';
-      if(i<steps.length-1){
-        html+='<div style="flex:1;height:1px;background:'+(done?'var(--orange)':'#e5e7eb')+';margin:0 20px;min-width:40px"></div>';
-      }
-      return html;
-    }).join('')
-    +'</div>';
-
   let content='';
 
   if(includeStep(0)){
@@ -2382,6 +2407,35 @@ function buildContractFormHTML(type,step,splitMode){
       +'<div style="font-size:12px;color:#3b82f6;line-height:1.5">You will be invoiced a one time deposit equivalent to the employee\'s Gross Salary of 1 month.</div>'
       +'</div></div>';
   }
+  return content;
+}
+function buildContractFormHTML(type,step,splitMode){
+  const prefill=aiAssistedFlow?Object.assign({},aiContractPrefill||{},aiWizardFormData||{}):{};
+  const isAssistedReview=aiAssistedFlow&&splitMode;
+  const includeStep=function(s){return isAssistedReview||step===s;};
+  const steps=['Basic Details','Job Details','Other Details'];
+
+  // Stepper bar
+  const stepper=isAssistedReview?'':'<div style="display:flex;align-items:center;gap:0;margin-bottom:28px;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;padding:20px 30px">'
+    +steps.map(function(s,i){
+      const active=i===step;
+      const done=i<step;
+      const circleStyle='width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;'
+        +(done?'background:var(--orange);color:#fff;':active?'background:transparent;color:var(--orange);border:2px solid var(--orange);':'background:transparent;color:#d1d5db;border:2px solid #d1d5db;');
+      const labelColor=active?'var(--orange)':done?'var(--navy)':'#9ca3af';
+      const circleContent=done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
+      let html='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="'+(type==='PEO'?'peoGoStep':'eorGoStep')+'('+i+')">'
+        +'<div style="'+circleStyle+'">'+circleContent+'</div>'
+        +'<span style="font-size:13px;font-weight:600;color:'+labelColor+'">'+s+'</span>'
+        +'</div>';
+      if(i<steps.length-1){
+        html+='<div style="flex:1;height:1px;background:'+(done?'var(--orange)':'#e5e7eb')+';margin:0 20px;min-width:40px"></div>';
+      }
+      return html;
+    }).join('')
+    +'</div>';
+
+  const content=buildContractStepCards(includeStep,prefill);
 
   const isLast=isAssistedReview||step===2;
   const goBack=type==='PEO'?'peoBack()':'eorBack()';
@@ -2444,12 +2498,62 @@ function buildContractTypeSelectHTML(){
     +'<div style="display:flex;flex-direction:column;gap:16px;margin-top:4px">'
     +card(peoBag,'PEO','Professional Employer Organization (PEO)',
       'An arrangement between you and a third party for the management of your employment agreements and associated documentation for businesses in several countries.',
-      'peoStep=0;page=\'contract-peo\';renderADTPage()')
+      'openContractModal(\'PEO\')')
     +card(eorBuild,'EOR','Employer of Record (EOR)',
       "An arrangement between you and a third party for the establishment of a legal relationship between a freelancer and a client that covers the terms and conditions of the freelancer's work.",
-      'eorStep=0;page=\'contract-eor\';renderADTPage()')
+      'openContractModal(\'EOR\')')
     +'</div>'
+    +'</div>'
+    +(contractModalOpen?buildContractModalHTML():'')
+    +(contractSuccessName?buildContractSuccessModalHTML():'');
+}
+function buildContractModalHTML(){
+  const type=contractModalType;
+  const step=type==='PEO'?peoStep:eorStep;
+  const steps=['Basic Details','Job Details','Other Details'];
+  const includeStep=function(s){return step===s;};
+  const content=buildContractStepCards(includeStep,manualContractFormData);
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const stepper='<div style="display:flex;align-items:center;gap:0;margin-bottom:20px;background:#fafbfc;border:1px solid var(--border);border-radius:10px;overflow:hidden;padding:14px 18px">'
+    +steps.map(function(s,i){
+      const active=i===step;
+      const done=i<step;
+      const circleStyle='width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;'
+        +(done?'background:var(--orange);color:#fff;':active?'background:transparent;color:var(--orange);border:2px solid var(--orange);':'background:transparent;color:#d1d5db;border:2px solid #d1d5db;');
+      const labelColor=active?'var(--orange)':done?'var(--navy)':'#9ca3af';
+      const circleContent=done?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
+      let html='<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="contractModalGoStep('+i+')">'
+        +'<div style="'+circleStyle+'">'+circleContent+'</div>'
+        +'<span style="font-size:12px;font-weight:600;color:'+labelColor+'">'+s+'</span>'
+        +'</div>';
+      if(i<steps.length-1){
+        html+='<div style="flex:1;height:1px;background:'+(done?'var(--orange)':'#e5e7eb')+';margin:0 14px;min-width:20px"></div>';
+      }
+      return html;
+    }).join('')
     +'</div>';
+  const isLast=step===2;
+  const footer='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px">'
+    +'<button class="ep-cancel-btn" style="border-radius:99px;display:inline-flex;align-items:center;gap:6px" onclick="contractModalBack()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Back</button>'
+    +'<button class="ep-save-btn" style="padding:9px 28px;border-radius:99px" onclick="'+(isLast?'saveManualContract()':'contractModalNext()')+'">'+(isLast?'Submit Contract':'Next')+'</button>'
+    +'</div>';
+  return '<div class="ct-modal-overlay" onclick="closeContractModal()">'
+    +'<div class="ct-modal" style="width:min(760px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create '+type+' Contract</span><button class="ct-modal-close" onclick="closeContractModal()">'+xSvg+'</button></div>'
+    +stepper
+    +content
+    +footer
+    +'</div></div>';
+}
+function buildContractSuccessModalHTML(){
+  const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeContractSuccess()">'
+    +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
+    +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeContractSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+    +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
+    +'<div class="rr-success-title">Contract Created</div>'
+    +'<div class="rr-success-sub">&ldquo;'+contractSuccessName+'&rdquo; contract has been submitted.</div>'
+    +'</div></div>';
 }
 function buildContractsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
