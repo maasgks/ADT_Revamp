@@ -2173,6 +2173,7 @@
 <script src="js/renderer.js"></script>
 <script>
 function switchDashboard(tab){
+  window.activeDashboardTab=tab;
   document.querySelectorAll('.tab-btn').forEach(function(t){
     var isActive=t.dataset.tab===tab;
     t.classList.toggle('active',isActive);

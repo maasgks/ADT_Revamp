@@ -231,6 +231,7 @@ function showAgentModule(pg){
   const moduleEl=ensureAgentModuleContent();
   moduleEl.style.display='block';
   moduleEl.innerHTML=pg==='dashboard'?dashboardContentHTML:buildListingHTML(pg);
+  if(pg==='dashboard'&&window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
   setAgentWorkspaceButton(true);
 }
 function hideAgentWorkspaceButton(){const btn=document.getElementById('agent-workspace-btn');if(btn)btn.style.display='none';}
@@ -334,6 +335,126 @@ function buildTimesheetHTML(){
 }
 
 // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ NOTIFICATION POPOVER ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
+// ── TOAST NOTIFICATIONS ──
+function showToast(title,type,sub){
+  type=type||'success';
+  let stack=document.getElementById('toast-stack');
+  if(!stack){stack=document.createElement('div');stack.id='toast-stack';document.body.appendChild(stack);}
+  const icons={
+    success:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  };
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  el.innerHTML='<div class="toast-ico">'+(icons[type]||icons.success)+'</div>'
+    +'<div class="toast-body"><div class="toast-title">'+title+'</div>'+(sub?'<div class="toast-sub">'+sub+'</div>':'')+'</div>'
+    +'<button class="toast-close" onclick="dismissToast(this)" title="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+  stack.appendChild(el);
+  while(stack.children.length>4)stack.removeChild(stack.firstChild);
+  el._timer=setTimeout(function(){dismissToastEl(el);},3400);
+  return el;
+}
+function dismissToast(btn){dismissToastEl(btn.closest('.toast'));}
+function dismissToastEl(el){
+  if(!el||el.classList.contains('toast-leaving'))return;
+  clearTimeout(el._timer);
+  el.classList.add('toast-leaving');
+  setTimeout(function(){el.remove();},240);
+}
+
+// ── DEMO ACTION DELEGATION ──
+// Buttons in this mockup with no dedicated handler get plausible demo
+// behaviour + a toast here, so every visible control responds. Buttons with an
+// inline onclick are left alone.
+function handleDemoPagination(btn){
+  const wrap=btn.parentElement;if(!wrap)return;
+  const t=btn.textContent.trim();
+  if(t==='...')return;
+  const nums=[].slice.call(wrap.querySelectorAll('button')).filter(function(b){return /^\d+$/.test(b.textContent.trim());});
+  if(!nums.length)return;
+  if(/^\d+$/.test(t)){nums.forEach(function(b){b.classList.remove('active');});btn.classList.add('active');return;}
+  const cur=nums.findIndex(function(b){return b.classList.contains('active');});
+  const isPrev=t==='<'||btn.innerHTML.indexOf('15 18 9 12')>=0;
+  const ni=Math.min(nums.length-1,Math.max(0,(cur<0?0:cur)+(isPrev?-1:1)));
+  nums.forEach(function(b){b.classList.remove('active');});
+  nums[ni].classList.add('active');
+}
+document.addEventListener('click',function(e){
+  const btn=e.target.closest('button');
+  if(!btn||btn.disabled)return;
+  if(btn.onclick||btn.getAttribute('onclick'))return;
+  if(btn.closest('#toast-stack'))return;
+  const cls=btn.classList;
+  const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
+  // Pagination (static demo pagers)
+  if(cls.contains('page-btn')||cls.contains('lp-pg-btn')||cls.contains('at-pg-btn')||cls.contains('at-pg-arr')||cls.contains('lp-pg-arrow')){handleDemoPagination(btn);return;}
+  // Notifications panel
+  if(cls.contains('np-mark')){notifData.forEach(function(n){n.pending=false;});renderNotif();showToast('All notifications marked as read');return;}
+  if(cls.contains('np-iconbtn')&&btn.title==='Refresh'){renderNotif();showToast('Notifications refreshed','info');return;}
+  // Timesheets
+  if(cls.contains('ts-submit-btn')||cls.contains('ts-sb-submit')){showToast('Timesheet submitted for approval','success','Your manager has been notified.');return;}
+  if(cls.contains('ts-btn-search')){renderADTPage();showToast('Filters applied','info');return;}
+  if(cls.contains('ts-btn-reset')){renderADTPage();return;}
+  if(cls.contains('ts-refresh-btn')){renderADTPage();showToast('Timesheet refreshed','info');return;}
+  // Cost calculator
+  if(cls.contains('cc-export-btn')){showToast('Preparing PDF export…','info');setTimeout(function(){showToast('Cost breakdown exported as PDF');},1000);return;}
+  // Chat / ticket reply
+  if(txt==='Send'){
+    const inp=btn.previousElementSibling;
+    if(inp&&inp.tagName==='INPUT'){
+      const val=inp.value.trim();
+      if(!val){showToast('Please type a reply first','error');return;}
+      const row=btn.parentElement;
+      row.insertAdjacentHTML('beforebegin','<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px"><div style="flex:1;display:flex;justify-content:flex-end"><div><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px;text-align:right">Pallavi Parate <span style="color:#9ca3af;font-weight:400">&middot; Just now</span></div><div class="demo-reply-bubble" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px 0 8px 8px;padding:8px 12px;font-size:12.5px;color:#374151;line-height:1.4"></div></div></div><div style="width:28px;height:28px;border-radius:50%;background:#fff7ed;color:#ea580c;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">PP</div></div>');
+      const bubble=row.previousElementSibling.querySelector('.demo-reply-bubble');
+      if(bubble)bubble.textContent=val;
+      inp.value='';
+      showToast('Reply sent');
+    }else{showToast('Message sent');}
+    return;
+  }
+  if(txt==='Reassign'){showToast('Reassigned successfully','success','The new owner has been notified.');return;}
+  // Password / profile
+  if(txt==='Update Password'){
+    const sec=btn.closest('div')?btn.closest('div').parentElement:null;
+    const pws=sec?[].slice.call(sec.querySelectorAll('input[type="password"]')):[];
+    if(pws.length&&pws.some(function(p){return !p.value.trim();})){showToast('Please fill in all password fields','error');return;}
+    pws.forEach(function(p){p.value='';});
+    showToast('Password updated successfully');return;
+  }
+  if(cls.contains('prof-edit-btn')||txt==='Edit Profile'){showToast('Fields are editable — make your changes and press Save','info');return;}
+  if(cls.contains('prof-att-upload')){showToast('Document uploaded');return;}
+  // Generic save / edit / cancel in sidebars & forms
+  if(cls.contains('ep-save-btn')){showToast(txt==='Save Changes'?'Changes saved successfully':'Saved successfully');return;}
+  if(cls.contains('ep-cancel-btn')){renderADTPage();showToast('Changes discarded','info');return;}
+  if(cls.contains('lp-logs-save-btn')){
+    if(txt.indexOf('Approval')>=0){showToast('Document sent for approval');}
+    else if(txt==='Update'){showToast('Updated successfully');}
+    else{showToast('Saved successfully');}
+    return;
+  }
+  if(cls.contains('lp-sb-view-edit-btn')){showToast('Fields are editable — make your changes and press Save','info');return;}
+  // Downloads & uploads
+  if(txt.indexOf('Download')>=0){showToast('Preparing download…','info');setTimeout(function(){showToast('Downloaded successfully');},900);return;}
+  if(btn.title==='Upload'||txt==='Upload'){showToast('Document uploaded');return;}
+  if(txt.indexOf('Create Invoice')>=0){showToast('Invoice created','success','A draft invoice has been generated.');return;}
+  if(txt==='Refresh'){showToast('Refreshed','info');return;}
+  if(btn.title==='Remove'){
+    const row=btn.closest('[class*="row"], li')||btn.parentElement;
+    if(row){row.remove();showToast('Removed');}
+    return;
+  }
+  // "+ Add X" buttons (attachments, bank details, branches, roles, members…)
+  if(/^\+?\s*Add\b/i.test(txt)){
+    const what=txt.replace(/^\+?\s*Add\s*/i,'').trim()||'Item';
+    showToast(what.charAt(0).toUpperCase()+what.slice(1)+' added');
+    return;
+  }
+  if(btn.innerHTML.indexOf('M18.5 2.5')>=0){showToast('Fields are editable — make your changes and press Save','info');return;}
+  if(txt==='Submit for Approval'){showToast('Submitted for approval');return;}
+});
+
 const notifData=[
   {name:'Your Invoice is ready for review',cid:'234',time:'22 sec ago',pending:true},
   {name:'Your contract is created',cid:'544',time:'1 min ago',pending:false},
@@ -342,13 +463,15 @@ const notifData=[
   {name:'Your Invoice is ready for review',cid:'675',time:'1 day ago',pending:true}
 ];
 function toggleNotif(e){if(e)e.stopPropagation();notifOpen=!notifOpen;renderNotif();}
+function notifMarkAllRead(){notifData.forEach(function(n){n.pending=false;});renderNotif();showToast('All notifications marked as read');}
+function notifRefresh(){renderNotif();showToast('Notifications refreshed','info');}
 function renderNotif(){
   const el=document.getElementById('notif-pop');if(!el)return;
   if(!notifOpen){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
   const list=notifShowUnread?notifData.filter(n=>n.pending):notifData;
-  el.innerHTML=`<div class="np-head"><div class="np-title">Notifications</div><div class="np-actions"><button class="np-iconbtn" title="Refresh"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="np-iconbtn" onclick="toggleNotif()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
-  <div class="np-controls"><button class="np-mark">Mark all as read</button><div class="np-toggle-row"><span>Only Show Unread</span><button class="np-switch ${notifShowUnread?'on':''}" onclick="event.stopPropagation();notifShowUnread=!notifShowUnread;renderNotif()"></button></div></div>
+  el.innerHTML=`<div class="np-head"><div class="np-title">Notifications</div><div class="np-actions"><button class="np-iconbtn" title="Refresh" onclick="notifRefresh()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="np-iconbtn" onclick="toggleNotif()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
+  <div class="np-controls"><button class="np-mark" onclick="notifMarkAllRead()">Mark all as read</button><div class="np-toggle-row"><span>Only Show Unread</span><button class="np-switch ${notifShowUnread?'on':''}" onclick="event.stopPropagation();notifShowUnread=!notifShowUnread;renderNotif()"></button></div></div>
   <div class="np-list">${list.map(n=>`<div class="np-item"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">Contract ID - ${n.cid}${n.pending?'<span class="np-pending">Pending</span>':''}</div></div></div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>'}</div>`;
 }
 document.getElementById('notif-pop')?.addEventListener('click',e=>e.stopPropagation());
@@ -647,7 +770,7 @@ function buildListingHTML(pg){
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
-      +`<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}<button class="lp-pill-reset" onclick="resetListingFilters('${pg}')">Reset</button><button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
+      +`<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}${clearFiltersBtn([listStatusFilters[pg]],`resetListingFilters('${pg}')`)}<button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
       +`<div class="listing-stats">`
         +`<div class="listing-stat ${s1Key}${statusFilter===s1Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s1Label}')"><div class="listing-stat-count">${s1Count}</div><div class="listing-stat-label">${s1Label}</div></div>`
         +`<div class="listing-stat ${s2Key}${statusFilter===s2Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s2Label}')"><div class="listing-stat-count">${s2Count}</div><div class="listing-stat-label">${s2Label}</div></div>`
@@ -670,6 +793,16 @@ function applyListingFilters(pg){
 function resetListingFilters(pg){
   delete listStatusFilters[pg];
   renderADTPage();
+}
+// Renders a "Clear Filters" pill only when at least one filter is actually
+// applied. `applied` is the list of a page's filter-state values; `call` is the
+// page's own clear handler.
+function clearFiltersBtn(applied,call){
+  const n=(applied||[]).filter(Boolean).length;
+  if(!n)return '';
+  return '<button class="lp-pill-clear" onclick="'+call+'" title="Clear applied filters">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    +'Clear Filters<span class="lp-pill-clear-count">'+n+'</span></button>';
 }
 function toggleListingStatFilter(pg,value){
   if(listStatusFilters[pg]===value)delete listStatusFilters[pg];
@@ -864,7 +997,40 @@ function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policies';renderADTPage();}
 function resetLpFilters(){lpFilterField='';lpFilterStatus='';lpCurrentPage=1;renderADTPage();}
 function lpGoToPage(n){lpCurrentPage=n;renderADTPage();}
-function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}}
+function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
+// Demo add for the Employees page: appends a plausible record to the active tab.
+const demoEmpNames=['Arjun Kapoor','Sara Ali','Vikram Rao','Neha Gupta','Tom Becker','Julia Costa'];
+function addDemoEmployee(){
+  const nm=demoEmpNames[(directEmpData.length+globalEmpData.length)%demoEmpNames.length];
+  if(empSubTab==='global'){
+    const id=globalEmpData.length?Math.max.apply(null,globalEmpData.map(e=>e.id))+1:1;
+    globalEmpData.unshift({id:id,name:nm,empId:'GEP00'+id,dept:'Engineering',country:'Netherlands',jobTitle:'Consultant',workerType:'EOR',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
+  }else{
+    const id=directEmpData.length?Math.max.apply(null,directEmpData.map(e=>e.id))+1:1;
+    directEmpData.unshift({id:id,name:nm,empId:'EMP00'+id,dept:'Engineering',branch:'Hyderabad',jobTitle:'Software Engineer',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
+  }
+  renderADTPage();
+  showToast('Employee added','success','"'+nm+'" has been added as a '+(empSubTab==='global'?'global':'direct')+' employee.');
+}
+// Generic demo add for listing pages driven by supportPageMeta rows.
+function addDemoMetaRow(pg){
+  const meta=getPageMeta(pg);
+  if(!meta||!meta.rows||!meta.columns||!meta.columns.length){showToast('Nothing to add here','info');return;}
+  const cols=meta.columns;
+  const row=cols.map(function(c,i){
+    if(i===0)return meta.rows.length+1;
+    const lc=String(c).toLowerCase();
+    if(lc==='status')return 'Pending';
+    if(lc.indexOf('name')>=0||lc===meta.title.toLowerCase().replace(/s$/,''))return 'New '+meta.title.replace(/s$/,'');
+    if(lc.indexOf('date')>=0||lc.indexOf('active')>=0||lc.indexOf('updated')>=0)return 'Today';
+    return '--';
+  });
+  row[0]=0;
+  meta.rows.unshift(row);
+  meta.rows.forEach(function(r,i){r[0]=i+1;});
+  renderADTPage();
+  showToast(meta.title.replace(/s$/,'')+' added','success','A new record has been created (demo data).');
+}
 
 // -- DIRECT EMPLOYEE PAGE --
 const directEmpData=[
@@ -907,6 +1073,7 @@ const deWorkflowData={
   ]
 };
 let deSelectedId=null,deTab='basic-details';
+let deDeptFilter='',deBranchFilter='',deStatusFilter='';
 const globalEmpData=[
   {id:1,name:'Emma Schmidt',empId:'GEP001',dept:'Engineering',country:'Germany',jobTitle:'Senior Developer',workerType:'EOR',joinDate:'10 Feb 2024',desc:'Full time employee',contact:'+49 152 0000 0001',email:'emma@testemp.com',status:'Active'},
   {id:2,name:'Lucas Dubois',empId:'GEP002',dept:'Finance',country:'France',jobTitle:'Finance Analyst',workerType:'EOR',joinDate:'15 Apr 2024',desc:'Full time employee',contact:'+33 6 12 34 56 78',email:'lucas@testemp.com',status:'Active'},
@@ -980,6 +1147,7 @@ const tmWorkflowData={
   6:[{title:'Team Deactivated',user:'Admin',date:'15 Jul 2025',time:'04:00:00 PM',description:'Local Admin team deactivated. Members reassigned.'},{title:'Team Activated',user:'Admin',date:'01 Jun 2025',time:'09:00:00 AM',description:'Local Admin team created for Netherlands entity.'}]
 };
 let tmSelectedId=null,tmTab='basic-details';
+let tmTeamFilter='',tmStatusFilter='';
 const ctFlow=['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Onboarding','Ready for Payroll'];
 const contractsData=[
   {id:1,contractId:'94135',empName:'TestEmp Antar',empDesig:'Business Analyst',country:'Netherlands',type:'EOR',date:'2026-06-11 15:17:26',status:'Submitted',
@@ -1693,4 +1861,5 @@ function csSaveLog(){
   const timeStr=(h%12||12)+':'+(mm<10?'0'+mm:mm)+':'+(ss<10?'0'+ss:ss)+' '+(h>=12?'PM':'AM');
   csLogsData.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status,action:comment});
   refreshCsSidebar();
+  showToast('Log added','success','Comment saved with status "'+status+'".');
 }

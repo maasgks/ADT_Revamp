@@ -537,8 +537,11 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-filter-bar-row .cs-dropdown{border-radius:12px;min-width:160px;top:calc(100% + 5px)}
 .lp-pill-select{border:1.5px solid var(--border);border-radius:20px;padding:6px 28px 6px 14px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none;min-width:110px;transition:.15s}
 .lp-pill-select:focus{border-color:var(--orange)}
-.lp-pill-reset{padding:6px 18px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;color:var(--gray);background:#fff;cursor:pointer;font-family:inherit;transition:.15s;font-weight:500}
-.lp-pill-reset:hover{border-color:#94a3b8;color:var(--navy)}
+.lp-pill-clear{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 11px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:600;color:var(--navy);background:#fff;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
+.lp-pill-clear:hover{border-color:#94a3b8;background:#f8fafc}
+.lp-pill-clear svg{width:12px;height:12px;flex-shrink:0;color:var(--gray)}
+.lp-pill-clear:hover svg{color:var(--navy)}
+.lp-pill-clear-count{font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:20px;background:var(--navy);color:#fff}
 .lp-pill-search{padding:6px 20px;border:none;border-radius:20px;font-size:13px;color:#fff;background:#1e293b;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600}
 .lp-pill-search:hover{background:#0f172a}
 .lp-filter-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
@@ -1232,6 +1235,25 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ai-scope-row-manual{background:#fafbfc}
 .ai-scope-manual-badge{flex:0 0 auto;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid var(--border);border-radius:20px;padding:6px 14px}
 .prof-att-upload:hover{color:var(--orange);background:#fff7ed}
+
+/* ── TOAST NOTIFICATIONS ── */
+#toast-stack{position:fixed;top:74px;right:20px;z-index:4000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:360px}
+.toast{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(15,23,42,.12);pointer-events:auto;min-width:280px;max-width:360px;animation:toastIn .28s cubic-bezier(.21,1.02,.73,1) both}
+.toast.toast-leaving{animation:toastOut .22s ease forwards}
+@keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(24px)}}
+.toast-ico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.toast-ico svg{width:14px;height:14px}
+.toast.success .toast-ico{background:#dcfce7;color:#16a34a}
+.toast.error .toast-ico{background:#fee2e2;color:#dc2626}
+.toast.info .toast-ico{background:#e0e7ff;color:#4f46e5}
+.toast-body{flex:1;min-width:0}
+.toast-title{font-size:13px;font-weight:600;color:var(--navy);line-height:1.35}
+.toast-sub{font-size:12px;color:var(--gray);margin-top:2px;line-height:1.4}
+.toast-close{background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px;flex-shrink:0;display:flex;align-items:center;border-radius:6px;font-family:inherit}
+.toast-close:hover{color:var(--navy);background:#f1f5f9}
+.toast-close svg{width:12px;height:12px}
+@media(max-width:640px){#toast-stack{left:16px;right:16px;max-width:none}.toast{max-width:none;width:100%}}
 
 /* ── MODULE SUB-TABS (Employees, Timesheet) ── */
 .mod-page{display:flex;flex-direction:column;width:100%;min-width:0}

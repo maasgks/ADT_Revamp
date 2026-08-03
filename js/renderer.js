@@ -65,7 +65,12 @@ function renderPageContent(id){
   if(page==='switch-entity'){el.innerHTML=buildSwitchEntityHTML();return;}
   if(page==='support-tickets'){el.innerHTML=buildTicketsPageHTML();return;}
   if(page==='chats'){el.innerHTML=buildChatsPageHTML();return;}
-  if(page==='dashboard'){el.innerHTML=dashboardContentHTML;return;}
+  if(page==='dashboard'){
+    el.innerHTML=dashboardContentHTML;
+    // The snapshot always has the first tab active — restore the one the user was on.
+    if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
+    return;
+  }
   el.innerHTML=buildListingHTML(page);
 }
 

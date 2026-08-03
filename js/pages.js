@@ -11,7 +11,14 @@ function closeDeSidebar(){
 }
 function navDeTab(tab){deTab=tab;const inner=document.getElementById('de-isb-inner');if(inner){inner.innerHTML=renderDeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('de-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function scrollTabRow(dir,id){const el=document.getElementById(id);if(!el)return;const t=el.querySelector('.lp-isb-tab');const w=t?t.offsetWidth*2+32:160;el.scrollBy({left:dir==='right'?w:-w,behavior:'smooth'});}
-function resetDeFilters(){deSelectedId=null;renderADTPage();}
+function applyDeFilters(){
+  const dept=getCSValue('de-f-dept'),branch=getCSValue('de-f-branch'),status=getCSValue('de-f-status');
+  deDeptFilter=dept&&dept!=='Department'?dept:'';
+  deBranchFilter=branch&&branch!=='Branch'?branch:'';
+  deStatusFilter=status&&status!=='Status'?status:'';
+  deSelectedId=null;renderADTPage();
+}
+function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';deSelectedId=null;renderADTPage();}
 function renderDeSidebar(){
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
@@ -214,7 +221,12 @@ function renderDeSidebar(){
 }
 function buildDirectListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  const rows=directEmpData.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
+  let deRows=directEmpData;
+  if(deDeptFilter)deRows=deRows.filter(e=>e.dept===deDeptFilter);
+  if(deBranchFilter)deRows=deRows.filter(e=>e.branch===deBranchFilter);
+  if(deStatusFilter)deRows=deRows.filter(e=>e.status===deStatusFilter);
+  if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
+  const rows=deRows.length?deRows.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
@@ -223,16 +235,16 @@ function buildDirectListingHTML(){
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openDeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>').join('');
+    +'</tr>').join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>';
   const sbInner=deSelectedId?renderDeSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +apCS('de-f-dept',['Engineering','HR','Product','Design','Sales'],'','Department')
-    +apCS('de-f-branch',['Hyderabad','Mumbai','Delhi','Punjab','Bangalore'],'','Branch')
-    +apCS('de-f-status',['Active','Inactive'],'','Status')
-    +'<button class="lp-pill-reset" onclick="resetDeFilters()">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +apCS('de-f-dept',['Engineering','HR','Product','Design','Sales'],deDeptFilter,'Department')
+    +apCS('de-f-branch',['Hyderabad','Mumbai','Delhi','Punjab','Bangalore'],deBranchFilter,'Branch')
+    +apCS('de-f-status',['Active','Inactive'],deStatusFilter,'Status')
+    +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter],'resetDeFilters()')
+    +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -426,7 +438,7 @@ function buildGlobalListingHTML(){
     +apCS('ge-f-dept',['Engineering','Finance','HR','Operations','Product'],'','Department')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
     +apCS('ge-f-status',['Active','Inactive'],geStatusFilter,'Status')
-    +'<button class="lp-pill-reset" onclick="resetGeFilters()">Reset</button>'
+    +clearFiltersBtn([geStatusFilter],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
@@ -560,9 +572,20 @@ function renderTmSidebar(){
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
+function applyTmFilters(){
+  const team=getCSValue('tm-f-team'),status=getCSValue('tm-f-status');
+  tmTeamFilter=team&&team!=='Select Team'?team:'';
+  tmStatusFilter=status&&status!=='Status'?status:'';
+  tmSelectedId=null;renderADTPage();
+}
+function resetTmFilters(){tmTeamFilter='';tmStatusFilter='';tmSelectedId=null;renderADTPage();}
 function buildTeamsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  const rows=teamsData.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
+  let tmRows=teamsData;
+  if(tmTeamFilter)tmRows=tmRows.filter(t=>t.name===tmTeamFilter);
+  if(tmStatusFilter)tmRows=tmRows.filter(t=>t.status===tmStatusFilter);
+  if(tmSelectedId&&!tmRows.some(t=>t.id===tmSelectedId))tmSelectedId=null;
+  const rows=tmRows.length?tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.name+'</td>'
     +'<td>'+(t.dept||d)+'</td>'
@@ -570,15 +593,15 @@ function buildTeamsListingHTML(){
     +'<td style="font-weight:600;color:var(--navy)">'+t.members+'</td>'
     +'<td><span class="lp-status-badge '+t.status.toLowerCase()+'">'+t.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openTmSidebar('+t.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>').join('');
+    +'</tr>').join(''):'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No teams match this filter.</td></tr>';
   const sbInner=tmSelectedId?renderTmSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +apCS('tm-f-team',teamsData.map(t=>t.name),'','Select Team')
-    +apCS('tm-f-status',['Active','Inactive','Pending'],'','Status')
-    +'<button class="lp-pill-reset">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +apCS('tm-f-team',teamsData.map(t=>t.name),tmTeamFilter,'Select Team')
+    +apCS('tm-f-status',['Active','Inactive','Pending'],tmStatusFilter,'Status')
+    +clearFiltersBtn([tmTeamFilter,tmStatusFilter],'resetTmFilters()')
+    +'<button class="lp-pill-search" onclick="applyTmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -714,11 +737,11 @@ function submitAddLeave(isDraft){
   const emailVal=(document.getElementById('al-email-input')||{}).value||'';
   const descVal=(document.getElementById('al-desc')||{}).value||'';
   if(!isDraft){
-    if(!empVal){alert('Please enter an employee name or ID.');return;}
-    if(!typeVal||typeVal==='Select'){alert('Please select a leave type.');return;}
-    if(!fromVal){alert('Please select a From Date.');return;}
-    if(!emailVal){alert('Please enter employee email.');return;}
-    if(!descVal){alert('Please enter a description.');return;}
+    if(!empVal){showToast('Please enter an employee name or ID','error');return;}
+    if(!typeVal||typeVal==='Select'){showToast('Please select a leave type','error');return;}
+    if(!fromVal){showToast('Please select a From Date','error');return;}
+    if(!emailVal){showToast('Please enter employee email','error');return;}
+    if(!descVal){showToast('Please enter a description','error');return;}
   }
   const toVal=alDurationType==='multiple'?((document.getElementById('al-to-date')||{}).value||fromVal):fromVal;
   const newId=allLeavesData.length?Math.max.apply(null,allLeavesData.map(function(x){return x.id;}))+1:1;
@@ -729,7 +752,7 @@ function submitAddLeave(isDraft){
     return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d;
   };
   const hrMap={'half':'Half Day','one':'Full Day','multiple':'Full Day'};
-  allLeavesData.push({
+  allLeavesData.unshift({
     id:newId,empId:'CLOCLO'+Math.floor(10000+Math.random()*90000),name:empVal||'Unknown',
     leaveId:String(leaveIdNum),leaveType:typeVal||'Casual Leave',
     leaveFrom:fmtDate(fromVal),leaveTo:fmtDate(toVal),
@@ -740,6 +763,7 @@ function submitAddLeave(isDraft){
   });
   alDurationType='multiple';
   page='all-leaves';renderADTPage();
+  showToast(isDraft?'Leave saved as draft':'Leave request created','success',(empVal||'Employee')+' &middot; '+(typeVal&&typeVal!=='Select'?typeVal:'Casual Leave'));
 }
 function buildAddLeaveHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
@@ -841,7 +865,7 @@ function buildAllLeavesHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('al-f-type',['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave'],'','Leave Type')
     +apCS('al-f-status',['Approved','Pending','Unapproved'],alStatusFilter,'Status')
-    +'<button class="lp-pill-reset" onclick="resetAlFilters()">Reset</button><button class="lp-pill-search" onclick="applyAlFilters()">Search</button>'
+    +clearFiltersBtn([alStatusFilter],'resetAlFilters()')+'<button class="lp-pill-search" onclick="applyAlFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat approved'+(alStatusFilter==='Approved'?' stat-selected':'')+'" onclick="alToggleStatFilter(\'Approved\')"><div class="listing-stat-count">'+approvedCount+'</div><div class="listing-stat-label">Approved</div></div>'
@@ -928,6 +952,7 @@ function pmSaveLog(orderId){
   if(!pmLogsData[orderId])pmLogsData[orderId]=[];
   pmLogsData[orderId].unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status,action:comment});
   const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();
+  showToast('Log added','success','Payment log saved with status "'+status+'".');
 }
 function renderPmSidebar(){
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
@@ -1127,7 +1152,7 @@ function buildPaymentsHTML(){
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
     +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
     +'<input type="date" style="height:34px;border:1px solid var(--border);border-radius:20px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;cursor:pointer">'
-    +'<button class="lp-pill-reset" onclick="resetPmFilters()">Reset</button><button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
+    +clearFiltersBtn([pmInvoiceStatusFilter],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat active'+(pmInvoiceStatusFilter==='Paid'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'Paid\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
@@ -1191,6 +1216,17 @@ function chatStatusBadge(s){const m={active:{bg:'#f0fdf4',c:'#16a34a',b:'#86efac
 function ctPickStatus(contractId,status){document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));openCtSidebar(contractId,'logs',status);}
 function ctToggleStatFilter(v){
   ctQuickStatusFilter=ctQuickStatusFilter===v?'':v;
+  ctSelectedId=null;
+  renderADTPage();
+}
+function applyCtFilters(){
+  const status=getCSValue('ct-f-status');
+  ctQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  ctSelectedId=null;
+  renderADTPage();
+}
+function resetCtFilters(){
+  ctQuickStatusFilter='';
   ctSelectedId=null;
   renderADTPage();
 }
@@ -1458,7 +1494,7 @@ function saveManualContract(){
     empDuration:from+(p.toDate?' – '+p.toDate:''),empType:type,workSchedule:p.hours||'—',payAmount:p.pay||'—',currency:'INR',
     jobDesc:p.jobDesc||'—',payFrequency:'Monthly',commercial:aiGenCommercial(p.pay),
     complianceItems:[{item:type+' '+(p.country||'')+' Proposal',note:'Optional',status:'Pending',doc:null}]};
-  contractsData.push(record);
+  contractsData.unshift(record);
   ctLogsData[newId]=[{date:now.date,time:now.time,user:'Shaun Test1',status:'Submitted',action:'Contract submitted for review and quotation.'}];
   ctWorkflowData[newId]=[{title:'Contract Submitted',user:'Shaun Test1',date:now.date,time:now.time,description:type+' contract for '+fullName+' submitted for quotation and review.'}];
   contractModalOpen=false;contractModalType='';manualContractFormData={};
@@ -1476,6 +1512,11 @@ function applyComplianceFilters(){
 }
 function resetComplianceFilters(){
   complianceCountryFilter='';complianceModelFilter='';complianceStatusFilter='';
+  renderADTPage();
+}
+function cmpToggleStatFilter(v){
+  complianceStatusFilter=complianceStatusFilter===v?'':v;
+  complianceSelectedId=null;
   renderADTPage();
 }
 function closeComplianceModal(){complianceModalOpen=false;renderADTPage();}
@@ -1499,9 +1540,10 @@ function saveComplianceItem(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  complianceItemsData.push({id:complianceNextId++,country,item:name,model,status:'Active',category,mandatory,payrollBlocking,evidenceRequired,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
+  complianceItemsData.unshift({id:complianceNextId++,country,item:name,model,status:'Active',category,mandatory,payrollBlocking,evidenceRequired,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
   complianceModalOpen=false;
   renderADTPage();
+  showToast('Compliance item created','success','"'+name+'" added for '+country+' ('+model+').');
 }
 function buildCreateComplianceModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -1553,6 +1595,7 @@ function complianceSaveLog(id){
   if(!item.logs)item.logs=[];
   item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
   const inner=document.getElementById('cmp-isb-inner');if(inner)inner.innerHTML=renderComplianceSidebar();
+  showToast('Log added','success','Comment saved to "'+item.item+'".');
 }
 function renderComplianceSidebar(){
   const item=complianceItemsData.find(x=>x.id===complianceSelectedId);if(!item)return'';
@@ -1663,12 +1706,12 @@ function buildComplianceItemsHTML(){
     +apCS('cmp-f-country',countryOpts,complianceCountryFilter,'Country')
     +apCS('cmp-f-model',modelOpts,complianceModelFilter,'Model')
     +apCS('cmp-f-status',statusOpts,complianceStatusFilter,'Status')
-    +'<button class="lp-pill-reset" onclick="resetComplianceFilters()">Reset</button>'
+    +clearFiltersBtn([complianceCountryFilter,complianceModelFilter,complianceStatusFilter],'resetComplianceFilters()')
     +'<button class="lp-pill-search" onclick="applyComplianceFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="cmp-stats">'
-    +'<div class="cmp-stat"><div class="cmp-stat-val" style="color:#2563eb">'+totalActive+'</div><div class="cmp-stat-lbl">Total Active</div></div>'
-    +'<div class="cmp-stat"><div class="cmp-stat-val" style="color:var(--orange)">'+totalInactive+'</div><div class="cmp-stat-lbl">Total Inactive</div></div>'
+    +'<div class="listing-stats" style="flex-shrink:0">'
+    +'<div class="listing-stat active'+(complianceStatusFilter==='Active'?' stat-selected':'')+'" onclick="cmpToggleStatFilter(\'Active\')"><div class="listing-stat-count">'+totalActive+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat inactive'+(complianceStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="cmpToggleStatFilter(\'Inactive\')"><div class="listing-stat-count">'+totalInactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div>'
     +'</div>'
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
@@ -1709,6 +1752,7 @@ function ratesRuleSaveLog(id){
   if(!item.logs)item.logs=[];
   item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
   const inner=document.getElementById('rr-isb-inner');if(inner)inner.innerHTML=renderRatesRuleSidebar();
+  showToast('Log added','success','Comment saved to "'+item.ruleName+'".');
 }
 function renderRatesRuleSidebar(){
   const item=ratesRulesData.find(x=>x.id===ratesRuleSelectedId);if(!item)return'';
@@ -1807,7 +1851,7 @@ function buildRatesRulesHTML(){
     +apCS('rr-f-country',countryOpts,ratesRuleCountryFilter,'Country')
     +apCS('rr-f-category',categoryOpts,ratesRuleCategoryFilter,'Category')
     +apCS('rr-f-status',statusOpts,ratesRuleStatusFilter,'Status')
-    +'<button class="lp-pill-reset" onclick="resetRatesRuleFilters()">Reset</button>'
+    +clearFiltersBtn([ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter],'resetRatesRuleFilters()')
     +'<button class="lp-pill-search" onclick="applyRatesRuleFilters()">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
@@ -1876,7 +1920,7 @@ function saveRule(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  ratesRulesData.push({id:ratesRuleNextId++,country,ruleName:name,category,applicableTo,valueRate,status,createdBy:'Shaun Test1',createdAt,logs:[],
+  ratesRulesData.unshift({id:ratesRuleNextId++,country,ruleName:name,category,applicableTo,valueRate,status,createdBy:'Shaun Test1',createdAt,logs:[],
     ruleType,employmentType,currency,valueType,conditionOperator,conditionValue,minLimit,maxLimit,effectiveFrom,effectiveTo});
   ratesRuleModalOpen=false;
   ratesRuleSuccessName=name;
@@ -1962,6 +2006,7 @@ function ctpSaveLog(id){
   if(!item.logs)item.logs=[];
   item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
   const inner=document.getElementById('ctp-isb-inner');if(inner)inner.innerHTML=renderCtpSidebar();
+  showToast('Log added','success','Comment saved to template.');
 }
 function renderCtpSidebar(){
   const item=contractTemplatesData.find(x=>x.id===ctpSelectedId);if(!item)return'';
@@ -2073,7 +2118,7 @@ function buildContractTemplatesHTML(){
     +apCS('ctp-f-country',countryOpts,ctpCountryFilter,'Country')
     +apCS('ctp-f-category',categoryOpts,ctpCategoryFilter,'Category')
     +apCS('ctp-f-status',statusOpts,ctpStatusFilter,'Status')
-    +'<button class="lp-pill-reset" onclick="resetCtpFilters()">Reset</button>'
+    +clearFiltersBtn([ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter],'resetCtpFilters()')
     +'<button class="lp-pill-search" onclick="applyCtpFilters()">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
@@ -2122,7 +2167,7 @@ function saveTemplate(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  contractTemplatesData.push({id:ctpNextId,templateName:name,employmentType,templateId:String(ctpNextId),status,country,category,createdBy:'Shaun Test1',createdAt,
+  contractTemplatesData.unshift({id:ctpNextId,templateName:name,employmentType,templateId:String(ctpNextId),status,country,category,createdBy:'Shaun Test1',createdAt,
     attachments:fileName?[{name:fileName}]:[],logs:[]});
   ctpNextId++;
   ctpModalOpen=false;
@@ -2563,7 +2608,7 @@ function buildContractsListingHTML(){
   const types=[...new Set(contractsData.map(c=>c.type))];
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const filteredContracts=ctQuickStatusFilter?contractsData.filter(c=>c.status===ctQuickStatusFilter):contractsData;
-  const rows=filteredContracts.map(c=>{
+  const rows=filteredContracts.map((c,ctRowIdx)=>{
     const flowIdx=ctFlow.indexOf(c.status);
     const menuItems=ctFlow.map((step,i)=>{
       const isDone=flowIdx>i;
@@ -2581,7 +2626,7 @@ function buildContractsListingHTML(){
       +'<div class="ct-action-menu" id="ctm-'+c.id+'">'+menuItems+'</div>'
       +'</div>';
     return '<tr class="ct-row'+(ctSelectedId===c.id?' lp-row-selected':'')+'" id="ct-row-'+c.id+'" style="cursor:pointer" onclick="openCtSidebar('+c.id+')">'
-      +'<td style="color:#6b7280;font-size:13px">'+c.id+'</td>'
+      +'<td style="color:#6b7280;font-size:13px">'+(ctRowIdx+1)+'</td>'
       +'<td style="font-weight:600;color:var(--navy)">'+c.contractId+'</td>'
       +'<td><div style="font-weight:600;color:var(--navy)">'+c.empName+'</div><div style="font-size:11px;color:#9ca3af">'+c.empDesig+'</div></td>'
       +'<td>'+c.country+'</td>'
@@ -2601,10 +2646,10 @@ function buildContractsListingHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('ct-f-country',countries,'','All Countries')
     +apCS('ct-f-type',types,'','All Types')
-    +apCS('ct-f-status',['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Inactive'],'','All Statuses')
+    +apCS('ct-f-status',['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Inactive'],ctQuickStatusFilter,'All Statuses')
     +'<input class="ct-search-input" placeholder="Search by name, ID..." type="text" style="height:34px;border-radius:20px">'
-    +'<button class="lp-pill-reset">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +clearFiltersBtn([ctQuickStatusFilter],'resetCtFilters()')
+    +'<button class="lp-pill-search" onclick="applyCtFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(ctQuickStatusFilter==='Proposal Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Proposal Sent\')"><div class="listing-stat-count" style="color:#7c3aed">'+proposalPending+'</div><div class="listing-stat-label">Proposal Pending</div></div>'
@@ -2720,18 +2765,32 @@ function buildAddTeamHTML(){
     +'<div class="team-form-actions"><button class="ep-cancel-btn" onclick="cancelAddTeam()">Cancel</button><button class="ep-save-btn" onclick="submitAddTeam()">Create Team</button></div>'
     +'</div>';
 }
-function getCSValue(id){const wrap=document.getElementById('csw-'+id);return wrap?wrap.querySelector('.cs-value').textContent.trim():'';}
+// An untouched select still shows its placeholder as .cs-value text, so return
+// '' unless the user actually picked an option (mirrors getCustomSelectValue).
+function getCSValue(id){
+  const wrap=document.getElementById('csw-'+id);
+  if(!wrap)return '';
+  const trigger=wrap.querySelector('.cs-trigger');
+  if(trigger&&trigger.classList.contains('cs-placeholder'))return '';
+  const val=wrap.querySelector('.cs-value');
+  return val?val.textContent.trim():'';
+}
 function submitAddTeam(){
   const name=document.getElementById('team-name');
   const email=document.getElementById('team-email');
   const dept=getCSValue('team-department');
-  if(!name||!name.value.trim()){alert('Please enter a Team Name.');name&&name.focus();return;}
-  if(!email||!email.value.trim()){alert('Please enter a Team Email ID.');email&&email.focus();return;}
-  if(!dept||dept==='Select Department'){alert('Please select a Department.');return;}
+  if(!name||!name.value.trim()){showToast('Please enter a Team Name','error');name&&name.focus();return;}
+  if(!email||!email.value.trim()){showToast('Please enter a Team Email ID','error');email&&email.focus();return;}
+  if(!dept||dept==='Select Department'){showToast('Please select a Department','error');return;}
   const member=getCSValue('team-member');
+  const teamName=name.value.trim();
+  const newId=teamsData.length?Math.max.apply(null,teamsData.map(function(t){return t.id;}))+1:1;
+  teamsData.unshift({id:newId,teamId:String(2880+newId),name:teamName,dept:dept,country:'India',members:member&&member!=='Select'?1:0,email:email.value.trim(),createdBy:'Pallavi Parate',joinDate:'From: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),status:'Active',membersList:member&&member!=='Select'?[{name:member,role:'Member',desig:'--'}]:[]});
   const rows=supportPageMeta.teams.rows;
-  rows.push([rows.length+1,name.value.trim(),dept,'India',member&&member!=='Select'?'1':'0','Active']);
+  rows.unshift([0,teamName,dept,'India',member&&member!=='Select'?'1':'0','Active']);
+  rows.forEach(function(r,i){r[0]=i+1;});
   page='teams';renderADTPage();
+  showToast('Team created','success','"'+teamName+'" has been added to Teams.');
 }
 function buildAddLeavePolicyHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
@@ -2777,9 +2836,9 @@ function submitAddLeavePolicy(){
   const statusWrap=document.getElementById('csw-ap-status');
   const statusVal=statusWrap?statusWrap.querySelector('.cs-value').textContent.trim():'';
   const yearly=document.getElementById('ap-yearly');
-  if(!typeVal||typeVal==='Select leave type'){alert('Please select a Leave Type Name.');return;}
-  if(!yearly||!yearly.value){alert('Please enter a Yearly Count.');yearly&&yearly.focus();return;}
-  if(!statusVal||statusVal==='Select Status'){alert('Please select a Status.');return;}
+  if(!typeVal||typeVal==='Select leave type'){showToast('Please select a Leave Type Name','error');return;}
+  if(!yearly||!yearly.value){showToast('Please enter a Yearly Count','error');yearly&&yearly.focus();return;}
+  if(!statusVal||statusVal==='Select Status'){showToast('Please select a Status','error');return;}
   const newId=leavePoliciesData.length?Math.max(...leavePoliciesData.map(p=>p.id))+1:1;
   const monthly=document.getElementById('ap-monthly');
   const cflimit=document.getElementById('ap-cflimit');
@@ -2794,7 +2853,7 @@ function submitAddLeavePolicy(){
   const filterValWrap=document.getElementById('csw-ap-filter-value');
   const filterValStr=filterValWrap?filterValWrap.querySelector('.cs-value').textContent.trim():'';
   const employees=[...selectedEmps].map(id=>{const e=empPool.find(x=>x.id===id);return e?e.name:'';}).filter(Boolean);
-  leavePoliciesData.push({
+  leavePoliciesData.unshift({
     id:newId,type:typeVal,yearly:parseInt(yearly.value)||0,
     monthly:monthly&&monthly.value?parseInt(monthly.value):null,
     carryForward:cflimit&&cflimit.value?parseInt(cflimit.value):null,
@@ -2803,6 +2862,11 @@ function submitAddLeavePolicy(){
   });
   selectedEmps=new Set();apFilterType='';apFilterValue='';
   page='leave-policies';renderADTPage();
+  showToast('Leave policy created','success','"'+typeVal+'" is now '+statusVal.toLowerCase()+'.');
+}
+function submitEditLeavePolicy(){
+  page='leave-policies';renderADTPage();
+  showToast('Leave policy updated','success','Your changes have been saved.');
 }
 function buildLeavePoliciesHTML(){
   const numVal=(v)=>v!==null&&v!==undefined?'<span style="color:var(--black);font-weight:600">'+v+'</span>':'<span style="color:#9ca3af">-</span>';
@@ -2842,7 +2906,7 @@ function buildLeavePoliciesHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('lp-filter-field',['Type Name','Yearly Count','Monthly Limit'],lpFilterField,'Select')
     +apCS('lp-filter-status',['Active','Inactive'],lpFilterStatus,'Status')
-    +'<button class="lp-pill-reset" onclick="resetLpFilters()">Reset</button>'
+    +clearFiltersBtn([lpFilterField,lpFilterStatus],'resetLpFilters()')
     +'<button class="lp-pill-search">Search</button>'
     +'</div></div>'
     +'<div class="lp-split-wrap">'
@@ -2876,7 +2940,7 @@ function buildEditLeavePolicyHTML(){
       +'<div class="ep-title-wrap"><span class="ep-title">Edit Leave Policy</span></div>'
       +'<div class="ep-actions">'
         +'<button class="ep-cancel-btn" onclick="navigatePage(\'leave-policies\')">Cancel</button>'
-        +'<button class="ep-save-btn">Save Changes</button>'
+        +'<button class="ep-save-btn" onclick="submitEditLeavePolicy()">Save Changes</button>'
       +'</div>'
     +'</div>'
     +'<div class="ep-summary-card">'
@@ -3111,6 +3175,7 @@ function lpSaveLog(policyId){
   const p=leavePoliciesData.find(x=>x.id===policyId);
   if(p&&(status==='Active'||status==='Inactive'))p.status=status;
   refreshLPSidebar();
+  showToast('Log added','success',p?'"'+p.type+'" status set to '+status+'.':'');
 }
 function lpSidebarEmpSelectorHTML(policyEmps){
   const available=empPool.filter(e=>!(policyEmps||[]).includes(e.name));
@@ -3205,7 +3270,7 @@ function buildMyTimesheetHTML(viewingOther) {
   // ── Filter bar ──
   const filterBar = '<div class="ts-filter-bar">'
     + '<span class="ts-filter-label">Select Filters</span>'
-    + '<button class="ts-date-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1 '+mShort[m]+' '+y+' – '+daysInMonth+' '+mShort[m]+' '+y+' <svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+    + '<button class="ts-date-btn" onclick="tsToggleMonthPicker(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1 '+mShort[m]+' '+y+' – '+daysInMonth+' '+mShort[m]+' '+y+' <svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
     + '<button class="ts-btn-reset">Reset</button>'
     + '<button class="ts-btn-search">Search</button>'
     + '</div>';
@@ -3337,6 +3402,15 @@ function atToggleTsFilter(v){
   atTsQuickFilter=v===''?'':(atTsQuickFilter===v?'':v);
   renderADTPage();
 }
+function applyAtFilters(){
+  const ts=getCSValue('at-f-ts');
+  atTsQuickFilter=ts&&ts!=='Timesheet Status'&&ts!=='All'?ts:'';
+  renderADTPage();
+}
+function resetAtFilters(){
+  atTsQuickFilter='';
+  renderADTPage();
+}
 function buildAllTimesheetHTML(){
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const data=allTsData;
@@ -3356,10 +3430,10 @@ function buildAllTimesheetHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('at-f-status',['Active','Inactive','All'],'','Status')
     +apCS('at-f-admin',['Admin Name'],'','Admin Name')
-    +apCS('at-f-ts',['Unfilled','Filled','All'],'','Timesheet Status')
+    +apCS('at-f-ts',['Unfilled','Filled','All'],atTsQuickFilter,'Timesheet Status')
     +apCS('at-f-month',months,'Jun','Month')
-    +'<button class="lp-pill-reset">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +clearFiltersBtn([atTsQuickFilter],'resetAtFilters()')
+    +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--orange)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'
@@ -3948,12 +4022,12 @@ function buildCompanySettingsHTML(){
     +row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')
     +'<td><button class="lp-action-btn" title="More actions" onclick="event.stopPropagation();openCsSidebar('+row[0]+')">'+hamburger+'</button></td>'
     +'</tr>').join(''):'<tr><td colspan="'+(cols.length+1)+'" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>';
-  const filters=(meta.filters||[]).map((f,i)=>apCS('cs-lst-f'+i,getFilterOptions(f).slice(1),'',f)).join('');
+  const filters=(meta.filters||[]).map((f,i)=>apCS('lst-settings-f'+i,getFilterOptions(f).slice(1),f==='Status'?csStatFilter:'',f)).join('');
   const sbInner=csSelectedItem?renderCsSidebar():'';
   return '<div class="listing-page">'
     +'<div class="listing-top">'
       +'<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div>'
-      +'<div class="lp-filter-bar-row">'+filters+'<button class="lp-pill-reset" onclick="resetListingFilters(\'settings\')">Reset</button><button class="lp-pill-search">Search</button></div></div>'
+      +'<div class="lp-filter-bar-row">'+filters+clearFiltersBtn([csStatFilter],'resetListingFilters(\'settings\')')+'<button class="lp-pill-search" onclick="applyListingFilters(\'settings\')">Search</button></div></div>'
       +'<div class="listing-stats">'
         +'<div class="listing-stat active'+(csStatFilter==='Active'?' stat-selected':'')+'" onclick="toggleListingStatFilter(\'settings\',\'Active\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
         +'<div class="listing-stat inactive'+(csStatFilter==='Inactive'?' stat-selected':'')+'" onclick="toggleListingStatFilter(\'settings\',\'Inactive\')"><div class="listing-stat-count">'+inactiveCount+'</div><div class="listing-stat-label">Inactive</div></div>'
@@ -4276,6 +4350,17 @@ function tkToggleStatFilter(v){
   tkSelectedId=null;
   renderADTPage();
 }
+function applyTkFilters(){
+  const status=getCSValue('tk-f-status');
+  tkQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  tkSelectedId=null;
+  renderADTPage();
+}
+function resetTkFilters(){
+  tkQuickStatusFilter='';
+  tkSelectedId=null;
+  renderADTPage();
+}
 function buildTicketsPageHTML(){
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const countries=[...new Set(ticketsData.map(t=>t.country))];
@@ -4305,9 +4390,9 @@ function buildTicketsPageHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('tk-f-country',countries,'','All Countries')
     +apCS('tk-f-category',categories,'','All Categories')
-    +apCS('tk-f-status',['open','in_progress','blocked','closed'],'','All Statuses')
-    +'<button class="lp-pill-reset">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +apCS('tk-f-status',['open','in_progress','blocked','closed'],tkQuickStatusFilter,'All Statuses')
+    +clearFiltersBtn([tkQuickStatusFilter],'resetTkFilters()')
+    +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(tkQuickStatusFilter==='open'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'open\')"><div class="listing-stat-count" style="color:#2563eb">'+openCount+'</div><div class="listing-stat-label">Open</div></div>'
@@ -4405,6 +4490,17 @@ function chatToggleStatFilter(v){
   chatSelectedId=null;
   renderADTPage();
 }
+function applyChatFilters(){
+  const status=getCSValue('chat-f-status');
+  chatQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  chatSelectedId=null;
+  renderADTPage();
+}
+function resetChatFilters(){
+  chatQuickStatusFilter='';
+  chatSelectedId=null;
+  renderADTPage();
+}
 function buildChatsPageHTML(){
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const assignees=[...new Set(chatsData.map(c=>c.assignedTo))];
@@ -4433,9 +4529,9 @@ function buildChatsPageHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('chat-f-country',countries,'','All Countries')
     +apCS('chat-f-assignee',assignees,'','All Assignees')
-    +apCS('chat-f-status',['active','waiting_client','waiting_csm','inactive'],'','All Statuses')
-    +'<button class="lp-pill-reset">Reset</button>'
-    +'<button class="lp-pill-search">Search</button>'
+    +apCS('chat-f-status',['active','waiting_client','waiting_csm','inactive'],chatQuickStatusFilter==='__waiting_group__'?'':chatQuickStatusFilter,'All Statuses')
+    +clearFiltersBtn([chatQuickStatusFilter],'resetChatFilters()')
+    +'<button class="lp-pill-search" onclick="applyChatFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(chatQuickStatusFilter==='active'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'active\')"><div class="listing-stat-count" style="color:#16a34a">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
@@ -4761,7 +4857,7 @@ function captureCfgSystemDraft(){
 function saveCfgSystemEdit(systemId){
   const s=cfgSystems.find(function(x){return x.id===systemId;});if(!s)return;
   const name=document.getElementById('cfg-sys-edit-name');
-  if(!name||!name.value.trim()){alert('Please enter a system name.');name&&name.focus();return;}
+  if(!name||!name.value.trim()){showToast('Please enter a system name','error');name&&name.focus();return;}
   s.name=name.value.trim();
   const type=document.getElementById('cfg-sys-edit-type');if(type)s.type=type.value.trim()||s.type;
   const method=document.getElementById('cfg-sys-edit-method');if(method)s.method=method.value.trim()||s.method;
@@ -4796,7 +4892,7 @@ function addCfgApiRow(systemId){
   const nameInp=document.getElementById('cfg-newapi-name');
   const dirSel=document.getElementById('cfg-newapi-dir');
   const name=nameInp?nameInp.value.trim():'';
-  if(!name){alert('Please enter an API name.');nameInp&&nameInp.focus();return;}
+  if(!name){showToast('Please enter an API name','error');nameInp&&nameInp.focus();return;}
   captureCfgSystemDraft();
   s.apiList.push({name:name,dir:dirSel?dirSel.value:'r'});
   navigatePage('cfg-system-detail');
@@ -4884,13 +4980,13 @@ function buildCfgSystemDetailHTML(){
 function cancelCfgSystemAdd(){navigatePage('cfg-systems');}
 function submitCfgSystemAdd(){
   const name=document.getElementById('cfg-sys-add-name');
-  if(!name||!name.value.trim()){alert('Please enter a system name.');name&&name.focus();return;}
+  if(!name||!name.value.trim()){showToast('Please enter a system name','error');name&&name.focus();return;}
   const type=(document.getElementById('cfg-sys-add-type').value||'').trim()||'Custom';
   const method=(document.getElementById('cfg-sys-add-method').value||'').trim()||'REST';
   const endpoint=(document.getElementById('cfg-sys-add-endpoint').value||'').trim()||'https://';
   const auth=(document.getElementById('cfg-sys-add-auth').value||'').trim()||'API Key';
   const id=cfgSlug(name.value.trim());
-  cfgSystems.push({id:id,name:name.value.trim(),type:type,method:method,endpoint:endpoint,auth:auth,apis:0,lastTested:'Never',status:'Disconnected',apiList:[]});
+  cfgSystems.unshift({id:id,name:name.value.trim(),type:type,method:method,endpoint:endpoint,auth:auth,apis:0,lastTested:'Never',status:'Disconnected',apiList:[]});
   selectedCfgSystemId=id;cfgSystemEditing=false;
   navigatePage('cfg-system-detail');
 }
@@ -5006,7 +5102,7 @@ function removeCfgEnrichRow(idx){syncCfgModelDraftFromDOM();cfgModelDraft.enrich
 function saveCfgModelEdit(modelId){
   const m=cfgModels.find(function(x){return x.id===modelId;});if(!m)return;
   const nameEl=document.getElementById('cfg-model-edit-name');
-  if(!nameEl||!nameEl.value.trim()){alert('Please enter a model name.');nameEl&&nameEl.focus();return;}
+  if(!nameEl||!nameEl.value.trim()){showToast('Please enter a model name','error');nameEl&&nameEl.focus();return;}
   m.name=nameEl.value.trim();
   const sourceEl=document.getElementById('cfg-model-edit-source');if(sourceEl)m.source=sourceEl.value.trim()||m.source;
   const descEl=document.getElementById('cfg-model-edit-desc');if(descEl)m.desc=descEl.value.trim()||m.desc;
@@ -5063,11 +5159,11 @@ function testCfgModel(modelId,btnEl){
 function cancelCfgModelAdd(){navigatePage('cfg-data-foundation');}
 function submitCfgModelAdd(){
   const name=document.getElementById('cfg-model-add-name');
-  if(!name||!name.value.trim()){alert('Please enter a model name.');name&&name.focus();return;}
+  if(!name||!name.value.trim()){showToast('Please enter a model name','error');name&&name.focus();return;}
   const source=(document.getElementById('cfg-model-add-source').value||'').trim()||'Custom';
   const desc=(document.getElementById('cfg-model-add-desc').value||'').trim()||'Unified object defined in Data Foundation.';
   const id=cfgModelSlug(name.value.trim());
-  cfgModels.push({id:id,name:name.value.trim(),source:source,desc:desc,mapped:[],enrichment:[],rules:{makerChecker:false,validation:''},sample:[]});
+  cfgModels.unshift({id:id,name:name.value.trim(),source:source,desc:desc,mapped:[],enrichment:[],rules:{makerChecker:false,validation:''},sample:[]});
   selectedCfgModelId=id;cfgModelEditing=false;cfgModelDraft=null;
   navigatePage('cfg-model-detail');
 }
@@ -6402,7 +6498,7 @@ function aiSubmitAssistedContract(type){
     commercial:aiGenCommercial(p.pay),
     complianceItems:[{item:type+' '+(p.country||'')+' Proposal',note:'Optional',status:'Pending',doc:null}]
   };
-  contractsData.push(record);
+  contractsData.unshift(record);
   ctLogsData[newId]=[{date:now.date,time:now.time,user:'AI Contract Assistant',status:'Submitted',action:'Contract created via AI Contract Assistant for '+fullName+'.'}];
   ctWorkflowData[newId]=[{title:'Contract Created by AI',user:'AI Contract Assistant',date:now.date,time:now.time,description:'AI compiled the proposal and contract data from the conversation for '+fullName+'.'}];
   aiCreatedContractId=newId;
