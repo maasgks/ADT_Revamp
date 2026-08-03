@@ -1232,3 +1232,16 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ai-scope-row-manual{background:#fafbfc}
 .ai-scope-manual-badge{flex:0 0 auto;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid var(--border);border-radius:20px;padding:6px 14px}
 .prof-att-upload:hover{color:var(--orange);background:#fff7ed}
+
+/* ── MODULE SUB-TABS (Employees, Timesheet) ── */
+.mod-page{display:flex;flex-direction:column;width:100%;min-width:0}
+.mod-tabs-row{width:100%;max-width:1180px;margin:0 auto 16px}
+.mod-tabs-row.full{max-width:none}
+.mod-tabs{display:inline-flex;align-items:center;gap:4px;padding:4px;background:#f1f5f9;border:1px solid var(--border);border-radius:11px}
+.mod-tab{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border:none;background:transparent;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;color:#64748b;cursor:pointer;white-space:nowrap;transition:background .16s ease,color .16s ease,box-shadow .16s ease}
+.mod-tab svg{width:15px;height:15px;flex-shrink:0}
+.mod-tab:hover:not(.active){color:var(--navy);background:#e6ebf1}
+.mod-tab.active{background:var(--card);color:var(--navy);box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.mod-tab-count{font-size:11px;font-weight:700;line-height:1;padding:3px 7px;border-radius:20px;background:#e2e8f0;color:#64748b;transition:background .16s ease,color .16s ease}
+.mod-tab.active .mod-tab-count{background:var(--navy);color:#fff}
+@media(max-width:640px){.mod-tabs{width:100%}.mod-tab{flex:1;justify-content:center;padding:7px 10px;font-size:12.5px}.mod-tab span{overflow:hidden;text-overflow:ellipsis}}
