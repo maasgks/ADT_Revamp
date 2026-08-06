@@ -11,7 +11,9 @@
 <link rel="stylesheet" href="css/cost-calc.css">
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/leaves.css">
-<link rel="stylesheet" href="css/dashboard-multiview.css"></head>
+<link rel="stylesheet" href="css/dashboard-multiview.css">
+<!-- Loaded last: the button system is authoritative over every legacy button rule. -->
+<link rel="stylesheet" href="css/buttons.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <div id="v-adt" class="view active">
@@ -671,35 +673,35 @@
                   <td>Casual Leave</td>
                   <td>15 - 16 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Ashneet Kaur</td>
                   <td>Sick Leave</td>
                   <td>18 May</td>
                   <td class="manager-days">1</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Sneha Kulkarni</td>
                   <td>Earned Leave</td>
                   <td>22 - 23 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Diksha Kumari</td>
                   <td>Casual Leave</td>
                   <td>26 May</td>
                   <td class="manager-days">1</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
                   <td class="hr-emp-name">Pardeep Verga</td>
                   <td>Sick Leave</td>
                   <td>28 - 29 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn approve">Approve</button><button class="hr-action-btn reject">Reject</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
                 </tr>
               </tbody>
             </table>
@@ -1870,7 +1872,7 @@
                   <td class="hr-emp-name">Germany PEO – Nora</td>
                   <td>Germany</td>
                   <td>PEO</td>
-                  <td><span class="hr-leave-badge rejected">Proposal Sent</span></td>
+                  <td><span class="hr-leave-badge pending">Proposal Sent</span></td>
                 </tr>
               </tbody>
             </table>
@@ -1895,7 +1897,7 @@
                   <td class="hr-emp-name">Employee KYC Review</td>
                   <td>Documents</td>
                   <td>Yes</td>
-                  <td><span class="hr-leave-badge rejected">Pending</span></td>
+                  <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Work Authorization</td>
@@ -1907,7 +1909,7 @@
                   <td class="hr-emp-name">Tax Registration</td>
                   <td>Payroll</td>
                   <td>Yes</td>
-                  <td><span class="hr-leave-badge rejected">Pending</span></td>
+                  <td><span class="hr-leave-badge pending">Pending</span></td>
                 </tr>
                 <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
                   <td class="hr-emp-name">Policy Acknowledgement</td>
@@ -1948,7 +1950,7 @@
                 <td>Spain</td>
                 <td>EOR</td>
                 <td>Registration documents pending</td>
-                <td><span class="hr-leave-badge rejected">Pending</span></td>
+                <td><span class="hr-leave-badge pending">Pending</span></td>
               </tr>
               <tr>
                 <td class="hr-emp-name">ADT Brazil Ltda.</td>
@@ -2230,6 +2232,7 @@ function initDashboardTabsBar(){
       <button class="search-clear" id="search-clear-btn" onclick="clearSearch()" title="Clear">
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
+    </div>
     </div>
     <div class="search-hints" id="search-hints">
       <button class="search-hint-chip" onclick="executeSearch('Contracts')">Contracts</button>

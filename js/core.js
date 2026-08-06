@@ -122,6 +122,80 @@ const supportPageMeta={
   ]}
 };
 
+// Payroll cycle detail - one record per row in the payroll listing.
+// Figures are internally consistent: gross - deductions + employer cost = total cost,
+// and gross - deductions = net payable.
+const payrollRecords={
+  1:{id:1,cycle:'May 2026',period:'01 May 2026 - 31 May 2026',country:'Netherlands',entity:'Dhi Hyperlocal BV',currency:'EUR',employees:41,
+     grossPay:'EUR 184,200',deductions:'EUR 41,880',employerCost:'EUR 33,156',netPayable:'EUR 142,320',totalCost:'EUR 217,356',
+     payDate:'28 May 2026',cutOff:'20 May 2026',payMethod:'SEPA Bank Transfer',frequency:'Monthly',
+     owner:'Pallavi Parate',approver:'Finance Ops',approvedOn:'22 May 2026',status:'Active',payrollId:'PR-2026-NL-05'},
+  2:{id:2,cycle:'May 2026',period:'01 May 2026 - 31 May 2026',country:'India',entity:'Dhi Hyperlocal Pvt Ltd',currency:'INR',employees:83,
+     grossPay:'INR 9,840,000',deductions:'INR 1,968,000',employerCost:'INR 1,180,800',netPayable:'INR 7,872,000',totalCost:'INR 11,020,800',
+     payDate:'30 May 2026',cutOff:'22 May 2026',payMethod:'NEFT Bank Transfer',frequency:'Monthly',
+     owner:'Rahul Mehta',approver:'-',approvedOn:'-',status:'Pending',payrollId:'PR-2026-IN-05'},
+  3:{id:3,cycle:'April 2026',period:'01 Apr 2026 - 30 Apr 2026',country:'Germany',entity:'Dhi Hyperlocal GmbH',currency:'EUR',employees:19,
+     grossPay:'EUR 92,450',deductions:'EUR 22,188',employerCost:'EUR 18,027',netPayable:'EUR 70,262',totalCost:'EUR 110,477',
+     payDate:'28 Apr 2026',cutOff:'20 Apr 2026',payMethod:'SEPA Bank Transfer',frequency:'Monthly',
+     owner:'Neha Sharma',approver:'Finance Ops',approvedOn:'23 Apr 2026',status:'Active',payrollId:'PR-2026-DE-04'},
+  4:{id:4,cycle:'April 2026',period:'01 Apr 2026 - 30 Apr 2026',country:'Spain',entity:'Dhi Hyperlocal SL',currency:'EUR',employees:22,
+     grossPay:'EUR 78,110',deductions:'EUR 19,527',employerCost:'EUR 15,622',netPayable:'EUR 58,583',totalCost:'EUR 93,732',
+     payDate:'29 Apr 2026',cutOff:'21 Apr 2026',payMethod:'SEPA Bank Transfer',frequency:'Monthly',
+     owner:'Aman Singh',approver:'Finance Ops',approvedOn:'24 Apr 2026',status:'Active',payrollId:'PR-2026-ES-04'},
+  5:{id:5,cycle:'March 2026',period:'01 Mar 2026 - 31 Mar 2026',country:'United Kingdom',entity:'Dhi Hyperlocal Ltd',currency:'GBP',employees:28,
+     grossPay:'GBP 116,700',deductions:'GBP 28,008',employerCost:'GBP 16,105',netPayable:'GBP 88,692',totalCost:'GBP 132,805',
+     payDate:'28 Mar 2026',cutOff:'20 Mar 2026',payMethod:'BACS Bank Transfer',frequency:'Monthly',
+     owner:'Olivia Clark',approver:'Finance Ops',approvedOn:'23 Mar 2026',status:'Active',payrollId:'PR-2026-UK-03'},
+  6:{id:6,cycle:'March 2026',period:'01 Mar 2026 - 31 Mar 2026',country:'Netherlands',entity:'Dhi Hyperlocal BV',currency:'EUR',employees:39,
+     grossPay:'EUR 176,900',deductions:'EUR 40,687',employerCost:'EUR 31,842',netPayable:'EUR 136,213',totalCost:'EUR 208,742',
+     payDate:'28 Mar 2026',cutOff:'20 Mar 2026',payMethod:'SEPA Bank Transfer',frequency:'Monthly',
+     owner:'Pallavi Parate',approver:'Finance Ops',approvedOn:'22 Mar 2026',status:'Inactive',payrollId:'PR-2026-NL-03'}
+};
+const prLogsData={
+  1:[{date:'22 May 2026',time:'11:20:00 AM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'},
+     {date:'20 May 2026',time:'06:00:00 PM',user:'Pallavi Parate',status:'Pending',action:'Inputs locked at cut-off.'}],
+  2:[{date:'22 May 2026',time:'06:00:00 PM',user:'Rahul Mehta',status:'Pending',action:'Awaiting finance approval.'}],
+  3:[{date:'23 Apr 2026',time:'10:05:00 AM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'}],
+  4:[{date:'24 Apr 2026',time:'09:40:00 AM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'}],
+  5:[{date:'23 Mar 2026',time:'02:15:00 PM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'}],
+  6:[{date:'30 Mar 2026',time:'05:30:00 PM',user:'Finance Ops',status:'Inactive',action:'Cycle closed and archived.'}]
+};
+// Payroll workflow - ends on each cycle's real status.
+const prWorkflowData={
+  1:[{title:'Approved for Disbursement',user:'Finance Ops',date:'22 May 2026',time:'11:20:00 AM',description:'May 2026 Netherlands cycle approved. Payment scheduled for 28 May 2026.'},
+     {title:'Inputs Locked',user:'Pallavi Parate',date:'20 May 2026',time:'06:00:00 PM',description:'Attendance and variable inputs locked at cut-off for 41 employees.'},
+     {title:'Cycle Opened',user:'System',date:'01 May 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal BV.'}],
+  2:[{title:'Awaiting Approval',user:'Rahul Mehta',date:'22 May 2026',time:'06:00:00 PM',description:'INR 9,840,000 gross submitted to Finance Ops for approval.'},
+     {title:'Inputs Locked',user:'Rahul Mehta',date:'22 May 2026',time:'05:00:00 PM',description:'Inputs locked at cut-off for 83 employees.'},
+     {title:'Cycle Opened',user:'System',date:'01 May 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal Pvt Ltd.'}],
+  3:[{title:'Approved for Disbursement',user:'Finance Ops',date:'23 Apr 2026',time:'10:05:00 AM',description:'April 2026 Germany cycle approved. Payment scheduled for 28 Apr 2026.'},
+     {title:'Inputs Locked',user:'Neha Sharma',date:'20 Apr 2026',time:'06:00:00 PM',description:'Inputs locked at cut-off for 19 employees.'},
+     {title:'Cycle Opened',user:'System',date:'01 Apr 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal GmbH.'}],
+  4:[{title:'Approved for Disbursement',user:'Finance Ops',date:'24 Apr 2026',time:'09:40:00 AM',description:'April 2026 Spain cycle approved. Payment scheduled for 29 Apr 2026.'},
+     {title:'Inputs Locked',user:'Aman Singh',date:'21 Apr 2026',time:'06:00:00 PM',description:'Inputs locked at cut-off for 22 employees.'},
+     {title:'Cycle Opened',user:'System',date:'01 Apr 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal SL.'}],
+  5:[{title:'Approved for Disbursement',user:'Finance Ops',date:'23 Mar 2026',time:'02:15:00 PM',description:'March 2026 UK cycle approved. Payment scheduled for 28 Mar 2026.'},
+     {title:'Inputs Locked',user:'Olivia Clark',date:'20 Mar 2026',time:'06:00:00 PM',description:'Inputs locked at cut-off for 28 employees.'},
+     {title:'Cycle Opened',user:'System',date:'01 Mar 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal Ltd.'}],
+  6:[{title:'Cycle Closed',user:'Finance Ops',date:'30 Mar 2026',time:'05:30:00 PM',description:'March 2026 Netherlands cycle closed and archived after disbursement.'},
+     {title:'Payment Disbursed',user:'Finance Ops',date:'28 Mar 2026',time:'11:00:00 AM',description:'EUR 136,213 net disbursed to 39 employees via SEPA.'},
+     {title:'Cycle Opened',user:'System',date:'01 Mar 2026',time:'09:00:00 AM',description:'Monthly payroll cycle opened for Dhi Hyperlocal BV.'}]
+};
+let prSelectedId=null,prTab='basic-details';
+function openPrSidebar(id){
+  prSelectedId=id;prTab='basic-details';
+  const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.add('open');
+  const inner=document.getElementById('pr-isb-inner');if(inner)inner.innerHTML=renderPrSidebar();
+}
+function closePrSidebar(){
+  prSelectedId=null;
+  const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.remove('open');
+}
+function navPrTab(tab){
+  prTab=tab;
+  const inner=document.getElementById('pr-isb-inner');
+  if(inner){inner.innerHTML=renderPrSidebar();requestAnimationFrame(function(){var nt=document.getElementById('pr-isb-tabs');if(nt){var a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}
+}
 function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheet',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Items',context:'Compliance Items',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
@@ -766,7 +840,7 @@ function buildListingHTML(pg){
   const filters=meta.filters.map((f,i)=>apCS(`lst-${pgSlug}-f${i}`,getFilterOptions(f).slice(1),f==='Status'?statusFilter:'',f)).join('');
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>`<th>${c}</th>`).join('')+'<th>ACTION</th>';
-  const tableRows=rows.length?rows.map(row=>`<tr>${row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')}<td><button class="lp-action-btn" title="More actions">${hamburger}</button></td></tr>`).join(''):`<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`;
+  const tableRows=rows.length?rows.map(row=>`<tr>${row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')}<td><button class="lp-action-btn"${pg==='payroll'?` onclick="event.stopPropagation();openPrSidebar(${row[0]})"`:''} title="More actions">${hamburger}</button></td></tr>`).join(''):`<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`;
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
@@ -777,9 +851,12 @@ function buildListingHTML(pg){
         +`<div class="listing-stat pending${statusFilter==='Pending'?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','Pending')"><div class="listing-stat-count">${s3Count}</div><div class="listing-stat-label">Pending</div></div>`
       +`</div>`
     +`</div>`
+    +(pg==='payroll'?`<div class="lp-split-wrap">`:'')
     +`<div class="listing-card"><table class="lp-table" style="min-width:700px"><thead><tr>${headers}</tr></thead><tbody>${tableRows}</tbody></table>`
     +`<div class="pagination"><button class="page-btn">&lt;</button><button class="page-btn">1</button><button class="page-btn active">2</button><button class="page-btn">3</button><button class="page-btn">4</button><button class="page-btn">...</button><button class="page-btn">86</button><button class="page-btn">&gt;</button></div>`
-    +`</div></div>`;
+    +`</div>`
+    +(pg==='payroll'?`<div class="lp-split-sb${prSelectedId?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${prSelectedId?renderPrSidebar():''}</div></div></div>`:'')
+    +`</div>`;
 }
 
 function applyListingFilters(pg){
@@ -1663,6 +1740,21 @@ const allLeavesData=[
   {id:5,empId:'CLOCLO11759',name:'Nora Kim',leaveId:'2031',leaveType:'Sick Leave',leaveFrom:'28-04-2026',leaveTo:'28-04-2026',leaveHours:'Half Day',description:'Doctor appointment',email:'nora.kim@maaserp.com',appliedDate:'27 Apr, 2026 08:45:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'},
   {id:6,empId:'CLOCLO11760',name:'Luis Martin',leaveId:'2033',leaveType:'Casual Leave',leaveFrom:'02-05-2026',leaveTo:'04-05-2026',leaveHours:'Full Day',description:'Vacation trip',email:'luis.martin@maaserp.com',appliedDate:'30 Apr, 2026 11:20:00',createdBy:'Self',status:'Approved',subStatus:'Paid'}
 ];
+// Leave approval workflow - keyed by allLeavesData id. Ends on each row's real status.
+const alWorkflowData={
+  1:[{title:'Leave Approved',user:'Reporting Manager',date:'15 Apr 2026',time:'10:12:00 AM',description:'Casual Leave 14-16 Apr approved for Shaun J. Balance updated.'},
+     {title:'Manager Review',user:'Reporting Manager',date:'15 Apr 2026',time:'09:30:00 AM',description:'Request reviewed against team coverage for the week.'},
+     {title:'Leave Applied',user:'Shaun J',date:'14 Apr 2026',time:'11:40:25 PM',description:'Casual Leave applied for 14-16 Apr 2026 (Full Day). Reason: I need leave.'}],
+  2:[{title:'Awaiting Approval',user:'Reporting Manager',date:'17 Apr 2026',time:'11:00:00 AM',description:'Sick Leave request pending manager action. Medical note not required for half day.'},
+     {title:'Leave Applied',user:'Pallavi P',date:'17 Apr 2026',time:'10:15:00 AM',description:'Sick Leave applied for 18 Apr 2026 (Half Day). Reason: Not feeling well.'}],
+  3:[{title:'Leave Approved',user:'Reporting Manager',date:'19 Apr 2026',time:'02:20:00 PM',description:'Casual Leave 20-22 Apr approved for Anika Shah. Cover arranged within team.'},
+     {title:'Leave Applied',user:'Anika Shah',date:'19 Apr 2026',time:'09:00:00 AM',description:'Casual Leave applied for 20-22 Apr 2026 (Full Day). Reason: Personal work.'}],
+  4:[{title:'Leave Unapproved',user:'Reporting Manager',date:'23 Apr 2026',time:'10:05:00 AM',description:'Earned Leave 25-27 Apr not approved. Clashes with month-end payroll cycle.'},
+     {title:'Manager Review',user:'Reporting Manager',date:'22 Apr 2026',time:'05:00:00 PM',description:'Request reviewed against payroll close-out dates.'},
+     {title:'Leave Applied',user:'Rahul Mehta',date:'22 Apr 2026',time:'02:30:00 PM',description:'Earned Leave applied for 25-27 Apr 2026 (Full Day). Reason: Family function.'}],
+  5:[{title:'Awaiting Approval',user:'Reporting Manager',date:'27 Apr 2026',time:'09:30:00 AM',description:'Sick Leave request pending manager action.'},
+     {title:'Leave Applied',user:'Nora Kim',date:'27 Apr 2026',time:'08:45:00 AM',description:'Sick Leave applied for 28 Apr 2026 (Full Day).'}]
+};
 const alLogsData={
   1:[{date:'14 Apr, 2026',time:'23:40:25',user:'Shaun J',status:'Approved',action:'Leave applied and approved by manager.'}],
   2:[{date:'17 Apr, 2026',time:'10:15:00',user:'Pallavi P',status:'Pending',action:'Leave application submitted, awaiting approval.'}],
@@ -1748,6 +1840,27 @@ let ctpModalOpen=false;
 let ctpSuccessName='';
 
 // ── SUPPORT: TICKETS & CHATS DATA ──
+// Support ticket workflow - keyed by ticketsData id. Ends on each ticket's real status.
+const tkWorkflowData={
+  1:[{title:'Awaiting Client Document',user:'Pallavi Parate',date:'Jun 13, 2026',time:'10:20:00 AM',description:'Requested the corrected compliance document from John Doe.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 12, 2026',time:'02:15:00 PM',description:'Compliance ticket assigned to Pallavi Parate.'},
+     {title:'Ticket Raised',user:'John Doe',date:'Jun 12, 2026',time:'11:05:00 AM',description:'Issue with compliance doc reported by John Doe (United States).'}],
+  2:[{title:'Ticket Blocked',user:'Rahul Mehta',date:'Jun 15, 2026',time:'04:40:00 PM',description:'Blocked - salary document cannot be issued until payroll data is confirmed.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 14, 2026',time:'01:30:00 PM',description:'Document ticket assigned to Rahul Mehta.'},
+     {title:'Ticket Raised',user:'Thijs Verbeek',date:'Jun 14, 2026',time:'09:50:00 AM',description:'Salary document missing reported by Thijs Verbeek (Netherlands).'}],
+  3:[{title:'Awaiting Contract Review',user:'Aman Singh',date:'Jun 11, 2026',time:'11:00:00 AM',description:'Renewal terms shared with the contracts team for review.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 10, 2026',time:'03:20:00 PM',description:'Contract ticket assigned to Aman Singh.'},
+     {title:'Ticket Raised',user:'Alice Smith',date:'Jun 10, 2026',time:'10:10:00 AM',description:'Contract renewal request raised by Alice Smith (United Kingdom).'}],
+  4:[{title:'In Progress',user:'Pallavi Parate',date:'Jun 19, 2026',time:'09:45:00 AM',description:'Tax form re-issued and sent to Mark Lee for confirmation.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 18, 2026',time:'02:00:00 PM',description:'Compliance ticket assigned to Pallavi Parate.'},
+     {title:'Ticket Raised',user:'Mark Lee',date:'Jun 18, 2026',time:'12:30:00 PM',description:'Tax form not received reported by Mark Lee.'}],
+  5:[{title:'Awaiting Draft Feedback',user:'Neha Sharma',date:'Jun 21, 2026',time:'10:30:00 AM',description:'Contract draft shared with Thijs Verbeek for review.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 20, 2026',time:'04:10:00 PM',description:'Contract ticket assigned to Neha Sharma.'},
+     {title:'Ticket Raised',user:'Thijs Verbeek',date:'Jun 20, 2026',time:'03:00:00 PM',description:'Contract draft review requested by Thijs Verbeek.'}],
+  6:[{title:'Ticket Blocked',user:'Rahul Mehta',date:'Jun 23, 2026',time:'11:25:00 AM',description:'Blocked - compliance certificate pending issue from the local authority.'},
+     {title:'Assigned to Agent',user:'Support Desk',date:'Jun 22, 2026',time:'05:00:00 PM',description:'Compliance ticket assigned to Rahul Mehta.'},
+     {title:'Ticket Raised',user:'Alice Smith',date:'Jun 22, 2026',time:'02:40:00 PM',description:'Missing compliance certificate reported by Alice Smith.'}]
+};
 const ticketsData=[
   {id:1,ticketId:'TCK-1021',clientName:'John Doe',title:'Issue with compliance doc',category:'Compliance',createdAt:'Jun 12, 2026',status:'open',clientEmail:'john.doe@example.com',clientPhone:'+1 555-0101',country:'United States',assignedTo:'Pallavi Parate',description:'Client reported missing compliance documentation for Q2 audit. Follow-up required with legal team.'},
   {id:2,ticketId:'TCK-1025',clientName:'Thijs Verbeek',title:'Salary document missing',category:'Document',createdAt:'Jun 14, 2026',status:'blocked',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Rahul Mehta',description:'Monthly salary document not uploaded for May 2026. Awaiting finance team confirmation.'},
@@ -1757,6 +1870,27 @@ const ticketsData=[
   {id:6,ticketId:'TCK-1298',clientName:'Alice Smith',title:'Missing compliance certificate',category:'Compliance',createdAt:'Jun 22, 2026',status:'blocked',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Rahul Mehta',description:'Certificate of compliance for UK operations not obtained. Blocked pending local authority approval.'},
   {id:7,ticketId:'TCK-1921',clientName:'Mark Lee',title:'Invoice document request',category:'Document',createdAt:'Jun 25, 2026',status:'closed',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Aman Singh',description:'Client requested invoice copies for Q1 2026. All documents sent and acknowledged.'}
 ];
+// Chat workflow - keyed by chatsData id. Ends on each chat's real status.
+const chatWorkflowData={
+  1:[{title:'Waiting for CSM',user:'Pallavi Parate',date:'Jun 26, 2026',time:'09:40:00 AM',description:'Client reply received on TCK-1021. Awaiting CSM response.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Jun 26, 2026',time:'09:10:00 AM',description:'CHAT-1045 assigned to Pallavi Parate.'},
+     {title:'Chat Started',user:'John Doe',date:'Jun 26, 2026',time:'09:00:00 AM',description:'Chat opened by John Doe (United States).'}],
+  2:[{title:'Waiting for Client',user:'Rahul Mehta',date:'Jun 24, 2026',time:'03:15:00 PM',description:'Response sent to Priya Sharma. Awaiting client confirmation.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Jun 24, 2026',time:'02:40:00 PM',description:'CHAT-1044 assigned to Rahul Mehta.'},
+     {title:'Chat Started',user:'Priya Sharma',date:'Jun 24, 2026',time:'02:30:00 PM',description:'Chat opened by Priya Sharma (India).'}],
+  3:[{title:'Chat Active',user:'Neha Sharma',date:'Jun 19, 2026',time:'11:30:00 AM',description:'Ongoing conversation linked to TCK-1019.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Jun 19, 2026',time:'11:20:00 AM',description:'CHAT-1043 assigned to Neha Sharma.'},
+     {title:'Chat Started',user:'Ramesh Patel',date:'Jun 19, 2026',time:'11:15:00 AM',description:'Chat opened by Ramesh Patel (India).'}],
+  4:[{title:'Chat Inactive',user:'Olivia Clark',date:'Apr 28, 2026',time:'10:00:00 AM',description:'No client response for 48 hours. Chat marked inactive.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Apr 26, 2026',time:'04:10:00 PM',description:'CHAT-1042 assigned to Olivia Clark.'},
+     {title:'Chat Started',user:'Aisha Verma',date:'Apr 26, 2026',time:'04:00:00 PM',description:'Chat opened by Aisha Verma.'}],
+  5:[{title:'Chat Active',user:'Aman Singh',date:'Mar 26, 2026',time:'10:20:00 AM',description:'Conversation ongoing with Sophie Dubois.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Mar 26, 2026',time:'10:05:00 AM',description:'CHAT-1041 assigned to Aman Singh.'},
+     {title:'Chat Started',user:'Sophie Dubois',date:'Mar 26, 2026',time:'10:00:00 AM',description:'Chat opened by Sophie Dubois.'}],
+  6:[{title:'Waiting for Client',user:'Pallavi Parate',date:'Mar 12, 2026',time:'04:05:00 PM',description:'Follow-up sent to Luca Bianchi. Awaiting client reply.'},
+     {title:'Chat Assigned',user:'Support Desk',date:'Mar 12, 2026',time:'03:50:00 PM',description:'CHAT-1040 assigned to Pallavi Parate.'},
+     {title:'Chat Started',user:'Luca Bianchi',date:'Mar 12, 2026',time:'03:45:00 PM',description:'Chat opened by Luca Bianchi.'}]
+};
 const chatsData=[
   {id:1,chatId:'CHAT-1045',clientName:'John Doe',assignedTo:'Pallavi Parate',lastActivity:'53 min ago',status:'waiting_csm',country:'United States',clientEmail:'john.doe@example.com',startedAt:'Jun 26, 2026 | 09:00 AM',linkedTickets:['TCK-1021']},
   {id:2,chatId:'CHAT-1044',clientName:'Priya Sharma',assignedTo:'Rahul Mehta',lastActivity:'2 days ago',status:'waiting_client',country:'India',clientEmail:'priya.sharma@example.com',startedAt:'Jun 24, 2026 | 02:30 PM',linkedTickets:[]},
@@ -1836,6 +1970,13 @@ function atBackToAllTimesheet(){
 let csTab='basic-details';
 let csStructureTab='branch';
 let csSelectedItem=null;
+// Company settings workflow - a single company profile, so a flat list.
+const csWorkflowData=[
+  {title:'Settings Updated',user:'Shaun Test1',date:'22 Apr 2026',time:'05:44:07 PM',description:'Company profile updated and re-verified.'},
+  {title:'Payroll Configured',user:'Admin',date:'14 Apr 2026',time:'11:28:08 PM',description:'Payroll cycle, leave policy and attendance rules configured.'},
+  {title:'Banking Details Added',user:'Admin',date:'14 Apr 2026',time:'11:02:44 PM',description:'Company bank account added and pending verification.'},
+  {title:'Company Created',user:'Admin',date:'10 Apr 2026',time:'09:00:00 AM',description:'Company record created and entity workspace provisioned.'}
+];
 const csLogsData=[
   {date:'22 Apr 2026',time:'05:44:07 PM',user:'Shaun Test1',status:'Active',action:'Hvj'},
   {date:'14 Apr 2026',time:'11:28:08 PM',user:'Shaun Test1',status:'Pending',action:'Yes'},

@@ -623,9 +623,102 @@ function closeAlSidebar(){
   document.querySelectorAll('.al-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navAlTab(tab){alTab=tab;const inner=document.getElementById('al-isb-inner');if(inner){inner.innerHTML=renderAlSidebar();requestAnimationFrame(function(){const nt=document.getElementById('al-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+// Payroll cycle detail sidebar. Opened by the row action button on the payroll
+// listing. Tabs mirror the other listing sidebars so the pattern is consistent.
+function renderPrSidebar(){
+  const r=payrollRecords[prSelectedId];if(!r)return '';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'pay-summary',label:'Pay Summary'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
+  const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
+  const xIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'pr-isb-tabs\')" title="Scroll left">'+chevL+'</button>'
+    +'<div class="lp-isb-tabs" id="pr-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(prTab===t.id?' active':'')+'" onclick="navPrTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'pr-isb-tabs\')" title="Scroll right">'+chevR+'</button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closePrSidebar()" title="Close">'+xIco+'</button></div>'
+    +'</div>';
+  const iCal='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const iGlobe='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  const iUser='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iUsers='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>';
+  const iCash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><circle cx="12" cy="14" r="3"/></svg>';
+  const iBank='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
+  const iHash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+  const iCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
+  const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value||'-')+'</div></div></div>';
+  const stClass={Active:'active',Pending:'pending',Inactive:'inactive'};
+  let body='';
+  if(prTab==='basic-details'){
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Cycle Details</span>'
+        +'<span class="lp-status-badge '+(stClass[r.status]||'pending')+'">'+r.status+'</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
+      +fc(iHash,'Payroll ID',r.payrollId)+fc(iCal,'Cycle',r.cycle)
+      +fc(iCal,'Pay Period',r.period)+fc(iCal,'Frequency',r.frequency)
+      +fc(iGlobe,'Country',r.country)+fc(iBank,'Entity',r.entity)
+      +fc(iCash,'Currency',r.currency)+fc(iUsers,'Employees',String(r.employees))
+      +'</div>'
+      +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Schedule &amp; Ownership</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +fc(iClock,'Input Cut-off',r.cutOff)+fc(iCal,'Pay Date',r.payDate)
+      +fc(iBank,'Payment Method',r.payMethod)+fc(iUser,'Payroll Owner',r.owner)
+      +'</div>';
+  }else if(prTab==='pay-summary'){
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Pay Summary</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
+      +fc(iCash,'Gross Pay',r.grossPay)+fc(iCash,'Total Deductions',r.deductions)
+      +fc(iCash,'Employer Contributions',r.employerCost)+fc(iCash,'Net Payable',r.netPayable)
+      +fc(iCash,'Total Employer Cost',r.totalCost)+fc(iUsers,'Employees Paid',String(r.employees))
+      +'</div>'
+      +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Approval</span></div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +fc(iCheck,'Approved By',r.approver)+fc(iCal,'Approved On',r.approvedOn)
+      +'</div>';
+  }else if(prTab==='logs'){
+    const logs=prLogsData[r.id]||[];
+    const prLogKey=(st)=>({Active:'active',Inactive:'inactive',Pending:'default'}[st]||'default');
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    body=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((entry,i)=>{
+          const sk=prLogKey(entry.status);
+          return '<div class="lp-log-row">'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-card">'
+            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+entry.status+'</span></div>'
+            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
+            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
+            +'</div></div>';
+        }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
+  }else if(prTab==='workflow'){
+    body=wfTimelineHTML(prWorkflowData[r.id]);
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+// Standard workflow timeline. Same markup the existing workflow tabs emit -
+// used by the sidebars that previously had no workflow, so every Workflow tab
+// in the app renders identically.
+function wfTimelineHTML(wf){
+  const pSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  if(!wf||!wf.length)return '<div class="lp-wf-empty">No workflow activity yet.</div>';
+  return '<div class="lp-wf-wrap">'+wf.map(function(w,i){
+    return '<div class="lp-wf-row">'
+      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
+      +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
+      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+pSvg+'<span>'+w.user+'</span></span>'
+      +(w.date?'<span class="lp-wf-meta-item">'+cSvg+'<span>'+w.date+'</span></span>':'')
+      +(w.time?'<span class="lp-wf-meta-sep">|</span><span class="lp-wf-meta-item"><span>'+w.time+'</span></span>':'')
+      +'</div>'
+      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
+      +'</div></div>';
+  }).join('')+'</div>';
+}
 function renderAlSidebar(){
   const l=allLeavesData.find(x=>x.id===alSelectedId);if(!l)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'al-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="al-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(alTab===t.id?' active':'')+'" onclick="navAlTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -670,7 +763,7 @@ function renderAlSidebar(){
             +'<div class="lp-log-card">'
             +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+entry.status+'</span></div>'
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Action:</span>'+entry.action+'</div>'
+            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
@@ -685,6 +778,8 @@ function renderAlSidebar(){
       +'<button class="lp-logs-save-btn">Update</button>'
       +'</div>';
     body='<div class="lp-logs-wrap">'+timelineHTML+actionPanel+'</div>';
+  }else if(alTab==='workflow'){
+    body=wfTimelineHTML(alWorkflowData[l.id]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -1073,19 +1168,20 @@ function renderPmSidebar(){
       +'<p style="font-size:13px;color:#9ca3af">No receivables found.</p>';
   }else if(pmTab==='logs'){
     const logs=pmLogsData[p.id]||[];
+    const pmLogKey=(st)=>({Active:'active',Paid:'active',Closed:'active',Inactive:'inactive',Unpaid:'inactive'}[st]||'default');
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>'<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--default">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+pmLogKey(l.status)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--default"></span><span class="lp-log-status-text lp-log-status-text--default">'+l.status+'</span></div>'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+pmLogKey(l.status)+'"></span><span class="lp-log-status-text lp-log-status-text--'+pmLogKey(l.status)+'">'+l.status+'</span></div>'
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>').join('')+'</div>'
-      :'<div class="lp-logs-empty">No logs yet.</div>';
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const statusOpts=pmLogStatusOptions.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-label">Status</div>'
@@ -1137,7 +1233,7 @@ function buildPaymentsHTML(){
       +'<td style="font-weight:600;color:var(--navy)">'+p.name+'</td>'
       +'<td style="color:var(--orange);font-weight:600">'+p.amountDue+'</td>'
       +'<td>'+p.type+'</td>'
-      +'<td><span class="lp-status-badge active" style="background:#dcfce7;color:#16a34a;border:1.5px solid #86efac;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600">'+p.orderStatus+'</span></td>'
+      +'<td><span class="lp-status-badge active" style="background:var(--st-ok-bg);color:var(--st-ok-fg);border:1.5px solid var(--st-ok-bd);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600">'+p.orderStatus+'</span></td>'
       +'<td onclick="event.stopPropagation()">'+statusBtn+'</td>'
       +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openPmSidebar('+p.id+')" title="More actions">'+dotsIco+'</button></td>'
       +'</tr>';
@@ -1148,16 +1244,16 @@ function buildPaymentsHTML(){
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +'<input class="ct-search-input" placeholder="Search ID" type="text" style="height:34px;border-radius:20px;min-width:120px;max-width:140px">'
+    +'<input class="ct-search-input" placeholder="Search ID" type="text" style="height:34px;border-radius:var(--r-input);min-width:120px;max-width:140px">'
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
     +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
-    +'<input type="date" style="height:34px;border:1px solid var(--border);border-radius:20px;padding:0 12px;font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;cursor:pointer">'
+    +'<input type="date" style="height:34px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 12px;font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;cursor:pointer">'
     +clearFiltersBtn([pmInvoiceStatusFilter],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat active'+(pmInvoiceStatusFilter==='Paid'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'Paid\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
     +'<div class="listing-stat pending'+(pmInvoiceStatusFilter==='__pending_group__'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'__pending_group__\')"><div class="listing-stat-count">'+pendingCount+'</div><div class="listing-stat-label">Pending</div></div>'
-    +'<div class="listing-stat'+(pmInvoiceStatusFilter==='Closed'?' stat-selected':'')+'" style="border-color:#bfdbfe" onclick="pmToggleStatFilter(\'Closed\')"><div class="listing-stat-count" style="color:#2563eb">'+closedCount+'</div><div class="listing-stat-label">Closed</div></div>'
+    +'<div class="listing-stat'+(pmInvoiceStatusFilter==='Closed'?' stat-selected':'')+'" style="border-color:#bfdbfe" onclick="pmToggleStatFilter(\'Closed\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+closedCount+'</div><div class="listing-stat-label">Closed</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -1206,13 +1302,13 @@ function toggleCtAction(id,e){
 function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('tk-isb-inner');if(inner)inner.innerHTML=renderTkSidebar();document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
 function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.tk-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navTkTab(tab){tkTab=tab;const inner=document.getElementById('tk-isb-inner');if(inner){inner.innerHTML=renderTkSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tk-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function tkStatusBadge(s){const m={open:{bg:'#eff6ff',c:'#2563eb',b:'#bfdbfe',l:'Open'},in_progress:{bg:'#fef3c7',c:'#d97706',b:'#fde68a',l:'In Progress'},blocked:{bg:'#fef2f2',c:'#dc2626',b:'#fecaca',l:'Blocked'},closed:{bg:'#f1f5f9',c:'#64748b',b:'#e2e8f0',l:'Closed'}};const v=m[s]||{bg:'#f1f5f9',c:'#64748b',b:'#e2e8f0',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
+function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)',l:'Open'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'In Progress'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)',l:'Blocked'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:'Closed'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
 // ── CHATS SIDEBAR ──
 function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('chat-isb-inner');if(inner)inner.innerHTML=renderChatSidebar();document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navChatTab(tab){chatTab=tab;const inner=document.getElementById('chat-isb-inner');if(inner){inner.innerHTML=renderChatSidebar();requestAnimationFrame(function(){const nt=document.getElementById('chat-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage();}
-function chatStatusBadge(s){const m={active:{bg:'#f0fdf4',c:'#16a34a',b:'#86efac',l:'Active'},waiting_client:{bg:'#fff7ed',c:'#c2410c',b:'#fed7aa',l:'Waiting for Client'},waiting_csm:{bg:'#fef3c7',c:'#d97706',b:'#fde68a',l:'Waiting for CSM'},inactive:{bg:'#f1f5f9',c:'#64748b',b:'#e2e8f0',l:'Inactive'}};const v=m[s]||{bg:'#f1f5f9',c:'#64748b',b:'#e2e8f0',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
+function chatStatusBadge(s){const m={active:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)',l:'Active'},waiting_client:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'Waiting for Client'},waiting_csm:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'Waiting for CSM'},inactive:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)',l:'Inactive'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
 function ctPickStatus(contractId,status){document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));openCtSidebar(contractId,'logs',status);}
 function ctToggleStatFilter(v){
   ctQuickStatusFilter=ctQuickStatusFilter===v?'':v;
@@ -1367,7 +1463,7 @@ function renderCtSidebar(){
             +'<div class="lp-log-card">'
             +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Action:</span>'+l.action+'</div>'
+            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
@@ -1652,7 +1748,7 @@ function renderComplianceSidebar(){
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
       }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No status change logs found.</div>';
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -1667,7 +1763,7 @@ function renderComplianceSidebar(){
     body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }else if(complianceTab==='workflow'){
     body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
       +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
       +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>'+item.createdAt+'</span></span></div>'
       +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Compliance item created.</span></div>'
@@ -1799,7 +1895,7 @@ function renderRatesRuleSidebar(){
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
       }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No status change logs found.</div>';
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -1814,7 +1910,7 @@ function renderRatesRuleSidebar(){
     body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }else if(ratesRuleTab==='workflow'){
     body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
       +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
       +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
       +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Rate rule created.</span></div>'
@@ -2066,7 +2162,7 @@ function renderCtpSidebar(){
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
       }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No logs yet.</div>';
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -2081,7 +2177,7 @@ function renderCtpSidebar(){
     body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }else if(ctpTab==='workflow'){
     body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="cmp-wf-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>'
+      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
       +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
       +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
       +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Contract template created.</span></div>'
@@ -2390,7 +2486,7 @@ function buildContractStepCards(includeStep,prefill){
   if(includeStep(2)){
     const thS='padding:10px 14px;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid var(--border);text-align:left';
     const tdS='padding:14px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9;vertical-align:middle';
-    const inputNum=function(val){return '<input type="number" value="'+val+'" min="0" style="width:60px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;text-align:center;font-family:inherit;outline:none;color:var(--navy)">';};
+    const inputNum=function(val){return '<input type="number" value="'+val+'" min="0" style="width:60px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r-input);font-size:13px;text-align:center;font-family:inherit;outline:none;color:var(--navy)">';};
     content+=
       // Leave Entitlement card
       '<div class="ep-form-card" style="margin-bottom:16px;padding:0;overflow:hidden">'
@@ -2501,7 +2597,7 @@ function buildContractFormHTML(type,step,splitMode){
   return '<div class="ep-page" style="'+pageStyle+'">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
     +'<button class="ep-back" onclick="'+goBack+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> '+(step===0?'Back to Create Contract':'Back')+'</button>'
-    +'<span style="font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid var(--border);padding:4px 12px;border-radius:6px;letter-spacing:.5px">'+type+'</span>'
+    +'<span style="font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid var(--border);padding:4px 12px;border-radius:999px;letter-spacing:.5px">'+type+'</span>'
     +'</div>'
     +'<div class="ep-header" style="margin-bottom:20px">'
     +'<div class="ep-title-wrap"><span class="ep-title">Create a Contract</span></div>'
@@ -2647,13 +2743,13 @@ function buildContractsListingHTML(){
     +apCS('ct-f-country',countries,'','All Countries')
     +apCS('ct-f-type',types,'','All Types')
     +apCS('ct-f-status',['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Inactive'],ctQuickStatusFilter,'All Statuses')
-    +'<input class="ct-search-input" placeholder="Search by name, ID..." type="text" style="height:34px;border-radius:20px">'
+    +'<input class="ct-search-input" placeholder="Search by name, ID..." type="text" style="height:34px;border-radius:var(--r-input)">'
     +clearFiltersBtn([ctQuickStatusFilter],'resetCtFilters()')
     +'<button class="lp-pill-search" onclick="applyCtFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(ctQuickStatusFilter==='Proposal Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Proposal Sent\')"><div class="listing-stat-count" style="color:#7c3aed">'+proposalPending+'</div><div class="listing-stat-label">Proposal Pending</div></div>'
-    +'<div class="listing-stat'+(ctQuickStatusFilter==='Contract Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Contract Sent\')"><div class="listing-stat-count" style="color:#2563eb">'+contractPending+'</div><div class="listing-stat-label">Contract Pending</div></div>'
+    +'<div class="listing-stat'+(ctQuickStatusFilter==='Proposal Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Proposal Sent\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+proposalPending+'</div><div class="listing-stat-label">Proposal Pending</div></div>'
+    +'<div class="listing-stat'+(ctQuickStatusFilter==='Contract Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Contract Sent\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+contractPending+'</div><div class="listing-stat-label">Contract Pending</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -2686,7 +2782,7 @@ function buildApplicableEmpSection(){
       <div class="ap-filter-row">
         <div class="ap-filter-group"><label class="ep-form-label">Assign By</label>${typeOpts}</div>
         <div class="ap-filter-second"><label class="ep-form-label">Filter Value</label>${valueOpts}</div>
-        <button type="button" class="ep-save-btn ap-pill-btn" style="margin-top:18px;height:42px;min-width:80px" onclick="applyApFilter()">Apply</button>
+        <button type="button" class="ep-save-btn ap-pill-btn" style="margin-top:18px;min-width:80px" onclick="applyApFilter()">Apply</button>
       </div>
     </div>
     <div class="employee-picker">
@@ -3323,7 +3419,7 @@ function buildMyTimesheetHTML(viewingOther) {
       if (isToday) cellCls += ' is-today';
       if (isSel) cellCls += ' is-selected';
       if (isFuture) cellCls += ' future';
-      if (att) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
+      if (att && !isWe) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
       else if (!isWe && !isFuture) cellCls += ' st-absent';
 
       const clickH = (!isWe && !isFuture) ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
@@ -3436,8 +3532,8 @@ function buildAllTimesheetHTML(){
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--orange)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'
-    +'<div class="listing-stat'+(atTsQuickFilter==='Filled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Filled\')"><div class="listing-stat-count" style="color:#0d9488">'+filled+'</div><div class="listing-stat-label">Filled</div></div>'
+    +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'
+    +'<div class="listing-stat'+(atTsQuickFilter==='Filled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Filled\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+filled+'</div><div class="listing-stat-label">Filled</div></div>'
     +'<div class="listing-stat'+(atTsQuickFilter===''?' stat-selected':'')+'" onclick="atToggleTsFilter(\'\')"><div class="listing-stat-count" style="color:var(--navy)">'+total+'</div><div class="listing-stat-label">Total</div></div>'
     +'</div>'
     +'</div>';
@@ -3946,16 +4042,38 @@ function buildMyProfileHTML(){
   }
 
   else if(profTab==='attachments'){
-    const docs=['Resume','Relieving Letter','Address Proof','Qualification Proof','Passport Photo','Photo Id Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Aadhar Back','Aadhar Front','Last Offer Letter'];
-    const docItems=docs.map(d=>`
+    const uploadedDocs=[
+      {name:'Resume',file:'Pallavi_Parate_Resume.pdf',date:'12 Jan 2024'},
+      {name:'Passport Photo',file:'passport_photo.jpg',date:'12 Jan 2024'},
+      {name:'Photo Id Proof',file:'pan_card.pdf',date:'14 Jan 2024'},
+      {name:'Aadhar Front',file:'aadhar_front.jpg',date:'14 Jan 2024'},
+      {name:'Aadhar Back',file:'aadhar_back.jpg',date:'14 Jan 2024'}
+    ];
+    const pendingDocs=['Relieving Letter','Address Proof','Qualification Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter'];
+    const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>';
+    const uploadedItems=uploadedDocs.map(d=>`
+      <div class="prof-att-card">
+        <span class="prof-att-iconwrap">${iPaperclip}<span class="prof-att-tick">${tick}</span></span>
+        <span class="prof-att-body">
+          <span class="prof-att-name">${d.name}</span>
+          <span class="prof-att-meta">${d.file}</span>
+          <span class="prof-att-date">Uploaded ${d.date}</span>
+        </span>
+        <button class="prof-att-dl" title="Download">${iDl}</button>
+      </div>`).join('');
+    const pendingItems=pendingDocs.map(d=>`
       <div class="prof-att-item">
         <span class="prof-att-icon">${iPaperclip}</span>
         <span class="prof-att-name">${d}</span>
         <button class="prof-att-upload" title="Upload">${iUpload}</button>
       </div>`).join('');
-    tabContent=`<div class="ep-form-card">
-      <div class="prof-section-hdr"><span class="policy-section-title">Others (Not Uploaded)</span></div>
-      <div class="prof-att-grid">${docItems}</div>
+    tabContent=`<div class="ep-form-card" style="margin-bottom:16px">
+      <div class="prof-section-hdr"><span class="policy-section-title">Uploaded</span><span class="prof-att-count ok">${tick} ${uploadedDocs.length} of ${uploadedDocs.length+pendingDocs.length} uploaded</span></div>
+      <div class="prof-att-cards">${uploadedItems}</div>
+    </div>
+    <div class="ep-form-card">
+      <div class="prof-section-hdr"><span class="policy-section-title">Others (Not Uploaded)</span><span class="prof-att-count">${pendingDocs.length} pending</span></div>
+      <div class="prof-att-grid">${pendingItems}</div>
     </div>`;
   }
 
@@ -3967,7 +4085,7 @@ function buildMyProfileHTML(){
       <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--navy)">${m}</td>
       <td style="padding:10px 14px;font-size:13px;color:#374151">Pallavi Parate</td>
       <td style="padding:10px 14px;font-size:13px;color:#374151">EMP-00211</td>
-      <td style="padding:10px 14px"><span style="background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;border-radius:6px;padding:2px 10px;font-size:11px;font-weight:600">Generated</span></td>
+      <td style="padding:10px 14px"><span style="background:var(--st-ok-bg);color:var(--st-ok-fg);border:1.5px solid var(--st-ok-bd);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600">Generated</span></td>
       <td style="padding:10px 14px"><button style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit">${iDl} Download</button></td>
     </tr>`).join('');
     tabContent=`<div class="ep-form-card">
@@ -3987,7 +4105,7 @@ function buildMyProfileHTML(){
   }
 
   else if(profTab==='change-password'){
-    const inp=(id,label,ph)=>`<div><div style="font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px">${label}</div><input id="${id}" type="password" placeholder="${ph}" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:8px;padding:0 14px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);box-sizing:border-box"></div>`;
+    const inp=(id,label,ph)=>`<div><div style="font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px">${label}</div><input id="${id}" type="password" placeholder="${ph}" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:var(--r-input);padding:0 14px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);box-sizing:border-box"></div>`;
     tabContent=`<div class="ep-form-card" style="max-width:480px">
       <div class="prof-section-hdr"><span class="policy-section-title">Change Password</span></div>
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -4262,10 +4380,7 @@ function renderCsSidebar(){
     body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
   }
   else if(csTab==='workflow'){
-    body='<div style="padding:52px;text-align:center;color:#9ca3af">'
-      +'<div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:8px">No workflow configured.</div>'
-      +'<div style="font-size:13px">Workflow steps will appear here once configured.</div>'
-      +'</div>';
+    body=wfTimelineHTML(csWorkflowData);
   }
 
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
@@ -4274,7 +4389,7 @@ function renderCsSidebar(){
 // ── TICKETS PAGE ──
 function renderTkSidebar(){
   const t=ticketsData.find(x=>x.id===tkSelectedId);if(!t)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'conversation',label:'Conversation'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'conversation',label:'Conversation'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'tk-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="tk-isb-tabs">'+tabs.map(tb=>'<button class="lp-isb-tab'+(tkTab===tb.id?' active':'')+'" onclick="navTkTab(\''+tb.id+'\')">'+tb.label+'</button>').join('')+'</div>'
@@ -4319,7 +4434,7 @@ function renderTkSidebar(){
       +'<div style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Chat Thread</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:12px"><div style="width:28px;height:28px;border-radius:50%;background:#e0e7ff;color:#4f46e5;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+initials+'</div><div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px">'+t.clientName+' <span style="color:#9ca3af;font-weight:400">· '+t.createdAt+'</span></div><div style="background:#f1f5f9;border-radius:0 8px 8px 8px;padding:8px 12px;font-size:12.5px;color:#374151;line-height:1.4">'+t.description+'</div></div></div>'
       +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px"><div style="flex:1;display:flex;justify-content:flex-end"><div><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px;text-align:right">'+t.assignedTo+' <span style="color:#9ca3af;font-weight:400">· Today</span></div><div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px 0 8px 8px;padding:8px 12px;font-size:12.5px;color:#374151;line-height:1.4">Thank you for reaching out. We are looking into this and will respond shortly.</div></div></div><div style="width:28px;height:28px;border-radius:50%;background:#fff7ed;color:#ea580c;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">PP</div></div>'
-      +'<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)"><input style="flex:1;height:34px;border:1.5px solid var(--border);border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy)" placeholder="Type a reply…"><button style="height:34px;padding:0 16px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Send</button></div>'
+      +'<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)"><input style="flex:1;height:34px;border:1.5px solid var(--border);border-radius:var(--r-input);padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy)" placeholder="Type a reply…"><button style="height:34px;padding:0 16px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Send</button></div>'
       +'</div></div>';
   }else if(tkTab==='attachments'){
     const dIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -4341,6 +4456,8 @@ function renderTkSidebar(){
       +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Note (optional)</div><textarea style="width:100%;height:72px;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);resize:none;box-sizing:border-box" placeholder="Add a note for the new assignee…"></textarea></div>'
       +'<button style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
       +'</div>';
+  }else if(tkTab==='workflow'){
+    body=wfTimelineHTML(tkWorkflowData[t.id]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -4395,9 +4512,9 @@ function buildTicketsPageHTML(){
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='open'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'open\')"><div class="listing-stat-count" style="color:#2563eb">'+openCount+'</div><div class="listing-stat-label">Open</div></div>'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='in_progress'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'in_progress\')"><div class="listing-stat-count" style="color:#d97706">'+inProgressCount+'</div><div class="listing-stat-label">In Progress</div></div>'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='blocked'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'blocked\')"><div class="listing-stat-count" style="color:#dc2626">'+blockedCount+'</div><div class="listing-stat-label">Blocked</div></div>'
+    +'<div class="listing-stat'+(tkQuickStatusFilter==='open'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'open\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+openCount+'</div><div class="listing-stat-label">Open</div></div>'
+    +'<div class="listing-stat'+(tkQuickStatusFilter==='in_progress'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'in_progress\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+inProgressCount+'</div><div class="listing-stat-label">In Progress</div></div>'
+    +'<div class="listing-stat'+(tkQuickStatusFilter==='blocked'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'blocked\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+blockedCount+'</div><div class="listing-stat-label">Blocked</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client Name</th><th>Title</th><th>Category</th><th>Created At</th><th>Status</th><th>Action</th></tr></thead>'
@@ -4472,15 +4589,27 @@ function renderChatSidebar(){
       +'</div>';
   }else if(chatTab==='logs'){
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const logs=[{user:'Pallavi Parate',date:c.startedAt,status:'Active',action:'Chat initiated with '+c.clientName+'.'},{user:'System',date:'—',status:'Active',action:'Auto-assigned to '+c.assignedTo+'.'}];
-    body='<div class="lp-logs-timeline">'+logs.map((l,i)=>'<div class="lp-log-row">'
-      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--active">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-      +'<div class="lp-log-card"><div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--active"></span><span class="lp-log-status-text lp-log-status-text--active">'+l.status+'</span></div>'
-      +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span></div>'
-      +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Action:</span>'+l.action+'</div>'
-      +'</div></div>').join('')+'</div>';
+    const chatStatusLabel={active:'Active',waiting_csm:'Pending',waiting_client:'Pending',inactive:'Inactive'}[c.status]||'Active';
+    const startParts=String(c.startedAt||'').split('|');
+    const startDate=(startParts[0]||'').trim(),startTime=(startParts[1]||'').trim();
+    const logs=[{user:c.assignedTo,date:startDate,time:startTime,status:chatStatusLabel,action:'Chat initiated with '+c.clientName+'.'},{user:'System',date:startDate,time:startTime,status:'Active',action:'Auto-assigned to '+c.assignedTo+'.'}];
+    const chatLogKey=(st)=>({Active:'active',Inactive:'inactive'}[st]||'default');
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    body=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+          const sk=chatLogKey(l.status);
+          return '<div class="lp-log-row">'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-card">'
+            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+            +'</div></div>';
+        }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
   }else if(chatTab==='workflow'){
-    body='<div style="padding:52px;text-align:center;color:#9ca3af"><div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:8px">No workflow configured.</div><div style="font-size:13px">Workflow steps will appear here once configured.</div></div>';
+    body=wfTimelineHTML(chatWorkflowData[c.id]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -4534,9 +4663,9 @@ function buildChatsPageHTML(){
     +'<button class="lp-pill-search" onclick="applyChatFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(chatQuickStatusFilter==='active'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'active\')"><div class="listing-stat-count" style="color:#16a34a">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
-    +'<div class="listing-stat'+(chatQuickStatusFilter==='__waiting_group__'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'__waiting_group__\')"><div class="listing-stat-count" style="color:#d97706">'+waitingCount+'</div><div class="listing-stat-label">Waiting</div></div>'
-    +'<div class="listing-stat'+(chatQuickStatusFilter==='inactive'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'inactive\')"><div class="listing-stat-count" style="color:#64748b">'+inactiveCount+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'<div class="listing-stat'+(chatQuickStatusFilter==='active'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(chatQuickStatusFilter==='__waiting_group__'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'__waiting_group__\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+waitingCount+'</div><div class="listing-stat-label">Waiting</div></div>'
+    +'<div class="listing-stat'+(chatQuickStatusFilter==='inactive'?' stat-selected':'')+'" onclick="chatToggleStatFilter(\'inactive\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+inactiveCount+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr><th>S.No</th><th>Chat ID</th><th>Client Name</th><th>Assigned To</th><th>Last Activity</th><th>Status</th><th>Action</th></tr></thead>'
@@ -5192,7 +5321,7 @@ function buildCfgModelDetailHTML(){
       +'<div class="ep-form-group"><label class="ep-form-label">Description</label><input class="ep-form-input" id="cfg-model-edit-desc" value="'+attrSafe(dm.desc)+'"></div>'
       +'</div>'
     :'<div style="margin-bottom:24px"><p style="font-size:17px;font-weight:700;margin-bottom:6px">'+m.name+'</p><p style="font-size:12.5px;color:var(--gray);margin:0">Unified object &middot; source: '+m.source+'</p><p style="font-size:12.5px;color:var(--gray);margin-top:4px">'+m.desc+'</p></div>';
-  const actionBtns=editing?'':'<div style="display:flex;gap:10px;flex-shrink:0"><button class="btn btn-secondary btn-sm" onclick="startCfgModelEdit()">Edit</button></div>';
+  const actionBtns=editing?'':'<div style="display:flex;gap:10px;flex-shrink:0"><button class="btn btn-primary btn-sm" onclick="startCfgModelEdit()">Edit</button></div>';
   const mapSection=editing
     ?'<div class="ep-form-card" style="margin-bottom:18px">'
       +'<div class="ep-form-title">Field mapping &middot; from '+attrSafe(dm.source)+'</div>'
