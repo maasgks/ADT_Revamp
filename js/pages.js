@@ -4386,6 +4386,135 @@ function renderCsSidebar(){
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
 
+/* ── GENERIC LISTING SIDEBAR ──
+   The detail panel behind the action button on every listing that has no
+   bespoke one (Payheads, Users, People, Teams, Contracts, Payments, Support…).
+   Its Basic Details tab is generated from the page's own columns, so each page
+   gets a correct panel without a hand-written renderer, and a column added to a
+   listing shows up here automatically. */
+const lstNouns={payheads:'Payhead','all-users':'User','all-leaves':'Leave Request',people:'Person',
+  teams:'Team',contracts:'Contract',payments:'Invoice',settings:'Setting',support:'Ticket',
+  leaves:'Leave',dashboard:'Metric'};
+function renderLstSidebar(){
+  const row=getLstSelectedRow();
+  const meta=getPageMeta(lstSelectedPg);
+  const cols=meta.columns||[];
+  const noun=lstNouns[lstSelectedPg]||String(meta.title||'Record').replace(/s$/,'');
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
+  const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
+  const xIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'lst-isb-tabs\')" title="Scroll left">'+chevL+'</button>'
+    +'<div class="lp-isb-tabs" id="lst-isb-tabs">'+tabs.map(function(t){return '<button class="lp-isb-tab'+(lstTab===t.id?' active':'')+'" onclick="navLstTab(\''+t.id+'\')">'+t.label+'</button>';}).join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'lst-isb-tabs\')" title="Scroll right">'+chevR+'</button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeLstSidebar()" title="Close">'+xIco+'</button></div>'
+    +'</div>';
+  // A record can be filtered out from under an open panel — say the status
+  // filter changes. Say so rather than rendering an empty shell.
+  if(!row)return tabBar+'<div class="lp-isb-body"><div class="lp-wf-empty">This '+noun.toLowerCase()+' is no longer in the filtered list.</div></div>';
+
+  const i={
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    globe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>',
+    money:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    tag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+    mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+    clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>',
+    doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+  };
+  // Pick the field icon from the column's own name, so the panel reads like the
+  // hand-built ones without a per-page icon map to maintain.
+  const pickIco=function(label){
+    const l=String(label).toLowerCase();
+    if(/status/.test(l))return i.check;
+    if(/email/.test(l))return i.mail;
+    if(/employees|members|headcount/.test(l))return i.users;
+    if(/name|employee|owner|user|person|requester|full name/.test(l))return i.user;
+    if(/country|location|region|scope|branch/.test(l))return i.globe;
+    if(/date|updated|start|period|dates|last active/.test(l))return i.cal;
+    if(/amount|pay|gross|value|salary|rate|cost|calculation/.test(l))return i.money;
+    if(/type|category|role|worker|topic|area|applies/.test(l))return i.tag;
+    if(/hours|time|cycle|trend/.test(l))return i.clock;
+    return i.doc;
+  };
+  const fc=function(ico,label,val){
+    return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div>'
+      +'<div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div>'
+      +'<div class="lp-sb-field-value">'+(val!=null&&val!==''?val:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
+  };
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>';
+
+  let body='';
+  if(lstTab==='basic-details'){
+    const fields=cols.map(function(c,ci){
+      if(c==='S.No'||c==='S. No')return '';
+      const raw=row[ci];
+      const val=(c==='Status'||c==='status')
+        ? '<span class="lp-status-badge '+statusClass(raw)+'">'+raw+'</span>'
+        : raw;
+      return fc(pickIco(c),c,val);
+    }).join('');
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+noun+' Details</span>'+editBtn+'</div>'
+      +'<div class="lp-sb-detail-grid">'+fields+'</div>';
+  }
+  else if(lstTab==='logs'){
+    const logs=getLstLogs();
+    // Only these have styled variants; anything else falls back to grey rather
+    // than rendering an invisible dot and a transparent avatar.
+    const styled={active:1,inactive:1,pending:1,approved:1,unapproved:1};
+    const lsk=function(s){const k=statusClass(s||'Active');return styled[k]?k:'default';};
+    const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const timeline='<div class="lp-logs-timeline">'+logs.map(function(l,n){
+      const sk=lsk(l.status);
+      return '<div class="lp-log-row">'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(n<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-card">'
+        +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+(l.status||'Active')+'</span></div>'
+        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span>'
+        +(l.date?'<span class="lp-log-meta-item">'+cSvg+'<span>'+l.date+'</span></span>':'')
+        +(l.time?'<span class="lp-log-meta-item">'+tSvg+'<span>'+l.time+'</span></span>':'')
+        +'</div>'
+        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>';
+    // Offer the states this listing actually uses — Leaves are Approved /
+    // Unapproved, everything else is Active / Inactive.
+    const opts=(lstSelectedPg==='leaves'||lstSelectedPg==='all-leaves')
+      ? ['Approved','Unapproved','Pending']
+      : ['Active','Inactive','Pending'];
+    const cur=lstRowStatus(row)||opts[0];
+    const form='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+lsk(cur)+'"></span>'+cur+'</div>'
+      +'<p class="lp-logs-form-sub">Update '+noun.toLowerCase()+' status and add a comment</p>'
+      +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
+      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="lst-log-status-sel"><option value="">Select Status</option>'
+      +opts.map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('')
+      +'</select>'+chevSvg+'</div>'
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="lst-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<button class="lp-logs-save-btn" onclick="lstSaveLog()">Save</button>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  }
+  else if(lstTab==='workflow'){
+    const who=cols.indexOf('Owner')>=0?row[cols.indexOf('Owner')]:'Pallavi Parate';
+    body=wfTimelineHTML([
+      {title:'Current Status — '+(lstRowStatus(row)||'Active'),user:who,date:'22 Apr 2026',time:'05:44:07 PM',description:'Latest reviewed state for this '+noun.toLowerCase()+'.'},
+      {title:'Reviewed',user:'Shaun Test1',date:'14 Apr 2026',time:'11:28:08 PM',description:'Checked against policy and approved to proceed.'},
+      {title:'Submitted',user:who,date:'12 Apr 2026',time:'04:10:22 PM',description:'Sent into the approval queue.'},
+      {title:'Created',user:'System',date:'10 Apr 2026',time:'09:00:00 AM',description:noun+' record created in the workspace.'}
+    ]);
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+
 // ── TICKETS PAGE ──
 function renderTkSidebar(){
   const t=ticketsData.find(x=>x.id===tkSelectedId);if(!t)return '';

@@ -160,6 +160,8 @@
 .emp-payslip-amount{font-size:var(--ds-title);font-weight:700;color:var(--navy);text-align:right;margin-bottom:3px}
 .emp-doc-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f1f3f5}
 .emp-doc-row:last-child{border-bottom:0;padding-bottom:0}
+/* uniform action column: every row button matches the widest label ("Download") */
+.emp-doc-row .hr-action-btn{min-width:92px;flex-shrink:0}
 .emp-doc-icon{width:30px;height:30px;border-radius:7px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .emp-doc-icon svg{width:13px;height:13px;stroke:var(--navy);fill:none;stroke-width:1.8}
 .emp-doc-name{font-size:var(--ds-body);font-weight:600;color:var(--navy);margin-bottom:1px}

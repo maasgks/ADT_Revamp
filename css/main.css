@@ -4,7 +4,7 @@
    Use these tokens instead of hard-coded px so all widgets stay optically aligned.
    10 / 11 / 12 / 13 / 15 / 18 / 26 — no in-between sizes. */
 :root{
-  --ds-metric:26px;      /* primary widget value: numbers + short status words */
+  --ds-metric:22.5px;    /* primary widget value: numbers + short status words */
   --ds-metric-text:18px; /* widget value that is a long text string (entity/company name) */
   --ds-h1:18px;          /* dashboard page title */
   --ds-h2:15px;          /* hero / feature panel title */

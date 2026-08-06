@@ -196,6 +196,95 @@ function navPrTab(tab){
   const inner=document.getElementById('pr-isb-inner');
   if(inner){inner.innerHTML=renderPrSidebar();requestAnimationFrame(function(){var nt=document.getElementById('pr-isb-tabs');if(nt){var a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}
 }
+
+// ── GENERIC LISTING SIDEBAR ──
+// Payroll and Company Settings each own a hand-built detail panel. Every other
+// listing (Payheads, Users, People, Teams, Contracts, Payments, Support…)
+// shares this one, so its action button behaves exactly like theirs instead of
+// being a dead control. The panel is generated from the page's own columns,
+// which is why a listing gets a correct one without a bespoke renderer.
+let lstSelectedPg=null,lstSelectedId=null,lstTab='basic-details';
+function openLstSidebar(pg,id){
+  const same=lstSelectedPg===pg&&String(lstSelectedId)===String(id);
+  if(same){closeLstSidebar();return;}   // clicking the open row closes it again
+  lstSelectedPg=pg;lstSelectedId=id;lstTab='basic-details';
+  const sb=document.getElementById('lst-split-sb');if(sb)sb.classList.add('open');
+  markLstSelectedRow();
+  refreshLstSidebar();
+}
+function closeLstSidebar(){
+  lstSelectedPg=null;lstSelectedId=null;
+  const sb=document.getElementById('lst-split-sb');if(sb)sb.classList.remove('open');
+  markLstSelectedRow();
+}
+function navLstTab(tab){lstTab=tab;refreshLstSidebar();}
+function refreshLstSidebar(){
+  const inner=document.getElementById('lst-isb-inner');if(!inner)return;
+  inner.innerHTML=lstSelectedId!=null?renderLstSidebar():'';
+  requestAnimationFrame(function(){
+    const nt=document.getElementById('lst-isb-tabs');
+    if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}
+  });
+}
+// Highlight the row the panel is describing. Done by hand rather than through a
+// re-render so the open/close width transition is not thrown away mid-flight.
+function markLstSelectedRow(){
+  const rows=document.querySelectorAll('#adt-content tr.lp-row[data-row-id]');
+  rows.forEach(function(r){
+    r.classList.toggle('lp-row-selected',lstSelectedId!=null&&r.dataset.rowId===String(lstSelectedId));
+  });
+}
+// The row the sidebar is currently describing, or null once it is filtered away.
+function getLstSelectedRow(){
+  if(lstSelectedPg==null||lstSelectedId==null)return null;
+  return (getListingRows(lstSelectedPg)||[]).find(function(r){return String(r[0])===String(lstSelectedId);})||null;
+}
+// Per-record log trail, seeded from the row on first open so the history a user
+// adds survives tab switches and status changes for the rest of the session.
+const lstLogsStore={};
+function lstRowStatus(row){
+  const cols=(getPageMeta(lstSelectedPg).columns)||[];
+  const i=cols.findIndex(function(c){return c==='Status'||c==='status';});
+  return row&&i>=0?String(row[i]):'';
+}
+function getLstLogs(){
+  const key=lstSelectedPg+':'+lstSelectedId;
+  if(!lstLogsStore[key]){
+    const st=lstRowStatus(getLstSelectedRow())||'Active';
+    lstLogsStore[key]=[
+      {date:'22 Apr 2026',time:'05:44:07 PM',user:'Shaun Test1',   status:st,       action:'Reviewed — current status confirmed.'},
+      {date:'14 Apr 2026',time:'11:28:08 PM',user:'Pallavi Parate',status:'Pending',action:'Submitted for review.'},
+      {date:'10 Apr 2026',time:'09:00:00 AM',user:'System',        status:'Active', action:'Record created.'}
+    ];
+  }
+  return lstLogsStore[key];
+}
+function lstSaveLog(){
+  const sel=document.getElementById('lst-log-status-sel');
+  const inp=document.getElementById('lst-log-comment-inp');
+  if(!sel||!inp)return;
+  const status=sel.value,comment=inp.value.trim();
+  if(!status){sel.style.borderColor='#ef4444';setTimeout(function(){sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#ef4444';setTimeout(function(){inp.style.borderColor='';},1500);return;}
+  const now=new Date();
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
+  const h=now.getHours(),mm=now.getMinutes(),ss=now.getSeconds();
+  const timeStr=(h%12||12)+':'+(mm<10?'0'+mm:mm)+':'+(ss<10?'0'+ss:ss)+' '+(h>=12?'PM':'AM');
+  getLstLogs().unshift({date:dateStr,time:timeStr,user:'Pallavi Parate',status:status,action:comment});
+  // Reflect the new status on the record itself, so the row badge and the
+  // Active/Inactive/Pending counters above the table agree with the log.
+  const row=getLstSelectedRow(),meta=getPageMeta(lstSelectedPg);
+  const si=(meta.columns||[]).findIndex(function(c){return c==='Status'||c==='status';});
+  if(row&&si>=0)row[si]=status;
+  const tbl=document.querySelector('#adt-content tr.lp-row[data-row-id="'+lstSelectedId+'"]');
+  if(tbl){
+    const cell=tbl.children[si];
+    if(cell)cell.innerHTML='<span class="lp-status-badge '+statusClass(status)+'">'+status+'</span>';
+  }
+  refreshLstSidebar();
+  showToast('Log added','success','Comment saved with status "'+status+'".');
+}
 function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheet',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Items',context:'Compliance Items',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
@@ -821,13 +910,25 @@ function buildListingCell(cell,column){
   return `<td>${cell}</td>`;
 }
 
+// The rows a listing page is currently showing, after its status filter. The
+// table and the row action menu both read from here so a menu can never act on
+// a different record than the one the user clicked.
+function getListingRows(pg){
+  const meta=getPageMeta(pg);
+  const allRows=meta.rows||[];
+  const cols=meta.columns||[];
+  const statusIdx=cols.findIndex(c=>c==='Status'||c==='status');
+  const f=listStatusFilters[pg]||'';
+  return f&&statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'')===f):allRows;
+}
+
 function buildListingHTML(pg){
   const meta=getPageMeta(pg);
   const allRows=meta.rows||[];
   const cols=meta.columns||[];
   const statusIdx=cols.findIndex(c=>c==='Status'||c==='status');
   const statusFilter=listStatusFilters[pg]||'';
-  const rows=statusFilter&&statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'')===statusFilter):allRows;
+  const rows=getListingRows(pg);
   const isLeavePg=(pg==='all-leaves'||pg==='leaves');
   const s1Key=isLeavePg?'approved':'active';
   const s2Key=isLeavePg?'unapproved':'inactive';
@@ -840,7 +941,20 @@ function buildListingHTML(pg){
   const filters=meta.filters.map((f,i)=>apCS(`lst-${pgSlug}-f${i}`,getFilterOptions(f).slice(1),f==='Status'?statusFilter:'',f)).join('');
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>`<th>${c}</th>`).join('')+'<th>ACTION</th>';
-  const tableRows=rows.length?rows.map(row=>`<tr>${row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')}<td><button class="lp-action-btn"${pg==='payroll'?` onclick="event.stopPropagation();openPrSidebar(${row[0]})"`:''} title="More actions">${hamburger}</button></td></tr>`).join(''):`<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`;
+  // Payroll keeps its own detail panel; every other listing shares the generic
+  // one. Either way the row and its action button open the same thing.
+  const isPr=pg==='payroll';
+  const openCall=row=>isPr?`openPrSidebar(${row[0]})`:`openLstSidebar('${pg}',${row[0]})`;
+  const selId=isPr?prSelectedId:(lstSelectedPg===pg?lstSelectedId:null);
+  const tableRows=rows.length?rows.map(row=>
+    `<tr class="lp-row${selId!=null&&String(selId)===String(row[0])?' lp-row-selected':''}" data-row-id="${row[0]}" style="cursor:pointer" onclick="${openCall(row)}">`
+      +row.map((cell,ci)=>buildListingCell(cell,cols[ci])).join('')
+      +`<td><button class="lp-action-btn" title="View details" onclick="event.stopPropagation();${openCall(row)}">${hamburger}</button></td>`
+    +`</tr>`).join(''):`<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`;
+  const sbOpen=isPr?!!prSelectedId:(lstSelectedPg===pg&&lstSelectedId!=null);
+  const sidebar=isPr
+    ? `<div class="lp-split-sb${sbOpen?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${sbOpen?renderPrSidebar():''}</div></div>`
+    : `<div class="lp-split-sb${sbOpen?' open':''}" id="lst-split-sb"><div class="lp-isb" id="lst-isb-inner">${sbOpen?renderLstSidebar():''}</div></div>`;
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
@@ -851,11 +965,15 @@ function buildListingHTML(pg){
         +`<div class="listing-stat pending${statusFilter==='Pending'?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','Pending')"><div class="listing-stat-count">${s3Count}</div><div class="listing-stat-label">Pending</div></div>`
       +`</div>`
     +`</div>`
-    +(pg==='payroll'?`<div class="lp-split-wrap">`:'')
-    +`<div class="listing-card"><table class="lp-table" style="min-width:700px"><thead><tr>${headers}</tr></thead><tbody>${tableRows}</tbody></table>`
-    +`<div class="pagination"><button class="page-btn">&lt;</button><button class="page-btn">1</button><button class="page-btn active">2</button><button class="page-btn">3</button><button class="page-btn">4</button><button class="page-btn">...</button><button class="page-btn">86</button><button class="page-btn">&gt;</button></div>`
+    +`<div class="lp-split-wrap">`
+      +`<div class="lp-split-main">`
+        +`<div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">`
+          +`<table class="lp-table" style="min-width:700px"><thead><tr>${headers}</tr></thead><tbody>${tableRows}</tbody></table>`
+          +`<div class="pagination"><button class="page-btn">&lt;</button><button class="page-btn">1</button><button class="page-btn active">2</button><button class="page-btn">3</button><button class="page-btn">4</button><button class="page-btn">...</button><button class="page-btn">86</button><button class="page-btn">&gt;</button></div>`
+        +`</div>`
+      +`</div>`
+      +sidebar
     +`</div>`
-    +(pg==='payroll'?`<div class="lp-split-sb${prSelectedId?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${prSelectedId?renderPrSidebar():''}</div></div></div>`:'')
     +`</div>`;
 }
 
