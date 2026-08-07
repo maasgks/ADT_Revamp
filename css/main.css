@@ -43,6 +43,17 @@
   --st-info-bg:#eff6ff; --st-info-fg:#2563eb; --st-info-bd:#93c5fd;
   --st-idle-bg:#f1f5f9; --st-idle-fg:#64748b; --st-idle-bd:#cbd5e1;
 }
+/* Line-item selection — ONE feedback for every clickable row/cell in the app:
+   table rows (listings, leaves, policies, payroll, tickets…), timesheet day
+   cells, picker list items. Light blue on click, same fade, same orange rail.
+   Never hard-code a selected background; use these three. */
+:root{
+  --row-hover:#fafbfc;      /* pointer is over it, nothing committed yet */
+  --row-sel:#eff6ff;        /* clicked / open — light blue, same hue as --st-info-bg */
+  --row-sel-hover:#dbeafe;  /* clicked AND hovered */
+  --row-sel-rail:var(--orange);  /* 3px inset accent rail on the leading edge */
+  --row-fade:background-color .16s ease;
+}
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
 body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);overflow:hidden;height:100vh;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;font-feature-settings:'cv02','cv03','cv04','cv11'}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
@@ -141,6 +152,12 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-children .sb-item:hover .sb-ico-wrap{background:#e2e8f0;color:#475569;transform:scale(1.08)}
 .sb-children .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:inset 3px 0 0 var(--orange)}
 .sb-children .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
+/* Time & Payroll children only: the active marker is a straight full-height
+   bar. An inset box-shadow follows the item's 7px radius and curves around the
+   corners, so it is drawn as a square-cornered pseudo-element instead — the
+   grey highlight behind it keeps its rounded corners. */
+.sb-children.sb-group-time-payroll .sb-item.active{box-shadow:none}
+.sb-children.sb-group-time-payroll .sb-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0;background:var(--orange)}
 .sb-spacer{flex:1}
 .sb-agent-launcher{margin:8px;padding:10px;border-radius:12px;background:var(--ol);border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--orange);transition:.2s}
 .sb-agent-launcher:hover{background:#fce4bf;transform:scale(1.04)}
@@ -470,7 +487,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .listing-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 22px;min-width:88px;gap:3px;border-right:1px solid var(--border);cursor:pointer;user-select:none;transition:background .12s}
 .listing-stat:last-child{border-right:none}
 .listing-stat:hover{background:#f8fafc}
-.listing-stat.stat-selected{background:#eff6ff;box-shadow:inset 0 -3px 0 var(--orange)}
+.listing-stat.stat-selected{background:var(--row-sel);box-shadow:inset 0 -3px 0 var(--row-sel-rail)}
 .listing-stat-count{font-size:22px;font-weight:700;line-height:1.2}
 .listing-stat-label{font-size:10.5px;font-weight:500;color:var(--gray);white-space:nowrap}
 .listing-stat.active .listing-stat-count,.listing-stat.approved .listing-stat-count{color:var(--st-ok-fg)}
@@ -582,6 +599,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-pill-clear-count{font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:var(--r-status);background:var(--navy);color:#fff}
 .lp-pill-search{padding:6px 20px;border:none;border-radius:var(--r-control);font-size:13px;color:#fff;background:#1e293b;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600}
 .lp-pill-search:hover{background:#0f172a}
+/* Payroll listing only: the filter row reads as pills, not square cards.
+   Scoped to .lp-filter-pill so every other listing keeps --r-control. */
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .cs-trigger,
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-select,
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-clear,
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-search{border-radius:999px}
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .cs-trigger{padding:0 16px}
+.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-search{padding:6px 22px}
 .lp-filter-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
 .lp-select{border:1px solid var(--border);border-radius:8px;padding:8px 28px 8px 12px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;outline:none;min-width:120px}
 .lp-select:focus{border-color:var(--orange)}
@@ -685,8 +710,9 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .emp-sel-list::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:99px}
 .emp-sel-item{display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;transition:background .12s;border-bottom:1px solid #f5f6f8}
 .emp-sel-item:last-child{border-bottom:none}
-.emp-sel-item:hover{background:#f8fafc}
-.emp-sel-item.selected{background:#f1f5f9}
+.emp-sel-item:hover{background:var(--row-hover)}
+.emp-sel-item.selected{background:var(--row-sel)}
+.emp-sel-item.selected:hover{background:var(--row-sel-hover)}
 .emp-sel-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;flex-shrink:0;color:#fff}
 .emp-sel-info{flex:1;min-width:0}
 .emp-sel-name{font-size:12.5px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -823,8 +849,10 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-day-cell:last-child{border-right:none}
 .ts-day-cell.we{background:rgba(254,243,226,.3);cursor:default}
 .ts-day-cell.is-today{background:rgba(26,26,26,.06)}
-.ts-day-cell.is-selected{background:rgba(26,26,26,.1)}
-.ts-day-cell:not(.we):not(.ts-empty):hover{background:rgba(26,26,26,.05)}
+/* a picked day is a selected line item — same light blue as every table row */
+.ts-day-cell.is-selected{background:var(--row-sel);box-shadow:inset 3px 0 0 var(--row-sel-rail)}
+.ts-day-cell:not(.we):not(.ts-empty):hover{background:var(--row-hover)}
+.ts-day-cell.is-selected:hover{background:var(--row-sel-hover)}
 .ts-day-cell.st-present{border-left-color:#86efac}
 .ts-day-cell.st-absent{border-left-color:#fca5a5}
 .ts-day-cell.st-inprog{border-left-color:#fdba74}

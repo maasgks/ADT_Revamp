@@ -490,7 +490,7 @@ function renderTmSidebar(){
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const statusVal='<span style="color:'+(team.status==='Active'?'var(--orange)':team.status==='Inactive'?'#ef4444':'#f59e0b')+'">'+team.status+'</span>';
+  const statusVal=sbStatus(team.status);
   let body='';
   if(tmTab==='basic-details'){
     const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
@@ -647,11 +647,10 @@ function renderPrSidebar(){
   const iCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
   const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value||'-')+'</div></div></div>';
-  const stClass={Active:'active',Pending:'pending',Inactive:'inactive'};
   let body='';
   if(prTab==='basic-details'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Cycle Details</span>'
-        +'<span class="lp-status-badge '+(stClass[r.status]||'pending')+'">'+r.status+'</span></div>'
+        +sbStatus(r.status)+'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
       +fc(iHash,'Payroll ID',r.payrollId)+fc(iCal,'Cycle',r.cycle)
       +fc(iCal,'Pay Period',r.period)+fc(iCal,'Frequency',r.frequency)
@@ -734,12 +733,10 @@ function renderAlSidebar(){
   const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const iId='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const stColor={Approved:'#16a34a',Pending:'#f59e0b',Unapproved:'#ef4444',Rejected:'#ef4444'};
-  const subColor={Paid:'#0d9488',paid:'#0d9488',Unpaid:'#64748b',unpaid:'#64748b'};
   let body='';
   if(alTab==='basic-details'){
-    const stVal='<span style="color:'+(stColor[l.status]||'#64748b')+';font-weight:700">'+l.status+'</span>';
-    const subVal='<span style="color:'+(subColor[l.subStatus]||'#64748b')+';font-weight:700">'+l.subStatus+'</span>';
+    const stVal=sbStatus(l.status);
+    const subVal=sbStatus(l.subStatus);
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+l.name+'</span></div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Employee ID',l.empId)+fc(iUser,'Name',l.name)
@@ -1127,7 +1124,7 @@ function renderPmSidebar(){
     body='<div class="lp-sb-detail-grid">'
       +fc(iId,'Employee ID',emp.empId)+fc(iUser,'Name',emp.name)
       +fc(iMail,'Email','<span style="color:var(--orange)">'+emp.email+'</span>')+fc(iPhone,'Mobile',emp.mobile)
-      +fc(iCheck,'Status',emp.status)+fc(iCal,'Created On','<span style="color:var(--orange)">'+emp.createdOn+'</span>')
+      +fc(iCheck,'Status',sbStatus(emp.status))+fc(iCal,'Created On','<span style="color:var(--orange)">'+emp.createdOn+'</span>')
       +'</div>';
   }else if(pmTab==='attachments'){
     const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
@@ -1302,13 +1299,19 @@ function toggleCtAction(id,e){
 function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('tk-isb-inner');if(inner)inner.innerHTML=renderTkSidebar();document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
 function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.tk-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navTkTab(tab){tkTab=tab;const inner=document.getElementById('tk-isb-inner');if(inner){inner.innerHTML=renderTkSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tk-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)',l:'Open'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'In Progress'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)',l:'Blocked'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:'Closed'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
+// Stored keys are snake_case; these are how they read. Shared by the table pill
+// and by sbStatus() in the detail panel so the two never drift apart.
+const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',closed:'Closed'};
+function tkStatusLabel(s){return TK_STATUS_LABEL[s]||s;}
+function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+tkStatusLabel(s)+'</span>';}
 // ── CHATS SIDEBAR ──
 function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('chat-isb-inner');if(inner)inner.innerHTML=renderChatSidebar();document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navChatTab(tab){chatTab=tab;const inner=document.getElementById('chat-isb-inner');if(inner){inner.innerHTML=renderChatSidebar();requestAnimationFrame(function(){const nt=document.getElementById('chat-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage();}
-function chatStatusBadge(s){const m={active:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)',l:'Active'},waiting_client:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'Waiting for Client'},waiting_csm:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)',l:'Waiting for CSM'},inactive:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)',l:'Inactive'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)',l:s};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+v.l+'</span>';}
+const CHAT_STATUS_LABEL={active:'Active',waiting_client:'Waiting for Client',waiting_csm:'Waiting for CSM',inactive:'Inactive'};
+function chatStatusLabel(s){return CHAT_STATUS_LABEL[s]||s;}
+function chatStatusBadge(s){const m={active:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)'},waiting_client:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},waiting_csm:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},inactive:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+chatStatusLabel(s)+'</span>';}
 function ctPickStatus(contractId,status){document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));openCtSidebar(contractId,'logs',status);}
 function ctToggleStatFilter(v){
   ctQuickStatusFilter=ctQuickStatusFilter===v?'':v;
@@ -1715,7 +1718,7 @@ function renderComplianceSidebar(){
       +'<div class="lp-sb-detail-grid">'
       +fc(iUser,'Compliance Name',item.item)+fc(iGlobe,'Country',item.country)
       +fc(iDoc,'Employment Model',item.model)+fc(iTag,'Category',item.category)
-      +fc(iCheck,'Status',item.status)+fc(iCal,'Created By',item.createdBy+' ( '+item.createdAt+' )')
+      +fc(iCheck,'Status',sbStatus(item.status))+fc(iCal,'Created By',item.createdBy+' ( '+item.createdAt+' )')
       +'</div>';
   }else if(complianceTab==='attachments'){
     const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
@@ -1870,7 +1873,7 @@ function renderRatesRuleSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   let body='';
   if(ratesRuleTab==='basic-details'){
-    const statusVal=item.status==='Active'?'<span style="color:#16a34a;font-weight:600">Active</span>':'<span style="color:#dc2626;font-weight:600">Inactive</span>';
+    const statusVal=sbStatus(item.status);
     body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iDoc,'Rule Name',item.ruleName)+fc(iFlag,'Country',item.country)
@@ -2124,7 +2127,7 @@ function renderCtpSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   let body='';
   if(ctpTab==='basic-details'){
-    const statusVal=item.status==='Active'?'<span style="color:#16a34a;font-weight:600">Active</span>':'<span style="color:#dc2626;font-weight:600">Inactive</span>';
+    const statusVal=sbStatus(item.status);
     body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iUser,'Template Name',item.templateName)+fc(iBag,'Employment Type',item.employmentType)
@@ -2989,7 +2992,7 @@ function buildLeavePoliciesHTML(){
   const nextArrow='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
   const pageButtons=Array.from({length:totalPages},(_,i)=>'<button class="lp-pg-btn'+(lpCurrentPage===i+1?' active':'')+'" onclick="lpGoToPage('+(i+1)+')">'+(i+1)+'</button>').join('');
   const pagination='<div class="lp-pagination">'
-    +'<span class=”lp-pagination-info”>Showing '+(total===0?0:start+1)+'&ndash;'+Math.min(start+LP_PAGE_SIZE,total)+' of '+total+' entries</span>'
+    +'<span class="lp-pagination-info">Showing '+(total===0?0:start+1)+'&ndash;'+Math.min(start+LP_PAGE_SIZE,total)+' of '+total+' entries</span>'
     +'<div class="lp-pagination-controls">'
     +'<button class="lp-pg-btn lp-pg-arrow" onclick="lpGoToPage('+(lpCurrentPage-1)+')" '+(lpCurrentPage===1?'disabled':'')+'>'+prevArrow+'</button>'
     +pageButtons
@@ -3081,13 +3084,27 @@ function buildEditLeavePolicyHTML(){
   +'</div>';
 }
 // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ LP INLINE SPLIT SIDEBAR ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+// Open/close in place — same as every other listing — so the panel keeps its
+// width transition and the row highlight is applied without a full re-render.
+function markLPSelectedRow(id){
+  document.querySelectorAll('#adt-content tr.lp-row').forEach(function(r){
+    r.classList.toggle('lp-row-selected',id!=null&&r.id==='lp-row-'+id);
+  });
+}
 function openLPSidebar(id){
   lpSidebarPolicyId=id;lpSidebarTab='basic-details';lpSidebarEditMode=false;lpEmpEditMode=false;
-  page='leave-policies';renderADTPage();
+  const sb=document.getElementById('lp-isb');
+  if(!sb){page='leave-policies';renderADTPage();return;}
+  sb.classList.add('open');
+  const inner=document.getElementById('lp-isb-inner');if(inner)inner.innerHTML=renderLPSidebar();
+  markLPSelectedRow(id);
 }
 function closeLPSidebar(){
   lpSidebarPolicyId=null;lpSidebarEditMode=false;lpEmpEditMode=false;
-  renderADTPage();
+  const sb=document.getElementById('lp-isb');
+  if(!sb){renderADTPage();return;}
+  sb.classList.remove('open');
+  markLPSelectedRow(null);
 }
 function renderLPSidebar(){
   const p=leavePoliciesData.find(x=>x.id===lpSidebarPolicyId);
@@ -3120,7 +3137,7 @@ function renderLPSidebar(){
       const noVal='<span style="color:#ef4444;font-weight:700">No</span>';
       const ynVal=(v)=>v?yesVal:noVal;
       const nullOrDash=(v)=>(v!==null&&v!==undefined&&v!=='')?v:dash;
-      const statusBadge='<span class="lp-status-badge '+p.status.toLowerCase()+'"><span class="lp-status-dot"></span>'+p.status+'</span>';
+      const statusVal=sbStatus(p.status);
       // icons
       const iTag='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
       const iStatus='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
@@ -3136,7 +3153,7 @@ function renderLPSidebar(){
         +'<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="lpSidebarEditMode=true;refreshLPSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button></div>'
         +'<div class="lp-sb-detail-grid">'
         +fc(iTag,'Leave Type Name',p.type)
-        +fc(iStatus,'Status',statusBadge)
+        +fc(iStatus,'Status',statusVal)
         +fc(iCal,'Yearly Count',p.yearly)
         +fc(iCal,'Monthly Limit',nullOrDash(p.monthly))
         +fc(iArrow,'Carry Forward Limit',nullOrDash(p.carryForward))
@@ -4453,9 +4470,7 @@ function renderLstSidebar(){
     const fields=cols.map(function(c,ci){
       if(c==='S.No'||c==='S. No')return '';
       const raw=row[ci];
-      const val=(c==='Status'||c==='status')
-        ? '<span class="lp-status-badge '+statusClass(raw)+'">'+raw+'</span>'
-        : raw;
+      const val=(c==='Status'||c==='status')?sbStatus(raw):raw;
       return fc(pickIco(c),c,val);
     }).join('');
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+noun+' Details</span>'+editBtn+'</div>'
@@ -4546,7 +4561,7 @@ function renderTkSidebar(){
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
       +fc(iTag,'Ticket ID',t.ticketId)+fc(iTag,'Category',t.category)
       +fc(iCal,'Created At',t.createdAt)+fc(iUser,'Assigned To',t.assignedTo)
-      +fc(iTag,'Status',tkStatusBadge(t.status))
+      +fc(iTag,'Status',sbStatus(t.status,tkStatusLabel(t.status)))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Description</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr;gap:10px">'+fcW(iDoc,'Details',t.description)+'</div>';
@@ -4558,7 +4573,7 @@ function renderTkSidebar(){
       +'<p style="margin:0;font-size:13px;color:#374151;line-height:1.5">'+t.description+'</p></div>'
       +'<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:10px;padding:14px 16px">'
       +'<div style="font-size:11px;font-weight:700;color:#0284c7;margin-bottom:8px;display:flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="var(--orange)" stroke="none"><path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z"/></svg>AI Summary</div>'
-      +'<p style="margin:0;font-size:12.5px;color:#374151;line-height:1.5">'+t.clientName+' raised a '+t.category.toLowerCase()+'-related issue ('+t.ticketId+') on '+t.createdAt+'. Assigned to '+t.assignedTo+'. Status: '+tkStatusBadge(t.status)+'.</p></div>'
+      +'<p style="margin:0;font-size:12.5px;color:#374151;line-height:1.5">'+t.clientName+' raised a '+t.category.toLowerCase()+'-related issue ('+t.ticketId+') on '+t.createdAt+'. Assigned to '+t.assignedTo+'. Status: '+sbStatus(t.status,tkStatusLabel(t.status))+'.</p></div>'
       +'<div>'
       +'<div style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Chat Thread</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:12px"><div style="width:28px;height:28px;border-radius:50%;background:#e0e7ff;color:#4f46e5;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+initials+'</div><div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--navy);margin-bottom:3px">'+t.clientName+' <span style="color:#9ca3af;font-weight:400">· '+t.createdAt+'</span></div><div style="background:#f1f5f9;border-radius:0 8px 8px 8px;padding:8px 12px;font-size:12.5px;color:#374151;line-height:1.4">'+t.description+'</div></div></div>'
@@ -4683,7 +4698,7 @@ function renderChatSidebar(){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Client Information</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
       +fc(iUser,'Client Name',c.clientName)+fc(iMail,'Email',c.clientEmail)
-      +fc(iGlobe,'Country',c.country)+fc(iTag,'Status',chatStatusBadge(c.status))
+      +fc(iGlobe,'Country',c.country)+fc(iTag,'Status',sbStatus(c.status,chatStatusLabel(c.status)))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Chat Information</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'

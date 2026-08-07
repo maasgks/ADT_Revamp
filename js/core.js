@@ -183,13 +183,25 @@ const prWorkflowData={
 };
 let prSelectedId=null,prTab='basic-details';
 function openPrSidebar(id){
+  if(String(prSelectedId)===String(id)){closePrSidebar();return;}  // clicking the open row closes it again
   prSelectedId=id;prTab='basic-details';
   const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.add('open');
   const inner=document.getElementById('pr-isb-inner');if(inner)inner.innerHTML=renderPrSidebar();
+  markPrSelectedRow();
 }
 function closePrSidebar(){
   prSelectedId=null;
   const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.remove('open');
+  markPrSelectedRow();
+}
+// Same hand-marking the generic listing does (markLstSelectedRow): payroll used
+// to skip it, so a clicked row got no grey fill or orange rail and the browser's
+// own blue selection was the only feedback. Now it reads like every other table.
+function markPrSelectedRow(){
+  const rows=document.querySelectorAll('#adt-content tr.lp-row[data-row-id]');
+  rows.forEach(function(r){
+    r.classList.toggle('lp-row-selected',prSelectedId!=null&&r.dataset.rowId===String(prSelectedId));
+  });
 }
 function navPrTab(tab){
   prTab=tab;
@@ -288,6 +300,22 @@ function lstSaveLog(){
 function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheet',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Items',context:'Compliance Items',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
+// Detail panels (the ones the action button opens) state the record's own status
+// as coloured text — see .sb-status. The pill form stays on table cells and on
+// lists of *other* records. One tone map so every panel in the app agrees.
+const SB_STATUS_TONE={
+  active:'ok',approved:'ok',completed:'ok',complete:'ok',resolved:'ok',paid:'ok',signed:'ok',connected:'ok',verified:'ok',success:'ok',
+  inactive:'bad',unapproved:'bad',rejected:'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
+  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','waiting-client':'wait','waiting-csm':'wait',
+  open:'info',new:'info',scheduled:'info'
+};
+function statusTone(v){return SB_STATUS_TONE[statusClass(v)]||'idle';}
+// `label` is for stores that key a status ('waiting_client') apart from how it
+// reads ('Waiting for Client'); the tone is always taken from the raw value.
+function sbStatus(v,label){
+  const text=label!=null?label:(v==null||v===''?'-':String(v));
+  return '<span class="sb-status '+statusTone(v)+'">'+text+'</span>';
+}
 function titleForAdd(pg){return pg==='dashboard'?'Dashboard':getPageTitle(pg);}
 function getSidebarActivePage(pg){if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-add'||pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
 
@@ -427,7 +455,10 @@ function buildSidebar(id,collapsed,activePg){
         parentBtn.className='sb-parent'+(isOpen?' open':'')+(hasActiveChild?' has-active':'');
         parentBtn.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div><span>'+item.dropdown+'</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
         parentBtn.title=item.dropdown;
-        const childrenDiv=document.createElement('div');childrenDiv.className='sb-children';childrenDiv.style.maxHeight=isOpen?'600px':'0';
+        // group slug on the container so CSS can style one section's children
+        // (e.g. sb-group-time-payroll) without touching the rest of the nav
+        const groupSlug=item.dropdown.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+        const childrenDiv=document.createElement('div');childrenDiv.className='sb-children sb-group-'+groupSlug;childrenDiv.style.maxHeight=isOpen?'600px':'0';
         (item.children||[]).forEach(child=>{
           const cd=document.createElement('button');cd.type='button';
           cd.className='sb-item'+(child.id===activePg?' active':'');
@@ -958,7 +989,7 @@ function buildListingHTML(pg){
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
-      +`<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}${clearFiltersBtn([listStatusFilters[pg]],`resetListingFilters('${pg}')`)}<button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
+      +`<div class="lp-filter-bar${isPr?' lp-filter-pill':''}" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}${clearFiltersBtn([listStatusFilters[pg]],`resetListingFilters('${pg}')`)}<button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
       +`<div class="listing-stats">`
         +`<div class="listing-stat ${s1Key}${statusFilter===s1Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s1Label}')"><div class="listing-stat-count">${s1Count}</div><div class="listing-stat-label">${s1Label}</div></div>`
         +`<div class="listing-stat ${s2Key}${statusFilter===s2Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s2Label}')"><div class="listing-stat-count">${s2Count}</div><div class="listing-stat-label">${s2Label}</div></div>`
