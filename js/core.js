@@ -455,10 +455,7 @@ function buildSidebar(id,collapsed,activePg){
         parentBtn.className='sb-parent'+(isOpen?' open':'')+(hasActiveChild?' has-active':'');
         parentBtn.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div><span>'+item.dropdown+'</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
         parentBtn.title=item.dropdown;
-        // group slug on the container so CSS can style one section's children
-        // (e.g. sb-group-time-payroll) without touching the rest of the nav
-        const groupSlug=item.dropdown.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-        const childrenDiv=document.createElement('div');childrenDiv.className='sb-children sb-group-'+groupSlug;childrenDiv.style.maxHeight=isOpen?'600px':'0';
+        const childrenDiv=document.createElement('div');childrenDiv.className='sb-children';childrenDiv.style.maxHeight=isOpen?'600px':'0';
         (item.children||[]).forEach(child=>{
           const cd=document.createElement('button');cd.type='button';
           cd.className='sb-item'+(child.id===activePg?' active':'');
@@ -989,7 +986,7 @@ function buildListingHTML(pg){
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
-      +`<div class="lp-filter-bar${isPr?' lp-filter-pill':''}" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}${clearFiltersBtn([listStatusFilters[pg]],`resetListingFilters('${pg}')`)}<button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
+      +`<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div><div class="lp-filter-bar-row">${filters}${clearFiltersBtn([listStatusFilters[pg]],`resetListingFilters('${pg}')`)}<button class="lp-pill-search" onclick="applyListingFilters('${pg}')">Search</button></div></div>`
       +`<div class="listing-stats">`
         +`<div class="listing-stat ${s1Key}${statusFilter===s1Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s1Label}')"><div class="listing-stat-count">${s1Count}</div><div class="listing-stat-label">${s1Label}</div></div>`
         +`<div class="listing-stat ${s2Key}${statusFilter===s2Label?' stat-selected':''}" onclick="toggleListingStatFilter('${pg}','${s2Label}')"><div class="listing-stat-count">${s2Count}</div><div class="listing-stat-label">${s2Label}</div></div>`

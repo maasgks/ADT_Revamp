@@ -121,10 +121,16 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-top{padding:4px 10px 8px;display:flex;align-items:center;justify-content:space-between;min-height:44px;flex-shrink:0}.sb-menu-label{font-size:11px;font-weight:600;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase}
 .sb-top .sidebar-toggle{width:32px;height:32px}
 /* -- Nav items -- */
-.sb-item{display:flex;align-items:center;gap:9px;padding:7px 10px;margin:1px 8px;cursor:pointer;font-size:13px;font-weight:500;color:#4b5563;transition:background .14s ease,color .14s ease,box-shadow .14s ease;background:transparent;border:none;border-radius:9px;position:relative;text-align:left;flex-shrink:0;width:calc(100% - 16px)}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 10px;margin:1px 8px;cursor:pointer;font-size:13px;font-weight:500;color:#4b5563;transition:background .14s ease,color .14s ease,box-shadow .14s ease;background:transparent;border:none;border-radius:0;position:relative;text-align:left;flex-shrink:0;width:calc(100% - 16px)}
 .sb-item:hover{background:#f1f5f9;color:#111827}
 .sb-item:hover .sb-ico-wrap{background:#e2e8f0;color:#374151;transform:scale(1.08)}
-.sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:inset 3px 0 0 var(--orange)}
+/* Active marker for EVERY nav item, top level and children alike: a straight
+   full-height bar. An inset box-shadow is clipped to the border box, so on a
+   rounded item it curved around the corners into a bracket — hence the square
+   corners above and the pseudo-element here. The AI launcher is excluded: its
+   ::before is the animated gradient border, not a marker. */
+.sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none}
+.sb-item.active:not(.sb-item-ai)::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0;background:var(--orange)}
 .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
 /* -- Icon wrap -- */
 .sb-ico-wrap{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:transparent;color:#64748b;transition:background .14s ease,color .14s ease,transform .14s ease}
@@ -145,20 +151,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-section{font-size:10px;font-weight:700;color:#c4c9d4;text-transform:uppercase;letter-spacing:.9px;padding:16px 18px 5px;flex-shrink:0}
 /* -- Children -- */
 .sb-children{display:flex;flex-direction:column;overflow:hidden;background:transparent;margin:2px 8px 4px 20px;padding:0;border-left:2px solid #edf0f4;flex-shrink:0;transition:max-height .32s cubic-bezier(.4,0,.2,1)}
-.sb-children .sb-item{padding:6px 8px;margin:1px 4px;font-size:12.5px;color:#64748b;border-radius:7px;gap:8px;flex-shrink:0;width:calc(100% - 8px);box-shadow:none}
+.sb-children .sb-item{padding:6px 8px;margin:1px 4px;font-size:12.5px;color:#64748b;border-radius:0;gap:8px;flex-shrink:0;width:calc(100% - 8px);box-shadow:none}
 .sb-children .sb-item .sb-ico-wrap{width:22px;height:22px;border-radius:5px;background:transparent;color:#64748b}
 .sb-children .sb-item .sb-ico-wrap svg{width:12px;height:12px}
 .sb-children .sb-item:hover{background:#f1f5f9;color:#111827}
 .sb-children .sb-item:hover .sb-ico-wrap{background:#e2e8f0;color:#475569;transform:scale(1.08)}
-.sb-children .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:inset 3px 0 0 var(--orange)}
+/* marker comes from .sb-item.active::before above — same bar as the top level */
+.sb-children .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none}
 .sb-children .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
-/* Time & Payroll children only: square corners, and the active marker is a
-   straight full-height bar. An inset box-shadow follows the item's radius and
-   curves around the corners, so it is drawn as a pseudo-element instead.
-   Hover is squared off too, so the shape does not change on click. */
-.sb-children.sb-group-time-payroll .sb-item{border-radius:0}
-.sb-children.sb-group-time-payroll .sb-item.active{box-shadow:none;border-radius:0}
-.sb-children.sb-group-time-payroll .sb-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0;background:var(--orange)}
 .sb-spacer{flex:1}
 .sb-agent-launcher{margin:8px;padding:10px;border-radius:12px;background:var(--ol);border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--orange);transition:.2s}
 .sb-agent-launcher:hover{background:#fce4bf;transform:scale(1.04)}
@@ -169,7 +169,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sidebar.collapsed .sb-item .sb-ico-wrap{width:34px;height:34px;border-radius:9px;background:transparent}
 .sidebar.collapsed .sb-item:hover{background:transparent}
 .sidebar.collapsed .sb-item:hover .sb-ico-wrap{background:#e8edf4;color:#374151;transform:scale(1.1)}
+/* icon-only rail marks the active item with the ring on .sb-ico-wrap below,
+   so the bar stays off here (the AI launcher keeps its gradient ::before) */
 .sidebar.collapsed .sb-item.active{background:transparent;box-shadow:none}
+.sidebar.collapsed .sb-item.active:not(.sb-item-ai)::before{display:none}
 .sidebar.collapsed .sb-item.active .sb-ico-wrap{background:#f1f5f9;color:var(--orange);box-shadow:0 0 0 1.5px rgba(26,26,26,.25)}
 .sidebar.collapsed .sb-section{display:none}
 .sidebar.collapsed .sb-parent{display:flex;padding:6px;margin:2px 6px;justify-content:center;border-radius:10px;width:auto;background:transparent}
@@ -600,14 +603,6 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-pill-clear-count{font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:var(--r-status);background:var(--navy);color:#fff}
 .lp-pill-search{padding:6px 20px;border:none;border-radius:var(--r-control);font-size:13px;color:#fff;background:#1e293b;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600}
 .lp-pill-search:hover{background:#0f172a}
-/* Payroll listing only: the filter row reads as pills, not square cards.
-   Scoped to .lp-filter-pill so every other listing keeps --r-control. */
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .cs-trigger,
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-select,
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-clear,
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-search{border-radius:999px}
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .cs-trigger{padding:0 16px}
-.lp-filter-bar.lp-filter-pill .lp-filter-bar-row .lp-pill-search{padding:6px 22px}
 .lp-filter-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
 .lp-select{border:1px solid var(--border);border-radius:8px;padding:8px 28px 8px 12px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;outline:none;min-width:120px}
 .lp-select:focus{border-color:var(--orange)}
