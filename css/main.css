@@ -42,6 +42,21 @@
   --st-bad-bg:#fee2e2;  --st-bad-fg:#dc2626;  --st-bad-bd:#fca5a5;
   --st-info-bg:#eff6ff; --st-info-fg:#2563eb; --st-info-bd:#93c5fd;
   --st-idle-bg:#f1f5f9; --st-idle-fg:#64748b; --st-idle-bd:#cbd5e1;
+  /* Contract pipeline. The 5 tones above answer "is this good or bad"; a deal
+     also has to answer "how far along is it". Two families carry that:
+       SENT / waiting  -> blues,  deepening   (cyan -> blue -> violet)
+       APPROVED        -> greens, deepening   (teal -> olive -> green)
+     then amber while onboarding, deep green when ready. Every pair in this
+     set clears ΔE 12 against each other AND against red Inactive, which shows
+     in the same table; all eight pass AA contrast. */
+  --st-p1-bg:#cffafe; --st-p1-fg:#0e7490; --st-p1-bd:#67e8f9;  /* 1 Submitted          sent */
+  --st-p2-bg:#ccfbf1; --st-p2-fg:#0f766e; --st-p2-bd:#5eead4;  /* 2 Quotation Approved approved */
+  --st-p3-bg:#dbeafe; --st-p3-fg:#1d4ed8; --st-p3-bd:#93c5fd;  /* 3 Proposal Sent      sent */
+  --st-p4-bg:#d9f99d; --st-p4-fg:#3f6212; --st-p4-bd:#bef264;  /* 4 Proposal Approved  approved */
+  --st-p5-bg:#ede9fe; --st-p5-fg:#6d28d9; --st-p5-bd:#c4b5fd;  /* 5 Contract Sent      sent */
+  --st-p6-bg:#dcfce7; --st-p6-fg:#15803d; --st-p6-bd:#86efac;  /* 6 Contract Approved  approved */
+  --st-p7-bg:#fef3c7; --st-p7-fg:#92400e; --st-p7-bd:#fde68a;  /* 7 Onboarding         in progress */
+  --st-p8-bg:#bbf7d0; --st-p8-fg:#14532d; --st-p8-bd:#4ade80;  /* 8 Ready for Payroll  done */
 }
 /* Line-item selection — ONE feedback for every clickable row/cell in the app:
    table rows (listings, leaves, policies, payroll, tickets…), timesheet day
@@ -594,14 +609,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-filter-bar-row .cs-wrap{width:auto;min-width:120px}
 .lp-filter-bar-row .cs-trigger{height:34px;border-radius:var(--r-control);padding:0 14px;font-size:13px;white-space:nowrap}
 .lp-filter-bar-row .cs-dropdown{border-radius:12px;min-width:160px;top:calc(100% + 5px)}
-.lp-pill-select{border:1.5px solid var(--border);border-radius:var(--r-control);padding:6px 28px 6px 14px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none;min-width:110px;transition:.15s}
+.lp-pill-select{height:34px;box-sizing:border-box;max-width:180px;text-overflow:ellipsis;border:1.5px solid var(--border);border-radius:var(--r-control);padding:0 28px 0 14px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none;min-width:110px;transition:.15s}
 .lp-pill-select:focus{border-color:var(--orange)}
-.lp-pill-clear{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 11px;border:1.5px solid var(--border);border-radius:var(--r-control);font-size:13px;font-weight:600;color:var(--navy);background:#fff;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
+.lp-pill-clear{display:inline-flex;align-items:center;gap:6px;height:34px;box-sizing:border-box;padding:0 12px 0 11px;border:1.5px solid var(--border);border-radius:var(--r-control);font-size:13px;font-weight:600;color:var(--navy);background:#fff;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
 .lp-pill-clear:hover{border-color:#94a3b8;background:#f8fafc}
 .lp-pill-clear svg{width:12px;height:12px;flex-shrink:0;color:var(--gray)}
 .lp-pill-clear:hover svg{color:var(--navy)}
 .lp-pill-clear-count{font-size:11px;font-weight:700;line-height:1;padding:3px 6px;border-radius:var(--r-status);background:var(--navy);color:#fff}
-.lp-pill-search{padding:6px 20px;border:none;border-radius:var(--r-control);font-size:13px;color:#fff;background:#1e293b;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600}
+.lp-pill-search{height:34px;box-sizing:border-box;padding:0 20px;border:none;border-radius:var(--r-control);font-size:13px;color:#fff;background:#1e293b;cursor:pointer;font-family:inherit;transition:.15s;font-weight:600}
 .lp-pill-search:hover{background:#0f172a}
 .lp-filter-card{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 0}
 .lp-select{border:1px solid var(--border);border-radius:8px;padding:8px 28px 8px 12px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;outline:none;min-width:120px}
@@ -618,12 +633,32 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-no{color:#dc2626;font-weight:600}
 .lp-dash{color:#9ca3af}
 .lp-status-badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:3px 12px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1.5px solid transparent;white-space:nowrap;min-width:68px}
-.lp-status-badge.active{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
-.lp-status-badge.inactive{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
-.lp-status-badge.approved{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
-.lp-status-badge.pending{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
-.lp-status-badge.unapproved{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
-.lp-status-badge.expired{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
+/* ══ STATUS COLOURS ═══════════════════════════════════════════════════
+   Generated from SB_STATUS_TONE + CT_PIPELINE_STEP in core.js. A status gets
+   its pipeline colour if it is a contract stage, otherwise its tone colour.
+   Add a status to those maps, not a rule here.
+     ok green | wait amber | bad red | info blue | idle grey
+     p1..p8   contract pipeline, cool -> warm in stage order
+   ═════════════════════════════════════════════════════════════════════ */
+.lp-status-badge.active,.ct-sb-badge.active,.lp-status-badge.approved,.ct-sb-badge.approved,.lp-status-badge.complete,.ct-sb-badge.complete,.lp-status-badge.completed,.ct-sb-badge.completed,.lp-status-badge.connected,.ct-sb-badge.connected,.lp-status-badge.paid,.ct-sb-badge.paid,.lp-status-badge.present,.ct-sb-badge.present,.lp-status-badge.resolved,.ct-sb-badge.resolved,.lp-status-badge.signed,.ct-sb-badge.signed,.lp-status-badge.success,.ct-sb-badge.success,.lp-status-badge.verified,.ct-sb-badge.verified{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.lp-status-badge.draft,.ct-sb-badge.draft,.lp-status-badge.in-progress,.ct-sb-badge.in-progress,.lp-status-badge.inprog,.ct-sb-badge.inprog,.lp-status-badge.on-hold,.ct-sb-badge.on-hold,.lp-status-badge.pending,.ct-sb-badge.pending,.lp-status-badge.pending-onboarding,.ct-sb-badge.pending-onboarding,.lp-status-badge.under-review,.ct-sb-badge.under-review,.lp-status-badge.unfilled,.ct-sb-badge.unfilled,.lp-status-badge.unpaid,.ct-sb-badge.unpaid,.lp-status-badge.waiting-client,.ct-sb-badge.waiting-client,.lp-status-badge.waiting-csm,.ct-sb-badge.waiting-csm,.lp-status-badge.waiting-for-approval,.ct-sb-badge.waiting-for-approval{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.lp-status-badge.absent,.ct-sb-badge.absent,.lp-status-badge.blocked,.ct-sb-badge.blocked,.lp-status-badge.canceled,.ct-sb-badge.canceled,.lp-status-badge.cancelled,.ct-sb-badge.cancelled,.lp-status-badge.disconnected,.ct-sb-badge.disconnected,.lp-status-badge.exception,.ct-sb-badge.exception,.lp-status-badge.expired,.ct-sb-badge.expired,.lp-status-badge.failed,.ct-sb-badge.failed,.lp-status-badge.inactive,.ct-sb-badge.inactive,.lp-status-badge.overdue,.ct-sb-badge.overdue,.lp-status-badge.rejected,.ct-sb-badge.rejected,.lp-status-badge.terminated,.ct-sb-badge.terminated,.lp-status-badge.unapproved,.ct-sb-badge.unapproved{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
+.lp-status-badge.created,.ct-sb-badge.created,.lp-status-badge.new,.ct-sb-badge.new,.lp-status-badge.open,.ct-sb-badge.open,.lp-status-badge.scheduled,.ct-sb-badge.scheduled,.lp-status-badge.updated,.ct-sb-badge.updated{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
+.lp-status-badge.archived,.ct-sb-badge.archived,.lp-status-badge.closed,.ct-sb-badge.closed{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
+/* contract pipeline, in stage order */
+.lp-status-badge.submitted,.ct-sb-badge.submitted{background:var(--st-p1-bg);color:var(--st-p1-fg);border-color:var(--st-p1-bd)}  /* p1 Submitted */
+.lp-status-badge.quotation-approved,.ct-sb-badge.quotation-approved{background:var(--st-p2-bg);color:var(--st-p2-fg);border-color:var(--st-p2-bd)}  /* p2 Quotation Approved */
+.lp-status-badge.proposal-sent,.ct-sb-badge.proposal-sent{background:var(--st-p3-bg);color:var(--st-p3-fg);border-color:var(--st-p3-bd)}  /* p3 Proposal Sent */
+.lp-status-badge.proposal-approved,.ct-sb-badge.proposal-approved{background:var(--st-p4-bg);color:var(--st-p4-fg);border-color:var(--st-p4-bd)}  /* p4 Proposal Approved */
+.lp-status-badge.contract-sent,.ct-sb-badge.contract-sent{background:var(--st-p5-bg);color:var(--st-p5-fg);border-color:var(--st-p5-bd)}  /* p5 Contract Sent */
+.lp-status-badge.contract-approved,.ct-sb-badge.contract-approved{background:var(--st-p6-bg);color:var(--st-p6-fg);border-color:var(--st-p6-bd)}  /* p6 Contract Approved */
+.lp-status-badge.onboarding,.ct-sb-badge.onboarding{background:var(--st-p7-bg);color:var(--st-p7-fg);border-color:var(--st-p7-bd)}  /* p7 Onboarding */
+.lp-status-badge.ready-for-payroll,.ct-sb-badge.ready-for-payroll{background:var(--st-p8-bg);color:var(--st-p8-fg);border-color:var(--st-p8-bd)}  /* p8 Ready for Payroll */
+.lp-status-badge.tone-ok,.ct-sb-badge.tone-ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.lp-status-badge.tone-wait,.ct-sb-badge.tone-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.lp-status-badge.tone-bad,.ct-sb-badge.tone-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
+.lp-status-badge.tone-info,.ct-sb-badge.tone-info{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
+.lp-status-badge.tone-idle,.ct-sb-badge.tone-idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
 .lp-status-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
 .lp-info-row{padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--gray)}
 /* ===== EDIT LEAVE POLICY PAGE ===== */
@@ -801,6 +836,28 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-month-btn{display:flex;align-items:center;gap:7px;padding:0 13px;height:32px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer}
 .ts-month-btn svg{width:13px;height:13px;stroke:var(--gray);fill:none;flex-shrink:0}
 .ts-month-wrap{position:relative}
+/* The range filter anchors its own popover; it used to trigger the month
+   picker, which rendered over in the user bar. */
+.ts-date-wrap{position:relative}
+.ts-date-btn.open{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+.ts-rp-panel{position:absolute;top:calc(100% + 8px);left:0;width:320px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:16px;z-index:401;animation:fadeUp .15s ease}
+.ts-rp-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px}
+.ts-rp-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ts-rp-fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.ts-rp-fld span{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
+.ts-rp-fld input{width:100%;min-width:0;height:34px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 8px;font-family:inherit;font-size:12.5px;color:var(--navy);background:#fff;outline:none;box-sizing:border-box}
+.ts-rp-fld input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+.ts-rp-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ts-rp-preset{flex:1;min-width:74px;padding:7px 6px;border:1px solid var(--border);border-radius:var(--r-control);background:#fff;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;transition:.12s}
+.ts-rp-preset:hover{border-color:var(--navy);background:var(--light)}
+.ts-rp-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)}
+.ts-rp-cancel{padding:0 14px;height:32px;border:1px solid var(--border);border-radius:var(--r-control);background:#fff;font-family:inherit;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer}
+.ts-rp-apply{padding:0 18px;height:32px;border:1px solid var(--navy);border-radius:var(--r-control);background:var(--navy);font-family:inherit;font-size:12px;font-weight:600;color:#fff;cursor:pointer}
+.ts-rp-cancel:hover{background:var(--light)}
+.ts-rp-apply:hover{filter:brightness(1.25)}
+/* Days outside the filtered range keep their date and lose everything else */
+.ts-day-cell.out-of-range{background:repeating-linear-gradient(135deg,#fbfcfd,#fbfcfd 6px,#f5f7f9 6px,#f5f7f9 12px)}
+.ts-day-cell.out-of-range .ts-day-num{color:#cbd5e1}
 .ts-mp-overlay{position:fixed;inset:0;z-index:400}
 .ts-mp-panel{position:absolute;top:calc(100% + 8px);right:0;width:216px;background:#fff;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:16px;z-index:401;animation:fadeUp .15s ease}
 .ts-mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -833,46 +890,43 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-cal-legend{display:flex;align-items:center;gap:14px}
 .ts-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);font-weight:500}
 .ts-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ts-col-hdrs{display:grid;grid-template-columns:62px repeat(5,1fr) 88px 88px;background:var(--light);border-bottom:1px solid var(--border)}
+.ts-col-hdrs{display:grid;grid-template-columns:72px repeat(5,1fr) 84px 84px;background:var(--light);border-bottom:1px solid var(--border)}
 .ts-col-hdr{padding:9px 10px;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--gray);text-align:center}
 .ts-col-hdr.we{color:#d97706;background:rgba(254,243,226,.6)}
-.ts-cal-row{display:grid;grid-template-columns:62px repeat(5,1fr) 88px 88px;border-bottom:1px solid var(--border)}
+.ts-cal-row{display:grid;grid-template-columns:72px repeat(5,1fr) 84px 84px;border-bottom:1px solid var(--border)}
 .ts-cal-row:last-child{border-bottom:none}
-.ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px 4px;background:var(--light);border-right:1px solid var(--border)}
+.ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 6px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}
-.ts-wk-cb{width:14px;height:14px;accent-color:var(--orange);cursor:pointer}
-.ts-day-cell{position:relative;padding:10px 12px;border-right:1px solid var(--border);border-left:1px solid transparent;min-height:76px;display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .12s}
+.ts-wk-total{font-size:12px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1}
+.ts-wk-total.none{color:#cbd5e1;font-weight:600}
+.ts-day-cell{position:relative;padding:9px 11px;border-right:1px solid var(--border);border-left:3px solid transparent;min-height:72px;display:flex;flex-direction:column;gap:2px;cursor:default;transition:background .12s}
+.ts-day-cell.is-clickable{cursor:pointer}
 .ts-day-cell:last-child{border-right:none}
-.ts-day-cell.we{background:rgba(254,243,226,.3);cursor:default}
+.ts-day-cell.we{background:rgba(254,243,226,.3)}
 .ts-day-cell.is-today{background:rgba(26,26,26,.06)}
 /* a picked day is a selected line item — same light blue as every table row */
-.ts-day-cell.is-selected{background:var(--row-sel);box-shadow:inset 3px 0 0 var(--row-sel-rail)}
-.ts-day-cell:not(.we):not(.ts-empty):hover{background:var(--row-hover)}
+.ts-day-cell.is-selected{background:var(--row-sel);border-left-color:var(--row-sel-rail)}
+.ts-day-cell.is-clickable:hover{background:var(--row-hover)}
 .ts-day-cell.is-selected:hover{background:var(--row-sel-hover)}
-.ts-day-cell.st-present{border-left-color:#86efac}
-.ts-day-cell.st-absent{border-left-color:#fca5a5}
-.ts-day-cell.st-inprog{border-left-color:#fdba74}
+.ts-day-cell.st-present{border-left-color:#4ade80}
+.ts-day-cell.st-absent{border-left-color:#f87171}
+.ts-day-cell.st-inprog{border-left-color:#fb923c}
 .ts-empty{background:transparent;cursor:default}
-/* Day number sits in the top-right corner (calendar convention); status content
-   flows from the top-left below it. */
-.ts-day-num{position:absolute;top:9px;right:10px;font-size:13px;font-weight:700;color:#9ca3af;line-height:1}
-.ts-day-num.today{color:var(--orange)}
+/* Date anchors the top-left so the eye reads date -> value; it used to be
+   absolutely positioned top-right, which made every cell read value -> date. */
+.ts-day-num{font-size:11.5px;font-weight:700;color:#9ca3af;line-height:1;letter-spacing:.2px}
+.ts-day-num.today{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin:-4px 0 -1px -4px;background:var(--orange);border-radius:50%;color:#fff}
+.ts-day-cell.we .ts-day-num{color:#c4a97a}
 .ts-day-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r-status);display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;width:fit-content;margin-top:2px}
 .ts-day-pill.present{background:var(--st-ok-bg);color:var(--st-ok-fg)}
 .ts-day-pill.absent{background:var(--st-bad-bg);color:var(--st-bad-fg)}
 .ts-day-pill.inprog{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.ts-day-pill.we{background:var(--st-idle-bg);color:var(--st-idle-fg)}
-/* SAT/SUN columns are narrow (88px) - drop the Weekend pill below the corner
-   day number so they never collide. */
-.ts-day-cell.we .ts-day-pill.we{margin-top:20px}
 .ts-day-pill.future{color:#cbd5e1}
-.ts-day-status{display:flex;align-items:center;gap:6px;margin-top:3px}
-.ts-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ts-status-dot.present{background:var(--st-ok-fg)}
-.ts-day-hrs{font-size:13px;font-weight:700;color:#353535;margin-top:2px}
-.ts-day-view-btn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:var(--orange);margin-top:auto;cursor:pointer}
-.ts-day-view-btn svg{width:10px;height:10px;stroke:var(--orange);fill:none}
-.ts-day-src{font-size:9px;color:#94a3b8;font-weight:500;margin-left:auto;margin-top:auto}
+.ts-day-hrs{font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
+.ts-day-peek{position:absolute;top:8px;right:9px;color:#9ca3af;opacity:0;transition:opacity .12s;pointer-events:none}
+.ts-day-peek svg{width:12px;height:12px}
+.ts-day-cell:hover .ts-day-peek{opacity:1}
+.ts-day-src{font-size:9.5px;color:#a5adba;font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-top:auto}
 .ts-footer{display:flex;justify-content:flex-end;padding:4px 0 8px}
 .ts-submit-btn{padding:10px 26px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
 .ts-submit-btn:hover{background:#1e293b}
@@ -1345,6 +1399,4 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .mod-tab svg{width:15px;height:15px;flex-shrink:0}
 .mod-tab:hover:not(.active){color:var(--navy);background:#e6ebf1}
 .mod-tab.active{background:var(--card);color:var(--navy);box-shadow:0 1px 3px rgba(15,23,42,.12)}
-.mod-tab-count{font-size:11px;font-weight:700;line-height:1;padding:3px 7px;border-radius:var(--r-status);background:#e2e8f0;color:#64748b;transition:background .16s ease,color .16s ease}
-.mod-tab.active .mod-tab-count{background:var(--navy);color:#fff}
 @media(max-width:640px){.mod-tabs{width:100%}.mod-tab{flex:1;justify-content:center;padding:7px 10px;font-size:12.5px}.mod-tab span{overflow:hidden;text-overflow:ellipsis}}

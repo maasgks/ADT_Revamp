@@ -185,53 +185,397 @@ function buildCCBody(id,el){
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeCostCalculator();});function openCostCalculator(){ccActiveCountry='nl';navigatePage('cost-calculator');}
 
+/* ── COST CALCULATOR PAGE ──────────────────────────────────────────────
+   Three states: 'empty' (nothing chosen yet) → 'loading' (rates being
+   fetched) → 'ready' (results on screen). The page opens empty on purpose:
+   no numbers are shown until the user has actually asked for them.
+   Rates are per-country, against gross monthly salary. `flat` lines are
+   fixed monthly amounts rather than a percentage of gross.               */
 const ccPageData={
-  nl:{name:'Netherlands',sym:'&#8364;',symT:'€',cur:'EUR',def:75000,min:10000,max:100000,socialLabel:'LE + SI + STW + WK + IA',benLabel:'Holiday Allowance (8%)',items:[{label:'Unemployment Insurance',rate:0.0274},{label:'Disability Insurance',rate:0.0627},{label:'Accident / Return-to-Work',rate:0.0152},{label:'Childcare Levy',rate:0.0050},{label:'Health Insurance',rate:0.0428}],benefits:[{label:'Holiday Allowance',rate:0.08}]},
-  in:{name:'India',sym:'&#8377;',symT:'₹',cur:'INR',def:100000,min:20000,max:500000,socialLabel:'PF + ESI + Gratuity',benLabel:'LWF & Professional Tax',items:[{label:'Employer PF (Provident Fund)',rate:0.06},{label:'Employer ESI',rate:0.0325},{label:'Gratuity Provision',rate:0.0231}],benefits:[{label:'LWF & Professional Tax',flat:200}]},
-  de:{name:'Germany',sym:'&#8364;',symT:'€',cur:'EUR',def:5000,min:1000,max:20000,socialLabel:'Rentenversicherung + KV + ALV',benLabel:'',items:[{label:'Pension Insurance (Rentenversicherung)',rate:0.093},{label:'Unemployment Insurance (ALV)',rate:0.012},{label:'Health Insurance (Krankenversicherung)',rate:0.073},{label:'Long-term Care Insurance (PV)',rate:0.01775}],benefits:[]}
+  nl:{name:'Netherlands',sym:'&#8364;',cur:'EUR',def:5000,min:2000,max:25000,step:100,updated:'Jul 2026',
+    groups:[
+      {key:'social',label:'Employer social security',items:[
+        {label:'Unemployment insurance',note:'WW / Awf',rate:0.0274},
+        {label:'Disability insurance',note:'WIA / WGA',rate:0.0627},
+        {label:'Accident / return-to-work',note:'Whk differentiated premium',rate:0.0152},
+        {label:'Childcare levy',note:'Wko',rate:0.0050},
+        {label:'Health insurance',note:'Zvw employer levy',rate:0.0428}]},
+      {key:'benefits',label:'Mandatory benefits',items:[
+        {label:'Holiday allowance',note:'Vakantiegeld, accrued monthly, paid in May',rate:0.08}]}
+    ]},
+  in:{name:'India',sym:'&#8377;',cur:'INR',def:100000,min:20000,max:500000,step:5000,updated:'Jun 2026',
+    groups:[
+      {key:'social',label:'Employer social security',items:[
+        {label:'Provident fund',note:'12% of basic salary',rate:0.06},
+        {label:'Employee state insurance',note:'ESI, on wages up to threshold',rate:0.0325},
+        {label:'Gratuity provision',note:'4.81% of basic salary',rate:0.0231}]},
+      {key:'benefits',label:'Statutory levies',items:[
+        {label:'Labour welfare fund & professional tax',note:'State levied, fixed amount',flat:200}]}
+    ]},
+  de:{name:'Germany',sym:'&#8364;',cur:'EUR',def:5000,min:1500,max:20000,step:100,updated:'Jul 2026',
+    groups:[
+      {key:'social',label:'Employer social security',items:[
+        {label:'Pension insurance',note:'Rentenversicherung',rate:0.093},
+        {label:'Unemployment insurance',note:'Arbeitslosenversicherung',rate:0.012},
+        {label:'Health insurance',note:'Krankenversicherung',rate:0.073},
+        {label:'Long-term care insurance',note:'Pflegeversicherung',rate:0.01775}]},
+      {key:'benefits',label:'Mandatory benefits',items:[]}
+    ]}
 };
-let ccActiveCountry='nl';
-let ccSalary=75000;function buildCostCalculatorPageHTML(){
-  return `<div class="cc-page"><div class="cc-subhdr"><button class="cc-back-btn" onclick="navigatePage('contracts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Cost calculator as per country</button><button class="cc-export-btn">Export PDF</button></div><div class="cc-page-body"><div class="cc-left-panel"><div class="cc-inputs-card"><div class="cc-input-group"><label class="cc-input-label">Country</label><select class="cc-country-sel" id="cc-country-sel" onchange="ccChangeCountry(this.value)"><option value="nl">Netherlands</option><option value="in">India</option><option value="de">Germany</option></select></div><div class="cc-input-group" style="margin-top:14px"><label class="cc-input-label">Gross Monthly Salary</label><div class="cc-salary-inp-wrap"><span class="cc-salary-sym" id="cc-sym">&#8364;</span><input type="number" class="cc-salary-inp" id="cc-salary-input" value="75000" oninput="ccUpdateFromInput(this.value)"></div></div></div><div class="cc-summary-card"><div class="cc-summary-ttl">Cost Summary</div><div class="cc-sum-row"><div><div class="cc-sum-row-label">Gross Monthly Salary</div><div class="cc-sum-row-note">Employee gross</div></div><div class="cc-sum-row-val" id="cc-sum-salary"></div></div><div class="cc-sum-row"><div><div class="cc-sum-row-label">Employer Social Security</div><div class="cc-sum-row-note" id="cc-sum-social-note"></div></div><div class="cc-sum-row-val cc-sum-plus" id="cc-sum-social"></div></div><div class="cc-sum-row" id="cc-sum-ben-row"><div><div class="cc-sum-row-label">Mandatory Benefits</div><div class="cc-sum-row-note" id="cc-sum-ben-note"></div></div><div class="cc-sum-row-val cc-sum-plus" id="cc-sum-benefits"></div></div><div class="cc-sum-total-row"><span class="cc-sum-total-lbl">Total Employer Cost</span><span class="cc-sum-total-val" id="cc-sum-total"></span></div><div class="cc-compliance-note"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>All rates sourced live from the Compliance Hub database</div></div></div><div class="cc-right-panel"><div class="cc-salary-display"><div class="cc-salary-display-label">Gross Monthly Salary</div><div class="cc-salary-display-val" id="cc-display-salary"></div><input type="range" class="cc-slider" id="cc-salary-slider" oninput="ccUpdateFromSlider(this.value)"><div class="cc-slider-limits"><span id="cc-slider-min-lbl"></span><span id="cc-slider-max-lbl"></span></div></div><div class="cc-breakdown-card"><div class="cc-breakdown-card-title">Cost Breakdown</div><table class="cc-bd-table"><thead><tr><th class="cc-th-line">Cost Line</th><th class="cc-th-rate">Rate</th><th class="cc-th-amt">Amount</th></tr></thead><tbody id="cc-bd-body"></tbody><tfoot><tr class="cc-bd-total-row"><td colspan="2">Total Employer Cost</td><td id="cc-bd-total"></td></tr></tfoot></table></div></div></div></div>`;
+let ccActiveCountry='';      // nothing preselected — the user must choose
+let ccSalary=0;
+let ccState='empty';         // 'empty' | 'loading' | 'ready'
+let ccTimers=[];
+
+function buildCostCalculatorPageHTML(){
+  const opts=Object.keys(ccPageData).map(k=>`<option value="${k}">${ccPageData[k].name}</option>`).join('');
+  return `<div class="ccp">
+  <div class="ccp-topbar">
+    <div class="ccp-topbar-l">
+      <button class="ccp-back" onclick="navigatePage('contracts')" aria-label="Back to contracts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="17" height="17"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+      <div>
+        <div class="ccp-title">Cost calculator</div>
+        <div class="ccp-sub">What an employee actually costs you, by country</div>
+      </div>
+    </div>
+    <button class="btn-primary" id="cc-export" style="display:none" onclick="ccExportPDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export PDF</button>
+  </div>
+
+  <div class="ccp-body">
+
+    <section class="ccp-card ccp-inputs">
+      <div class="ccp-inputs-row">
+        <div class="ccp-fld ccp-fld-country">
+          <label class="ccp-lbl" for="cc-country">Country of employment</label>
+          <select class="ccp-select" id="cc-country" onchange="ccChangeCountry(this.value)">
+            <option value="" selected>Select a country&hellip;</option>${opts}
+          </select>
+        </div>
+        <div class="ccp-fld ccp-fld-salary off" id="cc-salary-fld">
+          <label class="ccp-lbl" for="cc-salary">Gross monthly salary</label>
+          <div class="ccp-money">
+            <span class="ccp-money-sym" id="cc-sym">&mdash;</span>
+            <input class="ccp-money-inp" id="cc-salary" type="text" inputmode="numeric" autocomplete="off" disabled
+                   oninput="ccOnSalaryInput(this)" onblur="ccOnSalaryBlur(this)">
+          </div>
+        </div>
+      </div>
+      <div class="ccp-slider off" id="cc-slider-wrap">
+        <input type="range" class="ccp-range" id="cc-range" aria-label="Gross monthly salary" disabled oninput="ccUpdateFromSlider(this.value)">
+        <div class="ccp-scale"><span id="cc-min">&nbsp;</span><span id="cc-max">&nbsp;</span></div>
+      </div>
+      <div class="ccp-calc-row" id="cc-calc-row"></div>
+    </section>
+
+    <div id="cc-stage"></div>
+
+    <section class="ccp-results" id="cc-results">
+      <div class="ccp-result">
+        <div class="ccp-result-top">
+          <div>
+            <div class="ccp-result-lbl">Total employer cost &middot; per month</div>
+            <div class="ccp-result-val" id="cc-total"></div>
+            <div class="ccp-result-note" id="cc-total-note"></div>
+          </div>
+          <div class="ccp-stats">
+            <div>
+              <div class="ccp-stat-lbl">Gross salary</div>
+              <div class="ccp-stat-val" id="cc-stat-gross"></div>
+              <div class="ccp-stat-sub">Paid to the employee</div>
+            </div>
+            <div>
+              <div class="ccp-stat-lbl">Employer add-on</div>
+              <div class="ccp-stat-val" id="cc-stat-add"></div>
+              <div class="ccp-stat-sub" id="cc-stat-add-sub"></div>
+            </div>
+          </div>
+        </div>
+        <div class="ccp-bar" id="cc-bar"></div>
+        <div class="ccp-legend" id="cc-legend"></div>
+      </div>
+
+      <div class="ccp-card">
+        <div class="ccp-card-hdr">
+          <div class="ccp-card-ttl">Cost breakdown</div>
+          <div class="ccp-card-sub" id="cc-bd-sub"></div>
+        </div>
+        <table class="ccp-tbl">
+          <thead><tr>
+            <th>Cost line</th>
+            <th class="r ccp-w-rate">Rate</th>
+            <th class="r ccp-w-num">Monthly</th>
+            <th class="r ccp-w-num">Annual</th>
+          </tr></thead>
+          <tbody id="cc-bd-body"></tbody>
+        </table>
+        <div class="ccp-foot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span id="cc-foot-txt"></span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>`;
 }
 
+/* ── helpers ───────────────────────────────────────────────────────────── */
+function ccFmt(v){const d=ccPageData[ccActiveCountry];return (d?d.sym:'')+'&nbsp;'+Math.round(v).toLocaleString('en-US');}
+function ccSet(id,html){const el=document.getElementById(id);if(el)el.innerHTML=html;}
+function ccEl(id){return document.getElementById(id);}
+function ccClamp(v){const d=ccPageData[ccActiveCountry];if(!d)return v;return Math.max(d.min,Math.min(d.max,v));}
+function ccClearTimers(){ccTimers.forEach(clearTimeout);ccTimers=[];}
+function ccAfter(ms,fn){ccTimers.push(setTimeout(fn,ms));}
 
+/* ── lifecycle ─────────────────────────────────────────────────────────── */
+// The page always opens cold: no country, no salary, no numbers.
 function initCostCalcPage(){
-  const d=ccPageData[ccActiveCountry];ccSalary=d.def;
-  const inp=document.getElementById('cc-salary-input');if(inp){inp.value=d.def;inp.min=d.min;inp.max=d.max;}
-  const sl=document.getElementById('cc-salary-slider');if(sl){sl.min=d.min;sl.max=d.max;sl.value=d.def;}
-  const sel=document.getElementById('cc-country-sel');if(sel)sel.value=ccActiveCountry;
-  document.getElementById('cc-sym').innerHTML=d.sym;
-  const minLbl=document.getElementById('cc-slider-min-lbl');if(minLbl)minLbl.textContent=d.symT+' '+d.min.toLocaleString();
-  const maxLbl=document.getElementById('cc-slider-max-lbl');if(maxLbl)maxLbl.textContent=d.symT+' '+d.max.toLocaleString();
-  ccRender();
+  ccClearTimers();
+  ccState='empty';
+  const sel=ccEl('cc-country');if(sel)sel.value='';
+  ccChangeCountry('');   // single reset path: disables the fields, shows the empty state
 }
+
+/* The Calculate button is a gate for the *first* run, not a permanent control.
+   Once results are on screen the whole form is live, so a button that merely
+   recomputes what already updates itself would be dead weight — it is replaced
+   by a live indicator that explains why no button is needed.                */
+function ccSetCalcRow(mode){
+  const gate=(label,hint,disabled)=>
+    '<span class="ccp-hint">'+hint+'</span>'+
+    '<button class="btn-primary" id="cc-run"'+(disabled?' disabled':'')+' onclick="ccRunEstimate()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="17"/><line x1="8" y1="17" x2="12" y2="17"/></svg>'+
+    label+'</button>';
+  const rows={
+    locked: gate('Calculate cost','Select a country to begin',true),
+    armed:  gate('Calculate cost','Set the salary, then run the estimate',false),
+    busy:   '<button class="btn-primary" id="cc-run" disabled><span class="ccp-spin"></span>Calculating&hellip;</button>',
+    live:   '<span class="ccp-live"><span class="ccp-live-dot"></span>Live estimate &mdash; the figures below follow this form as you change it</span>'
+  };
+  ccSet('cc-calc-row',rows[mode]);
+}
+
+function ccShowEmpty(){
+  ccState='empty';
+  const res=ccEl('cc-results');if(res)res.classList.remove('on');
+  const exp=ccEl('cc-export');if(exp)exp.style.display='none';
+  const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>';
+  ccSet('cc-stage',`<div class="ccp-empty">
+    <div class="ccp-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="16" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="12" y2="16"/></svg></div>
+    <div>
+      <div class="ccp-empty-ttl">Your estimate will appear here</div>
+      <div class="ccp-empty-txt">Pick a country and a gross monthly salary above, then run the estimate.</div>
+      <div class="ccp-empty-list">
+        <span class="ccp-empty-li">${tick}Statutory employer contributions</span>
+        <span class="ccp-empty-li">${tick}Mandatory benefits and levies</span>
+        <span class="ccp-empty-li">${tick}Monthly and annual figures</span>
+      </div>
+    </div>
+  </div>`);
+}
+
+/* ── input handling ────────────────────────────────────────────────────── */
 function ccChangeCountry(id){
-  ccActiveCountry=id;const d=ccPageData[id];ccSalary=d.def;
-  const inp=document.getElementById('cc-salary-input');if(inp){inp.value=d.def;inp.min=d.min;inp.max=d.max;}
-  const sl=document.getElementById('cc-salary-slider');if(sl){sl.min=d.min;sl.max=d.max;sl.value=d.def;}
-  document.getElementById('cc-sym').innerHTML=d.sym;
-  const minLbl=document.getElementById('cc-slider-min-lbl');if(minLbl)minLbl.textContent=d.symT+' '+d.min.toLocaleString();
-  const maxLbl=document.getElementById('cc-slider-max-lbl');if(maxLbl)maxLbl.textContent=d.symT+' '+d.max.toLocaleString();
-  ccRender();
+  ccClearTimers();
+  ccActiveCountry=id;
+  const fld=ccEl('cc-salary-fld'),wrap=ccEl('cc-slider-wrap'),inp=ccEl('cc-salary'),sl=ccEl('cc-range');
+
+  if(!id){ // back to "Select a country…"
+    ccSalary=0;
+    if(fld)fld.classList.add('off');
+    if(wrap)wrap.classList.add('off');
+    if(inp){inp.disabled=true;inp.value='';}
+    if(sl)sl.disabled=true;
+    ccSet('cc-sym','&mdash;');ccSet('cc-min','&nbsp;');ccSet('cc-max','&nbsp;');
+    ccSetCalcRow('locked');
+    ccShowEmpty();
+    return;
+  }
+
+  const d=ccPageData[id];
+  ccSalary=d.def;
+  if(fld)fld.classList.remove('off');
+  if(wrap)wrap.classList.remove('off');
+  if(inp){inp.disabled=false;inp.value=ccSalary.toLocaleString('en-US');}
+  if(sl){sl.disabled=false;sl.min=d.min;sl.max=d.max;sl.step=d.step;sl.value=ccSalary;}
+  ccSet('cc-sym',d.sym);ccSet('cc-min',ccFmt(d.min));ccSet('cc-max',ccFmt(d.max));
+  ccSyncSlider();
+
+  // Rates differ per country, so an existing result is no longer valid:
+  // re-run the lookup rather than leaving stale numbers on screen.
+  if(ccState==='ready'||ccState==='loading'){ccRunEstimate();}
+  else{ccSetCalcRow('armed');}
 }
-function ccUpdateFromSlider(v){ccSalary=parseInt(v);const inp=document.getElementById('cc-salary-input');if(inp)inp.value=ccSalary;ccRender();}
-function ccUpdateFromInput(v){const d=ccPageData[ccActiveCountry];ccSalary=Math.max(d.min,Math.min(d.max,parseInt(v)||d.min));const sl=document.getElementById('cc-salary-slider');if(sl)sl.value=ccSalary;ccRender();}
-function ccRender(){
-  const d=ccPageData[ccActiveCountry];const s=ccSalary;const sym=d.symT;
-  const fmt=v=>sym+' '+Math.round(v).toLocaleString();
-  const socialItems=d.items.map(item=>({...item,amt:Math.round(s*item.rate)}));
-  const socialTotal=socialItems.reduce((a,b)=>a+b.amt,0);
-  const benItems=d.benefits.map(b=>({...b,amt:b.flat!=null?b.flat:Math.round(s*b.rate)}));
-  const benTotal=benItems.reduce((a,b)=>a+b.amt,0);
-  const grandTotal=s+socialTotal+benTotal;
-  const setText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  setText('cc-sum-salary',fmt(s));setText('cc-sum-social','+ '+fmt(socialTotal));setText('cc-sum-social-note',d.socialLabel);
-  setText('cc-sum-benefits','+ '+fmt(benTotal));setText('cc-sum-ben-note',d.benLabel);setText('cc-sum-total',fmt(grandTotal));
-  setText('cc-display-salary',fmt(s));setText('cc-bd-total',fmt(grandTotal));
-  const benRow=document.getElementById('cc-sum-ben-row');if(benRow)benRow.style.display=benTotal>0?'flex':'none';
-  const tbody=document.getElementById('cc-bd-body');
-  if(tbody)tbody.innerHTML=[...socialItems,...benItems].map(item=>`<tr><td>${item.label}</td><td><span class="cc-bd-rate">${item.flat!=null?'Fixed':(item.rate*100).toFixed(2)+'%'}</span></td><td class="cc-bd-amount">${fmt(item.amt)}</td></tr>`).join('');
+
+function ccUpdateFromSlider(v){
+  ccSalary=parseInt(v,10);
+  const inp=ccEl('cc-salary');if(inp)inp.value=ccSalary.toLocaleString('en-US');
+  ccSyncSlider();
+  ccLiveUpdate();
+}
+// While typing we keep the raw digits so the caret never jumps; the value is
+// only clamped and re-formatted once the field loses focus.
+function ccOnSalaryInput(el){
+  const digits=el.value.replace(/[^0-9]/g,'');
+  el.value=digits;
+  ccSalary=parseInt(digits,10)||0;
+  const sl=ccEl('cc-range');if(sl)sl.value=ccClamp(ccSalary);
+  ccSyncSlider();
+  ccLiveUpdate();
+}
+function ccOnSalaryBlur(el){
+  if(!ccActiveCountry)return;
+  ccSalary=ccClamp(parseInt(el.value.replace(/[^0-9]/g,''),10)||ccPageData[ccActiveCountry].def);
+  el.value=ccSalary.toLocaleString('en-US');
+  const sl=ccEl('cc-range');if(sl)sl.value=ccSalary;
+  ccSyncSlider();
+  ccLiveUpdate();
+}
+// Once an estimate is on screen the slider stays live — re-pressing Calculate
+// for every drag would be busywork. Only a country switch re-fetches rates.
+function ccLiveUpdate(){if(ccState==='ready')ccRender(false);}
+
+function ccSyncSlider(){
+  const sl=ccEl('cc-range'),d=ccPageData[ccActiveCountry];
+  if(!sl||!d)return;
+  sl.style.setProperty('--fill',((ccClamp(ccSalary)-d.min)/(d.max-d.min))*100+'%');
+}
+
+/* ── the estimate run: loader, then reveal ─────────────────────────────── */
+const ccSteps=[
+  {t:'Connecting to Compliance Hub',p:18},
+  {t:'Fetching statutory rates',p:58},
+  {t:'Calculating employer cost',p:88}
+];
+function ccRunEstimate(){
+  if(!ccActiveCountry)return;
+  ccClearTimers();
+  ccState='loading';
+
+  const res=ccEl('cc-results');if(res)res.classList.remove('on');
+  const exp=ccEl('cc-export');if(exp)exp.style.display='none';
+  ccSetCalcRow('busy');
+
+  ccSet('cc-stage',`<div class="ccp-loading">
+    <div class="ccp-ring"></div>
+    <div class="ccp-step" id="cc-step">${ccSteps[0].t}<span class="ccp-step-dots"><span>.</span><span>.</span><span>.</span></span></div>
+    <div class="ccp-progress"><i id="cc-prog"></i></div>
+  </div>`);
+  const prog=ccEl('cc-prog');
+  if(prog)requestAnimationFrame(()=>{prog.style.width=ccSteps[0].p+'%';});
+
+  ccSteps.slice(1).forEach((s,i)=>{
+    ccAfter(520*(i+1),()=>{
+      ccSet('cc-step',s.t+'<span class="ccp-step-dots"><span>.</span><span>.</span><span>.</span></span>');
+      const p=ccEl('cc-prog');if(p)p.style.width=s.p+'%';
+    });
+  });
+
+  ccAfter(1560,()=>{
+    const p=ccEl('cc-prog');if(p)p.style.width='100%';
+    ccState='ready';
+    ccSet('cc-stage','');
+    if(res)res.classList.add('on');
+    if(exp)exp.style.display='';
+    ccSetCalcRow('live');
+    ccRender(true);
+  });
+}
+
+/* ── calculation ───────────────────────────────────────────────────────── */
+// Every line is rounded first and the totals are summed from the rounded
+// lines, so what the user reads down the column always adds up.
+function ccCompute(){
+  const d=ccPageData[ccActiveCountry],s=Math.max(0,ccSalary);
+  const groups=d.groups
+    .map(g=>{
+      const items=g.items.map(i=>({...i,amt:i.flat!=null?i.flat:Math.round(s*i.rate)}));
+      return {label:g.label,key:g.key,items:items,total:items.reduce((a,b)=>a+b.amt,0)};
+    })
+    .filter(g=>g.items.length);
+  const addOn=groups.reduce((a,g)=>a+g.total,0);
+  return {d:d,s:s,groups:groups,addOn:addOn,total:s+addOn};
+}
+
+// Counts the headline figure up on a fresh reveal; live slider edits just set
+// it, because a counter re-firing on every drag frame reads as jitter.
+function ccCountUp(id,to){
+  const el=ccEl(id);if(!el)return;
+  const dur=650,t0=Date.now();
+  const tick=()=>{
+    if(ccState!=='ready')return;
+    const k=Math.min(1,(Date.now()-t0)/dur);
+    const e=1-Math.pow(1-k,3);
+    el.innerHTML=ccFmt(to*e);
+    if(k<1)requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+function ccRender(reveal){
+  if(!ccActiveCountry)return;
+  const c=ccCompute(),s=c.s,total=c.total;
+  const pct=s>0?(c.addOn/s*100):0;
+  const mult=s>0?(total/s):0;
+
+  if(reveal)ccCountUp('cc-total',total); else ccSet('cc-total',ccFmt(total));
+  ccSet('cc-total-note',ccFmt(total*12)+' per year &middot; '+mult.toFixed(2)+'&times; the gross salary');
+  ccSet('cc-stat-gross',ccFmt(s));
+  ccSet('cc-stat-add','+ '+ccFmt(c.addOn));
+  ccSet('cc-stat-add-sub',pct.toFixed(1)+'% on top of gross');
+  ccSet('cc-bd-sub','Gross monthly salary of '+ccFmt(s)+' in '+c.d.name+', with employer contributions shown monthly and annualised.');
+  ccSet('cc-foot-txt','Rates sourced live from the Compliance Hub &middot; '+c.d.name+' verified '+c.d.updated+'. Estimates only — actual cost varies with salary band, contract type and local rules.');
+
+  // composition bar + legend (segments start at 0 and widen on the next frame)
+  const seg=v=>total>0?(v/total*100):0;
+  const cls=['g','s','b'];
+  const widths=[seg(s)];
+  let bar='<div class="ccp-seg g"></div>';
+  let legend='<span class="ccp-lg"><span class="ccp-dot g"></span>Gross salary '+ccFmt(s)+'</span>';
+  c.groups.forEach((g,i)=>{
+    const k=cls[Math.min(i+1,2)];
+    widths.push(seg(g.total));
+    bar+='<div class="ccp-seg '+k+'"></div>';
+    legend+='<span class="ccp-lg"><span class="ccp-dot '+k+'"></span>'+g.label+' '+ccFmt(g.total)+'</span>';
+  });
+  ccSet('cc-bar',bar);
+  ccSet('cc-legend',legend);
+  const barEl=ccEl('cc-bar');
+  if(barEl){
+    const paint=()=>Array.prototype.forEach.call(barEl.children,(el,i)=>{el.style.width=widths[i]+'%';});
+    reveal?requestAnimationFrame(()=>requestAnimationFrame(paint)):paint();
+  }
+
+  // breakdown table
+  let rows='<tr class="ccp-r-base"><td>Gross salary<span class="sub">Paid to the employee</span></td>'+
+           '<td class="r rate">&mdash;</td><td class="r num">'+ccFmt(s)+'</td><td class="r num">'+ccFmt(s*12)+'</td></tr>';
+  c.groups.forEach(g=>{
+    // A one-line group would repeat its own subtotal, so the header stays bare.
+    const gPct=s>0?(g.total/s*100):0;
+    const single=g.items.length===1;
+    rows+='<tr class="ccp-r-grp"><td>'+g.label+'</td>'+
+          (single?'<td></td><td></td><td></td>'
+                 :'<td class="r">'+gPct.toFixed(2)+'%</td><td class="r num">'+ccFmt(g.total)+'</td><td class="r num">'+ccFmt(g.total*12)+'</td>')+
+          '</tr>';
+    g.items.forEach(i=>{
+      rows+='<tr class="ccp-r-item"><td class="line">'+i.label+(i.note?'<span class="sub">'+i.note+'</span>':'')+'</td>'+
+            '<td class="r rate">'+(i.flat!=null?'Fixed':(i.rate*100).toFixed(2)+'%')+'</td>'+
+            '<td class="r num">'+ccFmt(i.amt)+'</td><td class="r num">'+ccFmt(i.amt*12)+'</td></tr>';
+    });
+  });
+  rows+='<tr class="ccp-r-total"><td>Total employer cost</td><td class="r">'+(pct?'+'+pct.toFixed(1)+'%':'&mdash;')+'</td>'+
+        '<td class="r num">'+ccFmt(total)+'</td><td class="r num">'+ccFmt(total*12)+'</td></tr>';
+  ccSet('cc-bd-body',rows);
+
+  // stagger the rows in on a fresh reveal only
+  const body=ccEl('cc-bd-body');
+  if(body)Array.prototype.forEach.call(body.children,(tr,i)=>{tr.style.animationDelay=reveal?(0.13+i*0.035)+'s':'0s';});
+}
+
+function ccExportPDF(){
+  if(ccState!=='ready')return;
+  const c=ccCompute();
+  showToast('Cost estimate exported','success',c.d.name+' &middot; '+ccFmt(c.total)+' per employee, per month');
 }
 // == SEARCH OVERLAY ==
 function openSearch(){

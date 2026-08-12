@@ -101,9 +101,11 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .lp-sb-field{display:flex;flex-direction:column;gap:5px}
 .lp-sb-field label{font-size:11.5px;font-weight:600;color:var(--navy)}
+/* read-only identifier inside an edit form */
+.sb-field-hint{font-weight:500;font-size:10px;color:#9ca3af;text-transform:none;letter-spacing:0}
 .lp-sb-form-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:4px}
 .lp-sb-emp-edit{display:flex;flex-direction:column;gap:14px}
-.lp-sb-emp-actions{display:flex;gap:8px}
+.lp-sb-emp-edit .lp-sb-view-header{margin-bottom:0}
 /* LP SIDEBAR EMPLOYEE LIST */
 .lp-sb-emp-list{display:flex;flex-direction:column;gap:8px}
 .lp-sb-emp-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;border-radius:9px;padding:10px 14px;box-shadow:0 1px 4px rgba(15,23,42,.06)}
@@ -281,11 +283,7 @@ tr.lp-row-selected>td:first-child,
 .ct-act-step.done{background:#dcfce7;color:#16a34a}
 .ct-act-step.current{background:var(--orange);color:#fff}
 .ct-act-step.next{background:#f1f5f9;color:#64748b}
-.ct-sb-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1.5px solid currentColor;white-space:nowrap}
-.ct-sb-badge.submitted{color:var(--st-wait-fg);border-color:var(--st-wait-bd);background:var(--st-wait-bg)}
-.ct-sb-badge.quotation-approved,.ct-sb-badge.proposal-approved,.ct-sb-badge.contract-approved{color:var(--st-ok-fg);border-color:var(--st-ok-bd);background:var(--st-ok-bg)}
-.ct-sb-badge.proposal-sent,.ct-sb-badge.contract-sent{color:var(--st-wait-fg);border-color:var(--st-wait-bd);background:var(--st-wait-bg)}
-.ct-sb-badge.inactive{color:var(--st-bad-fg);border-color:var(--st-bad-bd);background:var(--st-bad-bg)}
+.ct-sb-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1.5px solid var(--btn-stroke);white-space:nowrap}
 .ct-pending-stats{display:flex;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fff;flex-shrink:0}
 .ct-pending-stat{padding:12px 22px;text-align:center;border-right:1px solid var(--border)}
 .ct-pending-stat:last-child{border-right:none}
@@ -303,7 +301,7 @@ tr.lp-row-selected>td:first-child,
 .ct-modal-field{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px}
 .ct-modal-flabel{font-size:11px;color:#9ca3af;font-weight:500;margin-bottom:3px}
 .ct-modal-fval{font-size:13px;font-weight:600;color:var(--navy)}
-.ct-search-input{flex:1;min-width:160px;padding:8px 14px;border:1px solid var(--border);border-radius:var(--r-input);font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;transition:.15s}
+.ct-search-input{width:150px;min-width:0;height:34px;box-sizing:border-box;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-control);font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;transition:.15s}
 .ct-search-input:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.1)}
 .ct-search-input::placeholder{color:#9ca3af}
 /* LP PAGINATION */

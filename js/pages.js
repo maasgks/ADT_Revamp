@@ -1,15 +1,15 @@
 ﻿function openDeSidebar(id){
-  deSelectedId=id;deTab='basic-details';
+  deSelectedId=id;deTab='basic-details';deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
   const inner=document.getElementById('de-isb-inner');if(inner)inner.innerHTML=renderDeSidebar();
   document.querySelectorAll('.de-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='de-row-'+id));
 }
 function closeDeSidebar(){
-  deSelectedId=null;
+  deSelectedId=null;deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.de-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navDeTab(tab){deTab=tab;const inner=document.getElementById('de-isb-inner');if(inner){inner.innerHTML=renderDeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('de-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navDeTab(tab){deTab=tab;deEditMode=false;const inner=document.getElementById('de-isb-inner');if(inner){inner.innerHTML=renderDeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('de-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function scrollTabRow(dir,id){const el=document.getElementById(id);if(!el)return;const t=el.querySelector('.lp-isb-tab');const w=t?t.offsetWidth*2+32:160;el.scrollBy({left:dir==='right'?w:-w,behavior:'smooth'});}
 function applyDeFilters(){
   const dept=getCSValue('de-f-dept'),branch=getCSValue('de-f-branch'),status=getCSValue('de-f-status');
@@ -41,8 +41,10 @@ function renderDeSidebar(){
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
-  if(deTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  if(deTab==='basic-details'&&deEditMode){
+    body=buildSbEditForm('desb',DE_EDIT_FIELDS,emp,'cancelDeEdit','saveDeEdit');
+  }else if(deTab==='basic-details'){
+    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
@@ -255,17 +257,17 @@ function buildDirectListingHTML(){
     +'</div></div>';
 }
 function openGeSidebar(id){
-  geSelectedId=id;geTab='basic-details';
+  geSelectedId=id;geTab='basic-details';geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.add('open');
   const inner=document.getElementById('ge-isb-inner');if(inner)inner.innerHTML=renderGeSidebar();
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ge-row-'+id));
 }
 function closeGeSidebar(){
-  geSelectedId=null;
+  geSelectedId=null;geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navGeTab(tab){geTab=tab;const inner=document.getElementById('ge-isb-inner');if(inner){inner.innerHTML=renderGeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ge-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navGeTab(tab){geTab=tab;geEditMode=false;const inner=document.getElementById('ge-isb-inner');if(inner){inner.innerHTML=renderGeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ge-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function renderGeSidebar(){
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
@@ -290,8 +292,10 @@ function renderGeSidebar(){
   const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
-  if(geTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  if(geTab==='basic-details'&&geEditMode){
+    body=buildSbEditForm('gesb',GE_EDIT_FIELDS,emp,'cancelGeEdit','saveGeEdit');
+  }else if(geTab==='basic-details'){
+    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
@@ -426,7 +430,7 @@ function buildGlobalListingHTML(){
     +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.country||d)+'</td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
-    +'<td>'+(e.workerType?'<span class="lp-status-badge active" style="background:#eff6ff;color:#2563eb;border-color:#bfdbfe">'+e.workerType+'</span>':d)+'</td>'
+    +'<td>'+(e.workerType?'<span class="lp-status-badge tone-info">'+e.workerType+'</span>':d)+'</td>'
     +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openGeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
     +'</tr>').join(''):'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>';
@@ -1230,7 +1234,7 @@ function buildPaymentsHTML(){
       +'<td style="font-weight:600;color:var(--navy)">'+p.name+'</td>'
       +'<td style="color:var(--orange);font-weight:600">'+p.amountDue+'</td>'
       +'<td>'+p.type+'</td>'
-      +'<td><span class="lp-status-badge active" style="background:var(--st-ok-bg);color:var(--st-ok-fg);border:1.5px solid var(--st-ok-bd);border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600">'+p.orderStatus+'</span></td>'
+      +'<td><span class="lp-status-badge '+statusClass(p.orderStatus)+'">'+p.orderStatus+'</span></td>'
       +'<td onclick="event.stopPropagation()">'+statusBtn+'</td>'
       +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openPmSidebar('+p.id+')" title="More actions">'+dotsIco+'</button></td>'
       +'</tr>';
@@ -1241,7 +1245,7 @@ function buildPaymentsHTML(){
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +'<input class="ct-search-input" placeholder="Search ID" type="text" style="height:34px;border-radius:var(--r-input);min-width:120px;max-width:140px">'
+    +'<input class="ct-search-input" placeholder="Search ID" type="text">'
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
     +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
     +'<input type="date" style="height:34px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 12px;font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;cursor:pointer">'
@@ -1735,7 +1739,7 @@ function renderComplianceSidebar(){
       +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments found.</td></tr></tbody>'
       +'</table>';
   }else if(complianceTab==='logs'){
-    const logs=item.logs||[];
+    const logs=complianceLogsData[item.id]||item.logs||[];
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -1882,7 +1886,7 @@ function renderRatesRuleSidebar(){
       +fc(iDollar,'Value/Rate',item.valueRate)
       +'</div>';
   }else if(ratesRuleTab==='logs'){
-    const logs=item.logs||[];
+    const logs=ratesRulesLogsData[item.id]||item.logs||[];
     const personSvg=iUser;
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -2149,7 +2153,7 @@ function renderCtpSidebar(){
       +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
       +'</table>';
   }else if(ctpTab==='logs'){
-    const logs=item.logs||[];
+    const logs=ctpLogsData[item.id]||item.logs||[];
     const personSvg=iUser;
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -2746,7 +2750,7 @@ function buildContractsListingHTML(){
     +apCS('ct-f-country',countries,'','All Countries')
     +apCS('ct-f-type',types,'','All Types')
     +apCS('ct-f-status',['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Inactive'],ctQuickStatusFilter,'All Statuses')
-    +'<input class="ct-search-input" placeholder="Search by name, ID..." type="text" style="height:34px;border-radius:var(--r-input)">'
+    +'<input class="ct-search-input" placeholder="Search name, ID" type="text">'
     +clearFiltersBtn([ctQuickStatusFilter],'resetCtFilters()')
     +'<button class="lp-pill-search" onclick="applyCtFilters()">Search</button>'
     +'</div></div>'
@@ -3299,8 +3303,13 @@ function lpSidebarEmpSelectorHTML(policyEmps){
     var initials=name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
     return '<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">'+initials+'</div><span class="lp-sb-emp-name">'+name+'</span><button class="lp-sb-emp-remove" onclick="removeLPEmployee(\''+name.replace(/'/g,"\\'")+'\')">&times;</button></div>';
   }).join(''):'<div class="lp-sb-empty">No employees added.</div>';
+  // Done takes the exact slot Manage occupied in view mode: same place,
+  // same weight, only the label flips. It used to float alone above the
+  // panes as a secondary button, reading like a heading rather than an action.
   return '<div class="lp-sb-emp-edit">'
-    +'<div class="lp-sb-emp-actions"><button class="ep-cancel-btn" onclick="lpEmpEditMode=false;refreshLPSidebar()">Done</button></div>'
+    +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Employees</span>'
+    +'<div style="display:flex;gap:8px;align-items:center"><span class="lp-sb-emp-count">'+((policyEmps||[]).length)+' assigned</span>'
+    +'<button class="ep-save-btn" style="padding:6px 14px;font-size:12px" onclick="lpEmpEditMode=false;refreshLPSidebar()">Done</button></div></div>'
     +'<div class="lp-sb-sel-pane"><div class="lp-sb-sel-pane-title">Available Employees</div><div class="lp-avail-emp-list">'+availHTML+'</div></div>'
     +'<div class="lp-sb-sel-pane"><div class="lp-sb-sel-pane-title">Assigned ('+((policyEmps||[]).length)+')</div><div class="lp-sb-sel-emp-list">'+selHTML+'</div></div>'
     +'</div>';
@@ -3342,6 +3351,22 @@ function buildTsSidebarHTML(dateStr) {
     + '</div>';
 }
 
+function buildTsRangePickerHTML() {
+  const preset = (kind, lbl) => '<button class="ts-rp-preset" onclick="tsRangePreset(\''+kind+'\',event)">'+lbl+'</button>';
+  return '<div class="ts-mp-overlay" onclick="tsCloseRangePicker()"></div>'
+    + '<div class="ts-rp-panel" onclick="event.stopPropagation()">'
+    + '<div class="ts-rp-title">Date range</div>'
+    + '<div class="ts-rp-fields">'
+    + '<label class="ts-rp-fld"><span>From</span><input type="date" value="'+tsRangeDraft.from+'" onchange="tsRangeDraftSet(\'from\',this.value)"></label>'
+    + '<label class="ts-rp-fld"><span>To</span><input type="date" value="'+tsRangeDraft.to+'" onchange="tsRangeDraftSet(\'to\',this.value)"></label>'
+    + '</div>'
+    + '<div class="ts-rp-presets">'+preset('month','Full month')+preset('first-half','1st–15th')+preset('second-half','16th–end')+'</div>'
+    + '<div class="ts-rp-actions">'
+    + '<button class="ts-rp-cancel" onclick="tsCloseRangePicker()">Cancel</button>'
+    + '<button class="ts-rp-apply" onclick="tsApplyRange(event)">Apply</button>'
+    + '</div></div>';
+}
+
 function buildTsMonthPickerHTML() {
   const mShortAll = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const monthsHtml = mShortAll.map(function(lbl, idx) {
@@ -3376,14 +3401,19 @@ function buildMyTimesheetHTML(viewingOther) {
   const monOff = (startDow === 0) ? 6 : startDow - 1;
 
   // Stats calc
-  const attVals = Object.values(tsAttendance);
+  // Stats follow the date-range filter — a filter the tiles ignore is a filter
+  // that lies about what you are looking at.
+  const attVals = Object.keys(tsAttendance).filter(tsInRange).map(k => tsAttendance[k]);
   const presentCount = attVals.filter(a => a.status === 'present').length;
   const totalHoursNum = attVals.filter(a => a.status === 'present').reduce((s, a) => s + parseFloat(a.hours), 0);
 
   // ── Filter bar ──
   const filterBar = '<div class="ts-filter-bar">'
     + '<span class="ts-filter-label">Select Filters</span>'
-    + '<button class="ts-date-btn" onclick="tsToggleMonthPicker(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>1 '+mShort[m]+' '+y+' – '+daysInMonth+' '+mShort[m]+' '+y+' <svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+    + '<div class="ts-date-wrap">'
+    + '<button class="ts-date-btn'+(tsRangeOpen?' open':'')+'" onclick="tsToggleRangePicker(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+tsFmtRange()+' <svg class="ts-date-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+    + (tsRangeOpen ? buildTsRangePickerHTML() : '')
+    + '</div>'
     + '<button class="ts-btn-reset">Reset</button>'
     + '<button class="ts-btn-search">Search</button>'
     + '</div>';
@@ -3414,8 +3444,21 @@ function buildMyTimesheetHTML(viewingOther) {
   const totalWeeks = Math.ceil((monOff + daysInMonth) / 7);
 
   for (let w = 0; w < totalWeeks; w++) {
+    // The rail used to hold a checkbox that was wired to nothing. A week's
+    // total is the figure people actually scan a timesheet for, so it goes
+    // there instead and the column starts earning its width.
+    let wkHours = 0;
+    for (let c = 0; c < 7; c++) {
+      const dn = w * 7 + c + 1 - monOff;
+      if (dn < 1 || dn > daysInMonth) continue;
+      const ds = y+'-'+String(m+1).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
+      if (!tsInRange(ds)) continue;
+      const a = tsAttendance[ds];
+      if (a && a.status === 'present') wkHours += parseFloat(a.hours);
+    }
     calRows += '<div class="ts-cal-row">';
-    calRows += '<div class="ts-week-cell"><span class="ts-wk-label">Week '+(w+1)+'</span><input type="checkbox" class="ts-wk-cb"></div>';
+    calRows += '<div class="ts-week-cell"><span class="ts-wk-label">Week '+(w+1)+'</span>'
+      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':'&mdash;')+'</span></div>';
     for (let col = 0; col < 7; col++) {
       const dayNum = w * 7 + col + 1 - monOff;
       const isWe = col >= 5;
@@ -3436,40 +3479,52 @@ function buildMyTimesheetHTML(viewingOther) {
       if (isToday) cellCls += ' is-today';
       if (isSel) cellCls += ' is-selected';
       if (isFuture) cellCls += ' future';
-      if (att && !isWe) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
-      else if (!isWe && !isFuture) cellCls += ' st-absent';
+      // Weekend days can carry real logged hours (overtime). The grid used to
+      // test isWe before the data and render those as blank "Weekend" cells,
+      // so worked Saturdays vanished here while still counting in the stat
+      // tiles above. Data wins; the tinted column still marks it as a weekend.
+      const inRange = tsInRange(dateStr);
+      if (!inRange) cellCls += ' out-of-range';
+      if (inRange && att) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
+      else if (inRange && !isWe && !isFuture) cellCls += ' st-absent';
 
-      const clickH = (!isWe && !isFuture) ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
+      const clickable = inRange && !isFuture && (att || !isWe);
+      if (clickable) cellCls += ' is-clickable';
+      const clickH = clickable ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
 
-      let midHtml = '';
-      let viewHtml = '';
-      let srcHtml = '';
-
-      if (isWe) {
-        midHtml = '<span class="ts-day-pill we">Weekend</span>';
-      } else if (isFuture) {
-        midHtml = '';
+      // Weekend cells carry no pill: the tinted column and its SAT/SUN header
+      // already say it, eight times over per month. An empty weekday is the
+      // only thing left that needs an explicit "Absent".
+      let body = '';
+      if (!inRange || isFuture) {
+        // Outside the filtered range the cell keeps its date and drops its
+        // content, so the range you picked is legible in the grid itself.
+        body = '';
       } else if (att) {
         if (att.status === 'inprog') {
-          midHtml = '<span class="ts-day-pill inprog">In Progress</span>'
+          body = '<span class="ts-day-pill inprog">In progress</span>'
             + (att.hours !== '--' ? '<span class="ts-day-hrs">'+att.hours+'</span>' : '');
         } else if (att.status === 'absent') {
-          midHtml = '<span class="ts-day-pill absent">Absent</span>';
+          body = '<span class="ts-day-pill absent">Absent</span>';
         } else {
-          midHtml = '<div class="ts-day-status"><span class="ts-status-dot present"></span><span class="ts-day-hrs">'+att.hours+'</span></div>';
+          // Only the exception is labelled — "Auto" on every present day is
+          // sixteen repetitions of the default.
+          body = '<span class="ts-day-hrs">'+att.hours+'</span>'
+            + (att.src === 'Manual' ? '<span class="ts-day-src">Manual</span>' : '');
         }
-        viewHtml = '<span class="ts-day-view-btn">'+eyeSvg+'View</span>';
-        srcHtml = '<span class="ts-day-src">'+att.src+'</span>';
+      } else if (isWe) {
+        body = '';
       } else {
-        midHtml = '<span class="ts-day-pill absent">Absent</span>';
+        body = '<span class="ts-day-pill absent">Absent</span>';
       }
 
-      calRows += '<div class="'+cellCls+'"'+clickH+'>'
-        + '<span class="ts-day-num'+(isToday?' today':'')+'">'+(isToday?'<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--orange);border-radius:50%;color:#fff;font-size:12px">'+dd+'</span>':dd)+'</span>'
-        + midHtml
-        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto">'
-        + viewHtml + srcHtml
-        + '</div>'
+      // The whole cell already opens the day panel, so the per-cell "View"
+      // link was twenty copies of the affordance the cursor gives for free.
+      // It becomes an icon that only surfaces on hover.
+      calRows += '<div class="'+cellCls+'"'+clickH+(clickH?' title="View '+dd+' '+mName+'"':'')+'>'
+        + '<span class="ts-day-num'+(isToday?' today':'')+'">'+dd+'</span>'
+        + body
+        + (clickH ? '<span class="ts-day-peek">'+eyeSvg+'</span>' : '')
         + '</div>';
     }
     calRows += '</div>';

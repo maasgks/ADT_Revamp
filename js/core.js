@@ -58,38 +58,48 @@ const sbIco={
 };
 
 const sidebarItems=[
-  {section:'Workspace'},
+  // Grouped by what the user is doing, not by which team owns the screen.
+  // Rules this list follows: a section header earns its place only if it holds
+  // more than one module; a dropdown only if it holds more than one page; and a
+  // child never repeats the word its parent already said.
+  {section:'Overview'},
   {id:'dashboard',label:'Dashboard',color:'orange',icon:sbIco.grid},
-  {dropdown:'Workforce',color:'blue',icon:sbIco.users,children:[
+
+  {section:'Workforce'},
+  {dropdown:'People',color:'blue',icon:sbIco.users,children:[
     {id:'employees',label:'Employees',color:'blue',icon:sbIco.user},
     {id:'teams',label:'Teams',color:'blue',icon:sbIco.users}
   ]},
-  {dropdown:'Client & Contracts',color:'teal',icon:sbIco.database,children:[
-    {id:'contracts',label:'Contracts',color:'teal',icon:sbIco.fileCheck},
-    {id:'contract-templates',label:'Contract Templates',color:'teal',icon:sbIco.fileText}
+  {dropdown:'Contracts',color:'teal',icon:sbIco.fileCheck,children:[
+    {id:'contracts',label:'All Contracts',color:'teal',icon:sbIco.fileCheck},
+    {id:'contract-templates',label:'Templates',color:'teal',icon:sbIco.fileText}
   ]},
-  {dropdown:'Compliance Hub',color:'amber',icon:sbIco.shield,children:[
-    {id:'compliance',label:'Compliance Items',color:'amber',icon:sbIco.shieldCheck},
-    {id:'rates-rules',label:'Rates & Rules',color:'amber',icon:sbIco.sliders}
+
+  {section:'Time & Pay'},
+  {dropdown:'Time & Attendance',color:'teal',icon:sbIco.clock,children:[
+    {id:'timesheet',label:'Timesheets',color:'teal',icon:sbIco.clock},
+    {id:'all-leaves',label:'Leave Requests',color:'teal',icon:sbIco.calendar},
+    {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText}
   ]},
-  {dropdown:'Time & Payroll',color:'teal',icon:sbIco.clock,children:[
-    {id:'all-leaves',label:'Leaves',color:'teal',icon:sbIco.calendar},
-    {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText},
-    {id:'timesheet',label:'Timesheet',color:'teal',icon:sbIco.clock},
-    {id:'payroll',label:'Payroll',color:'teal',icon:sbIco.dollar},
-    {id:'payheads',label:'Payheads',color:'teal',icon:sbIco.receipt}
-  ]},
-  {dropdown:'Finance',color:'green',icon:sbIco.card,children:[
+  {dropdown:'Payroll',color:'green',icon:sbIco.dollar,children:[
+    {id:'payroll',label:'Pay Runs',color:'green',icon:sbIco.dollar},
+    {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt},
     {id:'payments',label:'Payments',color:'green',icon:sbIco.card}
   ]},
-  {dropdown:'Support',color:'indigo',icon:sbIco.chat,children:[
-    {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},
-    {id:'support-tickets',label:'Tickets',color:'indigo',icon:sbIco.ticket}
+
+  {section:'Governance'},
+  {dropdown:'Compliance Hub',color:'amber',icon:sbIco.shield,children:[
+    {id:'compliance',label:'Requirements',color:'amber',icon:sbIco.shieldCheck},
+    {id:'rates-rules',label:'Rates & Rules',color:'amber',icon:sbIco.sliders}
   ]},
   {dropdown:'Administration',color:'slate',icon:sbIco.cog,children:[
     {id:'settings',label:'Company Settings',color:'slate',icon:sbIco.building},
     {id:'all-users',label:'Users',color:'slate',icon:sbIco.userCheck}
-  ]}
+  ]},
+
+  {section:'Support'},
+  {id:'chats',label:'Messages',color:'indigo',icon:sbIco.chatLines},
+  {id:'support-tickets',label:'Tickets',color:'indigo',icon:sbIco.ticket}
 ];
 
 
@@ -106,13 +116,13 @@ const supportPageMeta={
   teams:{title:'Teams',context:'Teams',filters:['Country','Department','Status'],columns:['S. No','Team','Department','Country','Members','Status'],rows:[[1,'Core Payroll','Finance','Netherlands','18','Active'],[2,'People Ops','HR','India','12','Active'],[3,'Compliance Desk','Legal','Germany','7','Active'],[4,'Entity Setup','Operations','Spain','9','Pending'],[5,'Customer Success','Support','United Kingdom','21','Active'],[6,'Local Admin','Admin','Netherlands','4','Inactive']]},
   contracts:{title:'Contracts',context:'Contracts',filters:['Country','Type','Status'],columns:['S. No','Contract Name','Country','Worker Type','Start Date','Status'],rows:[[1,'Netherlands EOR - Anika','Netherlands','EOR','12 May 2026','Active'],[2,'India Contractor - Rahul','India','Contractor','18 Apr 2026','Active'],[3,'Germany PEO - Nora','Germany','PEO','Pending','Pending'],[4,'Spain EOR - Luis','Spain','EOR','01 May 2026','Active'],[5,'UK EOR - Owen','United Kingdom','EOR','15 Mar 2026','Active'],[6,'Netherlands PEO - Maya','Netherlands','PEO','Expired','Inactive']]},
   leaves:{title:'Leaves',context:'Leaves',filters:['Country','Leave Type','Status'],columns:['S. No','Employee','Country','Leave Type','Dates','Status'],rows:[[1,'Anika Shah','Netherlands','Annual Leave','20-24 May','Active'],[2,'Rahul Mehta','India','Sick Leave','09 May','Pending'],[3,'Luis Martin','Spain','Parental Leave','Jun-Jul','Active'],[4,'Nora Kim','Germany','Annual Leave','14-18 May','Pending'],[5,'Owen Clark','United Kingdom','Holiday','27 May','Active'],[6,'Maya Vos','Netherlands','Sick Leave','Closed','Inactive']]},
-  payroll:{title:'Payroll',context:'Payroll',filters:['Country','Cycle','Status'],columns:['S. No','Cycle','Country','Employees','Gross Pay','Status'],rows:[[1,'May 2026','Netherlands','41','EUR 184,200','Active'],[2,'May 2026','India','83','INR 9,840,000','Pending'],[3,'April 2026','Germany','19','EUR 92,450','Active'],[4,'April 2026','Spain','22','EUR 78,110','Active'],[5,'March 2026','United Kingdom','28','GBP 116,700','Active'],[6,'March 2026','Netherlands','39','EUR 176,900','Inactive']]},
+  payroll:{title:'Pay Runs',context:'Pay Runs',filters:['Country','Cycle','Status'],columns:['S. No','Cycle','Country','Employees','Gross Pay','Status'],rows:[[1,'May 2026','Netherlands','41','EUR 184,200','Active'],[2,'May 2026','India','83','INR 9,840,000','Pending'],[3,'April 2026','Germany','19','EUR 92,450','Active'],[4,'April 2026','Spain','22','EUR 78,110','Active'],[5,'March 2026','United Kingdom','28','GBP 116,700','Active'],[6,'March 2026','Netherlands','39','EUR 176,900','Inactive']]},
   payments:{title:'Payments',context:'Payments',filters:['Country','Category','Status'],columns:['S. No','Invoice','Country','Category','Amount','Status'],rows:[[1,'INV-2048','Netherlands','Payroll','EUR 184,200','Active'],[2,'INV-2047','India','Contractor','INR 2,410,000','Pending'],[3,'INV-2046','Germany','Compliance','EUR 4,250','Active'],[4,'INV-2045','Spain','Payroll','EUR 78,110','Active'],[5,'INV-2044','United Kingdom','Benefits','GBP 8,720','Inactive'],[6,'INV-2043','Netherlands','Entity Setup','EUR 12,600','Active']]},
   settings:{title:'Company Settings',context:'Company Settings',filters:['Area','Owner','Status'],columns:['S. No','Setting','Area','Owner','Updated','Status'],rows:[[1,'Entity Profile','Company','Pallavi Parate','Today','Active'],[2,'Bank Details','Finance','Finance Ops','Yesterday','Pending'],[3,'Permissions','Access','Admin','06 May 2026','Active'],[4,'Notifications','Workspace','People Ops','02 May 2026','Active'],[5,'Billing Contacts','Finance','Admin','29 Apr 2026','Inactive'],[6,'Audit Logs','Security','System','Live','Active']]},
   support:{title:'Support',context:'Support',filters:['Topic','Priority','Status'],columns:['S. No','Ticket','Topic','Owner','Updated','Status'],rows:[[1,'SUP-1018','Payroll question','ADT Support','Today','Active'],[2,'SUP-1017','Contract review','Legal Desk','Yesterday','Pending'],[3,'SUP-1016','Compliance rates','Compliance Desk','06 May 2026','Active'],[4,'SUP-1015','Payment proof','Finance Ops','04 May 2026','Active'],[5,'SUP-1014','Account access','Admin','Closed','Inactive'],[6,'SUP-1013','Entity setup','Operations','01 May 2026','Active']]},
   payheads:{title:'Payheads',context:'Payheads',filters:['Type','Status'],columns:['S. No','Payhead','Type','Calculation','Applies To','Status'],rows:[[1,'Basic Salary','Earning','50% of CTC','All employees','Active'],[2,'House Rent Allowance','Earning','40% of Basic','All employees','Active'],[3,'Provident Fund','Deduction','12% of Basic','India','Active'],[4,'Professional Tax','Deduction','Flat, state slab','India','Active'],[5,'Holiday Allowance','Earning','8% of gross','Netherlands','Active'],[6,'Overtime','Earning','1.5x hourly rate','Hourly contracts','Pending']]},
   'all-users':{title:'Users',context:'Users',filters:['Role','Status'],columns:['S. No','Name','Email','Role','Last Active','Status'],rows:[[1,'Pallavi Parate','pallavi@testemp.com','Entity Super Admin','Today','Active'],[2,'Shaun Test1','shaun@testemp.com','Admin','Today','Active'],[3,'Karan Mehta','karan@testemp.com','Deal Manager','Yesterday','Active'],[4,'Priya Nair','priya@testemp.com','Ops Manager','06 May 2026','Active'],[5,'Meera Iyer','meera@testemp.com','Finance Approver','02 May 2026','Pending'],[6,'Antar Testemp','antar@testemp.com','Employee','28 Apr 2026','Inactive']]},
-  'all-leaves':{title:'Leaves',context:'Leaves',filters:['Leave Type','Status'],columns:['S.No','Key Id','Full Name','Leave Hours','From Date','To Date','Status'],rows:[
+  'all-leaves':{title:'Leave Requests',context:'Leave Requests',filters:['Leave Type','Status'],columns:['S.No','Key Id','Full Name','Leave Hours','From Date','To Date','Status'],rows:[
     [1,'2014','Shaun J','Full Day','14-04-2026','16-04-2026','Approved'],
     [2,'2019','Pallavi P','Half Day','18-04-2026','18-04-2026','Pending'],
     [3,'2021','Anika Shah','Full Day','20-04-2026','22-04-2026','Approved'],
@@ -159,6 +169,43 @@ const prLogsData={
   4:[{date:'24 Apr 2026',time:'09:40:00 AM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'}],
   5:[{date:'23 Mar 2026',time:'02:15:00 PM',user:'Finance Ops',status:'Active',action:'Cycle approved for disbursement.'}],
   6:[{date:'30 Mar 2026',time:'05:30:00 PM',user:'Finance Ops',status:'Inactive',action:'Cycle closed and archived.'}]
+};
+
+// These three modules shipped with an empty logs:[] on every record, so their
+// Logs tab always read "No activity logs yet". Entries are anchored to each
+// record's own createdBy / createdAt so the log agrees with the record.
+const complianceLogsData={
+  1:[{date:'15 Jun 2026',time:'01:30:34 PM',user:'Pritam Rai',status:'Active',action:'Requirement created.'}],
+  2:[{date:'12 Jun 2026',time:'11:05:02 AM',user:'Pritam Rai',status:'Active',action:'Requirement created.'}],
+  3:[{date:'10 Jun 2026',time:'04:22:40 PM',user:'Neha Sharma',status:'Active',action:'Requirement created.'}],
+  4:[{date:'08 Jun 2026',time:'09:15:11 AM',user:'Neha Sharma',status:'Active',action:'Requirement created.'}],
+  5:[{date:'05 Jun 2026',time:'02:48:57 PM',user:'Aman Singh',status:'Active',action:'Requirement created.'}],
+  6:[{date:'03 Jun 2026',time:'10:30:19 AM',user:'Aman Singh',status:'Active',action:'Requirement created.'}],
+  7:[{date:'01 Jun 2026',time:'05:52:03 PM',user:'Pritam Rai',status:'Active',action:'Requirement created.'}],
+  8:[{date:'11 Jun 2026',time:'10:15:00 AM',user:'Rahul Mehta',status:'Inactive',action:'Marked inactive.'},
+     {date:'28 May 2026',time:'03:10:45 PM',user:'Rahul Mehta',status:'Active',action:'Requirement created.'}],
+  9:[{date:'09 Jun 2026',time:'03:20:00 PM',user:'Rahul Mehta',status:'Inactive',action:'Marked inactive.'},
+     {date:'25 May 2026',time:'12:40:22 PM',user:'Rahul Mehta',status:'Active',action:'Requirement created.'}]
+};
+const ratesRulesLogsData={
+  1:[{date:'02 Mar 2026',time:'02:53:47 PM',user:'Tarak Swain',status:'Active',action:'Rate created.'}],
+  2:[{date:'18 Mar 2026',time:'11:05:00 AM',user:'Tarak Swain',status:'Inactive',action:'Marked inactive.'},
+     {date:'02 Mar 2026',time:'02:55:10 PM',user:'Tarak Swain',status:'Active',action:'Rate created.'}],
+  3:[{date:'28 Feb 2026',time:'11:20:00 AM',user:'Neha Sharma',status:'Active',action:'Rate created.'}],
+  4:[{date:'16 Mar 2026',time:'02:30:00 PM',user:'Neha Sharma',status:'Inactive',action:'Marked inactive.'},
+     {date:'28 Feb 2026',time:'11:25:40 AM',user:'Neha Sharma',status:'Active',action:'Rate created.'}],
+  5:[{date:'25 Feb 2026',time:'04:10:15 PM',user:'Aman Singh',status:'Active',action:'Rate created.'}],
+  6:[{date:'12 Mar 2026',time:'09:45:00 AM',user:'Aman Singh',status:'Inactive',action:'Marked inactive.'},
+     {date:'25 Feb 2026',time:'04:15:30 PM',user:'Aman Singh',status:'Active',action:'Rate created.'}],
+  7:[{date:'06 Mar 2026',time:'04:50:00 PM',user:'Rahul Mehta',status:'Inactive',action:'Marked inactive.'},
+     {date:'20 Feb 2026',time:'09:40:00 AM',user:'Rahul Mehta',status:'Active',action:'Rate created.'}]
+};
+const ctpLogsData={
+  1:[{date:'02 Mar 2026',time:'02:53:47 PM',user:'Tarak Swain',status:'Active',action:'Template created.'}],
+  2:[{date:'28 Feb 2026',time:'11:20:00 AM',user:'Neha Sharma',status:'Active',action:'Template created.'}],
+  3:[{date:'14 Mar 2026',time:'01:25:00 PM',user:'Aman Singh',status:'Inactive',action:'Marked inactive.'},
+     {date:'25 Feb 2026',time:'04:10:15 PM',user:'Aman Singh',status:'Active',action:'Template created.'}],
+  4:[{date:'20 Feb 2026',time:'09:40:00 AM',user:'Rahul Mehta',status:'Active',action:'Template created.'}]
 };
 // Payroll workflow - ends on each cycle's real status.
 const prWorkflowData={
@@ -297,17 +344,35 @@ function lstSaveLog(){
   refreshLstSidebar();
   showToast('Log added','success','Comment saved with status "'+status+'".');
 }
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheet',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Items',context:'Compliance Items',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Messages',context:'Messages',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Requirements',context:'Compliance Requirements',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
 // as coloured text — see .sb-status. The pill form stays on table cells and on
 // lists of *other* records. One tone map so every panel in the app agrees.
 const SB_STATUS_TONE={
-  active:'ok',approved:'ok',completed:'ok',complete:'ok',resolved:'ok',paid:'ok',signed:'ok',connected:'ok',verified:'ok',success:'ok',
+  // ok — reached a good terminal state
+  active:'ok',approved:'ok',completed:'ok',complete:'ok',resolved:'ok',paid:'ok',signed:'ok',connected:'ok',verified:'ok',success:'ok',present:'ok',
+  'quotation-approved':'ok','proposal-approved':'ok','contract-approved':'ok',
+  // bad — stopped, refused or broken
   inactive:'bad',unapproved:'bad',rejected:'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
+  disconnected:'bad',exception:'bad',absent:'bad',
+  // wait — in flight, someone owes an action
   pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','waiting-client':'wait','waiting-csm':'wait',
-  open:'info',new:'info',scheduled:'info'
+  'proposal-sent':'wait','contract-sent':'wait','waiting-for-approval':'wait','pending-onboarding':'wait',onboarding:'wait',inprog:'wait',unfilled:'wait',unpaid:'wait',
+  // info — informational, nothing owed
+  open:'info','new':'info',scheduled:'info',created:'info',updated:'info',
+  // idle — neutral / archived
+  closed:'idle',archived:'idle',
+  // pipeline end states
+  'ready-for-payroll':'ok','ready-for-payroll ':'ok'
+};
+// Contract pipeline stages get their own ordered palette so a deal's
+// position is readable at a glance. Anything not listed here falls back to
+// its SB_STATUS_TONE colour, so other modules are unaffected.
+const CT_PIPELINE_STEP={
+  submitted:1,'quotation-approved':2,'proposal-sent':3,'proposal-approved':4,
+  'contract-sent':5,'contract-approved':6,onboarding:7,'ready-for-payroll':8
 };
 function statusTone(v){return SB_STATUS_TONE[statusClass(v)]||'idle';}
 // `label` is for stores that key a status ('waiting_client') apart from how it
@@ -502,16 +567,127 @@ function buildModuleTabsHTML(tabs,active,handler,full){
   return '<div class="mod-tabs-row'+(full?' full':'')+'"><div class="mod-tabs" role="tablist">'
     +tabs.map(t=>'<button type="button" role="tab" aria-selected="'+(t.id===active)+'" class="mod-tab'+(t.id===active?' active':'')+'" onclick="'+handler+'(\''+t.id+'\')">'
       +(t.icon||'')+'<span>'+t.label+'</span>'
-      +(t.count==null?'':'<span class="mod-tab-count">'+t.count+'</span>')
       +'</button>').join('')
     +'</div></div>';
 }
+// ── EMPLOYEE DETAIL EDIT ──
+// The detail panels shipped with an Edit button that had no onclick at all.
+// These follow the pattern already used by the leave-policy sidebar: an inline
+// edit mode on the record, Cancel/Save, then a re-render so the listing row and
+// the panel agree.
+let geEditMode=false, deEditMode=false;
+const SB_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// Records store "10 Feb 2024"; <input type=date> needs "2024-02-10". Convert both
+// ways so editing a date cannot silently rewrite the stored format.
+function sbDateToISO(str){
+  if(!str||str==='--')return '';
+  const m=String(str).trim().match(/^(\d{1,2})\s+([A-Za-z]{3})[a-z]*\s+(\d{4})$/);
+  if(!m)return '';
+  const mi=SB_MONTHS.findIndex(x=>x.toLowerCase()===m[2].toLowerCase());
+  if(mi<0)return '';
+  return m[3]+'-'+String(mi+1).padStart(2,'0')+'-'+m[1].padStart(2,'0');
+}
+function sbISOToDate(iso){
+  if(!iso)return '--';
+  const m=String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return '--';
+  return m[3]+' '+SB_MONTHS[+m[2]-1]+' '+m[1];
+}
+function sbVal(id){const el=document.getElementById(id);return el?el.value.trim():null;}
+function startGeEdit(){geEditMode=true;refreshGeSidebar();}
+function cancelGeEdit(){geEditMode=false;refreshGeSidebar();}
+function startDeEdit(){deEditMode=true;refreshDeSidebar();}
+function cancelDeEdit(){deEditMode=false;refreshDeSidebar();}
+function refreshGeSidebar(){const el=document.getElementById('ge-isb-inner');if(el)el.innerHTML=renderGeSidebar();}
+function refreshDeSidebar(){const el=document.getElementById('de-isb-inner');if(el)el.innerHTML=renderDeSidebar();}
+
+// ── EMPLOYEE DETAIL EDIT FORMS ──
+// One spec per panel drives both the inputs and the save, so a field can never
+// be present in the form and forgotten on save.
+const GE_EDIT_FIELDS=[
+  {k:'name',     label:'Name',           type:'text'},
+  {k:'dept',     label:'Department',     type:'select', opts:['Engineering','Finance','HR','Operations']},
+  {k:'empId',    label:'Employee ID',    type:'text',   readonly:true, hint:'System generated'},
+  {k:'country',  label:'Country',        type:'select', opts:['Germany','France','Italy','United Kingdom']},
+  {k:'jobTitle', label:'Job Title',      type:'text'},
+  {k:'workerType',label:'Worker Type',   type:'select', opts:['EOR','Contractor']},
+  {k:'joinDate', label:'Joining Date',   type:'date'},
+  {k:'desc',     label:'Description',    type:'text'},
+  {k:'contact',  label:'Contact Number', type:'tel'},
+  {k:'email',    label:'Email',          type:'email'}
+];
+const DE_EDIT_FIELDS=[
+  {k:'name',     label:'Name',           type:'text'},
+  {k:'dept',     label:'Department',     type:'select', opts:['Engineering','HR','Product']},
+  {k:'empId',    label:'Employee ID',    type:'text',   readonly:true, hint:'System generated'},
+  {k:'branch',   label:'Branch',         type:'select', opts:['Punjab','Hyderabad','Mumbai','Delhi']},
+  {k:'jobTitle', label:'Job Title',      type:'text'},
+  {k:'joinDate', label:'Joining Date',   type:'date'},
+  {k:'desc',     label:'Description',    type:'text'},
+  {k:'contact',  label:'Contact Number', type:'tel'},
+  {k:'email',    label:'Email',          type:'email'}
+];
+function sbEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function buildSbEditForm(prefix,fields,rec,onCancel,onSave){
+  const inputs=fields.map(f=>{
+    const id=prefix+'-'+f.k;
+    const raw=rec[f.k]==null||rec[f.k]==='--'?'':rec[f.k];
+    let ctl;
+    if(f.type==='select'){
+      const opts=f.opts.slice();
+      if(raw&&opts.indexOf(raw)<0)opts.unshift(raw);   // never drop an unlisted existing value
+      ctl='<select class="ep-form-select" id="'+id+'">'
+        +opts.map(o=>'<option'+(o===raw?' selected':'')+'>'+sbEsc(o)+'</option>').join('')+'</select>';
+    }else if(f.type==='date'){
+      ctl='<input class="ep-form-input" id="'+id+'" type="date" value="'+sbDateToISO(raw)+'">';
+    }else{
+      ctl='<input class="ep-form-input" id="'+id+'" type="'+f.type+'" value="'+sbEsc(raw)+'"'
+        +(f.readonly?' disabled':'')+'>';
+    }
+    return '<div class="lp-sb-field"><label>'+f.label+(f.readonly?' <span class="sb-field-hint">'+f.hint+'</span>':'')+'</label>'+ctl+'</div>';
+  }).join('');
+  return '<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
+    +inputs
+    +'</div><div class="lp-sb-form-actions">'
+    +'<button class="ep-cancel-btn" onclick="'+onCancel+'()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="'+onSave+'()">Save changes</button>'
+    +'</div></div></div>';
+}
+function applySbEdit(prefix,fields,rec){
+  fields.forEach(f=>{
+    if(f.readonly)return;
+    const val=sbVal(prefix+'-'+f.k);
+    if(val===null)return;
+    rec[f.k]=f.type==='date'?sbISOToDate(val):(val===''?'--':val);
+  });
+}
+function saveGeEdit(){
+  const emp=globalEmpData.find(e=>e.id===geSelectedId);
+  if(!emp)return;
+  applySbEdit('gesb',GE_EDIT_FIELDS,emp);
+  geEditMode=false;
+  const id=geSelectedId;
+  renderADTPage();          // the listing row shows name/dept/country too
+  openGeSidebar(id);
+  showToast('Employee details updated','success',emp.name+' \u00b7 '+emp.empId);
+}
+function saveDeEdit(){
+  const emp=directEmpData.find(e=>e.id===deSelectedId);
+  if(!emp)return;
+  applySbEdit('desb',DE_EDIT_FIELDS,emp);
+  deEditMode=false;
+  const id=deSelectedId;
+  renderADTPage();
+  openDeSidebar(id);
+  showToast('Employee details updated','success',emp.name+' \u00b7 '+emp.empId);
+}
+
 function setEmpSubTab(t){if(empSubTab===t)return;empSubTab=t;deSelectedId=null;geSelectedId=null;renderADTPage();}
 function setTsSubTab(t){if(tsSubTab===t)return;tsSubTab=t;renderADTPage();}
 function buildEmployeesHTML(){
   const tabs=[
-    {id:'direct',label:'Direct Employee',icon:modTabIco.user,count:directEmpData.length},
-    {id:'global',label:'Global Employee',icon:modTabIco.globe,count:globalEmpData.length}
+    {id:'direct',label:'Direct Employee',icon:modTabIco.user},
+    {id:'global',label:'Global Employee',icon:modTabIco.globe}
   ];
   const body=empSubTab==='global'?buildGlobalListingHTML():buildDirectListingHTML();
   return '<div class="mod-page">'+buildModuleTabsHTML(tabs,empSubTab,'setEmpSubTab')+body+'</div>';
@@ -519,7 +695,7 @@ function buildEmployeesHTML(){
 function buildTimesheetHTML(){
   const tabs=[
     {id:'my',label:'My Timesheet',icon:modTabIco.clock},
-    {id:'all',label:'All Timesheet',icon:modTabIco.list,count:allTsData.length}
+    {id:'all',label:'All Timesheet',icon:modTabIco.list}
   ];
   const body=tsSubTab==='all'?buildAllTimesheetHTML():buildMyTimesheetHTML();
   return '<div class="mod-page">'+buildModuleTabsHTML(tabs,tsSubTab,'setTsSubTab',true)+body+'</div>';
@@ -586,7 +762,7 @@ document.addEventListener('click',function(e){
   // Timesheets
   if(cls.contains('ts-submit-btn')||cls.contains('ts-sb-submit')){showToast('Timesheet submitted for approval','success','Your manager has been notified.');return;}
   if(cls.contains('ts-btn-search')){renderADTPage();showToast('Filters applied','info');return;}
-  if(cls.contains('ts-btn-reset')){renderADTPage();return;}
+  if(cls.contains('ts-btn-reset')){tsResetRange();renderADTPage();return;}
   if(cls.contains('ts-refresh-btn')){renderADTPage();showToast('Timesheet refreshed','info');return;}
   // Cost calculator
   if(cls.contains('cc-export-btn')){showToast('Preparing PDF export…','info');setTimeout(function(){showToast('Cost breakdown exported as PDF');},1000);return;}
@@ -1934,7 +2110,10 @@ const pmWorkflowData={
   1:[{title:'Order Created',user:'Admin',date:'02 Jun 2026',time:'10:43 am',description:'EOR order created for TestEmp Antar in Belgium.'}],
   2:[{title:'Order Created',user:'Admin',date:'01 Jun 2026',time:'09:00 am',description:'EOR order created for Elon Musk in USA.'}]
 };
-const pmLogsData={1:[],2:[]};
+const pmLogsData={
+  1:[{date:'02 Jun 2026',time:'10:43 AM',user:'shaun test1',status:'Onboarding',action:'Order created for TestEmp Antar.'}],
+  2:[{date:'01 Jun 2026',time:'09:00 AM',user:'Gwynne Shotwell',status:'Onboarding',action:'Order created for Elon Musk.'}]
+};
 const pmLogStatusOptions=['Follow Up','Onboarding','Closed','Inactive','Logistic Terminated','Logistic Completed','Offboarding','Finance Termination','Finance Completed','Confirmation Vendor','initial discussion done','Order Extension','Revision'];
 const pmInvoiceFlow=['Unpaid','Pending','Paid','Closed'];
 let pmSelectedId=null,pmTab='basic-details',pmUserSubTab='company-details';
@@ -2088,8 +2267,57 @@ let tsMpYear=tsMonth.year;
 function tsToggleMonthPicker(ev){if(ev)ev.stopPropagation();tsMpOpen=!tsMpOpen;tsMpYear=tsMonth.year;renderADTPage();}
 function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;renderADTPage();}
 function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;renderADTPage();}
-function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMpOpen=false;tsSelectedDay=null;renderADTPage();}
-function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMpOpen=false;tsSelectedDay=null;renderADTPage();}
+// Picking a month re-spans the range to that month, so the filter label and the
+// grid can never disagree about which dates are in view.
+function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
+function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
+
+// ── TIMESHEET DATE-RANGE FILTER ──
+// The range control used to call tsToggleMonthPicker, so clicking a field
+// labelled "1 Jun – 30 Jun" opened a month list anchored to a different button
+// on the far side of the bar. It now owns a range picker, and the range it
+// produces actually filters the grid and the stat tiles.
+function tsPad(n){return String(n).padStart(2,'0');}
+function tsMonthSpan(y,m){
+  return {from:y+'-'+tsPad(m+1)+'-01', to:y+'-'+tsPad(m+1)+'-'+tsPad(new Date(y,m+1,0).getDate())};
+}
+let tsRange=tsMonthSpan(tsMonth.year,tsMonth.month);
+let tsRangeOpen=false;
+let tsRangeDraft={from:tsRange.from,to:tsRange.to};
+function tsToggleRangePicker(ev){
+  if(ev)ev.stopPropagation();
+  tsRangeOpen=!tsRangeOpen;
+  if(tsRangeOpen){tsMpOpen=false;tsRangeDraft={from:tsRange.from,to:tsRange.to};}
+  renderADTPage();
+}
+function tsCloseRangePicker(){if(!tsRangeOpen)return;tsRangeOpen=false;renderADTPage();}
+function tsRangeDraftSet(which,val){tsRangeDraft[which]=val;renderADTPage();}
+function tsRangePreset(kind,ev){
+  if(ev)ev.stopPropagation();
+  const y=tsMonth.year,m=tsMonth.month;
+  if(kind==='month')tsRangeDraft=tsMonthSpan(y,m);
+  else if(kind==='first-half')tsRangeDraft={from:y+'-'+tsPad(m+1)+'-01',to:y+'-'+tsPad(m+1)+'-15'};
+  else if(kind==='second-half')tsRangeDraft={from:y+'-'+tsPad(m+1)+'-16',to:tsMonthSpan(y,m).to};
+  renderADTPage();
+}
+function tsApplyRange(ev){
+  if(ev)ev.stopPropagation();
+  let {from,to}=tsRangeDraft;
+  if(!from||!to)return;
+  if(from>to){const t=from;from=to;to=t;}   // tolerate a backwards range
+  tsRange={from:from,to:to};
+  const d=from.split('-');
+  tsMonth={year:+d[0],month:+d[1]-1};        // show the month the range starts in
+  tsRangeOpen=false;tsSelectedDay=null;
+  renderADTPage();
+}
+function tsResetRange(){tsRange=tsMonthSpan(tsMonth.year,tsMonth.month);tsRangeOpen=false;tsSelectedDay=null;}
+function tsInRange(dateStr){return dateStr>=tsRange.from&&dateStr<=tsRange.to;}
+function tsFmtRange(){
+  const mS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const f=d=>{const p=d.split('-');return (+p[2])+' '+mS[+p[1]-1]+' '+p[0];};
+  return f(tsRange.from)+' – '+f(tsRange.to);
+}
 
 // ── ALL TIMESHEET DATA & ACTIONS ──
 const allTsData=[
