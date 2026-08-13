@@ -791,7 +791,6 @@ document.addEventListener('click',function(e){
     showToast('Password updated successfully');return;
   }
   if(cls.contains('prof-edit-btn')||txt==='Edit Profile'){showToast('Fields are editable — make your changes and press Save','info');return;}
-  if(cls.contains('prof-att-upload')){showToast('Document uploaded');return;}
   // Generic save / edit / cancel in sidebars & forms
   if(cls.contains('ep-save-btn')){showToast(txt==='Save Changes'?'Changes saved successfully':'Saved successfully');return;}
   if(cls.contains('ep-cancel-btn')){renderADTPage();showToast('Changes discarded','info');return;}
@@ -2229,6 +2228,15 @@ let tkSelectedId=null,tkTab='basic-details';
 let chatSelectedId=null,chatTab='basic-details';
 let chatStatusFilter='all';
 let profTab='basic-details';
+// Uploaded profile documents: docName -> {file,size,date}. Seeded with the
+// records the account already had on file.
+let profAttachments={
+  'Resume':{file:'Pallavi_Parate_Resume.pdf',size:'240 KB',date:'12 Jan 2024'},
+  'Passport Photo':{file:'passport_photo.jpg',size:'88 KB',date:'12 Jan 2024'},
+  'Photo Id Proof':{file:'pan_card.pdf',size:'156 KB',date:'14 Jan 2024'},
+  'Aadhar Front':{file:'aadhar_front.jpg',size:'102 KB',date:'14 Jan 2024'},
+  'Aadhar Back':{file:'aadhar_back.jpg',size:'97 KB',date:'14 Jan 2024'}
+};
 let seSelectedEntity='dhi-hyperlocal';
 const entitiesData=[
   {id:'dhi-hyperlocal',initials:'DH',name:'Dhi Hyperlocal',entityId:'ENT-00421',type:'EOR Entity',country:'India',plan:'Enterprise',employees:142,active:true},

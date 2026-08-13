@@ -1131,8 +1131,13 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 /* .se-proceed hover handled by the button system (colour only) */
 .se-proceed:active{transform:translateY(0)}
 /* Profile tabs */
-.prof-tab-bar{display:flex;gap:0;border-bottom:2px solid var(--border);margin-bottom:20px;overflow-x:auto}
-.prof-tab{padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;white-space:nowrap;font-family:inherit;color:#6b7280;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .15s,border-color .15s}
+/* Divider drawn as an inset shadow, not a border: the tabs' own 2px bottom
+   border then sits exactly on it without needing a negative margin. Without
+   this, overflow-x:auto forced overflow-y to compute to auto and the 2px
+   overhang spawned a vertical scrollbar that clipped the active underline. */
+.prof-tab-bar{display:flex;gap:0;align-items:stretch;min-height:42px;margin-bottom:20px;box-shadow:inset 0 -2px 0 var(--border);overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;flex-shrink:0}
+.prof-tab-bar::-webkit-scrollbar{display:none}
+.prof-tab{flex-shrink:0;display:inline-flex;align-items:center;padding:10px 20px;font-size:13px;font-weight:600;border:none;background:none;cursor:pointer;white-space:nowrap;font-family:inherit;color:#6b7280;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
 .prof-tab.active{color:var(--orange);border-bottom-color:var(--orange)}
 .prof-tab:hover:not(.active){color:var(--navy)}
 .prof-tab-body{width:100%}
@@ -1156,6 +1161,10 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .prof-att-date{font-size:10.5px;color:#9ca3af;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .prof-att-dl{background:none;border:1.5px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color .15s,background .15s,border-color .15s}
 .prof-att-dl:hover{color:var(--st-ok-fg);background:var(--st-ok-bg);border-color:var(--st-ok-bd)}
+.prof-att-dl.danger:hover{color:var(--st-bad-fg);background:var(--st-bad-bg);border-color:var(--st-bad-bd)}
+.prof-att-item.prof-att-dragging{background:#eff6ff;box-shadow:inset 0 0 0 1.5px #93c5fd;border-radius:8px}
+.prof-att-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:28px;font-size:13px;font-weight:600;color:var(--st-ok-fg)}
+.prof-att-empty svg{width:15px;height:15px}
 .prof-att-count{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#6b7280;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;padding:3px 11px}
 .prof-att-count.ok{color:var(--st-ok-fg);background:var(--st-ok-bg);border-color:var(--st-ok-bd)}
 .prof-att-count svg{width:11px;height:11px}

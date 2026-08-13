@@ -3976,6 +3976,61 @@ function buildSwitchEntityHTML(){
 
 // ── MY PROFILE PAGE ──
 function setProfTab(tab){profTab=tab;const el=document.getElementById('adt-content');if(el)el.innerHTML=buildMyProfileHTML();}
+// ── PROFILE ATTACHMENTS ──
+const PROF_DOCS=['Resume','Relieving Letter','Address Proof','Qualification Proof','Passport Photo','Photo Id Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Aadhar Back','Aadhar Front','Last Offer Letter'];
+function refreshProfile(){const el=document.getElementById('adt-content');if(el)el.innerHTML=buildMyProfileHTML();}
+function profFormatSize(bytes){
+  if(bytes<1024)return bytes+' B';
+  if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
+  return (bytes/(1024*1024)).toFixed(1)+' MB';
+}
+// Opens a real file picker for the given document slot.
+function profPickFile(docName){
+  const inp=document.createElement('input');
+  inp.type='file';
+  inp.accept='.pdf,.png,.jpg,.jpeg,.doc,.docx';
+  inp.style.display='none';
+  inp.onchange=function(){
+    const f=inp.files&&inp.files[0];
+    if(f)profReceiveFile(docName,f);
+    inp.remove();
+  };
+  document.body.appendChild(inp);
+  inp.click();
+}
+function profReceiveFile(docName,file){
+  const MAX=5*1024*1024;
+  if(file.size>MAX){showToast('File too large','error',profFormatSize(file.size)+' exceeds the 5 MB limit.');return;}
+  if(file.size===0){showToast('File is empty','error','Please choose a valid document.');return;}
+  profAttachments[docName]={
+    file:file.name,
+    size:profFormatSize(file.size),
+    date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+  };
+  refreshProfile();
+  showToast(docName+' uploaded','success',file.name+' &middot; '+profFormatSize(file.size));
+}
+function profRemoveAttachment(docName){
+  if(!profAttachments[docName])return;
+  delete profAttachments[docName];
+  refreshProfile();
+  showToast(docName+' removed','info','The document is back in the pending list.');
+}
+function profDownloadAttachment(docName){
+  const a=profAttachments[docName];
+  if(!a)return;
+  showToast('Preparing download…','info',a.file);
+  setTimeout(function(){showToast('Downloaded','success',a.file);},900);
+}
+// Drag & drop straight onto a pending row.
+function profDragOver(e,el){e.preventDefault();e.stopPropagation();el.classList.add('prof-att-dragging');}
+function profDragLeave(e,el){e.preventDefault();e.stopPropagation();el.classList.remove('prof-att-dragging');}
+function profDrop(e,el,docName){
+  e.preventDefault();e.stopPropagation();
+  el.classList.remove('prof-att-dragging');
+  const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0];
+  if(f)profReceiveFile(docName,f);
+}
 
 function buildMyProfileHTML(){
   const iUser='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -4114,39 +4169,38 @@ function buildMyProfileHTML(){
   }
 
   else if(profTab==='attachments'){
-    const uploadedDocs=[
-      {name:'Resume',file:'Pallavi_Parate_Resume.pdf',date:'12 Jan 2024'},
-      {name:'Passport Photo',file:'passport_photo.jpg',date:'12 Jan 2024'},
-      {name:'Photo Id Proof',file:'pan_card.pdf',date:'14 Jan 2024'},
-      {name:'Aadhar Front',file:'aadhar_front.jpg',date:'14 Jan 2024'},
-      {name:'Aadhar Back',file:'aadhar_back.jpg',date:'14 Jan 2024'}
-    ];
-    const pendingDocs=['Relieving Letter','Address Proof','Qualification Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter'];
+    const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    const uploadedDocs=PROF_DOCS.filter(d=>profAttachments[d]).map(d=>Object.assign({name:d},profAttachments[d]));
+    const pendingDocs=PROF_DOCS.filter(d=>!profAttachments[d]);
+    const total=PROF_DOCS.length;
+    const esc=s=>String(s).replace(/'/g,"\\'");
     const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>';
     const uploadedItems=uploadedDocs.map(d=>`
       <div class="prof-att-card">
         <span class="prof-att-iconwrap">${iPaperclip}<span class="prof-att-tick">${tick}</span></span>
         <span class="prof-att-body">
           <span class="prof-att-name">${d.name}</span>
-          <span class="prof-att-meta">${d.file}</span>
+          <span class="prof-att-meta">${d.file}${d.size?' &middot; '+d.size:''}</span>
           <span class="prof-att-date">Uploaded ${d.date}</span>
         </span>
-        <button class="prof-att-dl" title="Download">${iDl}</button>
+        <button class="prof-att-dl" title="Download" onclick="profDownloadAttachment('${esc(d.name)}')">${iDl}</button>
+        <button class="prof-att-dl danger" title="Remove" onclick="profRemoveAttachment('${esc(d.name)}')">${iTrash}</button>
       </div>`).join('');
     const pendingItems=pendingDocs.map(d=>`
-      <div class="prof-att-item">
+      <div class="prof-att-item" ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${esc(d)}')">
         <span class="prof-att-icon">${iPaperclip}</span>
         <span class="prof-att-name">${d}</span>
-        <button class="prof-att-upload" title="Upload">${iUpload}</button>
+        <button class="prof-att-upload" title="Upload ${d}" onclick="profPickFile('${esc(d)}')">${iUpload}</button>
       </div>`).join('');
-    tabContent=`<div class="ep-form-card" style="margin-bottom:16px">
-      <div class="prof-section-hdr"><span class="policy-section-title">Uploaded</span><span class="prof-att-count ok">${tick} ${uploadedDocs.length} of ${uploadedDocs.length+pendingDocs.length} uploaded</span></div>
+    const uploadedCard=uploadedDocs.length?`<div class="ep-form-card" style="margin-bottom:16px">
+      <div class="prof-section-hdr"><span class="policy-section-title">Uploaded</span><span class="prof-att-count ok">${tick} ${uploadedDocs.length} of ${total} uploaded</span></div>
       <div class="prof-att-cards">${uploadedItems}</div>
-    </div>
-    <div class="ep-form-card">
+    </div>`:'';
+    const pendingCard=pendingDocs.length?`<div class="ep-form-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Others (Not Uploaded)</span><span class="prof-att-count">${pendingDocs.length} pending</span></div>
       <div class="prof-att-grid">${pendingItems}</div>
-    </div>`;
+    </div>`:`<div class="ep-form-card"><div class="prof-att-empty">${tick} All ${total} documents have been uploaded.</div></div>`;
+    tabContent=uploadedCard+pendingCard;
   }
 
   else if(profTab==='salary-slip'){
