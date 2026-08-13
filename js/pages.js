@@ -1827,6 +1827,407 @@ function buildComplianceItemsHTML(){
     +(complianceModalOpen?buildCreateComplianceModalHTML():'');
 }
 
+// ══ COMPLIANCE HUB ═══════════════════════════════════════════════════════
+// Two screens: the hub (counts + filters + one card per group) and the
+// drill-down (the same activities as a table with the standard detail panel).
+// Both read their rows from cmpFilteredActivities(), so a filter set on the
+// hub still holds after the user clicks into a card.
+//
+// Colour does one job here and nothing else: red means someone has to act
+// (overdue or escalated). Everything else is type and hairlines.
+const chubIco={
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/></svg>',
+  chevR:'<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>'
+};
+const CHUB_GROUPS=[
+  {kind:'country',label:'Country'},{kind:'client',label:'Client'},
+  {kind:'process',label:'Process'},{kind:'owner',label:'Owner'}
+];
+// status -> the one class that styles it everywhere
+const CHUB_ST={Pending:'pending',Completed:'done',Overdue:'late',Escalated:'esc'};
+function chubStatus(s){return '<span class="chub-st '+CHUB_ST[s]+'">'+s+'</span>';}
+
+// ── Filters ──
+function applyChubFilters(){
+  chubClientFilter=getCSValue('chub-f-client');
+  chubCountryFilter=getCSValue('chub-f-country');
+  chubProcessFilter=getCSValue('chub-f-process');
+  chubOwnerFilter=getCSValue('chub-f-owner');
+  chubDueFilter=getCSValue('chub-f-due');
+  chubActivityId=null;
+  renderADTPage();
+}
+function resetChubFilters(){
+  chubClientFilter='';chubCountryFilter='';chubProcessFilter='';chubOwnerFilter='';chubDueFilter='';
+  chubStatusFilter='';chubSearch='';chubActivityId=null;
+  renderADTPage();
+}
+function chubRemoveFilter(key){
+  if(key==='chubClientFilter')chubClientFilter='';
+  else if(key==='chubCountryFilter')chubCountryFilter='';
+  else if(key==='chubProcessFilter')chubProcessFilter='';
+  else if(key==='chubOwnerFilter')chubOwnerFilter='';
+  else if(key==='chubDueFilter')chubDueFilter='';
+  else if(key==='chubStatusFilter')chubStatusFilter='';
+  chubActivityId=null;
+  renderADTPage();
+}
+function chubToggleStatus(v){
+  chubStatusFilter=chubStatusFilter===v?'':v;
+  chubActivityId=null;
+  renderADTPage();
+}
+function chubSetGroupBy(kind){chubGroupBy=kind;renderADTPage();}
+// Re-render, then put the caret back — the page is rebuilt on every keystroke.
+function chubOnSearch(el){
+  chubSearch=el.value;chubActivityId=null;renderADTPage();
+  const n=document.getElementById('chub-search-inp');
+  if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}
+}
+function chubOpenGroup(kind,value){
+  chubGroupKind=kind;chubGroupValue=value;chubActivityId=null;
+  page='compliance-group';renderADTPage();
+}
+function chubBackToHub(){chubActivityId=null;page='compliance-hub';renderADTPage();}
+// Jump from a country into the requirements catalogue, pre-filtered.
+function chubViewRequirements(country){
+  complianceCountryFilter=country;complianceModelFilter='';complianceStatusFilter='';
+  complianceSelectedId=null;navigatePage('compliance');
+}
+
+// ── Shared pieces ──
+function chubSearchBox(){
+  return '<span class="chub-search">'+chubIco.search
+    +'<input type="text" id="chub-search-inp" placeholder="Search activities" value="'+attrSafe(chubSearch)+'" oninput="chubOnSearch(this)"></span>';
+}
+function chubFilterBar(){
+  return '<div class="lp-filter-bar" style="padding:0">'
+    +'<div class="lp-filter-bar-label">Filter Activities</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('chub-f-client',cmpUnique('client'),chubClientFilter,'Client')
+    +apCS('chub-f-country',cmpUnique('country'),chubCountryFilter,'Country')
+    +apCS('chub-f-process',CMP_PROCESSES,chubProcessFilter,'Process')
+    +apCS('chub-f-owner',cmpUnique('owner'),chubOwnerFilter,'Owner')
+    +apCS('chub-f-due',CMP_DUE_PRESETS,chubDueFilter,'Due Date')
+    +clearFiltersBtn([chubClientFilter,chubCountryFilter,chubProcessFilter,chubOwnerFilter,chubDueFilter,chubStatusFilter,chubSearch],'resetChubFilters()')
+    +'<button class="lp-pill-search" onclick="applyChubFilters()">Search</button>'
+    +'</div></div>';
+}
+function chubFilterChips(){
+  const act=cmpActiveFilters();
+  if(!act.length)return '';
+  return '<div class="chub-chips">'+act.map(function(f){
+    return '<button class="chub-chip" onclick="chubRemoveFilter(\''+f.key+'\')" title="Remove this filter">'
+      +'<span class="chub-chip-k">'+f.label+'</span>'+f.value
+      +'<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+  }).join('')+'</div>';
+}
+// The four scope statuses as one plain strip. Doubles as the status filter.
+function chubStatStrip(rows){
+  const defs=[
+    {label:'Total',val:rows.length,status:'',tone:''},
+    {label:'Pending',val:cmpCountBy(rows,'Pending'),status:'Pending',tone:''},
+    {label:'Completed',val:cmpCountBy(rows,'Completed'),status:'Completed',tone:'done'},
+    {label:'Overdue',val:cmpCountBy(rows,'Overdue'),status:'Overdue',tone:'late'},
+    {label:'Escalated',val:cmpCountBy(rows,'Escalated'),status:'Escalated',tone:'late'}
+  ];
+  return '<div class="chub-stats">'+defs.map(function(d){
+    const on=d.status&&chubStatusFilter===d.status;
+    const call=d.status?'chubToggleStatus(\''+d.status+'\')':'chubRemoveFilter(\'chubStatusFilter\')';
+    // a zero problem count is not a problem, so it stays neutral
+    const tone=d.tone&&d.val?' '+d.tone:(d.val?'':' zero');
+    return '<button class="chub-stat'+(on?' is-on':'')+'" onclick="'+call+'" title="'+(d.status?'Show only '+d.status:'Show all statuses')+'">'
+      +'<span class="chub-stat-val'+tone+'">'+d.val+'</span>'
+      +'<span class="chub-stat-lbl">'+d.label+'</span></button>';
+  }).join('')+'</div>';
+}
+function chubGroupSub(kind,value,rows){
+  const uniq=function(f){const s=[];rows.forEach(function(a){if(s.indexOf(a[f])<0)s.push(a[f]);});return s;};
+  const n=rows.length+' activit'+(rows.length===1?'y':'ies');
+  if(kind==='country'){
+    const m=cmpCountryMeta[value]||{};
+    return [n,uniq('client').length+' client'+(uniq('client').length===1?'':'s'),m.currency].filter(Boolean).join(' · ');
+  }
+  if(kind==='client')return n+' · '+uniq('country').join(', ');
+  if(kind==='process')return n+' · '+uniq('country').length+' countries';
+  if(kind==='owner')return n+' · '+uniq('client').length+' clients';
+  return n;
+}
+
+// ── Hub ──
+function buildComplianceHubHTML(){
+  const scoped=cmpFilteredActivities({ignoreStatus:true});   // strip shows the split
+  const rows=cmpFilteredActivities();                        // cards honour it
+
+  const groups={};
+  rows.forEach(function(a){(groups[a[chubGroupBy]]=groups[a[chubGroupBy]]||[]).push(a);});
+  // worst first — escalations outrank overdues, then volume, then name
+  const keys=Object.keys(groups).sort(function(x,y){
+    const gx=groups[x],gy=groups[y];
+    const rx=cmpCountBy(gx,'Escalated')*10+cmpCountBy(gx,'Overdue');
+    const ry=cmpCountBy(gy,'Escalated')*10+cmpCountBy(gy,'Overdue');
+    if(rx!==ry)return ry-rx;
+    if(gy.length!==gx.length)return gy.length-gx.length;
+    return x.localeCompare(y);
+  });
+
+  const cards=keys.length?keys.map(function(k){
+    const g=groups[k];
+    const line=function(label,n,late){
+      return '<span class="chub-card-row"><span class="chub-card-row-k">'+label+'</span>'
+        +'<span class="chub-card-row-n'+(n?(late?' late':''):' zero')+'">'+n+'</span></span>';
+    };
+    return '<button class="chub-card" onclick="chubOpenGroup(\''+chubGroupBy+'\',\''+attrSafe(k).replace(/'/g,"\\'")+'\')">'
+      +'<span class="chub-card-top"><span class="chub-card-name">'+k+'</span>'
+      +'<span class="chub-card-arrow">'+chubIco.chevR+'</span></span>'
+      +'<span class="chub-card-sub">'+chubGroupSub(chubGroupBy,k,g)+'</span>'
+      +'<span class="chub-card-rows">'
+      +line('Pending',cmpCountBy(g,'Pending'),false)
+      +line('Completed',cmpCountBy(g,'Completed'),false)
+      +line('Overdue',cmpCountBy(g,'Overdue'),true)
+      +line('Escalated',cmpCountBy(g,'Escalated'),true)
+      +'</span></button>';
+  }).join('')
+   :'<div class="chub-empty">No compliance activities match the filters you applied.</div>';
+
+  return '<div class="chub-page">'
+    +dashboardBackHTML()
+    +'<div class="chub-head">'
+    +'<div class="chub-head-id"><div class="chub-head-title">Compliance activities</div>'
+    +'<div class="chub-head-sub">Every statutory activity across your clients and countries — what is pending, what is done, and what needs action.</div></div>'
+    +chubSearchBox()
+    +'</div>'
+    +chubStatStrip(scoped)
+    +'<div class="chub-filters">'+chubFilterBar()+'</div>'
+    +chubFilterChips()
+    +'<div class="chub-toolbar">'
+    +'<span class="chub-toolbar-title">By '+chubGroupBy+'<span>'+keys.length+' group'+(keys.length===1?'':'s')+' · '+rows.length+' activit'+(rows.length===1?'y':'ies')+'</span></span>'
+    +'<span class="chub-seg">'+CHUB_GROUPS.map(function(g){
+      return '<button class="'+(chubGroupBy===g.kind?'active':'')+'" onclick="chubSetGroupBy(\''+g.kind+'\')">'+g.label+'</button>';
+    }).join('')+'</span>'
+    +'<button class="chub-link" onclick="chubOpenGroup(\'all\',\'\')">View all activities</button>'
+    +'</div>'
+    +'<div class="chub-grid">'+cards+'</div>'
+    +'</div>';
+}
+
+// ── Drill-down ──
+function buildComplianceGroupHTML(){
+  const kind=chubGroupKind||'all',value=chubGroupValue;
+  const scoped=cmpFilteredActivities({ignoreStatus:true,kind:kind,value:value});
+  const rank={Escalated:0,Overdue:1,Pending:2,Completed:3};
+  const rows=cmpFilteredActivities({kind:kind,value:value}).sort(function(a,b){
+    if(rank[a.status]!==rank[b.status])return rank[a.status]-rank[b.status];
+    return cmpParseDate(a.due)-cmpParseDate(b.due);
+  });
+  if(chubActivityId&&!rows.some(function(a){return a.id===chubActivityId;}))chubActivityId=null;
+
+  const carried=cmpActiveFilters().length;
+  let sub=kind==='all'
+    ?scoped.length+' activities'+(carried?' · filtered by what you set on the hub':'')
+    :chubGroupSub(kind,value,scoped);
+  if(kind==='country'){
+    const m=cmpCountryMeta[value];
+    const reqs=complianceItemsData.filter(function(r){return r.country===value;}).length;
+    const rules=ratesRulesData.filter(function(r){return r.country===value;}).length;
+    if(m)sub+=' · '+m.entity+' · '+reqs+' requirements · '+rules+' rules';
+  }
+
+  // the dimension we drilled into is a constant here — no point repeating it
+  const cols=[{k:'client',h:'CLIENT'},{k:'country',h:'COUNTRY'},{k:'process',h:'PROCESS'},{k:'owner',h:'OWNER'}]
+    .filter(function(c){return c.k!==kind;});
+  const tableRows=rows.length?rows.map(function(a,i){
+    const late=a.status==='Overdue'||a.status==='Escalated';
+    return '<tr class="chub-row'+(chubActivityId===a.id?' lp-row-selected':'')+'" id="chub-row-'+a.id+'" style="cursor:pointer" onclick="openChubActivity('+a.id+')">'
+      +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
+      +'<td><span class="chub-cell-title">'+a.title+'</span><span class="chub-cell-ref">'+a.ref+'</span></td>'
+      +cols.map(function(c){return '<td>'+a[c.k]+'</td>';}).join('')
+      +'<td><span class="chub-cell-due">'+cmpFmtDate(a.due)
+      +'<span class="chub-due'+(late?' late':(a.status==='Completed'?' done':''))+'">'+cmpDueLabel(a)+'</span></span></td>'
+      +'<td>'+chubStatus(a.status)+'</td></tr>';
+  }).join('')
+   :'<tr><td colspan="'+(cols.length+4)+'" style="text-align:center;padding:28px;color:var(--gray)">No activities match the current filters.</td></tr>';
+
+  return '<div class="chub-page">'
+    +'<button class="ep-back" style="margin:0 0 14px" onclick="chubBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to Compliance Hub</button>'
+    +'<div class="chub-head">'
+    +'<div class="chub-head-id"><div class="chub-head-title">'+(kind==='all'?'All activities':value)+'</div>'
+    +'<div class="chub-head-sub">'+sub+'</div></div>'
+    +'<div class="chub-head-actions">'
+    +(kind==='country'?'<button class="chub-link" onclick="chubViewRequirements(\''+attrSafe(value).replace(/'/g,"\\'")+'\')">Country requirements</button>':'')
+    +chubSearchBox()
+    +'</div></div>'
+    +chubStatStrip(scoped)
+    +chubFilterChips()
+    +'<div class="lp-split-wrap" style="margin-top:16px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr>'
+    +'<th>S. NO</th><th>ACTIVITY</th>'+cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'<th>DUE DATE</th><th>STATUS</th>'
+    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(chubActivityId?' open':'')+'" id="chub-split-sb"><div class="lp-isb" id="chub-isb-inner">'+(chubActivityId?renderChubActivitySidebar():'')+'</div></div>'
+    +'</div></div>';
+}
+
+// ── Activity detail panel ──
+function openChubActivity(id){
+  chubActivityId=id;chubActivityTab='details';
+  const sb=document.getElementById('chub-split-sb');if(sb)sb.classList.add('open');
+  const inner=document.getElementById('chub-isb-inner');if(inner)inner.innerHTML=renderChubActivitySidebar();
+  document.querySelectorAll('.chub-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='chub-row-'+id);});
+}
+function closeChubActivity(){
+  chubActivityId=null;
+  const sb=document.getElementById('chub-split-sb');if(sb)sb.classList.remove('open');
+  document.querySelectorAll('.chub-row').forEach(function(r){r.classList.remove('lp-row-selected');});
+}
+function navChubActivityTab(tab){
+  chubActivityTab=tab;
+  const inner=document.getElementById('chub-isb-inner');
+  if(inner)inner.innerHTML=renderChubActivitySidebar();
+}
+function cmpNowParts(){
+  const now=new Date();
+  let h=now.getHours();const ampm=h>=12?'PM':'AM';h=h%12||12;
+  const p=function(n){return n<10?'0'+n:''+n;};
+  return {date:now.getDate()+' '+CMP_MONTHS[now.getMonth()]+' '+now.getFullYear(),
+          time:p(h)+':'+p(now.getMinutes())+':'+p(now.getSeconds())+' '+ampm,
+          iso:now.getFullYear()+'-'+p(now.getMonth()+1)+'-'+p(now.getDate())};
+}
+// Seeded from the record the first time it is opened, so anything the user adds
+// during the session survives tab switches and status changes.
+function cmpActivityLogs(a){
+  if(!a.logs){
+    const l=[{date:cmpFmtDate(a.raised),time:'09:15:00 AM',user:'System',status:'Pending',
+              action:'Activity raised for '+a.client+' ('+a.country+') and assigned to '+a.owner+'.'}];
+    if(a.status==='Overdue')l.push({date:cmpFmtDate(a.due),time:'11:59:00 PM',user:'System',status:'Overdue',
+              action:'Due date passed with no submission on file — flagged as overdue.'});
+    if(a.escalatedOn)l.push({date:cmpFmtDate(a.escalatedOn),time:'11:40:00 AM',user:a.owner,status:'Escalated',
+              action:a.escalationReason});
+    if(a.completedOn)l.push({date:cmpFmtDate(a.completedOn),time:'04:20:00 PM',user:a.owner,status:'Completed',
+              action:'Evidence filed and the activity closed.'});
+    a.logs=l.reverse();
+  }
+  return a.logs;
+}
+function chubMarkComplete(id){
+  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
+  const n=cmpNowParts();
+  a.status='Completed';a.completedOn=n.iso;
+  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:'Completed',action:'Marked complete from the Compliance Hub.'});
+  renderADTPage();
+  showToast('Activity completed','success','"'+a.title+'" closed for '+a.client+'.');
+}
+function chubReopenActivity(id){
+  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
+  const n=cmpNowParts();
+  a.completedOn=null;
+  a.status=cmpDaysTo(a.due)<0?'Overdue':'Pending';
+  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:a.status,action:'Reopened from the Compliance Hub.'});
+  renderADTPage();
+  showToast('Activity reopened','info','"'+a.title+'" is back in the '+a.status.toLowerCase()+' queue.');
+}
+function chubSubmitEscalation(id){
+  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
+  const inp=document.getElementById('chub-esc-reason');
+  const reason=inp?inp.value.trim():'';
+  if(!reason){if(inp){inp.style.borderColor='#dc2626';setTimeout(function(){inp.style.borderColor='';},1500);}return;}
+  const n=cmpNowParts();
+  a.status='Escalated';a.escalatedTo='Tarak Swain';a.escalatedOn=n.iso;a.escalationReason=reason;
+  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:'Escalated',action:reason});
+  renderADTPage();
+  showToast('Activity escalated','info','"'+a.title+'" raised to Tarak Swain.');
+}
+function chubSaveLog(id){
+  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
+  const inp=document.getElementById('chub-log-comment');
+  const comment=inp?inp.value.trim():'';
+  if(!comment){if(inp){inp.style.borderColor='#dc2626';setTimeout(function(){inp.style.borderColor='';},1500);}return;}
+  const n=cmpNowParts();
+  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:a.status,action:comment});
+  const inner=document.getElementById('chub-isb-inner');if(inner)inner.innerHTML=renderChubActivitySidebar();
+  showToast('Log added','success','Comment saved to '+a.ref+'.');
+}
+function renderChubActivitySidebar(){
+  const a=complianceActivities.find(function(x){return x.id===chubActivityId;});if(!a)return '';
+  const late=a.status==='Overdue'||a.status==='Escalated';
+  const tabs=[{id:'details',label:'Details'},{id:'logs',label:'Activity Log'},{id:'escalation',label:'Escalation'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<div class="lp-isb-tabs" id="chub-isb-tabs">'+tabs.map(function(t){
+      return '<button class="lp-isb-tab'+(chubActivityTab===t.id?' active':'')+'" onclick="navChubActivityTab(\''+t.id+'\')">'+t.label+'</button>';
+    }).join('')+'</div>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeChubActivity()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const kv=function(label,val){
+    return '<div class="chub-kv"><span class="chub-kv-k">'+label+'</span><span class="chub-kv-v">'+val+'</span></div>';
+  };
+  let body='';
+  if(chubActivityTab==='details'){
+    const action=a.status==='Completed'
+      ?'<button class="ep-cancel-btn" style="padding:5px 14px;font-size:12px" onclick="chubReopenActivity('+a.id+')">Reopen</button>'
+      :'<button class="ep-save-btn" style="padding:5px 14px;font-size:12px" onclick="chubMarkComplete('+a.id+')">Mark Complete</button>';
+    body='<div class="chub-sb-head">'
+      +'<div><div class="chub-sb-ref">'+a.ref+'</div><div class="chub-sb-title">'+a.title+'</div></div>'+action+'</div>'
+      +'<div class="chub-sb-desc">'+a.desc+'</div>'
+      +'<div class="chub-kvs">'
+      +kv('Status',chubStatus(a.status))
+      +kv('Due date',cmpFmtDate(a.due)+'<span class="chub-due'+(late?' late':(a.status==='Completed'?' done':''))+'">'+cmpDueLabel(a)+'</span>')
+      +kv('Client',a.client)
+      +kv('Country',a.country)
+      +kv('Process',a.process)
+      +kv('Owner',a.owner)
+      +kv('Employment model',a.model)
+      +kv('Priority',a.priority)
+      +kv('Workers in scope',a.workers)
+      +kv('Raised on',cmpFmtDate(a.raised))
+      +kv('Closed on',a.completedOn?cmpFmtDate(a.completedOn):'—')
+      +'</div>';
+  }else if(chubActivityTab==='logs'){
+    const logs=cmpActivityLogs(a);
+    const timeline=logs.length?'<div class="chub-log">'+logs.map(function(l){
+      return '<div class="chub-log-row">'
+        +'<div class="chub-log-rail"><span class="chub-log-dot '+CHUB_ST[l.status]+'"></span></div>'
+        +'<div class="chub-log-body">'
+        +'<div class="chub-log-top">'+chubStatus(l.status)+'<span class="chub-log-when">'+l.date+' · '+l.time+'</span></div>'
+        +'<div class="chub-log-text">'+l.action+'</div>'
+        +'<div class="chub-log-who">'+l.user+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>':'<div class="chub-empty" style="padding:26px">No activity logs yet.</div>';
+    body=timeline
+      +'<div class="chub-form">'
+      +'<div class="chub-form-label">Add a comment</div>'
+      +'<textarea class="chub-form-input" id="chub-log-comment" placeholder="What changed on this activity?"></textarea>'
+      +'<div class="chub-form-actions">'
+      +'<button class="ep-cancel-btn" onclick="document.getElementById(\'chub-log-comment\').value=\'\'">Clear</button>'
+      +'<button class="ep-save-btn" onclick="chubSaveLog('+a.id+')">Save</button>'
+      +'</div></div>';
+  }else{
+    if(a.status==='Escalated'){
+      body='<div class="chub-esc">'
+        +'<div class="chub-esc-head">Escalated to '+a.escalatedTo+'</div>'
+        +'<div class="chub-esc-meta">Raised by '+a.owner+' on '+cmpFmtDate(a.escalatedOn)+' · '+cmpDueLabel(a)+'</div>'
+        +'<div class="chub-esc-reason">'+a.escalationReason+'</div></div>'
+        +'<div class="chub-kvs" style="margin-top:14px">'
+        +kv('Escalated to',a.escalatedTo)+kv('Escalated on',cmpFmtDate(a.escalatedOn))
+        +kv('Priority',a.priority)+kv('Client informed','Yes')
+        +'</div>'
+        +'<div class="chub-form-actions" style="margin-top:16px">'
+        +'<button class="ep-save-btn" onclick="chubMarkComplete('+a.id+')">Resolve &amp; complete</button></div>';
+    }else if(a.status==='Completed'){
+      body='<div class="chub-note"><b>Nothing to escalate</b>This activity was closed on '+cmpFmtDate(a.completedOn)+'.</div>';
+    }else{
+      body='<div class="chub-note"><b>Not escalated</b>'+a.owner+' still owns this activity. Escalating raises it to the compliance lead and flags it on the hub.</div>'
+        +'<div class="chub-form">'
+        +'<div class="chub-form-label">Reason for escalating to Tarak Swain</div>'
+        +'<textarea class="chub-form-input" id="chub-esc-reason" placeholder="e.g. Portal rejected the filing twice — needs legal sign-off"></textarea>'
+        +'<div class="chub-form-actions">'
+        +'<button class="ep-cancel-btn" onclick="navChubActivityTab(\'details\')">Cancel</button>'
+        +'<button class="ep-save-btn" onclick="chubSubmitEscalation('+a.id+')">Escalate</button>'
+        +'</div></div>';
+    }
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+
 // ── RATES & RULES PAGE ──
 function openRatesRuleSidebar(id){
   ratesRuleSelectedId=id;ratesRuleTab='basic-details';

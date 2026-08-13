@@ -89,6 +89,7 @@ const sidebarItems=[
 
   {section:'Governance'},
   {dropdown:'Compliance Hub',color:'amber',icon:sbIco.shield,children:[
+    {id:'compliance-hub',label:'Overview',color:'amber',icon:sbIco.shield},
     {id:'compliance',label:'Requirements',color:'amber',icon:sbIco.shieldCheck},
     {id:'rates-rules',label:'Rates & Rules',color:'amber',icon:sbIco.sliders}
   ]},
@@ -344,7 +345,7 @@ function lstSaveLog(){
   refreshLstSidebar();
   showToast('Log added','success','Comment saved with status "'+status+'".');
 }
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Messages',context:'Messages',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Requirements',context:'Compliance Requirements',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Messages',context:'Messages',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance-hub')return{title:'Compliance Hub',context:'Compliance Hub',filters:[],columns:[],rows:[]};if(pg==='compliance-group')return{title:(chubGroupKind&&chubGroupKind!=='all'?chubGroupValue:'All Compliance Activities'),context:'Compliance Hub',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Requirements',context:'Compliance Requirements',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
@@ -356,7 +357,7 @@ const SB_STATUS_TONE={
   'quotation-approved':'ok','proposal-approved':'ok','contract-approved':'ok',
   // bad — stopped, refused or broken
   inactive:'bad',unapproved:'bad',rejected:'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
-  disconnected:'bad',exception:'bad',absent:'bad',
+  disconnected:'bad',exception:'bad',absent:'bad',escalated:'bad',
   // wait — in flight, someone owes an action
   pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','waiting-client':'wait','waiting-csm':'wait',
   'proposal-sent':'wait','contract-sent':'wait','waiting-for-approval':'wait','pending-onboarding':'wait',onboarding:'wait',inprog:'wait',unfilled:'wait',unpaid:'wait',
@@ -382,7 +383,7 @@ function sbStatus(v,label){
   return '<span class="sb-status '+statusTone(v)+'">'+text+'</span>';
 }
 function titleForAdd(pg){return pg==='dashboard'?'Dashboard':getPageTitle(pg);}
-function getSidebarActivePage(pg){if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-add'||pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
+function getSidebarActivePage(pg){if(pg==='compliance-group')return 'compliance-hub';if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-add'||pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
 
 function attrSafe(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
 function customSelect(id,selected,options,placeholder,variant){
@@ -2134,6 +2135,179 @@ let complianceCountryFilter='',complianceModelFilter='',complianceStatusFilter='
 let complianceModalOpen=false;
 let complianceSelectedId=null,complianceTab='basic-details';
 
+// ── COMPLIANCE HUB — ACTIVITY TRACKER ──────────────────────────────────
+// The Requirements page above is the *catalogue* (what each country demands).
+// The hub tracks the *work*: one activity = one requirement applied to one
+// client, in one country, owned by one person, with a due date. Every KPI,
+// card and filter on the hub is derived from this one array.
+//
+// Dates are measured against CMP_TODAY rather than the wall clock, so the demo
+// keeps telling the same story (6 overdue, 3 escalated) whenever it is opened.
+const CMP_TODAY=new Date(2026,7,13); // 13 Aug 2026
+const CMP_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const CMP_STATUSES=['Pending','Completed','Overdue','Escalated'];
+const CMP_PROCESSES=['Onboarding','Payroll','Statutory Filing','Offboarding','Contract & Docs'];
+const CMP_DUE_PRESETS=['Overdue','Due in 7 days','Due in 30 days','Due later'];
+
+// Country reference used by the hub cards and the country snapshot panel.
+const cmpCountryMeta={
+  'Netherlands':  {iso:'NL',region:'Europe',currency:'EUR',entity:'Own entity',models:['EOR','PEO']},
+  'India':        {iso:'IN',region:'Asia Pacific',currency:'INR',entity:'Own entity',models:['EOR','PEO']},
+  'Germany':      {iso:'DE',region:'Europe',currency:'EUR',entity:'Own entity',models:['PEO','Direct']},
+  'Spain':        {iso:'ES',region:'Europe',currency:'EUR',entity:'Partner entity',models:['EOR']},
+  'Belgium':      {iso:'BE',region:'Europe',currency:'EUR',entity:'Partner entity',models:['EOR']},
+  'United Kingdom':{iso:'GB',region:'Europe',currency:'GBP',entity:'Setup in progress',models:['EOR']}
+};
+
+const complianceActivities=[
+  // ── Netherlands ──
+  {id:1,ref:'CMP-2041',title:'Wage Tax Declaration — July 2026',process:'Payroll',client:'Nimbus Retail BV',country:'Netherlands',owner:'Neha Sharma',model:'EOR',due:'2026-08-20',raised:'2026-08-01',status:'Pending',priority:'High',workers:12,
+   desc:'Monthly wage tax (loonheffing) declaration to be filed with the Belastingdienst for all EOR workers on the July cycle.'},
+  {id:2,ref:'CMP-2042',title:'Right to Work Check — 3 new hires',process:'Onboarding',client:'Nimbus Retail BV',country:'Netherlands',owner:'Pritam Rai',model:'EOR',due:'2026-08-15',raised:'2026-08-04',status:'Pending',priority:'High',workers:3,
+   desc:'Identity and work authorisation verification for three hires starting on 1 September. Evidence must be on file before day one.'},
+  {id:3,ref:'CMP-2043',title:'Payroll Tax Number Registration',process:'Statutory Filing',client:'Nimbus Retail BV',country:'Netherlands',owner:'Aman Singh',model:'EOR',due:'2026-08-05',raised:'2026-07-15',status:'Overdue',priority:'High',workers:12,
+   desc:'Registration of the payroll tax number for the new cost centre. Payroll cannot be finalised until the number is issued.'},
+  {id:4,ref:'CMP-2044',title:'Holiday Allowance Payout Reconciliation',process:'Payroll',client:'Brightwave Media NV',country:'Netherlands',owner:'Neha Sharma',model:'PEO',due:'2026-07-31',raised:'2026-07-10',status:'Completed',completedOn:'2026-07-29',priority:'Medium',workers:9,
+   desc:'8% statutory holiday allowance reconciled against the May payout and confirmed with the client finance team.'},
+  {id:5,ref:'CMP-2045',title:'Final Settlement Approval — M. Vos',process:'Offboarding',client:'Brightwave Media NV',country:'Netherlands',owner:'Rahul Mehta',model:'PEO',due:'2026-08-11',raised:'2026-07-25',status:'Overdue',priority:'Medium',workers:1,
+   desc:'Final settlement sheet awaiting client approval before the last payroll run can be released.'},
+  {id:6,ref:'CMP-2046',title:'30% Ruling Application — A. Shah',process:'Contract & Docs',client:'Nimbus Retail BV',country:'Netherlands',owner:'Pallavi Parate',model:'EOR',due:'2026-09-01',raised:'2026-08-06',status:'Pending',priority:'Low',workers:1,
+   desc:'Expat tax ruling application to be submitted within four months of the start date to secure retroactive effect.'},
+  {id:7,ref:'CMP-2047',title:'UWV Employee Insurance Update',process:'Statutory Filing',client:'Brightwave Media NV',country:'Netherlands',owner:'Aman Singh',model:'PEO',due:'2026-08-08',raised:'2026-07-20',status:'Completed',completedOn:'2026-08-06',priority:'Medium',workers:9,
+   desc:'Employee insurance contribution bands updated with the UWV following the mid-year rate revision.'},
+  {id:8,ref:'CMP-2048',title:'Annual Wage Statement Preparation',process:'Payroll',client:'Nimbus Retail BV',country:'Netherlands',owner:'Neha Sharma',model:'EOR',due:'2026-08-08',raised:'2026-07-18',status:'Completed',completedOn:'2026-08-07',priority:'Low',workers:12,
+   desc:'Annual wage statements (jaaropgaaf) drafted and queued for distribution to all active workers.'},
+
+  // ── India ──
+  {id:9,ref:'CMP-2049',title:'Provident Fund Registration',process:'Statutory Filing',client:'Kanan Textiles Pvt Ltd',country:'India',owner:'Aman Singh',model:'EOR',due:'2026-08-02',raised:'2026-07-08',status:'Escalated',priority:'High',workers:24,
+   escalatedTo:'Tarak Swain',escalatedOn:'2026-08-09',escalationReason:'EPFO portal rejected the establishment code twice. Legal sign-off needed on the revised entity documents before a third attempt.',
+   desc:'Employer PF registration for the Hyderabad site. Blocks the first payroll run for all 24 workers.'},
+  {id:10,ref:'CMP-2050',title:'ESIC Registration — 18 workers',process:'Statutory Filing',client:'Kanan Textiles Pvt Ltd',country:'India',owner:'Aman Singh',model:'PEO',due:'2026-08-25',raised:'2026-08-02',status:'Pending',priority:'Medium',workers:18,
+   desc:'Employee State Insurance registration for workers below the wage threshold at the new site.'},
+  {id:11,ref:'CMP-2051',title:'Professional Tax Remittance — July',process:'Payroll',client:'Kanan Textiles Pvt Ltd',country:'India',owner:'Rahul Mehta',model:'PEO',due:'2026-08-10',raised:'2026-08-01',status:'Overdue',priority:'High',workers:24,
+   desc:'State professional tax remittance for the July cycle. Late payment attracts interest from the due date.'},
+  {id:12,ref:'CMP-2052',title:'Form 16 Issuance — FY 2025-26',process:'Payroll',client:'Orion Systems Ltd',country:'India',owner:'Neha Sharma',model:'EOR',due:'2026-07-31',raised:'2026-06-20',status:'Completed',completedOn:'2026-07-24',priority:'Medium',workers:11,
+   desc:'Annual TDS certificates generated from the traces portal and released to all workers.'},
+  {id:13,ref:'CMP-2053',title:'Full & Final Settlement — R. Mehta',process:'Offboarding',client:'Kanan Textiles Pvt Ltd',country:'India',owner:'Neha Sharma',model:'PEO',due:'2026-08-28',raised:'2026-08-05',status:'Pending',priority:'Medium',workers:1,
+   desc:'Full and final settlement including gratuity, leave encashment and PF withdrawal support.'},
+  {id:14,ref:'CMP-2054',title:'Background Verification — 5 candidates',process:'Onboarding',client:'Orion Systems Ltd',country:'India',owner:'Pritam Rai',model:'EOR',due:'2026-08-18',raised:'2026-08-03',status:'Pending',priority:'Medium',workers:5,
+   desc:'Education, employment and criminal record checks for five offers pending release.'},
+  {id:15,ref:'CMP-2055',title:'Gratuity Registration',process:'Statutory Filing',client:'Kanan Textiles Pvt Ltd',country:'India',owner:'Rahul Mehta',model:'PEO',due:'2026-08-06',raised:'2026-07-14',status:'Completed',completedOn:'2026-08-04',priority:'Low',workers:24,
+   desc:'Gratuity scheme registered and the 4.81% monthly accrual switched on in the payroll engine.'},
+
+  // ── Germany ──
+  {id:16,ref:'CMP-2056',title:'Sozialversicherung Registration',process:'Statutory Filing',client:'Vertex Labs GmbH',country:'Germany',owner:'Pritam Rai',model:'PEO',due:'2026-08-14',raised:'2026-07-28',status:'Pending',priority:'High',workers:7,
+   desc:'Social insurance registration with the collecting health fund for seven newly transferred workers.'},
+  {id:17,ref:'CMP-2057',title:'Lohnsteuer Monthly Filing — July',process:'Payroll',client:'Vertex Labs GmbH',country:'Germany',owner:'Neha Sharma',model:'PEO',due:'2026-08-10',raised:'2026-08-01',status:'Overdue',priority:'High',workers:7,
+   desc:'Monthly wage tax return to the Finanzamt via ELSTER. Filing window closed on the 10th.'},
+  {id:18,ref:'CMP-2058',title:'Direct Onboarding Pack — N. Kim',process:'Onboarding',client:'Vertex Labs GmbH',country:'Germany',owner:'Pritam Rai',model:'Direct',due:'2026-08-07',raised:'2026-07-22',status:'Completed',completedOn:'2026-08-05',priority:'Medium',workers:1,
+   desc:'Signed contract, tax ID, social security number and bank mandate collected and filed.'},
+  {id:19,ref:'CMP-2059',title:'Arbeitszeugnis Issuance',process:'Offboarding',client:'Vertex Labs GmbH',country:'Germany',owner:'Pallavi Parate',model:'Direct',due:'2026-08-02',raised:'2026-07-16',status:'Completed',completedOn:'2026-08-01',priority:'Low',workers:1,
+   desc:'Statutory employment reference letter drafted, reviewed by the client and issued to the leaver.'},
+  {id:20,ref:'CMP-2060',title:'Works Council Agreement Filing',process:'Contract & Docs',client:'Brightwave Media NV',country:'Germany',owner:'Rahul Mehta',model:'PEO',due:'2026-07-20',raised:'2026-06-25',status:'Escalated',priority:'High',workers:9,
+   escalatedTo:'Tarak Swain',escalatedOn:'2026-08-04',escalationReason:'Works council has not returned the signed agreement after three reminders. The filing window closes on 31 Aug and the client has been informed.',
+   desc:'Betriebsvereinbarung to be filed before the new shift pattern can take effect.'},
+  {id:21,ref:'CMP-2061',title:'Health Insurance Enrolment — 4 hires',process:'Statutory Filing',client:'Vertex Labs GmbH',country:'Germany',owner:'Pritam Rai',model:'EOR',due:'2026-08-22',raised:'2026-08-05',status:'Pending',priority:'Medium',workers:4,
+   desc:'Statutory health fund selection captured from each hire and enrolment submitted.'},
+
+  // ── Spain ──
+  {id:22,ref:'CMP-2062',title:'Seguridad Social Affiliation',process:'Statutory Filing',client:'Aurora Health SL',country:'Spain',owner:'Neha Sharma',model:'EOR',due:'2026-08-19',raised:'2026-08-01',status:'Pending',priority:'High',workers:6,
+   desc:'Affiliation and alta filings for six workers ahead of the September payroll cycle.'},
+  {id:23,ref:'CMP-2063',title:'Work Permit Verification — 2 workers',process:'Statutory Filing',client:'Aurora Health SL',country:'Spain',owner:'Rahul Mehta',model:'EOR',due:'2026-07-28',raised:'2026-07-05',status:'Overdue',priority:'High',workers:2,
+   desc:'Residence and work permit validity confirmation for two non-EU workers. Both permits lapse in October.'},
+  {id:24,ref:'CMP-2064',title:'Modelo 111 Withholding — Q2',process:'Payroll',client:'Aurora Health SL',country:'Spain',owner:'Pallavi Parate',model:'EOR',due:'2026-07-20',raised:'2026-07-01',status:'Completed',completedOn:'2026-07-18',priority:'Medium',workers:6,
+   desc:'Quarterly IRPF withholding return filed with the Agencia Tributaria.'},
+  {id:25,ref:'CMP-2065',title:'Contrata Registration — 3 hires',process:'Onboarding',client:'Aurora Health SL',country:'Spain',owner:'Aman Singh',model:'EOR',due:'2026-08-16',raised:'2026-08-03',status:'Pending',priority:'Medium',workers:3,
+   desc:'Employment contracts registered with SEPE within ten days of each start date.'},
+  {id:26,ref:'CMP-2066',title:'Finiquito Calculation — L. Martin',process:'Offboarding',client:'Orion Systems Ltd',country:'Spain',owner:'Pallavi Parate',model:'EOR',due:'2026-08-09',raised:'2026-07-24',status:'Completed',completedOn:'2026-08-08',priority:'Low',workers:1,
+   desc:'Settlement calculation covering accrued holiday, pro-rata extra payments and notice.'},
+
+  // ── Belgium ──
+  {id:27,ref:'CMP-2067',title:'Dimona Declaration — 6 hires',process:'Statutory Filing',client:'Brightwave Media NV',country:'Belgium',owner:'Pritam Rai',model:'EOR',due:'2026-08-15',raised:'2026-08-04',status:'Pending',priority:'High',workers:6,
+   desc:'Immediate employment declaration to the NSSO — must be lodged before the first hour worked.'},
+  {id:28,ref:'CMP-2068',title:'Meal Voucher Setup',process:'Payroll',client:'Brightwave Media NV',country:'Belgium',owner:'Neha Sharma',model:'EOR',due:'2026-08-03',raised:'2026-07-18',status:'Overdue',priority:'Medium',workers:6,
+   desc:'Electronic meal voucher provider onboarding and employer contribution configured in payroll.'},
+  {id:29,ref:'CMP-2069',title:'Antar Compliance Test',process:'Onboarding',client:'Brightwave Media NV',country:'Belgium',owner:'Pritam Rai',model:'EOR',due:'2026-07-30',raised:'2026-07-12',status:'Completed',completedOn:'2026-07-27',priority:'Low',workers:6,
+   desc:'Onboarding checklist validation run for the Belgium EOR template.'},
+  {id:30,ref:'CMP-2070',title:'C4 Exit Documents',process:'Contract & Docs',client:'Nimbus Retail BV',country:'Belgium',owner:'Rahul Mehta',model:'EOR',due:'2026-08-04',raised:'2026-07-21',status:'Completed',completedOn:'2026-08-04',priority:'Low',workers:1,
+   desc:'C4 unemployment certificate and social documents issued to the departing worker.'},
+
+  // ── United Kingdom ──
+  {id:31,ref:'CMP-2071',title:'Right to Work Share Code Check',process:'Onboarding',client:'Orion Systems Ltd',country:'United Kingdom',owner:'Pallavi Parate',model:'EOR',due:'2026-07-31',raised:'2026-07-14',status:'Escalated',priority:'High',workers:2,
+   escalatedTo:'Tarak Swain',escalatedOn:'2026-08-06',escalationReason:'Home Office share code expired before verification could complete. Candidate start date on 1 Sep is at risk and the client needs a decision.',
+   desc:'Online right to work verification for two hires ahead of the UK entity going live.'},
+  {id:32,ref:'CMP-2072',title:'PAYE Scheme Registration',process:'Statutory Filing',client:'Orion Systems Ltd',country:'United Kingdom',owner:'Aman Singh',model:'EOR',due:'2026-08-26',raised:'2026-08-07',status:'Pending',priority:'High',workers:2,
+   desc:'HMRC PAYE and accounts office reference required before the first RTI submission.'}
+];
+
+// Hub view state. `chubGroupBy` drives what the cards represent; the group page
+// reuses whichever dimension the user drilled into.
+let chubGroupBy='country';
+let chubClientFilter='',chubCountryFilter='',chubProcessFilter='',chubOwnerFilter='',chubDueFilter='';
+let chubStatusFilter='',chubSearch='';
+let chubGroupKind='',chubGroupValue='';
+let chubActivityId=null,chubActivityTab='details';
+
+function cmpParseDate(s){const p=String(s).split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function cmpFmtDate(s){if(!s)return '—';const d=cmpParseDate(s);return (d.getDate()<10?'0':'')+d.getDate()+' '+CMP_MONTHS[d.getMonth()]+' '+d.getFullYear();}
+function cmpDaysTo(s){return Math.round((cmpParseDate(s)-CMP_TODAY)/86400000);}
+// One phrase that reads the same on a card, in a table cell and in the panel.
+function cmpDueLabel(a){
+  if(a.status==='Completed')return 'Closed '+cmpFmtDate(a.completedOn||a.due);
+  const d=cmpDaysTo(a.due);
+  if(d<0)return Math.abs(d)+(Math.abs(d)===1?' day':' days')+' overdue';
+  if(d===0)return 'Due today';
+  if(d===1)return 'Due tomorrow';
+  return 'Due in '+d+' days';
+}
+// Only two outcomes worth colouring: it is late, or it is closed. Everything
+// else is a plain date and does not need to shout.
+function cmpDueTone(a){
+  if(a.status==='Completed')return 'done';
+  return cmpDaysTo(a.due)<0?'late':'';
+}
+function cmpMatchesDuePreset(a,preset){
+  if(!preset)return true;
+  const d=cmpDaysTo(a.due);
+  if(preset==='Overdue')return d<0&&a.status!=='Completed';
+  if(preset==='Due in 7 days')return d>=0&&d<=7;
+  if(preset==='Due in 30 days')return d>=0&&d<=30;
+  if(preset==='Due later')return d>30;
+  return true;
+}
+// Every hub surface reads its rows through here, so the KPI tiles, the cards
+// and the drill-down table can never disagree about what is in scope.
+function cmpFilteredActivities(opts){
+  const o=opts||{};
+  const q=(chubSearch||'').trim().toLowerCase();
+  return complianceActivities.filter(function(a){
+    if(chubClientFilter&&a.client!==chubClientFilter)return false;
+    if(chubCountryFilter&&a.country!==chubCountryFilter)return false;
+    if(chubProcessFilter&&a.process!==chubProcessFilter)return false;
+    if(chubOwnerFilter&&a.owner!==chubOwnerFilter)return false;
+    if(!cmpMatchesDuePreset(a,chubDueFilter))return false;
+    if(!o.ignoreStatus&&chubStatusFilter&&a.status!==chubStatusFilter)return false;
+    if(o.kind&&o.kind!=='all'&&a[o.kind]!==o.value)return false;
+    if(q&&!(a.title+' '+a.ref+' '+a.client+' '+a.country+' '+a.owner+' '+a.process).toLowerCase().includes(q))return false;
+    return true;
+  });
+}
+function cmpCountBy(rows,status){return rows.filter(function(a){return a.status===status;}).length;}
+function cmpActiveFilters(){
+  return [
+    {key:'chubClientFilter',label:'Client',value:chubClientFilter},
+    {key:'chubCountryFilter',label:'Country',value:chubCountryFilter},
+    {key:'chubProcessFilter',label:'Process',value:chubProcessFilter},
+    {key:'chubOwnerFilter',label:'Owner',value:chubOwnerFilter},
+    {key:'chubDueFilter',label:'Due',value:chubDueFilter},
+    {key:'chubStatusFilter',label:'Status',value:chubStatusFilter}
+  ].filter(function(f){return !!f.value;});
+}
+function cmpUnique(field){
+  const seen=[];
+  complianceActivities.forEach(function(a){if(seen.indexOf(a[field])<0)seen.push(a[field]);});
+  return seen.sort();
+}
 // ── RATES & RULES DATA & STATE ──
 const ratesRulesData=[
   {id:1,country:'Netherlands',ruleName:'Minimum Wage',category:'General',applicableTo:'EOR / PEO',valueRate:'EUR 14.71',status:'Active',createdBy:'Tarak Swain',createdAt:'02 Mar 2026 | 02:53:47 PM',logs:[]},

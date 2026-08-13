@@ -1,0 +1,222 @@
+/* ── COMPLIANCE HUB ──────────────────────────────────────────────────────
+   Deliberately quiet. The palette is five neutrals and one red:
+
+     #0f172a  headings, numbers that matter
+     #6a7282  labels and secondary text
+     #94a3b8  muted — zero counts, closed items, anything settled
+     #e5e7eb  hairlines
+     #fff / #f8f9fb  surfaces
+     #dc2626  RED — overdue and escalated, and nothing else
+
+   Red is the only colour that carries meaning, so wherever it appears the
+   user knows without a legend that something needs them. Status is told by
+   type weight and a small dot, not by five different pill colours.
+   ─────────────────────────────────────────────────────────────────────── */
+.chub-page{max-width:1180px;margin:0 auto;width:100%}
+.chub-page .chub-late{color:#dc2626}
+
+/* ══ Page header ══ */
+.chub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.chub-head-id{min-width:0;flex:1}
+.chub-head-title{font-size:17px;font-weight:700;color:var(--navy);letter-spacing:-.2px;line-height:1.3}
+.chub-head-sub{font-size:12.5px;color:var(--gray);margin-top:4px;line-height:1.55;max-width:620px}
+.chub-head-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+
+.chub-search{position:relative;display:inline-flex;align-items:center}
+.chub-search svg{position:absolute;left:11px;width:14px;height:14px;fill:none;stroke:var(--gray);stroke-width:2;pointer-events:none}
+/* Sized by width, never by flex-basis: this box sits in a row on wide screens
+   and in a column once the header stacks, and a basis would be read as height
+   in the second case. Shrinks before the buttons beside it do. */
+.chub-search{flex:0 1 auto;width:210px;max-width:100%;min-width:0}
+.chub-search input{
+  height:34px;width:100%;padding:0 12px 0 32px;border:1px solid var(--border);border-radius:var(--r-input);
+  background:var(--card);font-size:12.5px;color:var(--navy);outline:none;font-family:inherit;transition:border-color .15s}
+.chub-search input:focus{border-color:var(--navy)}
+.chub-link{
+  height:34px;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-control);background:var(--card);
+  cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--navy);white-space:nowrap;transition:.15s}
+.chub-link:hover{border-color:#cbd5e1;background:var(--light)}
+
+/* ══ Count strip — one bordered row, hairline dividers, doubles as the
+      status filter. Same shape as .listing-stats elsewhere in the app. ══ */
+.chub-stats{
+  display:flex;align-items:stretch;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);overflow:hidden}
+.chub-stat{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;
+  padding:14px 18px;border:none;border-right:1px solid var(--border);background:none;cursor:pointer;
+  font-family:inherit;text-align:left;transition:background .14s}
+.chub-stat:last-child{border-right:none}
+.chub-stat:hover{background:var(--light)}
+.chub-stat.is-on{background:var(--row-sel);box-shadow:inset 0 -2px 0 var(--navy)}
+.chub-stat-val{font-size:23px;font-weight:700;color:var(--navy);line-height:1.15}
+.chub-stat-val.zero,.chub-stat-val.done{color:#94a3b8}
+.chub-stat-val.late{color:#dc2626}
+.chub-stat-lbl{font-size:11.5px;font-weight:500;color:var(--gray);white-space:nowrap}
+
+/* ══ Filters ══ */
+.chub-filters{margin-top:18px}
+.chub-chips{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px}
+.chub-chip{
+  display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px 0 10px;border-radius:var(--r-status);
+  border:1px solid var(--border);background:var(--card);cursor:pointer;font-family:inherit;
+  font-size:11.5px;font-weight:600;color:var(--navy);transition:.15s}
+.chub-chip:hover{border-color:#cbd5e1;background:var(--light)}
+.chub-chip-k{color:var(--gray);font-weight:500}
+.chub-chip svg{width:11px;height:11px;fill:none;stroke:var(--gray);stroke-width:2.6}
+
+/* ══ Toolbar ══ */
+.chub-toolbar{display:flex;align-items:center;gap:10px;margin:22px 0 12px;flex-wrap:wrap}
+.chub-toolbar-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);margin-right:auto;text-transform:capitalize}
+.chub-toolbar-title span{color:var(--gray);font-weight:500;margin-left:8px;font-size:12px;text-transform:none}
+.chub-seg{display:inline-flex;background:var(--ol);border-radius:var(--r-control);padding:3px;gap:2px}
+.chub-seg button{
+  height:28px;padding:0 13px;border:none;background:none;border-radius:6px;cursor:pointer;font-family:inherit;
+  font-size:12px;font-weight:600;color:var(--gray);transition:.15s;white-space:nowrap}
+.chub-seg button:hover{color:var(--navy)}
+.chub-seg button.active{background:var(--card);color:var(--navy);box-shadow:0 1px 2px rgba(15,23,42,.08)}
+
+/* ══ Group cards — a name, a subtitle, four labelled counts. No charts. ══ */
+/* The grid reflows on its own: auto-fill picks the column count from the space
+   available, so it runs 4 / 3 / 2 / 1 as the window narrows and no breakpoint
+   has to know about it. min(100%,…) is what stops a card from forcing a
+   horizontal scrollbar once the container drops below one card's minimum.
+
+   250px comes from the content, not from arithmetic: the widest line a card
+   holds is its subtitle (~30 characters at 11.5px ≈ 190px) plus 32px of
+   padding. Sizing it that way keeps every step clear of a boundary — tuning
+   the minimum to force a tidy 3x2 at one specific width put two of the
+   breakpoints within 2px of flipping, which any padding change would break. */
+.chub-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px}
+.chub-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:15px 16px;
+  cursor:pointer;text-align:left;font-family:inherit;width:100%;display:block;transition:border-color .15s,box-shadow .15s}
+.chub-card:hover{border-color:#cbd5e1;box-shadow:0 2px 10px rgba(15,23,42,.06)}
+.chub-card-top{display:flex;align-items:center;gap:10px}
+.chub-card-name{
+  flex:1;min-width:0;font-size:14px;font-weight:700;color:var(--navy);line-height:1.3;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chub-card-arrow{flex-shrink:0;display:inline-flex;color:#94a3b8;transition:transform .15s,color .15s}
+.chub-card-arrow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.4}
+.chub-card:hover .chub-card-arrow{color:var(--navy);transform:translateX(2px)}
+.chub-card-sub{
+  display:block;font-size:11.5px;color:var(--gray);margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chub-card-rows{display:block;margin-top:13px;border-top:1px solid var(--ol);padding-top:4px}
+.chub-card-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:5px 0}
+.chub-card-row-k{font-size:12px;color:var(--gray)}
+.chub-card-row-n{font-size:13px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.chub-card-row-n.zero{color:#cbd5e1;font-weight:600}
+.chub-card-row-n.late{color:#dc2626}
+
+.chub-empty{
+  grid-column:1/-1;padding:40px 20px;text-align:center;color:var(--gray);font-size:13px;
+  background:var(--card);border:1px dashed var(--border);border-radius:var(--r-card)}
+
+/* ══ Status — a dot and a word. Weight and tone carry the meaning. ══ */
+.chub-st{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.chub-st::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.chub-st.pending{color:var(--navy)}
+.chub-st.done{color:#94a3b8}
+.chub-st.late,.chub-st.esc{color:#dc2626}
+/* escalated is the same problem, one step louder — a ring marks it apart */
+.chub-st.esc::before{box-shadow:0 0 0 3px rgba(220,38,38,.16)}
+
+.chub-due{font-size:11px;font-weight:500;color:var(--gray);white-space:nowrap}
+.chub-due.late{color:#dc2626;font-weight:600}
+.chub-due.done{color:#94a3b8}
+
+/* ══ Drill-down table cells ══ */
+.chub-cell-title{display:block;font-weight:600;color:var(--navy)}
+.chub-cell-ref{display:block;font-size:10.5px;color:#94a3b8;margin-top:1px}
+.chub-cell-due{display:block;white-space:nowrap}
+.chub-cell-due .chub-due{display:block;margin-top:1px}
+
+/* ══ Activity panel ══ */
+.chub-sb-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding-bottom:12px}
+.chub-sb-ref{font-size:10.5px;font-weight:700;color:#94a3b8;letter-spacing:.5px}
+.chub-sb-title{font-size:16px;font-weight:700;color:var(--navy);margin-top:3px;line-height:1.35}
+.chub-sb-desc{
+  font-size:12.5px;color:#475569;line-height:1.6;background:var(--light);border:1px solid var(--border);
+  border-radius:10px;padding:11px 13px;margin-bottom:6px}
+
+/* a plain definition list beats a grid of bordered field cards */
+.chub-kvs{display:block}
+.chub-kv{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--ol)}
+.chub-kv:last-child{border-bottom:none}
+.chub-kv-k{font-size:12px;color:var(--gray);flex-shrink:0}
+.chub-kv-v{font-size:12.5px;font-weight:600;color:var(--navy);text-align:right;min-width:0}
+.chub-kv-v .chub-due{margin-left:8px;display:inline}
+
+/* ══ Log ══ */
+.chub-log{display:block}
+.chub-log-row{display:flex;gap:12px}
+.chub-log-rail{position:relative;width:8px;flex-shrink:0;display:flex;justify-content:center}
+.chub-log-rail::before{content:'';position:absolute;top:14px;bottom:0;width:1px;background:var(--border)}
+.chub-log-row:last-child .chub-log-rail::before{display:none}
+.chub-log-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0;position:relative;background:#cbd5e1}
+.chub-log-dot.pending{background:var(--navy)}
+.chub-log-dot.late,.chub-log-dot.esc{background:#dc2626}
+.chub-log-body{min-width:0;flex:1;padding-bottom:18px}
+.chub-log-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+/* the rail already carries the dot — the status word must not repeat it */
+.chub-log-top .chub-st::before{display:none}
+.chub-log-when{font-size:11px;color:#94a3b8;white-space:nowrap}
+.chub-log-text{font-size:12.5px;color:#334155;line-height:1.6;margin-top:5px}
+.chub-log-who{font-size:11px;color:var(--gray);margin-top:4px}
+
+/* ══ Forms ══ */
+.chub-form{border-top:1px solid var(--border);padding-top:14px;margin-top:4px}
+.chub-form-label{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:7px}
+.chub-form-input{
+  width:100%;min-height:76px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;resize:vertical;
+  font-family:inherit;font-size:12.5px;color:var(--navy);outline:none;transition:border-color .15s}
+.chub-form-input:focus{border-color:var(--navy)}
+.chub-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
+
+/* ══ Escalation ══ */
+.chub-esc{border:1px solid var(--border);border-left:3px solid #dc2626;border-radius:10px;padding:13px 15px;background:var(--card)}
+.chub-esc-head{font-size:13.5px;font-weight:700;color:#dc2626}
+.chub-esc-meta{font-size:11.5px;color:var(--gray);margin-top:4px}
+.chub-esc-reason{font-size:12.5px;color:#334155;line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid var(--ol)}
+.chub-note{
+  background:var(--light);border:1px solid var(--border);border-radius:10px;padding:13px 15px;
+  font-size:12.5px;color:var(--gray);line-height:1.6}
+.chub-note b{display:block;color:var(--navy);font-size:13px;margin-bottom:3px}
+
+/* ══ Narrowing down ═══════════════════════════════════════════════════════
+   The card grid needs no help — it reflows from its own track sizing. These
+   rules are only for the parts that cannot: the fixed-column count strip, the
+   header row, and the attention list's rigid right-hand columns.          */
+
+/* header stops sharing a line with its actions */
+@media (max-width:900px){
+  .chub-head{flex-direction:column;gap:12px}
+  .chub-head-id{flex:none;width:100%}
+  .chub-head-actions{width:100%}
+  .chub-search{width:100%}
+  .chub-head-actions .chub-search{flex:1 1 auto}
+}
+
+/* five stat columns stop fitting — wrap them into rows that still divide evenly */
+@media (max-width:760px){
+  .chub-stats{flex-wrap:wrap}
+  .chub-stat{flex:1 0 33.333%;border-bottom:1px solid var(--border)}
+  .chub-stat:nth-last-child(-n+2){border-bottom:none}
+  .chub-stat:nth-child(3n){border-right:none}
+  .chub-toolbar-title{width:100%;margin-right:0}
+}
+
+/* only the activity and its status survive on a phone */
+@media (max-width:560px){
+  .chub-stat{flex:1 0 50%}
+  .chub-stat:nth-child(3n){border-right:1px solid var(--border)}
+  .chub-stat:nth-child(2n){border-right:none}
+  .chub-stat:nth-last-child(-n+2){border-bottom:1px solid var(--border)}
+  .chub-stat:last-child{border-bottom:none;flex-basis:100%}
+  /* four labels will not shrink below their own text, so wrap them 2x2
+     rather than let the control push the page wider than the screen */
+  .chub-seg{width:100%;flex-wrap:wrap}
+  .chub-seg button{flex:1 1 calc(50% - 4px);min-width:0}
+  .chub-kv{gap:10px}
+}
