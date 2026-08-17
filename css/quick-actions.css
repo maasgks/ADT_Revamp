@@ -1,0 +1,242 @@
+/* ==========================================================================
+   ROW QUICK ACTIONS  -  the action a row exists for, done from the row.
+
+   THE PROBLEM THIS SOLVES.  Every listing in this app ends in one hamburger
+   that opens a detail panel. Approving a leave was: click row -> panel opens
+   -> Logs tab -> pick status -> Save. Five interactions to answer a yes/no
+   question that the row already showed you the answer to. The detail panel is
+   right for reading a record. It is wrong as the only door to acting on one.
+
+   WHAT THIS ADDS.  A cluster of small buttons in the same ACTION cell, to the
+   LEFT of the hamburger. The hamburger never moves and never changes: "open
+   the full record" stays exactly where a returning user's hand already goes.
+
+   THE THREE SHAPES, and why a row only ever shows one or two of them.
+     .qa-lead   labelled pill. The one thing this row is WAITING for. Only
+                appears on rows that are actually blocked on a decision
+                (Pending leave, Unpaid invoice) - never on settled rows, so
+                a labelled pill anywhere in a table means "this one needs you"
+                and a table with none means "nothing here needs you". That
+                signal only survives if it stays rare. One per row, maximum.
+     .qa-btn    icon-only, 26px. Everything else a row can do.
+     hamburger  untouched, always last. See above.
+
+   COLOUR.  buttons.css sets the house rule: buttons are navigation, they get
+   no semantic colour, and hover is the only place colour appears at all.
+   These are the one deliberate exception to the first half of that rule and
+   they still obey the second. A quick action does not navigate - it COMMITS a
+   result, in place, with no confirmation step. So at rest it is neutral grey
+   like every other button, and on hover it takes the colour of the RESULT it
+   is about to write, drawn from the same --st-* tokens the resulting status
+   badge will use. Hover green means the badge is about to go green. That is
+   the confirmation step, and it costs nothing because it is just hover.
+   ========================================================================== */
+
+.qa-cluster{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  vertical-align:middle;
+  margin-right:4px;
+}
+
+/* -- icon-only ---------------------------------------------------------- */
+.qa-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;padding:0;
+  border:1px solid transparent;
+  border-radius:var(--r-control);      /* square-ish: it is a control, not a badge */
+  background:transparent;
+  color:#8b93a1;
+  cursor:pointer;
+  font-family:inherit;
+  flex-shrink:0;
+  transition:background var(--t-micro) ease,color var(--t-micro) ease,
+             border-color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
+}
+.qa-btn svg{width:14px;height:14px;pointer-events:none}
+.qa-btn:hover{transform:translateY(-1px)}
+.qa-btn:active{transform:translateY(0) scale(.9)}
+
+/* -- labelled lead ------------------------------------------------------ */
+.qa-btn.qa-lead{
+  width:auto;height:26px;padding:0 10px;gap:5px;
+  font-size:11.5px;font-weight:600;letter-spacing:.1px;
+  border-color:var(--border);
+  background:var(--card);
+  color:var(--btn-ink,#353535);
+}
+.qa-btn.qa-lead svg{width:12px;height:12px}
+
+/* -- hover tones: the colour of the RESULT, not of the button ----------- */
+.qa-btn.qa-ok:hover  {background:var(--st-ok-bg);  color:var(--st-ok-fg);  border-color:var(--st-ok-bd)}
+.qa-btn.qa-bad:hover {background:var(--st-bad-bg); color:var(--st-bad-fg); border-color:var(--st-bad-bd)}
+.qa-btn.qa-wait:hover{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.qa-btn.qa-info:hover{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
+.qa-btn.qa-idle:hover{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
+/* Actions that only navigate - "open the timesheet", "edit" - take brand
+   orange, matching every other navigation button's hover in the app. */
+.qa-btn.qa-nav:hover {background:#f8f9fb;color:var(--btn-accent,#de7909);border-color:var(--btn-accent,#de7909)}
+
+.qa-btn:focus-visible{outline:2px solid var(--btn-accent,#de7909);outline-offset:2px}
+
+/* The lead pill on a waiting row carries a slow breathing dot so an
+   unattended queue is visible from across the room without adding a colour
+   to the table itself. It stops the moment the row stops waiting, because
+   the button is then no longer rendered at all. */
+.qa-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;animation:qa-breathe 2.6s ease-in-out infinite}
+@keyframes qa-breathe{0%,100%{opacity:.35}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.qa-dot{animation:none;opacity:.8}}
+
+/* Keep the ACTION cell from wrapping onto two lines on a narrow table. */
+.lp-table td:last-child,.listing-table td:last-child{white-space:nowrap}
+
+/* The ACTION column right-aligns once any row in the table carries a cluster.
+   Clusters are different widths on different rows - a Pending row shows two
+   buttons, a settled one shows none - so a left-aligned column would land the
+   hamburger at a different x on every row. Anchored to the right edge, it
+   stays on one vertical line and the clusters grow leftwards into the gap. */
+.qa-right td[data-qa-cell],.qa-right th:last-child{text-align:right}
+.qa-right td[data-qa-cell]>*{vertical-align:middle}
+
+/* ── BULK BAR ─────────────────────────────────────────────────────────────
+   The same logic one level up: when several rows are waiting on the same
+   decision, answering them one at a time is the same tax paid N times. The
+   bar only exists while a selection exists, and it floats over the table
+   rather than pushing it, so the rows you are judging never move.
+
+   Fixed rather than sticky on purpose: the table it belongs to lives inside
+   .lp-split-main, which sets overflow-x and therefore becomes its own scroll
+   container - a sticky bar in there would pin to the bottom of the TABLE
+   instead of the bottom of the screen, which is not where a thumb is.     */
+.qa-bulkbar{
+  position:fixed;
+  left:50%;bottom:24px;
+  transform:translateX(-50%);
+  z-index:200;
+  max-width:calc(100vw - 32px);
+  display:flex;align-items:center;gap:12px;
+  padding:9px 10px 9px 16px;
+  background:var(--navy);
+  color:#fff;
+  border-radius:var(--r-control);
+  box-shadow:0 10px 30px rgba(15,23,42,.28);
+  animation:qa-bulk-in var(--t-base) var(--e-out) both;
+}
+@keyframes qa-bulk-in{
+  from{opacity:0;transform:translate(-50%,14px)}
+  to{opacity:1;transform:translate(-50%,0)}
+}
+.qa-bulk-count{font-size:12.5px;font-weight:600;white-space:nowrap}
+.qa-bulk-sep{width:1px;height:18px;background:rgba(255,255,255,.22)}
+.qa-bulk-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  height:28px;padding:0 12px;
+  border:1px solid rgba(255,255,255,.35);
+  border-radius:var(--r-control);
+  background:rgba(255,255,255,.14);
+  color:#fff;font-family:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;white-space:nowrap;
+  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
+}
+.qa-bulk-btn svg{width:13px;height:13px}
+.qa-bulk-btn:hover{background:#fff;color:var(--navy);border-color:#fff}
+.qa-bulk-btn:active{transform:scale(.96)}
+.qa-bulk-clear{border-color:transparent;background:transparent;color:rgba(255,255,255,.75)}
+.qa-bulk-clear:hover{background:rgba(255,255,255,.14);color:#fff;border-color:transparent}
+
+/* Selection checkbox. Lives in the S.No cell, which every one of these
+   tables has and which carries no information the eye needs while
+   selecting - so no column is added and no table gets wider. */
+.qa-check{
+  width:16px;height:16px;
+  border:1.5px solid #cbd5e1;border-radius:4px;
+  background:#fff;
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;padding:0;
+  color:transparent;
+  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
+}
+.qa-check svg{width:10px;height:10px}
+.qa-check:hover{border-color:var(--btn-accent,#de7909)}
+.qa-check:active{transform:scale(.88)}
+.qa-check.on{background:var(--navy);border-color:var(--navy);color:#fff}
+/* The number is what you normally want; the checkbox takes its place on hover,
+   and stays put for the whole table once anything at all is selected - so a
+   selection in progress never makes the row you are aiming at jump. */
+.qa-numwrap{display:inline-flex;align-items:center;justify-content:center;min-width:18px}
+.qa-numwrap .qa-check{display:none}
+tr:hover .qa-numwrap .qa-check,
+tr.qa-sel .qa-numwrap .qa-check,
+.qa-selecting tr .qa-numwrap .qa-check{display:inline-flex}
+tr:hover .qa-numwrap .qa-num,
+tr.qa-sel .qa-numwrap .qa-num,
+.qa-selecting tr .qa-numwrap .qa-num{display:none}
+tr.qa-sel>td{background:var(--row-sel)}
+tr.qa-sel:hover>td{background:var(--row-sel-hover)}
+tr.qa-sel>td:first-child{box-shadow:inset 3px 0 0 var(--row-sel-rail)}
+
+/* ==========================================================================
+   COMMAND PALETTE  (Ctrl/Cmd-K)
+
+   Lives in this file rather than main.css because it solves the same problem
+   the row clusters solve one level up: the distance between wanting to do a
+   thing and doing it. The clusters shorten it inside a table; this shortens
+   it across the whole product.
+
+   The overlay shell - backdrop, box, input row, footer - is already styled in
+   main.css. Everything here is the results list that replaced the five fixed
+   suggestion chips. Note main.css also had .search-hints / .search-hint-chip
+   rules for those chips; they are left in place and simply no longer match
+   anything, so reverting this file cannot leave the overlay unstyled.
+   ========================================================================== */
+.search-results{
+  max-height:340px;
+  overflow-y:auto;
+  padding:6px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(0,0,0,.08) transparent;
+}
+.search-results::-webkit-scrollbar{width:3px}
+.search-results::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:99px}
+
+.search-group{
+  padding:10px 12px 5px;
+  font-size:10px;font-weight:700;
+  letter-spacing:.7px;text-transform:uppercase;
+  color:#b0b8c4;
+}
+
+.search-result{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  width:100%;
+  padding:9px 12px;
+  border:0;border-radius:var(--r-control);
+  background:transparent;
+  font-family:inherit;font-size:13px;
+  color:var(--navy);
+  text-align:left;cursor:pointer;
+  transition:background var(--t-micro) ease,color var(--t-micro) ease;
+}
+/* One highlight, driven by the arrow keys - NOT a separate :hover style.
+   Two competing highlights in a keyboard list is the classic way to lose
+   track of what Enter is about to do, so hover just moves the same one. */
+.search-result.active{background:var(--row-sel)}
+.search-result.active .search-result-label{font-weight:600}
+.search-result:hover{background:var(--row-hover)}
+.search-result.active:hover{background:var(--row-sel)}
+
+.search-result-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-result-kind{
+  flex-shrink:0;
+  font-size:10px;font-weight:600;letter-spacing:.3px;
+  color:#a3aab8;
+  opacity:0;
+  transition:opacity var(--t-micro) ease;
+}
+.search-result.active .search-result-kind{opacity:1}
+
+.search-empty{padding:26px 16px;text-align:center;font-size:12.5px;color:#a3aab8}
+
+/* The footer keys sit tighter now that there are three of them. */
+#search-overlay .search-footer kbd+kbd{margin-left:2px}

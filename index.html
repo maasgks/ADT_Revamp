@@ -14,7 +14,12 @@
 <link rel="stylesheet" href="css/dashboard-multiview.css">
 <link rel="stylesheet" href="css/compliance-hub.css">
 <!-- Loaded last: the button system is authoritative over every legacy button rule. -->
-<link rel="stylesheet" href="css/buttons.css"></head>
+<link rel="stylesheet" href="css/buttons.css">
+<!-- After buttons.css on purpose. These two add motion and inline row actions
+     on top of the finished component set; neither redefines a colour or a
+     size, so order only matters for the transitions they layer on. -->
+<link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/quick-actions.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <div id="v-adt" class="view active">
@@ -2174,6 +2179,9 @@
 <script src="js/core.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/renderer.js"></script>
+<!-- After renderer.js: it enhances what the renderer paints, and needs the
+     page data arrays and open*Sidebar handlers to already exist. -->
+<script src="js/quick-actions.js"></script>
 <script>
 function switchDashboard(tab){
   window.activeDashboardTab=tab;
@@ -2234,16 +2242,13 @@ function initDashboardTabsBar(){
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    </div>
-    <div class="search-hints" id="search-hints">
-      <button class="search-hint-chip" onclick="executeSearch('Contracts')">Contracts</button>
-      <button class="search-hint-chip" onclick="executeSearch('Pending payroll')">Pending payroll</button>
-      <button class="search-hint-chip" onclick="executeSearch('Active employees')">Active employees</button>
-      <button class="search-hint-chip" onclick="executeSearch('Compliance items')">Compliance items</button>
-      <button class="search-hint-chip" onclick="executeSearch('Leave requests')">Leave requests</button>
-    </div>
+    <!-- Results are built by buildPaletteResults() in renderer.js. The chips
+         that used to sit here were a fixed list of five guesses; the list
+         below is every destination and every create action in the product,
+         filtered as you type. -->
+    <div class="search-results" id="search-results"></div>
     <div class="search-footer">
-      <kbd>Esc</kbd> to close &nbsp;&nbsp; <kbd>Enter</kbd> to search
+      <kbd>&uarr;</kbd><kbd>&darr;</kbd> to move &nbsp; <kbd>Enter</kbd> to open &nbsp; <kbd>Esc</kbd> to close
     </div>
   </div>
 </div>

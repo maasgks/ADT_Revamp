@@ -580,14 +580,83 @@ function ccExportPDF(){
   showToast('Cost estimate exported','success',c.d.name+' &middot; '+ccFmt(c.total)+' per employee, per month');
 }
 // == SEARCH OVERLAY ==
+/* ── COMMAND PALETTE ───────────────────────────────────────────────────────
+   Ctrl/Cmd-K. This used to be a blind box: you typed, pressed Enter, and a
+   chain of substring tests either navigated somewhere or did nothing at all,
+   silently. You could not see what it knew, so the only way to use it was to
+   already know the phrase it wanted.
+
+   It is now a list you can read. Every destination in the rail and every
+   create action in the product is in PALETTE_ITEMS, filtered as you type and
+   driven with the arrow keys. Two consequences worth keeping:
+
+     1. It is the shortest path to anything. Two keystrokes reaches any of
+        ~40 destinations, and reaches CREATE actions that otherwise need a
+        navigate-then-click - so "apply for leave" is Cmd-K, "lea", Enter
+        from anywhere in the app.
+     2. It doubles as the product's index. A user who does not know a feature
+        exists finds it by typing a word close to it, which no amount of
+        rail nesting achieves.
+
+   Some entries pre-set a filter before navigating ("Pending leave requests").
+   That is the same two-clicks-to-the-work idea as the row quick actions: land
+   on the queue, not on the page that contains the queue.               */
+var PALETTE_EXTRA=[
+  /* Filtered destinations - land on the work, not on the page. */
+  {label:'Pending leave requests',group:'Queues',keys:'leave approve pending queue',run:function(){alStatusFilter='Pending';navigatePage('all-leaves');}},
+  {label:'Unpaid invoices',group:'Queues',keys:'payment invoice unpaid due money',run:function(){pmInvoiceStatusFilter='Unpaid';navigatePage('payments');}},
+  {label:'Pending payroll',group:'Queues',keys:'pay run cycle pending',run:function(){listStatusFilters.payroll='Pending';navigatePage('payroll');}},
+  {label:'Open tickets',group:'Queues',keys:'support ticket open issue',run:function(){tkQuickStatusFilter='open';navigatePage('support-tickets');}},
+  {label:'Inactive employees',group:'Queues',keys:'people staff inactive offboard',run:function(){geStatusFilter='Inactive';empSubTab='global';navigatePage('employees');}},
+
+  /* Create actions - each one is a click that otherwise needs a page first. */
+  {label:'Create a contract',group:'Create',keys:'new contract eor peo hire',run:function(){navigatePage('contracts');addListingItem('contracts');}},
+  {label:'Add an employee',group:'Create',keys:'new employee people hire staff',run:function(){navigatePage('employees');addListingItem('employees');}},
+  {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){page='leave-add';renderADTPage();}},
+  {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policy-add';renderADTPage();}},
+  {label:'Create a team',group:'Create',keys:'new team group department',run:function(){page='team-add';renderADTPage();}},
+  {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},
+  {label:'Add a rate or rule',group:'Create',keys:'new rate rule tax statutory',run:function(){navigatePage('rates-rules');ratesRuleModalOpen=true;renderADTPage();}},
+  {label:'Add a contract template',group:'Create',keys:'new template contract document',run:function(){navigatePage('contract-templates');ctpModalOpen=true;renderADTPage();}},
+
+  /* Tools. */
+  {label:'Cost calculator',group:'Tools',keys:'cost calculator salary employer estimate',run:function(){navigatePage('cost-calculator');}},
+  {label:'Switch entity',group:'Tools',keys:'switch entity company change org',run:function(){navigatePage('switch-entity');}}
+];
+
+/* Destinations come from the rail itself, so a nav item added there shows up
+   here without anyone remembering to also add it. */
+function paletteItems(){
+  var items=[];
+  var seen={};
+  (typeof getSidebarItems==='function'?getSidebarItems():[]).forEach(function(item){
+    if(item.section)return;
+    var list=item.dropdown?(item.children||[]):[item];
+    list.forEach(function(c){
+      if(!c.id||c.placeholder||seen[c.id])return;
+      seen[c.id]=1;
+      items.push({
+        label:c.label||c.id,
+        group:item.dropdown||'Go to',
+        keys:(c.label||'')+' '+(item.dropdown||''),
+        pg:c.id
+      });
+    });
+  });
+  return items.concat(PALETTE_EXTRA);
+}
+
+var paletteMatches=[],paletteIndex=0;
+
 function openSearch(){
   var ov=document.getElementById('search-overlay');
   if(!ov)return;
   ov.classList.add('open');
   var inp=document.getElementById('search-input');
-  if(inp){inp.value='';setTimeout(function(){inp.focus();},80);}
+  if(inp){inp.value='';inp.placeholder='Search pages and actions…';setTimeout(function(){inp.focus();},80);}
   var clr=document.getElementById('search-clear-btn');
   if(clr)clr.classList.remove('visible');
+  buildPaletteResults('');
 }
 function closeSearch(){
   var ov=document.getElementById('search-overlay');
@@ -598,35 +667,90 @@ function clearSearch(){
   if(inp){inp.value='';inp.focus();}
   var clr=document.getElementById('search-clear-btn');
   if(clr)clr.classList.remove('visible');
+  buildPaletteResults('');
 }
 function onSearchInput(inp){
   var clr=document.getElementById('search-clear-btn');
   if(clr)clr.classList.toggle('visible',inp.value.length>0);
+  buildPaletteResults(inp.value);
 }
 function fillSearch(text){
   var inp=document.getElementById('search-input');
   if(inp){inp.value=text;inp.focus();onSearchInput(inp);}
 }
+
+/* Ranking: a prefix match beats a word-start match beats a match anywhere.
+   Without this "lea" surfaces "Global Employee" (…emp*lo*yee) above "Leaves",
+   which is the kind of result that teaches people not to trust the box. */
+function paletteScore(item,q){
+  if(!q)return 0;
+  var label=item.label.toLowerCase();
+  var keys=(item.label+' '+(item.keys||'')+' '+(item.group||'')).toLowerCase();
+  if(label.indexOf(q)===0)return 100;
+  if((' '+label).indexOf(' '+q)>=0)return 80;
+  if(label.indexOf(q)>=0)return 60;
+  if((' '+keys).indexOf(' '+q)>=0)return 40;
+  if(keys.indexOf(q)>=0)return 20;
+  return -1;
+}
+
+function buildPaletteResults(query){
+  var box=document.getElementById('search-results');
+  if(!box)return;
+  var q=String(query||'').trim().toLowerCase();
+  var scored=[];
+  paletteItems().forEach(function(it){
+    var s=paletteScore(it,q);
+    if(q&&s<0)return;
+    scored.push({it:it,s:s});
+  });
+  scored.sort(function(a,b){return b.s-a.s;});
+  paletteMatches=scored.slice(0,q?12:9).map(function(x){return x.it;});
+  paletteIndex=0;
+
+  if(!paletteMatches.length){
+    box.innerHTML='<div class="search-empty">Nothing matches “'+String(query).replace(/</g,'&lt;')+'”</div>';
+    return;
+  }
+  var lastGroup='',html='';
+  paletteMatches.forEach(function(it,i){
+    var g=it.group||'Go to';
+    if(g!==lastGroup){html+='<div class="search-group">'+g+'</div>';lastGroup=g;}
+    html+='<button type="button" class="search-result'+(i===0?' active':'')+'" data-i="'+i+'" onclick="runPalette('+i+')">'
+      +'<span class="search-result-label">'+it.label+'</span>'
+      +'<span class="search-result-kind">'+(it.pg?'Open':'Run')+'</span>'
+      +'</button>';
+  });
+  box.innerHTML=html;
+}
+
+function movePalette(delta){
+  if(!paletteMatches.length)return;
+  paletteIndex=(paletteIndex+delta+paletteMatches.length)%paletteMatches.length;
+  var box=document.getElementById('search-results');
+  if(!box)return;
+  var all=box.querySelectorAll('.search-result');
+  all.forEach(function(el,i){el.classList.toggle('active',i===paletteIndex);});
+  var active=all[paletteIndex];
+  if(active)active.scrollIntoView({block:'nearest'});
+}
+
+function runPalette(i){
+  var it=paletteMatches[i==null?paletteIndex:i];
+  if(!it)return;
+  closeSearch();
+  if(it.pg){if(typeof activeSidebarItem!=='undefined')activeSidebarItem=it.pg;navigatePage(it.pg);}
+  else if(it.run)it.run();
+}
+/* Kept as the public name the topbar and any older call sites use. */
 function executeSearch(text){
-  var inp=document.getElementById('search-input');
-  var q=String(text||(inp&&inp.value)||'').trim().toLowerCase().replace(/\s+/g,' ');
-  if(!q)return;
-  var target='';
-  var status=q.includes('pending')?'Pending':q.includes('inactive')?'Inactive':q.includes('active')?'Active':'';
-  if(q.includes('inactive employee')){geStatusFilter='Inactive';empSubTab='global';target='employees';}
-  else if(q.includes('active employee')){geStatusFilter='Active';empSubTab='global';target='employees';}
-  else if(q.includes('direct employee')){empSubTab='direct';target='employees';}
-  else if(q.includes('global employee')||q==='employees'||q==='employee listing'){geStatusFilter='';empSubTab='global';target='employees';}
-  else if(q.includes('timesheet')){tsSubTab=q.includes('my')?'my':'all';target='timesheet';}
-  else if(q.includes('contract')){target='contracts';}
-  else if(q.includes('payroll')){if(status)listStatusFilters.payroll=status;else delete listStatusFilters.payroll;target='payroll';}
-  else if(q.includes('compliance')){if(status)listStatusFilters.compliance=status;else delete listStatusFilters.compliance;target='compliance';}
-  else if(q.includes('leave request')||q.includes('leave requests')){alStatusFilter=status||'';target='all-leaves';}
-  else if(q.includes('payment')||q.includes('invoice')){pmInvoiceStatusFilter=status==='Active'?'Paid':status||'';target='payments';}
-  if(target){closeSearch();navigatePage(target);}
+  if(text){fillSearch(text);return;}
+  runPalette();
 }
 function onSearchKeydown(e){
-  if(e.key==='Enter'){e.preventDefault();executeSearch();}
+  if(e.key==='ArrowDown'){e.preventDefault();movePalette(1);return;}
+  if(e.key==='ArrowUp'){e.preventDefault();movePalette(-1);return;}
+  if(e.key==='Enter'){e.preventDefault();runPalette();return;}
 }
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){closeSearch();}
