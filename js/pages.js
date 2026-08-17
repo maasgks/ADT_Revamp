@@ -20,6 +20,7 @@ function applyDeFilters(){
 }
 function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';deSelectedId=null;renderADTPage();}
 function renderDeSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -44,7 +45,6 @@ function renderDeSidebar(){
   if(deTab==='basic-details'&&deEditMode){
     body=buildSbEditForm('desb',DE_EDIT_FIELDS,emp,'cancelDeEdit','saveDeEdit');
   }else if(deTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
@@ -269,6 +269,7 @@ function closeGeSidebar(){
 }
 function navGeTab(tab){geTab=tab;geEditMode=false;const inner=document.getElementById('ge-isb-inner');if(inner){inner.innerHTML=renderGeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ge-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function renderGeSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -295,7 +296,6 @@ function renderGeSidebar(){
   if(geTab==='basic-details'&&geEditMode){
     body=buildSbEditForm('gesb',GE_EDIT_FIELDS,emp,'cancelGeEdit','saveGeEdit');
   }else if(geTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
@@ -477,6 +477,7 @@ function closeTmSidebar(){
 }
 function navTmTab(tab){tmTab=tab;const inner=document.getElementById('tm-isb-inner');if(inner){inner.innerHTML=renderTmSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tm-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 function renderTmSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const team=teamsData.find(t=>t.id===tmSelectedId);if(!team)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'team-members',label:'Team Members'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -497,7 +498,6 @@ function renderTmSidebar(){
   const statusVal=sbStatus(team.status);
   let body='';
   if(tmTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+team.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Team ID',v(team.teamId))+fc(iTeam,'Team Name',v(team.name))
@@ -1051,6 +1051,7 @@ function pmSaveLog(orderId){
   showToast('Log added','success','Payment log saved with status "'+status+'".');
 }
 function renderPmSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'sales-details',label:'Sales Details'},{id:'taxes-details',label:'Taxes Details'},{id:'user',label:'User'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'timesheets',label:'Timesheets'},{id:'receivable',label:'Receivable'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -1071,7 +1072,6 @@ function renderPmSidebar(){
   const iDollar='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
   const iPin='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const pmEmptyTab=(label)=>'<div style="display:flex;align-items:center;justify-content:center;padding:48px 20px;color:#9ca3af;font-size:13px">'+label+' content coming soon.</div>';
   let body='';
   if(pmTab==='basic-details'){
@@ -1387,6 +1387,7 @@ function openCtModal(id){
 }
 function closeCtModal(){document.getElementById('ct-modal-overlay').style.display='none';}
 function renderCtSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const c=contractsData.find(x=>x.id===ctSelectedId);if(!c)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'commercial-terms',label:'Commercial Terms'},{id:'compliance',label:'Compliance'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -1411,7 +1412,6 @@ function renderCtSidebar(){
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(ctTab==='basic-details'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     const wpVal=c.workPermit?'Yes':'No';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+c.empName+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
@@ -1426,7 +1426,6 @@ function renderCtSidebar(){
       +fc(iClock,'Pay Frequency',v(c.payFrequency))
       +'</div>';
   }else if(ctTab==='commercial-terms'){
-    const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
     const cm=c.commercial;
     const cf=(l,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+l+'</div><div class="lp-sb-field-value">'+(val||dv)+'</div></div></div>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Commercial Terms</span>'+editBtn+'</div>'
@@ -1670,6 +1669,22 @@ function buildCreateComplianceModalHTML(){
     +'</div>'
     +'</div></div>';
 }
+// A detail panel's header: eyebrow, the record's own name, its status and the
+// primary action. Replaces the `<span></span>` spacer that panels used to push
+// the Edit button right with, which left the rest of the row empty.
+function lpRecordHead(eyebrow,title,statusHTML,actionHTML){
+  return '<div class="lp-sb-record">'
+    +'<div class="lp-sb-record-id">'
+    +'<div class="lp-sb-record-eyebrow">'+eyebrow+'</div>'
+    +'<div class="lp-sb-record-title">'+title+'</div></div>'
+    +'<div class="lp-sb-record-side">'+(statusHTML||'')+(actionHTML||'')+'</div>'
+    +'</div>';
+}
+function lpFlagValue(v){return v?'<span class="lp-sb-flag">Yes</span>':'<span class="lp-sb-flag no">No</span>';}
+// '15 Jun 2026 | 01:30:34 PM' reads better split across two fields than crammed
+// into one as "Name ( date | time )".
+function lpCreatedOn(v){return String(v==null?'':v).replace(' | ',', ');}
+
 // ── COMPLIANCE ITEM DETAIL SIDEBAR ──
 function openComplianceSidebar(id){
   complianceSelectedId=id;complianceTab='basic-details';
@@ -1683,24 +1698,21 @@ function closeComplianceSidebar(){
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navComplianceTab(tab){complianceTab=tab;const inner=document.getElementById('cmp-isb-inner');if(inner){inner.innerHTML=renderComplianceSidebar();requestAnimationFrame(function(){const nt=document.getElementById('cmp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function complianceCancelLog(){const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';}
+function complianceCancelLog(){
+  const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';
+  const sel=document.getElementById('cmp-log-status-sel');if(sel)sel.value='';
+}
 function complianceSaveLog(id){
   const item=complianceItemsData.find(x=>x.id===id);if(!item)return;
-  const inp=document.getElementById('cmp-log-comment-inp');
-  const comment=inp?inp.value.trim():'';
-  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
-  const now=new Date();
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
-  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-  const ampm=h>=12?'PM':'AM';h=h%12||12;
-  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  if(!item.logs)item.logs=[];
-  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
-  const inner=document.getElementById('cmp-isb-inner');if(inner)inner.innerHTML=renderComplianceSidebar();
-  showToast('Log added','success','Comment saved to "'+item.item+'".');
+  const was=item.status;
+  if(!lpCommitLog(item,'cmp-log-status-sel','cmp-log-comment-inp',complianceLogsData[item.id]))return;
+  renderADTPage();
+  showToast('Log added','success',item.status!==was
+    ? '"'+item.item+'" moved to '+item.status+'.'
+    : 'Comment saved to "'+item.item+'".');
 }
 function renderComplianceSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=complianceItemsData.find(x=>x.id===complianceSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -1715,14 +1727,20 @@ function renderComplianceSidebar(){
   const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   let body='';
   if(complianceTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+    const iLock='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+    const iClip='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24l-8.49 8.49a1 1 0 0 1-1.41-1.41l7.78-7.78"/></svg>';
+    // Country / model / category / the three rules / who and when — eight fields
+    // that fill the two-column grid evenly. The name is the panel title now, so
+    // it is not repeated here, and the three rule flags the create form collects
+    // are shown for the first time.
+    body=lpRecordHead('Compliance Requirement',item.item,sbStatus(item.status),editBtn)
       +'<div class="lp-sb-detail-grid">'
-      +fc(iUser,'Compliance Name',item.item)+fc(iGlobe,'Country',item.country)
-      +fc(iDoc,'Employment Model',item.model)+fc(iTag,'Category',item.category)
-      +fc(iCheck,'Status',sbStatus(item.status))+fc(iCal,'Created By',item.createdBy+' ( '+item.createdAt+' )')
+      +fc(iGlobe,'Country',item.country)+fc(iDoc,'Employment Model',item.model)
+      +fc(iTag,'Category',item.category)+fc(iCheck,'Mandatory',lpFlagValue(item.mandatory))
+      +fc(iLock,'Payroll Blocking',lpFlagValue(item.payrollBlocking))+fc(iClip,'Evidence Required',lpFlagValue(item.evidenceRequired))
+      +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
       +'</div>';
   }else if(complianceTab==='attachments'){
     const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
@@ -1739,7 +1757,7 @@ function renderComplianceSidebar(){
       +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments found.</td></tr></tbody>'
       +'</table>';
   }else if(complianceTab==='logs'){
-    const logs=complianceLogsData[item.id]||item.logs||[];
+    const logs=seedLogs(item,complianceLogsData[item.id]);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -1759,8 +1777,9 @@ function renderComplianceSidebar(){
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
-      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
-      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<p class="lp-logs-form-sub">Update requirement status and add a comment</p>'
+      +lpLogStatusField('cmp-log-status-sel',item.status,['Active','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="cmp-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
       +'<button class="ep-cancel-btn" style="flex:1" onclick="complianceCancelLog()">Cancel</button>'
@@ -1827,405 +1846,224 @@ function buildComplianceItemsHTML(){
     +(complianceModalOpen?buildCreateComplianceModalHTML():'');
 }
 
-// ══ COMPLIANCE HUB ═══════════════════════════════════════════════════════
-// Two screens: the hub (counts + filters + one card per group) and the
-// drill-down (the same activities as a table with the standard detail panel).
-// Both read their rows from cmpFilteredActivities(), so a filter set on the
-// hub still holds after the user clicks into a card.
-//
-// Colour does one job here and nothing else: red means someone has to act
-// (overdue or escalated). Everything else is type and hairlines.
-const chubIco={
-  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/></svg>',
-  chevR:'<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>'
-};
-const CHUB_GROUPS=[
-  {kind:'country',label:'Country'},{kind:'client',label:'Client'},
-  {kind:'process',label:'Process'},{kind:'owner',label:'Owner'}
-];
-// status -> the one class that styles it everywhere
-const CHUB_ST={Pending:'pending',Completed:'done',Overdue:'late',Escalated:'esc'};
-function chubStatus(s){return '<span class="chub-st '+CHUB_ST[s]+'">'+s+'</span>';}
+// ══ OPENDHI COMPLIANCE ADMIN DASHBOARD ═══════════════════════════════════
+// Header, a strip of count tiles that double as the filter, and one paged
+// listing. Every number is derived from ocaItems, so a tile can never disagree
+// with the rows it filters to.
+// Status colours come from the shared statusTone() map, same as every other
+// listing, so the pills here read exactly like the pills everywhere else.
+// What the owner has to do, taken from the status rather than written per row —
+// four honest phrasings beat 48 invented ones.
+const OCA_NEXT={'Blocking':'Resolve to unblock','Needs Review':'Review and sign off','Pending':'Awaiting response','Ready':'Nothing pending'};
+function ocaRef(r){return 'CMP-'+(4000+r.id);}
 
-// ── Filters ──
-function applyChubFilters(){
-  chubClientFilter=getCSValue('chub-f-client');
-  chubCountryFilter=getCSValue('chub-f-country');
-  chubProcessFilter=getCSValue('chub-f-process');
-  chubOwnerFilter=getCSValue('chub-f-owner');
-  chubDueFilter=getCSValue('chub-f-due');
-  chubActivityId=null;
-  renderADTPage();
+function ocaSetFilter(key){
+  ocaFilter=ocaFilter===key?'':key;   // clicking the active tile clears it
+  ocaPage=1;
+  renderOcaDashboard();
 }
-function resetChubFilters(){
-  chubClientFilter='';chubCountryFilter='';chubProcessFilter='';chubOwnerFilter='';chubDueFilter='';
-  chubStatusFilter='';chubSearch='';chubActivityId=null;
-  renderADTPage();
+function ocaGoPage(n){
+  ocaPage=Math.min(Math.max(1,n),ocaPageCount());
+  renderOcaDashboard();
 }
-function chubRemoveFilter(key){
-  if(key==='chubClientFilter')chubClientFilter='';
-  else if(key==='chubCountryFilter')chubCountryFilter='';
-  else if(key==='chubProcessFilter')chubProcessFilter='';
-  else if(key==='chubOwnerFilter')chubOwnerFilter='';
-  else if(key==='chubDueFilter')chubDueFilter='';
-  else if(key==='chubStatusFilter')chubStatusFilter='';
-  chubActivityId=null;
-  renderADTPage();
-}
-function chubToggleStatus(v){
-  chubStatusFilter=chubStatusFilter===v?'':v;
-  chubActivityId=null;
-  renderADTPage();
-}
-function chubSetGroupBy(kind){chubGroupBy=kind;renderADTPage();}
-// Re-render, then put the caret back — the page is rebuilt on every keystroke.
-function chubOnSearch(el){
-  chubSearch=el.value;chubActivityId=null;renderADTPage();
-  const n=document.getElementById('chub-search-inp');
-  if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length);}
-}
-function chubOpenGroup(kind,value){
-  chubGroupKind=kind;chubGroupValue=value;chubActivityId=null;
-  page='compliance-group';renderADTPage();
-}
-function chubBackToHub(){chubActivityId=null;page='compliance-hub';renderADTPage();}
-// Jump from a country into the requirements catalogue, pre-filtered.
-function chubViewRequirements(country){
-  complianceCountryFilter=country;complianceModelFilter='';complianceStatusFilter='';
-  complianceSelectedId=null;navigatePage('compliance');
-}
-
-// ── Shared pieces ──
-function chubSearchBox(){
-  return '<span class="chub-search">'+chubIco.search
-    +'<input type="text" id="chub-search-inp" placeholder="Search activities" value="'+attrSafe(chubSearch)+'" oninput="chubOnSearch(this)"></span>';
-}
-function chubFilterBar(){
-  return '<div class="lp-filter-bar" style="padding:0">'
-    +'<div class="lp-filter-bar-label">Filter Activities</div>'
-    +'<div class="lp-filter-bar-row">'
-    +apCS('chub-f-client',cmpUnique('client'),chubClientFilter,'Client')
-    +apCS('chub-f-country',cmpUnique('country'),chubCountryFilter,'Country')
-    +apCS('chub-f-process',CMP_PROCESSES,chubProcessFilter,'Process')
-    +apCS('chub-f-owner',cmpUnique('owner'),chubOwnerFilter,'Owner')
-    +apCS('chub-f-due',CMP_DUE_PRESETS,chubDueFilter,'Due Date')
-    +clearFiltersBtn([chubClientFilter,chubCountryFilter,chubProcessFilter,chubOwnerFilter,chubDueFilter,chubStatusFilter,chubSearch],'resetChubFilters()')
-    +'<button class="lp-pill-search" onclick="applyChubFilters()">Search</button>'
-    +'</div></div>';
-}
-function chubFilterChips(){
-  const act=cmpActiveFilters();
-  if(!act.length)return '';
-  return '<div class="chub-chips">'+act.map(function(f){
-    return '<button class="chub-chip" onclick="chubRemoveFilter(\''+f.key+'\')" title="Remove this filter">'
-      +'<span class="chub-chip-k">'+f.label+'</span>'+f.value
-      +'<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-  }).join('')+'</div>';
-}
-// The four scope statuses as one plain strip. Doubles as the status filter.
-function chubStatStrip(rows){
-  const defs=[
-    {label:'Total',val:rows.length,status:'',tone:''},
-    {label:'Pending',val:cmpCountBy(rows,'Pending'),status:'Pending',tone:''},
-    {label:'Completed',val:cmpCountBy(rows,'Completed'),status:'Completed',tone:'done'},
-    {label:'Overdue',val:cmpCountBy(rows,'Overdue'),status:'Overdue',tone:'late'},
-    {label:'Escalated',val:cmpCountBy(rows,'Escalated'),status:'Escalated',tone:'late'}
-  ];
-  return '<div class="chub-stats">'+defs.map(function(d){
-    const on=d.status&&chubStatusFilter===d.status;
-    const call=d.status?'chubToggleStatus(\''+d.status+'\')':'chubRemoveFilter(\'chubStatusFilter\')';
-    // a zero problem count is not a problem, so it stays neutral
-    const tone=d.tone&&d.val?' '+d.tone:(d.val?'':' zero');
-    return '<button class="chub-stat'+(on?' is-on':'')+'" onclick="'+call+'" title="'+(d.status?'Show only '+d.status:'Show all statuses')+'">'
-      +'<span class="chub-stat-val'+tone+'">'+d.val+'</span>'
-      +'<span class="chub-stat-lbl">'+d.label+'</span></button>';
-  }).join('')+'</div>';
-}
-function chubGroupSub(kind,value,rows){
-  const uniq=function(f){const s=[];rows.forEach(function(a){if(s.indexOf(a[f])<0)s.push(a[f]);});return s;};
-  const n=rows.length+' activit'+(rows.length===1?'y':'ies');
-  if(kind==='country'){
-    const m=cmpCountryMeta[value]||{};
-    return [n,uniq('client').length+' client'+(uniq('client').length===1?'':'s'),m.currency].filter(Boolean).join(' · ');
-  }
-  if(kind==='client')return n+' · '+uniq('country').join(', ');
-  if(kind==='process')return n+' · '+uniq('country').length+' countries';
-  if(kind==='owner')return n+' · '+uniq('client').length+' clients';
-  return n;
-}
-
-// ── Hub ──
-function buildComplianceHubHTML(){
-  const scoped=cmpFilteredActivities({ignoreStatus:true});   // strip shows the split
-  const rows=cmpFilteredActivities();                        // cards honour it
-
-  const groups={};
-  rows.forEach(function(a){(groups[a[chubGroupBy]]=groups[a[chubGroupBy]]||[]).push(a);});
-  // worst first — escalations outrank overdues, then volume, then name
-  const keys=Object.keys(groups).sort(function(x,y){
-    const gx=groups[x],gy=groups[y];
-    const rx=cmpCountBy(gx,'Escalated')*10+cmpCountBy(gx,'Overdue');
-    const ry=cmpCountBy(gy,'Escalated')*10+cmpCountBy(gy,'Overdue');
-    if(rx!==ry)return ry-rx;
-    if(gy.length!==gx.length)return gy.length-gx.length;
-    return x.localeCompare(y);
-  });
-
-  const cards=keys.length?keys.map(function(k){
-    const g=groups[k];
-    const line=function(label,n,late){
-      return '<span class="chub-card-row"><span class="chub-card-row-k">'+label+'</span>'
-        +'<span class="chub-card-row-n'+(n?(late?' late':''):' zero')+'">'+n+'</span></span>';
-    };
-    return '<button class="chub-card" onclick="chubOpenGroup(\''+chubGroupBy+'\',\''+attrSafe(k).replace(/'/g,"\\'")+'\')">'
-      +'<span class="chub-card-top"><span class="chub-card-name">'+k+'</span>'
-      +'<span class="chub-card-arrow">'+chubIco.chevR+'</span></span>'
-      +'<span class="chub-card-sub">'+chubGroupSub(chubGroupBy,k,g)+'</span>'
-      +'<span class="chub-card-rows">'
-      +line('Pending',cmpCountBy(g,'Pending'),false)
-      +line('Completed',cmpCountBy(g,'Completed'),false)
-      +line('Overdue',cmpCountBy(g,'Overdue'),true)
-      +line('Escalated',cmpCountBy(g,'Escalated'),true)
-      +'</span></button>';
-  }).join('')
-   :'<div class="chub-empty">No compliance activities match the filters you applied.</div>';
-
-  return '<div class="chub-page">'
-    +dashboardBackHTML()
-    +'<div class="chub-head">'
-    +'<div class="chub-head-id"><div class="chub-head-title">Compliance activities</div>'
-    +'<div class="chub-head-sub">Every statutory activity across your clients and countries — what is pending, what is done, and what needs action.</div></div>'
-    +chubSearchBox()
+function buildOcaHeaderHTML(){
+  const total=ocaItems.length;
+  const open=ocaItems.filter(function(r){return r.status!=='Ready';}).length;
+  return '<div class="oca-head">'
+    +'<div class="oca-head-id">'
+    +'<div class="oca-head-title">Opendhi Compliance Admin<span class="oca-role">COMPLIANCE ADMIN</span></div>'
+    +'<div class="oca-head-sub">You are looking after '+total+' compliance items — '+open+' still need action.</div>'
     +'</div>'
-    +chubStatStrip(scoped)
-    +'<div class="chub-filters">'+chubFilterBar()+'</div>'
-    +chubFilterChips()
-    +'<div class="chub-toolbar">'
-    +'<span class="chub-toolbar-title">By '+chubGroupBy+'<span>'+keys.length+' group'+(keys.length===1?'':'s')+' · '+rows.length+' activit'+(rows.length===1?'y':'ies')+'</span></span>'
-    +'<span class="chub-seg">'+CHUB_GROUPS.map(function(g){
-      return '<button class="'+(chubGroupBy===g.kind?'active':'')+'" onclick="chubSetGroupBy(\''+g.kind+'\')">'+g.label+'</button>';
-    }).join('')+'</span>'
-    +'<button class="chub-link" onclick="chubOpenGroup(\'all\',\'\')">View all activities</button>'
-    +'</div>'
-    +'<div class="chub-grid">'+cards+'</div>'
+    +'<button class="oca-primary" onclick="navigatePage(\'compliance\',true)">'
+    +'<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+    +'Open Compliance Hub</button>'
     +'</div>';
 }
-
-// ── Drill-down ──
-function buildComplianceGroupHTML(){
-  const kind=chubGroupKind||'all',value=chubGroupValue;
-  const scoped=cmpFilteredActivities({ignoreStatus:true,kind:kind,value:value});
-  const rank={Escalated:0,Overdue:1,Pending:2,Completed:3};
-  const rows=cmpFilteredActivities({kind:kind,value:value}).sort(function(a,b){
-    if(rank[a.status]!==rank[b.status])return rank[a.status]-rank[b.status];
-    return cmpParseDate(a.due)-cmpParseDate(b.due);
+function buildOcaTilesHTML(){
+  return '<div class="oca-tiles">'+ocaCategories.map(function(c){
+    const n=ocaCatCount(c.key);
+    const on=ocaFilter===c.key;
+    return '<button class="oca-tile'+(on?' is-on':'')+(n?'':' is-zero')+'" onclick="ocaSetFilter(\''+c.key+'\')"'
+      +' title="'+(on?'Clear this filter':ocaCatSub(c))+'">'
+      +'<span class="oca-tile-n">'+n+'</span>'
+      +'<span class="oca-tile-l">'+c.label+'</span>'
+      +'</button>';
+  }).join('')+'</div>';
+}
+// ── Item detail sidebar ───────────────────────────────────────────────────
+// The same split panel every listing page uses: the row's action button opens
+// it, the row stays highlighted while it is open, and it closes from its own
+// tab bar. A status changed in Logs writes back to the ocaItems row, so the
+// tiles, the row and the "what to do next" column all move together.
+const OCA_STATUSES=['Blocking','Needs Review','Pending','Ready'];
+function openOcaSidebar(id){
+  ocaSelectedId=id;ocaTab='basic-details';
+  const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.add('open');
+  // a short page must not leave the panel hanging out of the card
+  const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.add('has-sb');
+  const inner=document.getElementById('oca-isb-inner');if(inner)inner.innerHTML=renderOcaSidebar();
+  document.querySelectorAll('.oca-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='oca-row-'+id);});
+}
+function closeOcaSidebar(){
+  ocaSelectedId=null;
+  const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.remove('open');
+  const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.remove('has-sb');
+  document.querySelectorAll('.oca-row').forEach(function(r){r.classList.remove('lp-row-selected');});
+}
+function navOcaTab(tab){
+  ocaTab=tab;
+  const inner=document.getElementById('oca-isb-inner');if(!inner)return;
+  inner.innerHTML=renderOcaSidebar();
+  requestAnimationFrame(function(){
+    const nt=document.getElementById('oca-isb-tabs');if(!nt)return;
+    const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});
   });
-  if(chubActivityId&&!rows.some(function(a){return a.id===chubActivityId;}))chubActivityId=null;
-
-  const carried=cmpActiveFilters().length;
-  let sub=kind==='all'
-    ?scoped.length+' activities'+(carried?' · filtered by what you set on the hub':'')
-    :chubGroupSub(kind,value,scoped);
-  if(kind==='country'){
-    const m=cmpCountryMeta[value];
-    const reqs=complianceItemsData.filter(function(r){return r.country===value;}).length;
-    const rules=ratesRulesData.filter(function(r){return r.country===value;}).length;
-    if(m)sub+=' · '+m.entity+' · '+reqs+' requirements · '+rules+' rules';
-  }
-
-  // the dimension we drilled into is a constant here — no point repeating it
-  const cols=[{k:'client',h:'CLIENT'},{k:'country',h:'COUNTRY'},{k:'process',h:'PROCESS'},{k:'owner',h:'OWNER'}]
-    .filter(function(c){return c.k!==kind;});
-  const tableRows=rows.length?rows.map(function(a,i){
-    const late=a.status==='Overdue'||a.status==='Escalated';
-    return '<tr class="chub-row'+(chubActivityId===a.id?' lp-row-selected':'')+'" id="chub-row-'+a.id+'" style="cursor:pointer" onclick="openChubActivity('+a.id+')">'
-      +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
-      +'<td><span class="chub-cell-title">'+a.title+'</span><span class="chub-cell-ref">'+a.ref+'</span></td>'
-      +cols.map(function(c){return '<td>'+a[c.k]+'</td>';}).join('')
-      +'<td><span class="chub-cell-due">'+cmpFmtDate(a.due)
-      +'<span class="chub-due'+(late?' late':(a.status==='Completed'?' done':''))+'">'+cmpDueLabel(a)+'</span></span></td>'
-      +'<td>'+chubStatus(a.status)+'</td></tr>';
-  }).join('')
-   :'<tr><td colspan="'+(cols.length+4)+'" style="text-align:center;padding:28px;color:var(--gray)">No activities match the current filters.</td></tr>';
-
-  return '<div class="chub-page">'
-    +'<button class="ep-back" style="margin:0 0 14px" onclick="chubBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to Compliance Hub</button>'
-    +'<div class="chub-head">'
-    +'<div class="chub-head-id"><div class="chub-head-title">'+(kind==='all'?'All activities':value)+'</div>'
-    +'<div class="chub-head-sub">'+sub+'</div></div>'
-    +'<div class="chub-head-actions">'
-    +(kind==='country'?'<button class="chub-link" onclick="chubViewRequirements(\''+attrSafe(value).replace(/'/g,"\\'")+'\')">Country requirements</button>':'')
-    +chubSearchBox()
-    +'</div></div>'
-    +chubStatStrip(scoped)
-    +chubFilterChips()
-    +'<div class="lp-split-wrap" style="margin-top:16px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table"><thead><tr>'
-    +'<th>S. NO</th><th>ACTIVITY</th>'+cols.map(function(c){return '<th>'+c.h+'</th>';}).join('')+'<th>DUE DATE</th><th>STATUS</th>'
-    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
-    +'</div></div>'
-    +'<div class="lp-split-sb'+(chubActivityId?' open':'')+'" id="chub-split-sb"><div class="lp-isb" id="chub-isb-inner">'+(chubActivityId?renderChubActivitySidebar():'')+'</div></div>'
-    +'</div></div>';
 }
-
-// ── Activity detail panel ──
-function openChubActivity(id){
-  chubActivityId=id;chubActivityTab='details';
-  const sb=document.getElementById('chub-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('chub-isb-inner');if(inner)inner.innerHTML=renderChubActivitySidebar();
-  document.querySelectorAll('.chub-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='chub-row-'+id);});
+function ocaCancelLog(){
+  const inp=document.getElementById('oca-log-comment-inp');if(inp)inp.value='';
+  const sel=document.getElementById('oca-log-status-sel');if(sel)sel.value='';
 }
-function closeChubActivity(){
-  chubActivityId=null;
-  const sb=document.getElementById('chub-split-sb');if(sb)sb.classList.remove('open');
-  document.querySelectorAll('.chub-row').forEach(function(r){r.classList.remove('lp-row-selected');});
+function ocaSaveLog(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  const was=item.status;
+  if(!lpCommitLog(item,'oca-log-status-sel','oca-log-comment-inp',[]))return;
+  renderOcaDashboard();   // status drives the tiles and the row, so redraw both
+  showToast('Log added','success',item.status!==was
+    ? '"'+item.item+'" moved to '+item.status+'.'
+    : 'Comment saved to "'+item.item+'".');
 }
-function navChubActivityTab(tab){
-  chubActivityTab=tab;
-  const inner=document.getElementById('chub-isb-inner');
-  if(inner)inner.innerHTML=renderChubActivitySidebar();
-}
-function cmpNowParts(){
-  const now=new Date();
-  let h=now.getHours();const ampm=h>=12?'PM':'AM';h=h%12||12;
-  const p=function(n){return n<10?'0'+n:''+n;};
-  return {date:now.getDate()+' '+CMP_MONTHS[now.getMonth()]+' '+now.getFullYear(),
-          time:p(h)+':'+p(now.getMinutes())+':'+p(now.getSeconds())+' '+ampm,
-          iso:now.getFullYear()+'-'+p(now.getMonth()+1)+'-'+p(now.getDate())};
-}
-// Seeded from the record the first time it is opened, so anything the user adds
-// during the session survives tab switches and status changes.
-function cmpActivityLogs(a){
-  if(!a.logs){
-    const l=[{date:cmpFmtDate(a.raised),time:'09:15:00 AM',user:'System',status:'Pending',
-              action:'Activity raised for '+a.client+' ('+a.country+') and assigned to '+a.owner+'.'}];
-    if(a.status==='Overdue')l.push({date:cmpFmtDate(a.due),time:'11:59:00 PM',user:'System',status:'Overdue',
-              action:'Due date passed with no submission on file — flagged as overdue.'});
-    if(a.escalatedOn)l.push({date:cmpFmtDate(a.escalatedOn),time:'11:40:00 AM',user:a.owner,status:'Escalated',
-              action:a.escalationReason});
-    if(a.completedOn)l.push({date:cmpFmtDate(a.completedOn),time:'04:20:00 PM',user:a.owner,status:'Completed',
-              action:'Evidence filed and the activity closed.'});
-    a.logs=l.reverse();
-  }
-  return a.logs;
-}
-function chubMarkComplete(id){
-  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
-  const n=cmpNowParts();
-  a.status='Completed';a.completedOn=n.iso;
-  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:'Completed',action:'Marked complete from the Compliance Hub.'});
-  renderADTPage();
-  showToast('Activity completed','success','"'+a.title+'" closed for '+a.client+'.');
-}
-function chubReopenActivity(id){
-  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
-  const n=cmpNowParts();
-  a.completedOn=null;
-  a.status=cmpDaysTo(a.due)<0?'Overdue':'Pending';
-  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:a.status,action:'Reopened from the Compliance Hub.'});
-  renderADTPage();
-  showToast('Activity reopened','info','"'+a.title+'" is back in the '+a.status.toLowerCase()+' queue.');
-}
-function chubSubmitEscalation(id){
-  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
-  const inp=document.getElementById('chub-esc-reason');
-  const reason=inp?inp.value.trim():'';
-  if(!reason){if(inp){inp.style.borderColor='#dc2626';setTimeout(function(){inp.style.borderColor='';},1500);}return;}
-  const n=cmpNowParts();
-  a.status='Escalated';a.escalatedTo='Tarak Swain';a.escalatedOn=n.iso;a.escalationReason=reason;
-  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:'Escalated',action:reason});
-  renderADTPage();
-  showToast('Activity escalated','info','"'+a.title+'" raised to Tarak Swain.');
-}
-function chubSaveLog(id){
-  const a=complianceActivities.find(function(x){return x.id===id;});if(!a)return;
-  const inp=document.getElementById('chub-log-comment');
-  const comment=inp?inp.value.trim():'';
-  if(!comment){if(inp){inp.style.borderColor='#dc2626';setTimeout(function(){inp.style.borderColor='';},1500);}return;}
-  const n=cmpNowParts();
-  cmpActivityLogs(a).unshift({date:n.date,time:n.time,user:'Shaun Test1',status:a.status,action:comment});
-  const inner=document.getElementById('chub-isb-inner');if(inner)inner.innerHTML=renderChubActivitySidebar();
-  showToast('Log added','success','Comment saved to '+a.ref+'.');
-}
-function renderChubActivitySidebar(){
-  const a=complianceActivities.find(function(x){return x.id===chubActivityId;});if(!a)return '';
-  const late=a.status==='Overdue'||a.status==='Escalated';
-  const tabs=[{id:'details',label:'Details'},{id:'logs',label:'Activity Log'},{id:'escalation',label:'Escalation'}];
+function renderOcaSidebar(){
+  const item=ocaItems.find(function(x){return x.id===ocaSelectedId;});if(!item)return'';
+  const cat=ocaCategories.find(function(c){return c.key===item.cat;});
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'}];
   const tabBar='<div class="lp-isb-tabbar">'
-    +'<div class="lp-isb-tabs" id="chub-isb-tabs">'+tabs.map(function(t){
-      return '<button class="lp-isb-tab'+(chubActivityTab===t.id?' active':'')+'" onclick="navChubActivityTab(\''+t.id+'\')">'+t.label+'</button>';
+    +'<div class="lp-isb-tabs" id="oca-isb-tabs">'+tabs.map(function(t){
+      return '<button class="lp-isb-tab'+(ocaTab===t.id?' active':'')+'" onclick="navOcaTab(\''+t.id+'\')">'+t.label+'</button>';
     }).join('')+'</div>'
-    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeChubActivity()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeOcaSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
     +'</div>';
-  const kv=function(label,val){
-    return '<div class="chub-kv"><span class="chub-kv-k">'+label+'</span><span class="chub-kv-v">'+val+'</span></div>';
-  };
   let body='';
-  if(chubActivityTab==='details'){
-    const action=a.status==='Completed'
-      ?'<button class="ep-cancel-btn" style="padding:5px 14px;font-size:12px" onclick="chubReopenActivity('+a.id+')">Reopen</button>'
-      :'<button class="ep-save-btn" style="padding:5px 14px;font-size:12px" onclick="chubMarkComplete('+a.id+')">Mark Complete</button>';
-    body='<div class="chub-sb-head">'
-      +'<div><div class="chub-sb-ref">'+a.ref+'</div><div class="chub-sb-title">'+a.title+'</div></div>'+action+'</div>'
-      +'<div class="chub-sb-desc">'+a.desc+'</div>'
-      +'<div class="chub-kvs">'
-      +kv('Status',chubStatus(a.status))
-      +kv('Due date',cmpFmtDate(a.due)+'<span class="chub-due'+(late?' late':(a.status==='Completed'?' done':''))+'">'+cmpDueLabel(a)+'</span>')
-      +kv('Client',a.client)
-      +kv('Country',a.country)
-      +kv('Process',a.process)
-      +kv('Owner',a.owner)
-      +kv('Employment model',a.model)
-      +kv('Priority',a.priority)
-      +kv('Workers in scope',a.workers)
-      +kv('Raised on',cmpFmtDate(a.raised))
-      +kv('Closed on',a.completedOn?cmpFmtDate(a.completedOn):'—')
+  if(ocaTab==='basic-details'){
+    const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const iHash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+    const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+    const iFlag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
+    const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+    const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
+    // The header's "Open Compliance Hub" button already covers the jump to the
+    // Hub, so the panel head carries the record and its status, nothing more.
+    body=lpRecordHead('Compliance Item',item.item,sbStatus(item.status))
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iUser,'Employee / Client',item.who)+fc(iHash,'Reference',ocaRef(item))
+      +fc(iTag,'Category',cat?cat.label:item.cat)+fc(iFlag,'Priority',item.priority)
+      +fc(iCal,'Due','<span class="oca-due'+(item.due==='Today'?' is-now':'')+'">'+item.due+'</span>')
+      +fc(iCheck,'What to do next',OCA_NEXT[item.status]||'—')
       +'</div>';
-  }else if(chubActivityTab==='logs'){
-    const logs=cmpActivityLogs(a);
-    const timeline=logs.length?'<div class="chub-log">'+logs.map(function(l){
-      return '<div class="chub-log-row">'
-        +'<div class="chub-log-rail"><span class="chub-log-dot '+CHUB_ST[l.status]+'"></span></div>'
-        +'<div class="chub-log-body">'
-        +'<div class="chub-log-top">'+chubStatus(l.status)+'<span class="chub-log-when">'+l.date+' · '+l.time+'</span></div>'
-        +'<div class="chub-log-text">'+l.action+'</div>'
-        +'<div class="chub-log-who">'+l.user+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>':'<div class="chub-empty" style="padding:26px">No activity logs yet.</div>';
-    body=timeline
-      +'<div class="chub-form">'
-      +'<div class="chub-form-label">Add a comment</div>'
-      +'<textarea class="chub-form-input" id="chub-log-comment" placeholder="What changed on this activity?"></textarea>'
-      +'<div class="chub-form-actions">'
-      +'<button class="ep-cancel-btn" onclick="document.getElementById(\'chub-log-comment\').value=\'\'">Clear</button>'
-      +'<button class="ep-save-btn" onclick="chubSaveLog('+a.id+')">Save</button>'
-      +'</div></div>';
-  }else{
-    if(a.status==='Escalated'){
-      body='<div class="chub-esc">'
-        +'<div class="chub-esc-head">Escalated to '+a.escalatedTo+'</div>'
-        +'<div class="chub-esc-meta">Raised by '+a.owner+' on '+cmpFmtDate(a.escalatedOn)+' · '+cmpDueLabel(a)+'</div>'
-        +'<div class="chub-esc-reason">'+a.escalationReason+'</div></div>'
-        +'<div class="chub-kvs" style="margin-top:14px">'
-        +kv('Escalated to',a.escalatedTo)+kv('Escalated on',cmpFmtDate(a.escalatedOn))
-        +kv('Priority',a.priority)+kv('Client informed','Yes')
-        +'</div>'
-        +'<div class="chub-form-actions" style="margin-top:16px">'
-        +'<button class="ep-save-btn" onclick="chubMarkComplete('+a.id+')">Resolve &amp; complete</button></div>';
-    }else if(a.status==='Completed'){
-      body='<div class="chub-note"><b>Nothing to escalate</b>This activity was closed on '+cmpFmtDate(a.completedOn)+'.</div>';
-    }else{
-      body='<div class="chub-note"><b>Not escalated</b>'+a.owner+' still owns this activity. Escalating raises it to the compliance lead and flags it on the hub.</div>'
-        +'<div class="chub-form">'
-        +'<div class="chub-form-label">Reason for escalating to Tarak Swain</div>'
-        +'<textarea class="chub-form-input" id="chub-esc-reason" placeholder="e.g. Portal rejected the filing twice — needs legal sign-off"></textarea>'
-        +'<div class="chub-form-actions">'
-        +'<button class="ep-cancel-btn" onclick="navChubActivityTab(\'details\')">Cancel</button>'
-        +'<button class="ep-save-btn" onclick="chubSubmitEscalation('+a.id+')">Escalate</button>'
-        +'</div></div>';
-    }
+  }else if(ocaTab==='logs'){
+    const logs=seedLogs(item,[]);
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    // These four statuses are not the Active/Inactive pair the other panels use,
+    // so the timeline colours come from the shared tone map instead.
+    const tone=function(s){return statusTone(s);};
+    const timelineHTML=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i){
+        const sk=tone(l.status);
+        return '<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-card">'
+          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +'</div></div>';
+      }).join('')+'</div>'
+      :'<div class="lp-logs-empty">No activity logs yet.</div>';
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+tone(item.status)+'"></span>'+item.status+'</div>'
+      +'<p class="lp-logs-form-sub">Move this item on and say why</p>'
+      +lpLogStatusField('oca-log-status-sel',item.status,OCA_STATUSES)
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="oca-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="ocaCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="ocaSaveLog('+item.id+')">Submit</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+function buildOcaListingHTML(){
+  const rows=ocaRows();
+  const last=ocaPageCount();
+  if(ocaPage>last)ocaPage=last;
+  const from=(ocaPage-1)*OCA_PAGE_SIZE;
+  const page=rows.slice(from,from+OCA_PAGE_SIZE);
+  const active=ocaCategories.find(function(c){return c.key===ocaFilter;});
+  // A panel must always belong to a row you can see, so a filter or a page turn
+  // that drops the selected item closes it.
+  if(ocaSelectedId&&!page.some(function(r){return r.id===ocaSelectedId;}))ocaSelectedId=null;
+  const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+
+  // Same row shape as every other listing: name over its reference, the record
+  // name in orange, a status pill, and the action button at the end.
+  const body=page.length?page.map(function(r,i){
+    const cat=ocaCategories.find(function(c){return c.key===r.cat;});
+    return '<tr class="oca-row'+(ocaSelectedId===r.id?' lp-row-selected':'')+'" id="oca-row-'+r.id+'" style="cursor:pointer" onclick="openOcaSidebar('+r.id+')">'
+      +'<td style="color:var(--gray);font-size:13px">'+(from+i+1)+'</td>'
+      +'<td><div style="font-weight:600;color:var(--navy)">'+r.who+'</div><div style="font-size:11px;color:#9ca3af">'+ocaRef(r)+'</div></td>'
+      +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
+      +'<td>'+(cat?cat.label:r.cat)+'</td>'
+      +'<td>'+r.priority+'</td>'
+      // due today is the one thing on this row that is time-critical
+      +'<td'+(r.due==='Today'?' style="font-size:12px;color:var(--st-bad-fg);font-weight:600"':' style="font-size:12px;color:#64748b"')+'>'+r.due+'</td>'
+      +'<td><span class="lp-status-badge tone-'+statusTone(r.status)+'">'+r.status+'</span></td>'
+      +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openOcaSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+      +'</tr>';
+  }).join('')
+   :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No compliance items in this category.</td></tr>';
+
+  // fixed-width window of page numbers so the control does not grow with the set
+  let lo=Math.max(1,ocaPage-2),hi=Math.min(last,lo+4);
+  lo=Math.max(1,hi-4);
+  let nums='';
+  for(let p=lo;p<=hi;p++)nums+='<button class="lp-pg-btn'+(p===ocaPage?' active':'')+'" onclick="ocaGoPage('+p+')">'+p+'</button>';
+  const prevArrow='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>';
+  const nextArrow='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>';
+  const to=Math.min(from+OCA_PAGE_SIZE,rows.length);
+  const pager='<div class="lp-pagination">'
+    +'<span class="lp-pagination-info">Showing '+(rows.length?from+1:0)+'&ndash;'+to+' of '+rows.length+' entries</span>'
+    +'<div class="lp-pagination-controls">'
+    +'<button class="lp-pg-btn lp-pg-arrow" onclick="ocaGoPage('+(ocaPage-1)+')"'+(ocaPage===1?' disabled':'')+'>'+prevArrow+'</button>'
+    +nums
+    +'<button class="lp-pg-btn lp-pg-arrow" onclick="ocaGoPage('+(ocaPage+1)+')"'+(ocaPage===last?' disabled':'')+'>'+nextArrow+'</button>'
+    +'</div></div>';
+
+  return '<div class="oca-list">'
+    +'<div class="oca-list-head">'
+    +'<div><div class="oca-list-title">All compliance items</div>'
+    +'<div class="oca-list-sub">Everything you own, in one list. Pick a category above to narrow it down.</div></div>'
+    +'<span class="oca-count">'+rows.length+' of '+ocaItems.length+'</span>'
+    +'</div>'
+    +(active?'<div class="oca-active-filter">Filtered by <b>'+active.label+'</b>'
+        +'<button class="oca-clear" onclick="ocaSetFilter(\''+active.key+'\')">Clear</button></div>':'')
+    +'<div class="lp-split-wrap oca-split-wrap'+(ocaSelectedId?' has-sb':'')+'" id="oca-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr>'
+    +'<th>S. No</th><th>Employee / Client</th><th>Item</th><th>Category</th><th>Priority</th><th>Due</th><th>Status</th><th>Action</th>'
+    +'</tr></thead><tbody>'+body+'</tbody></table>'
+    +pager
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(ocaSelectedId?' open':'')+'" id="oca-split-sb"><div class="lp-isb" id="oca-isb-inner">'+(ocaSelectedId?renderOcaSidebar():'')+'</div></div>'
+    +'</div>'
+    +'</div>';
+}
+// Rebuilt on every entry into this dashboard tab and after a filter/page change.
+function renderOcaDashboard(){
+  const el=document.getElementById('oca-dash');
+  if(!el)return;
+  el.innerHTML=buildOcaHeaderHTML()+buildOcaTilesHTML()+buildOcaListingHTML();
 }
 
 // ── RATES & RULES PAGE ──
@@ -2241,24 +2079,21 @@ function closeRatesRuleSidebar(){
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navRatesRuleTab(tab){ratesRuleTab=tab;const inner=document.getElementById('rr-isb-inner');if(inner){inner.innerHTML=renderRatesRuleSidebar();requestAnimationFrame(function(){const nt=document.getElementById('rr-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function ratesRuleCancelLog(){const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';}
+function ratesRuleCancelLog(){
+  const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';
+  const sel=document.getElementById('rr-log-status-sel');if(sel)sel.value='';
+}
 function ratesRuleSaveLog(id){
   const item=ratesRulesData.find(x=>x.id===id);if(!item)return;
-  const inp=document.getElementById('rr-log-comment-inp');
-  const comment=inp?inp.value.trim():'';
-  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
-  const now=new Date();
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
-  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-  const ampm=h>=12?'PM':'AM';h=h%12||12;
-  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  if(!item.logs)item.logs=[];
-  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
-  const inner=document.getElementById('rr-isb-inner');if(inner)inner.innerHTML=renderRatesRuleSidebar();
-  showToast('Log added','success','Comment saved to "'+item.ruleName+'".');
+  const was=item.status;
+  if(!lpCommitLog(item,'rr-log-status-sel','rr-log-comment-inp',ratesRulesLogsData[item.id]))return;
+  renderADTPage();
+  showToast('Log added','success',item.status!==was
+    ? '"'+item.ruleName+'" moved to '+item.status+'.'
+    : 'Comment saved to "'+item.ruleName+'".');
 }
 function renderRatesRuleSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=ratesRulesData.find(x=>x.id===ratesRuleSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -2266,28 +2101,25 @@ function renderRatesRuleSidebar(){
     +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'rr-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
     +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeRatesRuleSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
     +'</div>';
-  const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   const iFlag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2V4S16 4 12 4 4 6 4 6z"/><line x1="4" y1="22" x2="4" y2="4"/></svg>';
   const iId='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3H8a2 2 0 0 0-2 2v2h12V5a2 2 0 0 0-2-2z"/></svg>';
   const iBars='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>';
-  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   const iDollar='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   let body='';
   if(ratesRuleTab==='basic-details'){
-    const statusVal=sbStatus(item.status);
-    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+    // Same treatment as the Compliance panel: name becomes the title, and the
+    // seven odd field cards become six that fill the grid evenly.
+    body=lpRecordHead('Rate Rule',item.ruleName,sbStatus(item.status),editBtn)
       +'<div class="lp-sb-detail-grid">'
-      +fc(iDoc,'Rule Name',item.ruleName)+fc(iFlag,'Country',item.country)
-      +fc(iId,'Applicable To',item.applicableTo)+fc(iBars,'Category',item.category)
-      +fc(iCheck,'Status',statusVal)+fc(iUser,'Created By',item.createdBy+' ( '+item.createdAt+' )')
-      +fc(iDollar,'Value/Rate',item.valueRate)
+      +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
+      +fc(iId,'Applicable To',item.applicableTo)+fc(iDollar,'Value / Rate',item.valueRate)
+      +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
       +'</div>';
   }else if(ratesRuleTab==='logs'){
-    const logs=ratesRulesLogsData[item.id]||item.logs||[];
+    const logs=seedLogs(item,ratesRulesLogsData[item.id]);
     const personSvg=iUser;
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -2307,8 +2139,9 @@ function renderRatesRuleSidebar(){
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
-      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
-      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<p class="lp-logs-form-sub">Update rule status and add a comment</p>'
+      +lpLogStatusField('rr-log-status-sel',item.status,['Active','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="rr-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
       +'<button class="ep-cancel-btn" style="flex:1" onclick="ratesRuleCancelLog()">Cancel</button>'
@@ -2495,24 +2328,23 @@ function closeCtpSidebar(){
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navCtpTab(tab){ctpTab=tab;const inner=document.getElementById('ctp-isb-inner');if(inner){inner.innerHTML=renderCtpSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ctp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function ctpCancelLog(){const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';}
+function ctpCancelLog(){
+  const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';
+  const sel=document.getElementById('ctp-log-status-sel');if(sel)sel.value='';
+}
 function ctpSaveLog(id){
   const item=contractTemplatesData.find(x=>x.id===id);if(!item)return;
-  const inp=document.getElementById('ctp-log-comment-inp');
-  const comment=inp?inp.value.trim():'';
-  if(!comment){if(inp){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);}return;}
-  const now=new Date();
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
-  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-  const ampm=h>=12?'PM':'AM';h=h%12||12;
-  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
-  if(!item.logs)item.logs=[];
-  item.logs.unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status:item.status,action:comment});
-  const inner=document.getElementById('ctp-isb-inner');if(inner)inner.innerHTML=renderCtpSidebar();
-  showToast('Log added','success','Comment saved to template.');
+  const was=item.status;
+  if(!lpCommitLog(item,'ctp-log-status-sel','ctp-log-comment-inp',ctpLogsData[item.id]))return;
+  // the table badge and the Active/Inactive counters read off item.status, so
+  // the whole page has to re-render, not just the panel
+  renderADTPage();
+  showToast('Log added','success',item.status!==was
+    ? '"'+item.templateName+'" moved to '+item.status+'.'
+    : 'Comment saved to "'+item.templateName+'".');
 }
 function renderCtpSidebar(){
+  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=contractTemplatesData.find(x=>x.id===ctpSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -2529,7 +2361,6 @@ function renderCtpSidebar(){
   const iBars='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   let body='';
   if(ctpTab==='basic-details'){
     const statusVal=sbStatus(item.status);
@@ -2554,7 +2385,7 @@ function renderCtpSidebar(){
       +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
       +'</table>';
   }else if(ctpTab==='logs'){
-    const logs=ctpLogsData[item.id]||item.logs||[];
+    const logs=seedLogs(item,ctpLogsData[item.id]);
     const personSvg=iUser;
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -2574,8 +2405,9 @@ function renderCtpSidebar(){
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
-      +'<p class="lp-logs-form-sub">Complete the required actions for these steps</p>'
-      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<p class="lp-logs-form-sub">Update template status and add a comment</p>'
+      +lpLogStatusField('ctp-log-status-sel',item.status,['Active','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="ctp-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
       +'<button class="ep-cancel-btn" style="flex:1" onclick="ctpCancelLog()">Cancel</button>'
@@ -4694,6 +4526,8 @@ function buildCompanySettingsHTML(){
 }
 
 function renderCsSidebar(){
+  const editIcoSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const editBtn='<button class="lp-sb-view-edit-btn">'+editIcoSvg+' Edit</button>';
   const tabs=[
     {id:'basic-details',label:'Basic Details'},
     {id:'attachments',label:'Attachments'},
@@ -4735,11 +4569,9 @@ function renderCsSidebar(){
   const iComment='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
   const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const iPin='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-  const editIcoSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
   const fcW=(icon,label,value)=>'<div class="lp-sb-field-card" style="grid-column:span 2"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
-  const editBtn='<button class="lp-sb-view-edit-btn">'+editIcoSvg+' Edit</button>';
   const dash='<span style="color:#9ca3af">-</span>';
 
   let body='';
@@ -4923,6 +4755,7 @@ const lstNouns={payheads:'Payhead','all-users':'User','all-leaves':'Leave Reques
   teams:'Team',contracts:'Contract',payments:'Invoice',settings:'Setting',support:'Ticket',
   leaves:'Leave',dashboard:'Metric'};
 function renderLstSidebar(){
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>';
   const row=getLstSelectedRow();
   const meta=getPageMeta(lstSelectedPg);
   const cols=meta.columns||[];
@@ -4973,7 +4806,6 @@ function renderLstSidebar(){
       +'<div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div>'
       +'<div class="lp-sb-field-value">'+(val!=null&&val!==''?val:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
   };
-  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Edit</button>';
 
   let body='';
   if(lstTab==='basic-details'){

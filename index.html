@@ -12,7 +12,6 @@
 <link rel="stylesheet" href="css/main.css">
 <link rel="stylesheet" href="css/leaves.css">
 <link rel="stylesheet" href="css/dashboard-multiview.css">
-<link rel="stylesheet" href="css/compliance-hub.css">
 <!-- Loaded last: the button system is authoritative over every legacy button rule. -->
 <link rel="stylesheet" href="css/buttons.css"></head>
 <body>
@@ -1560,188 +1559,7 @@
 
       <!-- OPENDHI COMPLIANCE ADMIN DASHBOARD VIEW -->
       <div class="dashboard-view" id="opendhi-compliance-view">
-        <div class="hr-header">
-          <div class="hr-header-title">Opendhi Compliance Admin Dashboard</div>
-          <div class="hr-header-desc">Monitor contract compliance, compliance hub items, payment compliance, and assigned support tasks.</div>
-        </div>
-
-        <!-- Stat cards — row 1: 4-col grid -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Contract Compliance</div>
-            <div class="hr-stat-number">18</div>
-            <div class="hr-stat-sub orange">5 blocking payroll readiness</div>
-          </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Compliance Hub Items</div>
-            <div class="hr-stat-number">26</div>
-            <div class="hr-stat-sub orange">9 require review</div>
-          </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Assigned Support Items</div>
-            <div class="hr-stat-number">7</div>
-            <div class="hr-stat-sub orange">3 high priority</div>
-          </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payment Compliance</div>
-            <div class="hr-stat-number">5</div>
-            <div class="hr-stat-sub orange">5 pending issues</div>
-          </div>
-        </div>
-        <!-- Stat cards — row 2: 3-col grid (full width) -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payroll Blockers</div>
-            <div class="hr-stat-number">4</div>
-            <div class="hr-stat-sub orange">Resolve before payroll run</div>
-          </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Document Verification Pending</div>
-            <div class="hr-stat-number">9</div>
-            <div class="hr-stat-sub orange">Documents awaiting review</div>
-          </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Expiring Documents</div>
-            <div class="hr-stat-number">5</div>
-            <div class="hr-stat-sub orange">Expiring in next 30 days</div>
-          </div>
-        </div>
-
-        <div class="hr-actions" style="grid-template-columns:repeat(2,1fr)">
-          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('contracts',true)">
-            <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg></div>
-            <div class="hr-action-text">
-              <div class="hr-action-name">Review Contracts</div>
-              <div class="hr-action-desc">Check missing clauses, signatures, and document readiness</div>
-            </div>
-          </a>
-          <a href="javascript:void(0)" class="hr-action-card" style="text-decoration:none;color:inherit" onclick="navigatePage('compliance',true)">
-            <div class="hr-action-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
-            <div class="hr-action-text">
-              <div class="hr-action-name">Compliance Hub</div>
-              <div class="hr-action-desc">Manage statutory, policy, and document compliance items</div>
-            </div>
-          </a>
-        </div>
-
-        <div class="hr-grid-2">
-          <div class="hr-section">
-            <div class="hr-section-header">
-              <div class="hr-section-title">Contract Compliance Queue</div>
-              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('contracts',true)">View all</a>
-            </div>
-            <table class="hr-leave-table">
-              <thead>
-                <tr>
-                  <th>Employee</th>
-                  <th>Contract Issue</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
-                  <td class="hr-emp-name">Ramesh Patel</td>
-                  <td>Missing signature</td>
-                  <td><span class="hr-leave-badge rejected">Blocking</span></td>
-                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Review</button></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
-                  <td class="hr-emp-name">Priya Sharma</td>
-                  <td>Work permit pending</td>
-                  <td><span class="hr-leave-badge rejected">Blocking</span></td>
-                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Review</button></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
-                  <td class="hr-emp-name">Arjun Desai</td>
-                  <td>Clause update required</td>
-                  <td><span class="hr-leave-badge pending">Needs Review</span></td>
-                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">Open</button></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
-                  <td class="hr-emp-name">Aishi Verma</td>
-                  <td>Contract verified</td>
-                  <td><span class="hr-leave-badge approved">Ready</span></td>
-                  <td onclick="event.stopPropagation()"><button class="hr-action-btn neutral" onclick="navigatePage('contracts',true)">View</button></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="hr-section">
-            <div class="hr-section-header">
-              <div class="hr-section-title">Compliance Hub Items</div>
-              <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('compliance',true)">Open hub</a>
-            </div>
-            <table class="hr-leave-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Category</th>
-                  <th>Due</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
-                  <td class="hr-emp-name">Employee KYC review</td>
-                  <td>Documents</td>
-                  <td>Today</td>
-                  <td><span class="hr-leave-badge pending">Pending</span></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
-                  <td class="hr-emp-name">Local tax registration</td>
-                  <td>Payroll</td>
-                  <td>24 May</td>
-                  <td><span class="hr-leave-badge rejected">Blocking</span></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
-                  <td class="hr-emp-name">Policy acknowledgement</td>
-                  <td>Policy</td>
-                  <td>26 May</td>
-                  <td><span class="hr-leave-badge pending">Pending</span></td>
-                </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
-                  <td class="hr-emp-name">Statutory filing check</td>
-                  <td>Entity</td>
-                  <td>31 May</td>
-                  <td><span class="hr-leave-badge approved">Ready</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="hr-section">
-          <div class="hr-section-header">
-            <div class="hr-section-title">Assigned Support Items</div>
-            <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('support-tickets',true)">View assigned</a>
-          </div>
-          <div class="manager-expense-list">
-            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('payments',true)">
-              <div class="manager-expense-body">
-                <div class="manager-expense-name">Payroll blocked by missing Tax ID</div>
-                <div class="manager-expense-desc">John Doe's payroll readiness is blocked until Tax ID verification is completed.</div>
-                <span class="manager-expense-tag">Payroll Compliance</span>
-              </div>
-            </div>
-            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('contracts',true)">
-              <div class="manager-expense-body">
-                <div class="manager-expense-name">Work permit document pending</div>
-                <div class="manager-expense-desc">Thijs Verbeek has a pending work authorization document for review.</div>
-                <span class="manager-expense-tag">Contract Compliance</span>
-              </div>
-            </div>
-            <div class="manager-expense-item" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
-              <div class="manager-expense-body">
-                <div class="manager-expense-name">Compliance exception escalated</div>
-                <div class="manager-expense-desc">Client support escalated an exception related to statutory onboarding checks.</div>
-                <span class="manager-expense-tag">Support</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
+        <div id="oca-dash"></div>
       </div>
 
       <!-- OPENDHI OPS ADMIN DASHBOARD VIEW -->
@@ -2183,6 +2001,9 @@ function switchDashboard(tab){
     if(isActive)t.scrollIntoView({inline:'nearest',block:'nearest',behavior:'smooth'});
   });
   document.querySelectorAll('.dashboard-view').forEach(function(v){v.classList.toggle('active',v.id===tab+'-view');});
+  // The compliance dashboard's cards and listing are built from data, not
+  // markup, so they have to be (re)rendered whenever this tab is shown.
+  if(tab==='opendhi-compliance'&&typeof renderOcaDashboard==='function')renderOcaDashboard();
 }
 function scrollDashboardTabs(dir){
   var el=document.getElementById('dashboard-tabs');

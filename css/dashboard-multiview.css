@@ -221,3 +221,85 @@
   .csm-ticket-row{grid-template-columns:1fr}
   .csm-status-pill{justify-self:flex-start}
 }
+
+
+/* ── OPENDHI COMPLIANCE ADMIN DASHBOARD ────────────────────────────────────
+   Header, a strip of count tiles that act as the filter, and one paged list.
+   Rows carry two lines where a single value is not enough on its own, so the
+   table stays scannable without a horizontal scroll. */
+#oca-dash{display:flex;flex-direction:column;gap:16px}
+
+/* ── Header ── */
+.oca-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.oca-head-id{min-width:0}
+.oca-head-title{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-size:20px;font-weight:700;color:var(--navy);letter-spacing:-.3px;line-height:1.25}
+.oca-role{
+  display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:5px;
+  background:var(--ol);color:var(--gray);font-size:10px;font-weight:700;letter-spacing:.6px}
+.oca-head-sub{font-size:13px;color:var(--gray);margin-top:5px}
+.oca-primary{
+  display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border:none;border-radius:9px;
+  background:var(--navy);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  white-space:nowrap;flex-shrink:0;transition:.15s}
+.oca-primary:hover{background:#1e293b}
+.oca-primary svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
+
+/* ── Count tiles / filter ── */
+.oca-tiles{
+  display:flex;gap:10px;padding:10px;background:#fff;border:1px solid var(--border);
+  border-radius:14px;overflow-x:auto;scrollbar-width:thin}
+.oca-tile{
+  flex:1 1 0;min-width:132px;display:flex;flex-direction:column;gap:3px;padding:12px 14px;
+  border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;
+  font-family:inherit;text-align:left;transition:border-color .15s,box-shadow .15s}
+.oca-tile:hover{border-color:#cbd5e1;box-shadow:0 2px 8px rgba(15,23,42,.06)}
+.oca-tile.is-on{border-color:var(--navy);box-shadow:inset 0 -3px 0 var(--navy)}
+.oca-tile-n{font-size:21px;font-weight:700;color:var(--navy);line-height:1.1}
+.oca-tile-l{font-size:11.5px;color:var(--gray);line-height:1.35}
+/* an empty category is not a thing to act on, so it recedes */
+.oca-tile.is-zero .oca-tile-n,.oca-tile.is-zero .oca-tile-l{color:#cbd5e1}
+
+/* ── Listing ── */
+/* No bottom padding: the pagination row closes the card, as it does on the
+   listing pages. */
+.oca-list{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px 0}
+.oca-list-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.oca-list-title{font-size:15px;font-weight:700;color:var(--navy)}
+.oca-list-sub{font-size:12.5px;color:var(--gray);margin-top:3px}
+.oca-count{
+  flex-shrink:0;display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;
+  background:var(--ol);color:var(--gray);font-size:11.5px;font-weight:600}
+.oca-active-filter{
+  display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;border-radius:8px;
+  background:var(--light);border:1px solid var(--border);font-size:12px;color:var(--gray)}
+.oca-active-filter b{color:var(--navy)}
+.oca-clear{
+  margin-left:auto;border:none;background:none;cursor:pointer;font-family:inherit;
+  font-size:12px;font-weight:600;color:var(--navy);text-decoration:underline}
+
+/* The list itself is a plain .lp-table in the same split wrap every listing
+   page uses — table, pagination and detail panel all behave identically. Only
+   the bits this card adds on top live here. */
+.oca-split-wrap.has-sb{min-height:500px}   /* a short page must still hold the panel */
+/* The table spans the full card so its row tint and the pager's divider reach
+   the edges; the first column and the pager are re-padded to the card's own
+   20px, keeping them in line with the card heading above. */
+.oca-split-wrap{margin:0 -20px}
+.oca-list .lp-split-main{border:none;border-radius:0}   /* the card is the border */
+.oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:20px}
+.oca-list .lp-table th:last-child,.oca-list .lp-table td:last-child{padding-right:20px}
+.oca-list .lp-pagination{padding:12px 20px}
+/* the panel's Due field, where "Today" still has to read as urgent */
+.oca-due{white-space:nowrap}
+.oca-due.is-now{font-weight:700;color:var(--st-bad-fg)}
+
+@media (max-width:720px){
+  .oca-primary{width:100%;justify-content:center}
+  .oca-list{padding:16px 14px 0}
+  .oca-split-wrap{margin:0 -14px}
+  .oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:14px}
+  .oca-list .lp-table th:last-child,.oca-list .lp-table td:last-child{padding-right:14px}
+  .oca-list .lp-pagination{padding:12px 14px}
+}

@@ -69,6 +69,26 @@ tr.lp-row-selected>td:first-child,
 .sb-status.info{color:var(--st-info-fg)}
 .lp-sb-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .lp-sb-section-title{font-size:13px;font-weight:700;color:var(--navy)}
+/* Record header for a detail panel. Panels that had nothing to put beside the
+   Edit button were pushing it right with an empty <span>, which left the whole
+   left half of the row blank. This gives that row the record's own identity —
+   what it is, what it is called, and where it stands — so the name no longer
+   has to be repeated as the first field card below. */
+.lp-sb-record{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
+  padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #eef0f3}
+.lp-sb-record-id{min-width:0;flex:1}
+.lp-sb-record-eyebrow{
+  font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;line-height:1}
+.lp-sb-record-title{
+  font-size:17px;font-weight:700;color:#1e293b;line-height:1.3;margin-top:6px;overflow-wrap:anywhere}
+.lp-sb-record-side{display:flex;align-items:center;gap:14px;flex-shrink:0}
+/* a "No" is the absence of a rule — it should not read as loudly as a "Yes" */
+.lp-sb-flag.no{color:#9ca3af;font-weight:500}
+@media (max-width:640px){
+  .lp-sb-record{flex-direction:column;gap:10px}
+  .lp-sb-record-side{width:100%;justify-content:space-between}
+}
 .pm-user-subtabs{display:flex;gap:20px;border-bottom:1px solid var(--border);margin-bottom:16px}
 .pm-user-subtab{border:none;background:none;padding:0 0 10px;font-size:13px;font-weight:600;color:var(--gray);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px}
 .pm-user-subtab.active{color:var(--navy);border-bottom-color:var(--orange)}
@@ -200,12 +220,15 @@ tr.lp-row-selected>td:first-child,
 .lp-log-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
 .lp-log-avatar--active{background:var(--st-ok-bg);color:var(--st-ok-fg);border:2px solid var(--st-ok-fg)}
 .lp-log-avatar--inactive{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
-.lp-log-avatar--default{background:var(--st-idle-bg);color:var(--st-idle-fg);border:2px solid var(--st-idle-bd)}
+.lp-log-avatar--default,.lp-log-avatar--idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border:2px solid var(--st-idle-bd)}
 /* Amber is "waiting", never "bad" — which is why Unapproved is red, not amber.
    See the status-token note in main.css. */
-.lp-log-avatar--approved{background:var(--st-ok-bg);color:var(--st-ok-fg);border:2px solid var(--st-ok-fg)}
-.lp-log-avatar--pending{background:var(--st-wait-bg);color:var(--st-wait-fg);border:2px solid var(--st-wait-fg)}
-.lp-log-avatar--unapproved{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
+/* The --ok/--bad/--wait/--info aliases are for panels whose statuses are not one
+   of the named pairs; they pass statusTone() straight through. */
+.lp-log-avatar--approved,.lp-log-avatar--ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border:2px solid var(--st-ok-fg)}
+.lp-log-avatar--pending,.lp-log-avatar--wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border:2px solid var(--st-wait-fg)}
+.lp-log-avatar--unapproved,.lp-log-avatar--bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
+.lp-log-avatar--info{background:var(--st-info-bg);color:var(--st-info-fg);border:2px solid var(--st-info-fg)}
 .lp-log-connector{flex:1;width:2px;background:#e5e7eb;margin:3px auto;min-height:16px}
 .lp-log-card{flex:1;background:#fff;border:1px solid #eef0f3;border-radius:10px;padding:11px 13px;margin-bottom:10px;box-shadow:0 1px 4px rgba(15,23,42,.05);transition:.15s}
 .lp-log-card:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(15,23,42,.09)}
@@ -213,17 +236,19 @@ tr.lp-row-selected>td:first-child,
 .lp-log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
 .lp-log-dot--active{background:var(--st-ok-fg)}
 .lp-log-dot--inactive{background:var(--st-bad-fg)}
-.lp-log-dot--default{background:var(--st-idle-fg)}
-.lp-log-dot--approved{background:var(--st-ok-fg)}
-.lp-log-dot--pending{background:var(--st-wait-fg)}
-.lp-log-dot--unapproved{background:var(--st-bad-fg)}
+.lp-log-dot--default,.lp-log-dot--idle{background:var(--st-idle-fg)}
+.lp-log-dot--approved,.lp-log-dot--ok{background:var(--st-ok-fg)}
+.lp-log-dot--pending,.lp-log-dot--wait{background:var(--st-wait-fg)}
+.lp-log-dot--unapproved,.lp-log-dot--bad{background:var(--st-bad-fg)}
+.lp-log-dot--info{background:var(--st-info-fg)}
 .lp-log-status-text{font-size:13px;font-weight:700}
 .lp-log-status-text--active{color:var(--st-ok-fg)}
 .lp-log-status-text--inactive{color:var(--st-bad-fg)}
-.lp-log-status-text--default{color:var(--st-idle-fg)}
-.lp-log-status-text--approved{color:var(--st-ok-fg)}
-.lp-log-status-text--pending{color:var(--st-wait-fg)}
-.lp-log-status-text--unapproved{color:var(--st-bad-fg)}
+.lp-log-status-text--default,.lp-log-status-text--idle{color:var(--st-idle-fg)}
+.lp-log-status-text--approved,.lp-log-status-text--ok{color:var(--st-ok-fg)}
+.lp-log-status-text--pending,.lp-log-status-text--wait{color:var(--st-wait-fg)}
+.lp-log-status-text--unapproved,.lp-log-status-text--bad{color:var(--st-bad-fg)}
+.lp-log-status-text--info{color:var(--st-info-fg)}
 .lp-log-meta-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#64748b;flex-wrap:wrap;margin-bottom:7px}
 .lp-log-meta-item{display:flex;align-items:center;gap:3px}
 .lp-log-meta-item svg{flex-shrink:0;opacity:.65}

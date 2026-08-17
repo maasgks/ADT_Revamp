@@ -701,6 +701,29 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 /* Date/time fields open a picker - they are choosers, so they take the square
    control shape even though they sit on .ep-form-input with the input shape. */
 input[type="date"],input[type="month"],input[type="time"],input[type="datetime-local"]{border-radius:var(--r-control)}
+/* ...but inside a form card the two shapes land side by side in one grid, and a
+   pill text field next to a square dropdown reads as a mistake rather than as a
+   signal. The type-vs-pick distinction earns its keep on standalone controls -
+   a toolbar search, a filter pill - where there is nothing to be out of step
+   with. In a form, agreeing with the field next to you wins, so every control
+   in a form card takes the control shape.
+   The height line is the same argument: a native date input measures ~2px
+   taller than a text input at identical padding, which shows up as a step in
+   the row it shares. */
+.ep-form-card .ep-form-input,
+.ep-form-card .ep-emp-search,
+.ep-form-grid .ep-form-input,
+.ep-form-grid .ep-emp-search,
+.lp-sb-form-grid .ep-form-input,
+.lp-sb-form-grid .ep-emp-search{border-radius:var(--r-control)}
+.ep-form-card input[type="date"].ep-form-input,
+.ep-form-card input[type="time"].ep-form-input,
+.ep-form-card input[type="month"].ep-form-input,
+.ep-form-card input[type="datetime-local"].ep-form-input,
+.lp-sb-form-grid input[type="date"].ep-form-input,
+.lp-sb-form-grid input[type="time"].ep-form-input,
+.lp-sb-form-grid input[type="month"].ep-form-input,
+.lp-sb-form-grid input[type="datetime-local"].ep-form-input{height:36px}
 .ep-form-input:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.1)}
 .ai-ct-field-fill{background:var(--ol)!important;border-color:var(--orange)!important;transition:background .25s,border-color .25s}
 .ep-form-select{padding:9px 28px 9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;appearance:none;background:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;outline:none;cursor:pointer;transition:.15s;width:100%;box-sizing:border-box}
