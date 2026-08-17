@@ -138,7 +138,24 @@
         </div>
 
         <!-- Metric Cards -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(3,1fr) 1.6fr;align-items:stretch">
+        <!-- NO PAYROLL STATUS CARD, HERE OR ON ANY OTHER DASHBOARD. The other
+             four sites carry a one-line pointer back to this note.
+
+             It read "Ready / Current cycle is on track" on every dashboard,
+             always, for every role - a hardcoded green tile that answered a
+             question nobody had asked and would have gone on saying "Ready"
+             through a payroll that wasn't. Where a dashboard genuinely needs
+             to say something about payroll it already does, and actionably:
+             Payroll Blockers ("4 - resolve before payroll run") on HR, Super
+             Admin, Ops and Entity Owner, and Latest Payslip here, which is the
+             only payroll fact an employee acts on.
+
+             The grids keep their original column count. This one is the
+             exception: it was 3 tiles + a wide attendance card, so it drops to
+             repeat(2,1fr) rather than leave a hole mid-row. Every other
+             dashboard's grid stays 4-col and simply ends one card short, so
+             its cards stay aligned with the rows above them. -->
+        <div class="hr-stat-grid" style="grid-template-columns:repeat(2,1fr) 1.6fr;align-items:stretch">
           <div class="hr-stat-card" style="display:flex;flex-direction:column;justify-content:space-between">
             <div class="hr-stat-label">Leave Balance</div>
             <div class="hr-stat-number">12</div>
@@ -148,11 +165,6 @@
             <div class="hr-stat-label">Latest Payslip</div>
             <div class="hr-stat-number">Apr</div>
             <div class="hr-stat-sub">April 2025 available</div>
-          </div>
-          <div class="hr-stat-card" style="display:flex;flex-direction:column;justify-content:space-between">
-            <div class="hr-stat-label">Payroll Status</div>
-            <div class="hr-stat-number green">Ready</div>
-            <div class="hr-stat-sub green">Current cycle is on track</div>
           </div>
           <div class="attendance-card" style="min-width:0">
             <div class="att-title">Attendance <a href="#">View</a></div>
@@ -422,11 +434,7 @@
             <div class="hr-stat-number">8</div>
             <div class="hr-stat-sub orange">Review now</div>
           </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payroll Status</div>
-            <div class="hr-stat-number green">Ready</div>
-            <div class="hr-stat-sub green">Current cycle is on track</div>
-          </div>
+          <!-- No Payroll Status card - see the note on #employee-view. -->
           <div class="hr-stat-card">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -905,13 +913,10 @@
             <div class="hr-stat-sub orange">Awaiting setup</div>
           </div>
         </div>
-        <!-- Stat cards — row 3: 4-col (full width) -->
+        <!-- Stat cards — row 3. Three cards in the same 4-col track, so they
+             stay aligned with rows 1 and 2 above.
+             No Payroll Status card - see the note on #employee-view. -->
         <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr)">
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payroll Status</div>
-            <div class="hr-stat-number green">Ready</div>
-            <div class="hr-stat-sub green">Current cycle is on track</div>
-          </div>
           <div class="hr-stat-card">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -1603,12 +1608,8 @@
           </div>
         </div>
         <!-- Top stat cards — row 2: 4-col grid (full width) -->
+        <!-- No Payroll Status card - see the note on #employee-view. -->
         <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr)">
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payroll Status</div>
-            <div class="hr-stat-number green">Ready</div>
-            <div class="hr-stat-sub green">Current cycle is on track</div>
-          </div>
           <div class="hr-stat-card">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -1833,11 +1834,7 @@
             <div class="hr-stat-number">43</div>
             <div class="hr-stat-sub green">Cleared this cycle</div>
           </div>
-          <div class="hr-stat-card">
-            <div class="hr-stat-label">Payroll Status</div>
-            <div class="hr-stat-number green">Ready</div>
-            <div class="hr-stat-sub green">Current cycle is on track</div>
-          </div>
+          <!-- No Payroll Status card - see the note on #employee-view. -->
           <div class="hr-stat-card">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -2000,6 +1997,9 @@
 <!-- After renderer.js: it enhances what the renderer paints, and needs the
      page data arrays and open*Sidebar handlers to already exist. -->
 <script src="js/quick-actions.js"></script>
+<!-- Reads layout only. The action column is pinned in CSS and stays pinned
+     without this; all this decides is whether the edge shadow is earned. -->
+<script src="js/sticky-actions.js"></script>
 <script>
 function switchDashboard(tab){
   window.activeDashboardTab=tab;

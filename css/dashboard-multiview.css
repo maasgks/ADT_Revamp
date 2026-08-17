@@ -239,12 +239,6 @@
   display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:5px;
   background:var(--ol);color:var(--gray);font-size:10px;font-weight:700;letter-spacing:.6px}
 .oca-head-sub{font-size:13px;color:var(--gray);margin-top:5px}
-.oca-primary{
-  display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 16px;border:none;border-radius:9px;
-  background:var(--navy);color:#fff;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
-  white-space:nowrap;flex-shrink:0;transition:.15s}
-.oca-primary:hover{background:#1e293b}
-.oca-primary svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2}
 
 /* ── Count tiles / filter ── */
 .oca-tiles{
@@ -296,7 +290,6 @@
 .oca-due.is-now{font-weight:700;color:var(--st-bad-fg)}
 
 @media (max-width:720px){
-  .oca-primary{width:100%;justify-content:center}
   .oca-list{padding:16px 14px 0}
   .oca-split-wrap{margin:0 -14px}
   .oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:14px}

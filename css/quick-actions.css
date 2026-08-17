@@ -99,82 +99,163 @@
 .qa-right td[data-qa-cell],.qa-right th:last-child{text-align:right}
 .qa-right td[data-qa-cell]>*{vertical-align:middle}
 
-/* ── BULK BAR ─────────────────────────────────────────────────────────────
-   The same logic one level up: when several rows are waiting on the same
-   decision, answering them one at a time is the same tax paid N times. The
-   bar only exists while a selection exists, and it floats over the table
-   rather than pushing it, so the rows you are judging never move.
+/* ==========================================================================
+   THE ACTION COLUMN NEVER SCROLLS AWAY
 
-   Fixed rather than sticky on purpose: the table it belongs to lives inside
-   .lp-split-main, which sets overflow-x and therefore becomes its own scroll
-   container - a sticky bar in there would pin to the bottom of the TABLE
-   instead of the bottom of the screen, which is not where a thumb is.     */
-.qa-bulkbar{
-  position:fixed;
-  left:50%;bottom:24px;
-  transform:translateX(-50%);
-  z-index:200;
-  max-width:calc(100vw - 32px);
-  display:flex;align-items:center;gap:12px;
-  padding:9px 10px 9px 16px;
-  background:var(--navy);
-  color:#fff;
-  border-radius:var(--r-control);
-  box-shadow:0 10px 30px rgba(15,23,42,.28);
-  animation:qa-bulk-in var(--t-base) var(--e-out) both;
-}
-@keyframes qa-bulk-in{
-  from{opacity:0;transform:translate(-50%,14px)}
-  to{opacity:1;transform:translate(-50%,0)}
-}
-.qa-bulk-count{font-size:12.5px;font-weight:600;white-space:nowrap}
-.qa-bulk-sep{width:1px;height:18px;background:rgba(255,255,255,.22)}
-.qa-bulk-btn{
-  display:inline-flex;align-items:center;gap:6px;
-  height:28px;padding:0 12px;
-  border:1px solid rgba(255,255,255,.35);
-  border-radius:var(--r-control);
-  background:rgba(255,255,255,.14);
-  color:#fff;font-family:inherit;font-size:12px;font-weight:600;
-  cursor:pointer;white-space:nowrap;
-  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
-}
-.qa-bulk-btn svg{width:13px;height:13px}
-.qa-bulk-btn:hover{background:#fff;color:var(--navy);border-color:#fff}
-.qa-bulk-btn:active{transform:scale(.96)}
-.qa-bulk-clear{border-color:transparent;background:transparent;color:rgba(255,255,255,.75)}
-.qa-bulk-clear:hover{background:rgba(255,255,255,.14);color:#fff;border-color:transparent}
+   Every listing here runs eight to ten columns inside a card that is narrower
+   than that - narrower still once a detail panel slides over 68% of it - so
+   ACTION, being last, was the first cell to fall off the right edge. That is
+   the one cell that must never be off screen: it holds the hamburger, and
+   since the clusters above it holds the row's decision buttons as well. So
+   "scroll right, then click" had become the cost of every inline action -
+   the exact friction this whole file exists to remove, reintroduced one
+   column over. A cheap action you cannot see is not a cheap action.
 
-/* Selection checkbox. Lives in the S.No cell, which every one of these
-   tables has and which carries no information the eye needs while
-   selecting - so no column is added and no table gets wider. */
-.qa-check{
-  width:16px;height:16px;
-  border:1.5px solid #cbd5e1;border-radius:4px;
-  background:#fff;
-  display:inline-flex;align-items:center;justify-content:center;
-  cursor:pointer;flex-shrink:0;padding:0;
-  color:transparent;
-  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
+   So the last column pins itself to the right edge of the card and the other
+   columns travel underneath it. Nothing about the row moves and no builder
+   changes - it is the same <td>, in the same place, that just stops leaving.
+
+   TWO THINGS THIS HAS TO PATCH UP, both of them consequences of these tables
+   being border-collapse:collapse:
+
+     1. Collapsed borders are painted by the TABLE, not by the cell, so they
+        do not travel with a sticky cell. The row rule would stay behind at
+        the cell's unscrolled x and the pinned cell would sit over a gap. It
+        draws its own rule as an inset box-shadow instead, in --sa-rule, set
+        per table to whatever that table's real border-bottom already uses.
+     2. A pinned cell has to be opaque or the columns sliding under it show
+        straight through. "Opaque" is not one colour though: a row can be at
+        rest, hovered, selected, or selected AND hovered. Rather than restate
+        that cascade cell-side - a second copy of leaves.css's row rules, free
+        to drift out of step with the first - each ROW publishes whatever it
+        is currently painted as --cell-bg, and the pinned cell just paints it.
+   ========================================================================== */
+
+/* -- the pinned cell ---------------------------------------------------- */
+.lp-table th:last-child,      .lp-table td:last-child,
+.listing-table th:last-child, .listing-table td:last-child,
+.at-table th:last-child,      .at-table td:last-child{
+  position:sticky;right:0;z-index:3;
+  background:var(--cell-bg,var(--card));
+  /* the row rule, plus the edge shadow - which is transparent until there is
+     actually something hidden underneath the column. See .sa-cut below. */
+  box-shadow:inset 0 -1px 0 var(--sa-rule,transparent),var(--sa-edge,0 0 transparent);
+  transition:background var(--t-fast) ease,box-shadow var(--t-fast) ease;
 }
-.qa-check svg{width:10px;height:10px}
-.qa-check:hover{border-color:var(--btn-accent,#de7909)}
-.qa-check:active{transform:scale(.88)}
-.qa-check.on{background:var(--navy);border-color:var(--navy);color:#fff}
-/* The number is what you normally want; the checkbox takes its place on hover,
-   and stays put for the whole table once anything at all is selected - so a
-   selection in progress never makes the row you are aiming at jump. */
-.qa-numwrap{display:inline-flex;align-items:center;justify-content:center;min-width:18px}
-.qa-numwrap .qa-check{display:none}
-tr:hover .qa-numwrap .qa-check,
-tr.qa-sel .qa-numwrap .qa-check,
-.qa-selecting tr .qa-numwrap .qa-check{display:inline-flex}
-tr:hover .qa-numwrap .qa-num,
-tr.qa-sel .qa-numwrap .qa-num,
-.qa-selecting tr .qa-numwrap .qa-num{display:none}
-tr.qa-sel>td{background:var(--row-sel)}
-tr.qa-sel:hover>td{background:var(--row-sel-hover)}
-tr.qa-sel>td:first-child{box-shadow:inset 3px 0 0 var(--row-sel-rail)}
+
+/* The "no records match this filter" row is one colspan cell that already
+   spans every column. There is no action in it to keep on screen, and pinning
+   a cell as wide as the table only risks it drifting inside its own row. */
+.lp-table td[colspan],.listing-table td[colspan],.at-table td[colspan]{
+  position:static;background:none;box-shadow:none;
+}
+
+/* -- the row rule each table draws under its own pinned cell ------------ */
+.lp-table tbody tr{--sa-rule:#f1f3f5}
+.listing-table tbody tr{--sa-rule:#f0f1f3}
+.at-table tbody tr{--sa-rule:var(--border)}
+/* every one of these tables drops the rule on its last row */
+.lp-table tbody tr:last-child,
+.listing-table tbody tr:last-child,
+.at-table tbody tr:last-child{--sa-rule:transparent}
+/* the header keeps the heavier --border it already had, and its own fill */
+.lp-table th:last-child,.listing-table th:last-child{--cell-bg:#fafbfc;--sa-rule:var(--border)}
+.at-table th:last-child{--cell-bg:var(--light);--sa-rule:var(--border)}
+
+/* -- what the row is currently painted, published for the pinned cell ----
+   Ordered and weighted to match leaves.css exactly: rest, hover, selected,
+   selected+hover, pressed. If a row colour changes there, change it here. */
+.lp-table tbody tr,.listing-table tbody tr,.at-table tbody tr{--cell-bg:var(--card)}
+.lp-table tbody tr:hover,.listing-table tbody tr:hover,.at-table tbody tr:hover{--cell-bg:var(--row-hover)}
+tbody tr.lp-row-selected{--cell-bg:var(--row-sel)}
+tbody tr.lp-row-selected:hover{--cell-bg:var(--row-sel-hover)}
+.lp-table tbody tr[onclick]:active,.listing-table tbody tr[onclick]:active{--cell-bg:var(--row-sel-hover)}
+
+/* -- the edge, and only while there is something behind it ---------------
+   .sa-cut is put on the scrolling card by js/sticky-actions.js for exactly as
+   long as content remains hidden to the right. Scrolled to the end there is
+   nothing underneath the column, so the shadow would be claiming a depth that
+   isn't there - and on a table narrow enough not to scroll at all it would be
+   a permanent vertical line down a column that is doing nothing special. */
+.sa-cut{--sa-edge:-13px 0 15px -11px rgba(15,23,42,.26)}
+
+@media (prefers-reduced-motion:reduce){
+  .lp-table th:last-child,.lp-table td:last-child,
+  .listing-table th:last-child,.listing-table td:last-child,
+  .at-table th:last-child,.at-table td:last-child{transition:none}
+}
+
+/* ==========================================================================
+   CONFIRM STEP
+
+   The dialog every inline action goes through. It exists to make the action
+   deliberate: it says what is about to change, it takes the reason, and the
+   reason is required. Deliberately small and centred rather than a full-page
+   modal - the row you clicked is still visible behind it, which is the whole
+   context needed to answer "why".
+   ========================================================================== */
+.qa-ask-overlay{
+  position:fixed;inset:0;z-index:5000;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(15,23,42,.42);
+  animation:qa-ask-fade var(--t-fast) ease both;
+}
+@keyframes qa-ask-fade{from{opacity:0}to{opacity:1}}
+.qa-ask-card{
+  width:100%;max-width:420px;
+  background:#fff;border-radius:14px;
+  box-shadow:0 20px 60px rgba(15,23,42,.28);
+  overflow:hidden;
+  animation:qa-ask-in var(--t-base) var(--e-out) both;
+}
+@keyframes qa-ask-in{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.qa-ask-head{padding:16px 18px 0}
+.qa-ask-title{font-size:15px;font-weight:700;color:var(--navy);letter-spacing:-.2px}
+.qa-ask-subject{margin-top:3px;font-size:12.5px;color:var(--gray);line-height:1.4}
+
+/* The transition, stated. Reading "Resolved -> Closed" before you type is
+   what turns a tick into a decision. */
+.qa-ask-move{display:flex;align-items:center;gap:8px;padding:14px 18px 0}
+.qa-ask-chip{
+  display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;
+  background:var(--st-idle-bg);color:var(--st-idle-fg);border:1.5px solid var(--st-idle-bd);
+  font-size:11px;font-weight:600;white-space:nowrap}
+.qa-ask-chip-ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.qa-ask-chip-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
+.qa-ask-chip-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.qa-ask-chip-info{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
+.qa-ask-arrow{display:inline-flex;color:#b0b8c4}
+.qa-ask-arrow svg{width:15px;height:15px}
+
+.qa-ask-body{padding:14px 18px 4px}
+.qa-ask-label{display:block;font-size:11.5px;font-weight:600;color:#1e293b;margin:0 0 5px}
+.qa-ask-label+.qa-ask-input{margin-bottom:12px}
+.qa-ask-req{color:#ef4444}
+.qa-ask-input{
+  width:100%;box-sizing:border-box;
+  border:1.5px solid #e2e8f0;border-radius:var(--r-control);
+  padding:9px 12px;
+  font-family:inherit;font-size:13px;color:#1e293b;background:#fff;
+  outline:none;transition:border-color var(--t-fast) var(--e-out);
+}
+select.qa-ask-input{height:38px;padding:0 12px;cursor:pointer}
+.qa-ask-area{height:76px;resize:none;line-height:1.5}
+.qa-ask-input::placeholder{color:#b0b8c4}
+/* One quiet ring, same rule as every other field in the app. */
+.qa-ask-input:focus{border-color:#94a3b8}
+.qa-ask-input.qa-ask-bad{border-color:#ef4444}
+.qa-ask-hint{font-size:11px;color:#9ca3af;line-height:1.45;margin:2px 0 0}
+.qa-ask-hint-bad{color:#ef4444;font-weight:600}
+
+.qa-ask-foot{display:flex;gap:10px;padding:16px 18px 18px}
+.qa-ask-btn{
+  flex:1;height:38px;border-radius:var(--r-control);
+  font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
+.qa-ask-cancel{background:#fff;border:1.5px solid var(--border);color:var(--navy)}
+.qa-ask-cancel:hover{border-color:#c7ccd6;background:#f8fafc}
+.qa-ask-go{background:var(--navy);border:1.5px solid var(--navy);color:#fff}
+.qa-ask-go:hover{background:#1e293b;border-color:#1e293b}
 
 /* ==========================================================================
    COMMAND PALETTE  (Ctrl/Cmd-K)

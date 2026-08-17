@@ -42,6 +42,7 @@ var I={
   arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
   cash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
   play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
+  pause:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="16" y2="20"/></svg>',
   copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
 };
 
@@ -125,14 +126,19 @@ var REGISTRY={
     ];
   },
 
-  /* Support tickets. */
+  /* Support tickets. The row offers exactly the moves TK_FLOW allows out of
+     the state the ticket is actually in - so there is no Close button on an
+     unresolved ticket to click by mistake. The pill goes on the move that WE
+     owe: an open ticket needs picking up, a resolved one is the client's to
+     confirm and gets no pill, because nothing there is waiting on us. */
   'support-tickets':function(id){
     var t=find(D().tickets,id);if(!t)return [];
-    if(t.status==='closed')return [A('Reopen ticket',I.undo,'info','qaTicket('+id+',\'open\')')];
-    var a=[];
-    if(t.status==='open')a.push(A('Start work',I.play,'wait','qaTicket('+id+',\'in_progress\')'));
-    a.push(A('Close ticket',I.check,'ok','qaTicket('+id+',\'closed\')',{lead:t.status==='in_progress'}));
-    return a;
+    if(typeof tkMoves!=='function')return [];
+    var ours=t.status==='open'||t.status==='in_progress';
+    return tkMoves(t).map(function(mv,i){
+      return A(mv.label,I[mv.icon]||I.arrow,mv.tone,'qaTicket('+id+',\''+mv.to+'\')',
+               {lead:ours&&i===0,dot:t.status==='open'&&i===0});
+    });
   },
 
   /* Contracts. The pipeline dropdown in this table already lets you PICK a
@@ -240,30 +246,11 @@ function actionsFor(pg,id,tr){
   return [];
 }
 
-/* ── bulk ──────────────────────────────────────────────────────────────────
-   Only pages where several rows plausibly need the SAME answer.           */
-var BULK={
-  'all-leaves':{
-    label:'leave request',
-    actions:[{label:'Approve all',icon:I.check,call:'qaBulkLeave(\'Approved\')'},
-             {label:'Reject all',icon:I.x,call:'qaBulkLeave(\'Unapproved\')'}]
-  },
-  payments:{
-    label:'invoice',
-    actions:[{label:'Mark all paid',icon:I.cash,call:'qaBulkPayment(\'Paid\')'}]
-  },
-  compliance:{
-    label:'requirement',
-    actions:[{label:'Activate all',icon:I.check,call:'qaBulkCompliance(\'Active\')'},
-             {label:'Deactivate all',icon:I.power,call:'qaBulkCompliance(\'Inactive\')'}]
-  },
-  'support-tickets':{
-    label:'ticket',
-    actions:[{label:'Close all',icon:I.check,call:'qaBulkTicket(\'closed\')'}]
-  }
-};
-var selected=new Set();
-var selectedPage=null;
+/* Row selection and the bulk bar used to live here. They only ever reached
+   four of the ~19 listings - the four with an obvious bulk verb - which made
+   the hover checkbox read as an accident on the pages that had it rather than
+   a feature the pages without it were missing. The per-row cluster below is
+   uniform across every listing, so that is the whole interaction now. */
 
 /* ── injection ─────────────────────────────────────────────────────────── */
 /* Every listing's ACTION cell ends in one of these two: the hamburger that
@@ -344,74 +331,6 @@ function enhanceRow(pg,tr){
   cell.insertBefore(buildCluster(actions),before);
 }
 
-function enhanceSelection(pg,tr){
-  var cfg=BULK[pg];
-  if(!cfg)return;                       /* page has no bulk action - leave the cell alone */
-  var first=tr.cells&&tr.cells[0];
-  if(!first)return;
-  var id=rowIdFrom(tr);
-  if(id==null)return;
-  var wrap=first.querySelector('.qa-numwrap');
-  if(!wrap){
-    var text=first.textContent;
-    first.textContent='';
-    wrap=document.createElement('span');
-    wrap.className='qa-numwrap';
-    wrap.innerHTML='<span class="qa-num">'+esc(text)+'</span>'
-      +'<button type="button" class="qa-check" aria-label="Select row" title="Select row">'+I.check+'</button>';
-    first.appendChild(wrap);
-    wrap.querySelector('.qa-check').addEventListener('click',function(e){
-      e.stopPropagation();
-      toggleSelect(pg,id,tr);
-    });
-  }
-  var on=selectedPage===pg&&selected.has(String(id));
-  wrap.querySelector('.qa-check').classList.toggle('on',on);
-  tr.classList.toggle('qa-sel',on);
-}
-
-function toggleSelect(pg,id,tr){
-  if(selectedPage!==pg){selected.clear();selectedPage=pg;}
-  id=String(id);
-  if(selected.has(id))selected.delete(id);else selected.add(id);
-  var check=tr.querySelector('.qa-check');
-  if(check)check.classList.toggle('on',selected.has(id));
-  tr.classList.toggle('qa-sel',selected.has(id));
-  syncBulkBar(pg);
-}
-
-function syncBulkBar(pg){
-  var host=document.querySelector('#adt-content .lp-split-main')||document.querySelector('#adt-content .lp-table-card');
-  var bar=document.getElementById('qa-bulkbar');
-  var cfg=BULK[pg];
-  var n=selectedPage===pg?selected.size:0;
-  if(!cfg||!n||!host){if(bar)bar.remove();document.querySelectorAll('.qa-selecting').forEach(function(e){e.classList.remove('qa-selecting');});return;}
-  host.classList.add('qa-selecting');
-  /* Lives on <body>, not in the table: it is position:fixed, and any ancestor
-     that is mid-transform (the page entrance animation) would silently become
-     its containing block and drag it up the page. */
-  if(!bar){
-    bar=document.createElement('div');
-    bar.id='qa-bulkbar';
-    bar.className='qa-bulkbar';
-    document.body.appendChild(bar);
-  }
-  bar.innerHTML='<span class="qa-bulk-count">'+n+' '+cfg.label+(n===1?'':'s')+' selected</span>'
-    +'<span class="qa-bulk-sep"></span>'
-    +cfg.actions.map(function(a){
-      return '<button type="button" class="qa-bulk-btn" onclick="'+a.call+'">'+a.icon+a.label+'</button>';
-    }).join('')
-    +'<button type="button" class="qa-bulk-btn qa-bulk-clear" onclick="qaClearSelection()">Clear</button>';
-}
-
-window.qaClearSelection=function(){
-  selected.clear();
-  document.querySelectorAll('tr.qa-sel').forEach(function(r){r.classList.remove('qa-sel');});
-  document.querySelectorAll('.qa-check.on').forEach(function(c){c.classList.remove('on');});
-  syncBulkBar(selectedPage);
-};
-function selectedIds(){return Array.from(selected);}
-
 /* ── the enhancer ──────────────────────────────────────────────────────────
    enhance() WRITES to the same subtree the observer WATCHES, so it has to
    close the loop itself: takeRecords() at the end throws away the records its
@@ -424,16 +343,12 @@ function enhance(){
   var pg=(typeof page!=='undefined')?page:null;
   var root=document.getElementById('adt-content');
   if(!pg||!root){if(observer)observer.takeRecords();return;}
-  /* Drop a selection that belongs to a page we have navigated away from. */
-  if(selectedPage&&selectedPage!==pg){selected.clear();selectedPage=null;}
   var rows=root.querySelectorAll('table tbody tr');
   for(var i=0;i<rows.length;i++){
     var tr=rows[i];
     if(!tr.querySelector(ANCHOR))continue;   /* empty-state row */
     enhanceRow(pg,tr);
-    enhanceSelection(pg,tr);
   }
-  syncBulkBar(pg);
   if(observer)observer.takeRecords();
 }
 function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(enhance);}
@@ -460,34 +375,225 @@ window.qaCommit=function(rowSelector,tone){
   });
 };
 
+/* ── the confirm step ──────────────────────────────────────────────────────
+   Every inline action goes through here, and every one of them requires a
+   comment. That is the whole point: a click on a tick is a keystroke, and a
+   keystroke is not a decision anyone can audit later. The dialog states what
+   is about to change, takes the reason, and only then commits - so the row's
+   history and the row's status can never disagree, and no status in the app
+   can be reached without a line in the log saying who moved it and why.
+
+   Some moves need more than a comment (which agent is picking this up, which
+   party we are blocked on). Those come through as `fields`. */
+var askState=null;
+
+function fieldHTML(f){
+  var lab='<label class="qa-ask-label" for="qa-ask-f-'+f.key+'">'+esc(f.label)
+    +(f.required===false?'':' <span class="qa-ask-req">*</span>')+'</label>';
+  if(f.type==='select'){
+    return lab+'<select class="qa-ask-input" id="qa-ask-f-'+f.key+'">'
+      +'<option value="">'+esc(f.placeholder||'Select…')+'</option>'
+      +(f.options||[]).map(function(o){
+        return '<option value="'+esc(o)+'"'+(o===f.value?' selected':'')+'>'+esc(o)+'</option>';
+      }).join('')+'</select>';
+  }
+  return lab+'<textarea class="qa-ask-input qa-ask-area" id="qa-ask-f-'+f.key+'"'
+    +' placeholder="'+esc(f.placeholder||'')+'">'+esc(f.value||'')+'</textarea>';
+}
+
+function closeAsk(){
+  var o=document.getElementById('qa-ask');
+  if(o)o.remove();
+  document.removeEventListener('keydown',askKey);
+  askState=null;
+}
+function askKey(e){if(e.key==='Escape')closeAsk();}
+
+/* opts: {title, subject, from, to, tone, confirmLabel, fields[], onConfirm(vals)} */
+function qaAsk(opts){
+  closeAsk();
+  askState=opts;
+  var fields=opts.fields||[];
+  var wrap=document.createElement('div');
+  wrap.id='qa-ask';
+  wrap.className='qa-ask-overlay';
+  wrap.innerHTML='<div class="qa-ask-card" role="dialog" aria-modal="true" aria-label="'+esc(opts.title)+'">'
+    +'<div class="qa-ask-head">'
+    +'<div class="qa-ask-title">'+esc(opts.title)+'</div>'
+    +(opts.subject?'<div class="qa-ask-subject">'+esc(opts.subject)+'</div>':'')
+    +'</div>'
+    +(opts.to?'<div class="qa-ask-move">'
+      +'<span class="qa-ask-chip">'+esc(opts.from||'')+'</span>'
+      +'<span class="qa-ask-arrow">'+I.arrow+'</span>'
+      +'<span class="qa-ask-chip qa-ask-chip-'+(opts.tone||'ok')+'">'+esc(opts.to)+'</span>'
+      +'</div>':'')
+    +'<div class="qa-ask-body">'
+    +fields.map(fieldHTML).join('')
+    +'<label class="qa-ask-label" for="qa-ask-comment">'+esc(opts.commentLabel||'Comment')+' <span class="qa-ask-req">*</span></label>'
+    +'<textarea class="qa-ask-input qa-ask-area" id="qa-ask-comment" placeholder="'
+      +esc(opts.commentPlaceholder||'Why are you making this change?')+'"></textarea>'
+    +'<div class="qa-ask-hint" id="qa-ask-hint">Saved to this record’s Logs and Workflow. It cannot be edited later.</div>'
+    +'</div>'
+    +'<div class="qa-ask-foot">'
+    +'<button type="button" class="qa-ask-btn qa-ask-cancel" id="qa-ask-cancel">Cancel</button>'
+    +'<button type="button" class="qa-ask-btn qa-ask-go" id="qa-ask-go">'+esc(opts.confirmLabel||'Confirm')+'</button>'
+    +'</div></div>';
+  document.body.appendChild(wrap);
+
+  var hint=wrap.querySelector('#qa-ask-hint');
+  var flash=function(el,msg){
+    if(el){el.classList.add('qa-ask-bad');setTimeout(function(){el.classList.remove('qa-ask-bad');},1400);el.focus();}
+    if(hint){hint.textContent=msg;hint.classList.add('qa-ask-hint-bad');
+      setTimeout(function(){hint.classList.remove('qa-ask-hint-bad');},1400);}
+  };
+
+  wrap.querySelector('#qa-ask-cancel').addEventListener('click',closeAsk);
+  wrap.addEventListener('mousedown',function(e){if(e.target===wrap)closeAsk();});
+  document.addEventListener('keydown',askKey);
+
+  wrap.querySelector('#qa-ask-go').addEventListener('click',function(){
+    var vals={},i,f,el;
+    for(i=0;i<fields.length;i++){
+      f=fields[i];
+      el=document.getElementById('qa-ask-f-'+f.key);
+      vals[f.key]=el?String(el.value||'').trim():'';
+      if(f.required!==false&&!vals[f.key]){flash(el,f.label+' is required.');return;}
+    }
+    var c=document.getElementById('qa-ask-comment');
+    vals.comment=c?c.value.trim():'';
+    if(!vals.comment){flash(c,'A comment is required to record this action.');return;}
+    closeAsk();
+    opts.onConfirm(vals);
+  });
+
+  requestAnimationFrame(function(){
+    var first=wrap.querySelector('.qa-ask-input');
+    if(first)first.focus();
+  });
+}
+
+/* ── where each page keeps its history ─────────────────────────────────────
+   `wf` is the Workflow-tab timeline (keyed by record id); `logs` is the
+   Logs-tab fixture that seedLogs() copies onto the record on first read.
+   Named accessors rather than a string lookup for the same reason D() uses
+   them: these are script-scope consts and are not reachable off `window`.
+   A page may have one store, both, or neither - the comment is required
+   either way, because the confirm step is what makes the action deliberate,
+   not what happens to be persisted afterwards. */
+var HISTORY={
+  'all-leaves':{row:'#al-row-',
+    wf:function(){return typeof alWorkflowData!=='undefined'?alWorkflowData:null;},
+    logs:function(id){return (typeof alLogsData!=='undefined'&&alLogsData[id])||[];}},
+  payments:{row:'#pm-row-',
+    wf:function(){return typeof pmWorkflowData!=='undefined'?pmWorkflowData:null;},
+    logs:function(id){return (typeof pmLogsData!=='undefined'&&pmLogsData[id])||[];}},
+  compliance:{row:'#cmp-row-',
+    wf:function(){return null;},
+    logs:function(id){return (typeof complianceLogsData!=='undefined'&&complianceLogsData[id])||[];}},
+  'leave-policies':{row:'#lp-row-',
+    wf:function(){return typeof lpWorkflowData!=='undefined'?lpWorkflowData:null;},
+    logs:function(id){return (typeof lpLogsData!=='undefined'&&lpLogsData[id])||[];}},
+  'support-tickets':{row:'#tk-row-',
+    wf:function(){return typeof tkWorkflowData!=='undefined'?tkWorkflowData:null;},
+    logs:function(id){return (typeof tkLogsData!=='undefined'&&tkLogsData[id])||[];}},
+  teams:{row:'#tm-row-',
+    wf:function(){return typeof tmWorkflowData!=='undefined'?tmWorkflowData:null;},
+    logs:function(id){return (typeof tmLogsData!=='undefined'&&tmLogsData[id])||[];}},
+  'rates-rules':{row:'#rr-row-',
+    wf:function(){return null;},
+    logs:function(id){return (typeof ratesRulesLogsData!=='undefined'&&ratesRulesLogsData[id])||[];}},
+  'contract-templates':{row:'#ctp-row-',
+    wf:function(){return null;},
+    logs:function(id){return (typeof ctpLogsData!=='undefined'&&ctpLogsData[id])||[];}},
+  chats:{row:'#chat-row-',
+    wf:function(){return typeof chatWorkflowData!=='undefined'?chatWorkflowData:null;},
+    logs:function(){return [];}}
+};
+
+/* Write the action into both histories the record has, then repaint. */
+function record(pg,rec,id,o){
+  var h=HISTORY[pg];
+  if(h){
+    if(typeof wfPush==='function')wfPush(h.wf(),id,o.title,o.comment);
+    if(typeof logPush==='function')logPush(rec,h.logs(id),o.statusLabel,o.comment);
+  }
+  qaCommit((h?h.row:'#row-')+id,o.tone);
+  toast(o.toastTitle,o.toastKind||'success',o.toastSub);
+}
+
 /* ── action handlers ───────────────────────────────────────────────────── */
 window.qaLeave=function(id,status){
   var l=find(D().leaves,id);if(!l)return;
-  l.status=status;
-  qaCommit('#al-row-'+id,status==='Approved'?'ok':status==='Pending'?'info':'bad');
-  toast('Leave '+status.toLowerCase(),status==='Approved'?'success':status==='Pending'?'info':'error',
-    l.name+' · '+l.leaveFrom+(l.leaveTo&&l.leaveTo!==l.leaveFrom?' to '+l.leaveTo:''));
+  var span=l.leaveFrom+(l.leaveTo&&l.leaveTo!==l.leaveFrom?' to '+l.leaveTo:'');
+  var tone=status==='Approved'?'ok':status==='Pending'?'info':'bad';
+  qaAsk({
+    title:status==='Approved'?'Approve leave request':status==='Pending'?'Move back to pending':'Reject leave request',
+    subject:l.name+' · '+span,
+    from:l.status,to:status,tone:tone,
+    confirmLabel:status==='Approved'?'Approve':status==='Pending'?'Move back':'Reject',
+    onConfirm:function(v){
+      l.status=status;
+      record('all-leaves',l,id,{
+        title:'Leave '+status,comment:v.comment,statusLabel:status,tone:tone,
+        toastTitle:'Leave '+status.toLowerCase(),
+        toastKind:status==='Approved'?'success':status==='Pending'?'info':'error',
+        toastSub:l.name+' · '+span});
+    }});
 };
 
 window.qaPayment=function(id,status){
   var p=find(D().payments,id);if(!p)return;
-  p.invoiceStatus=status;
-  qaCommit('#pm-row-'+id,status==='Paid'?'ok':'info');
-  toast('Invoice marked '+status.toLowerCase(),status==='Paid'?'success':'info',p.orderId+' · '+p.name+' · '+p.amountDue);
+  qaAsk({
+    title:status==='Paid'?'Mark invoice paid':'Reopen invoice',
+    subject:p.orderId+' · '+p.name+' · '+p.amountDue,
+    from:p.invoiceStatus,to:status,tone:status==='Paid'?'ok':'wait',
+    confirmLabel:status==='Paid'?'Mark paid':'Reopen',
+    onConfirm:function(v){
+      p.invoiceStatus=status;
+      record('payments',p,id,{
+        title:'Invoice '+status,comment:v.comment,statusLabel:status,
+        tone:status==='Paid'?'ok':'info',
+        toastTitle:'Invoice marked '+status.toLowerCase(),
+        toastKind:status==='Paid'?'success':'info',
+        toastSub:p.orderId+' · '+p.name+' · '+p.amountDue});
+    }});
 };
 
 window.qaCompliance=function(id){
   var r=find(D().compliance,id);if(!r)return;
-  r.status=r.status==='Active'?'Inactive':'Active';
-  qaCommit('#cmp-row-'+id,r.status==='Active'?'ok':'bad');
-  toast('Requirement '+r.status.toLowerCase(),r.status==='Active'?'success':'info',r.country+' · '+r.item);
+  var to=r.status==='Active'?'Inactive':'Active';
+  qaAsk({
+    title:to==='Active'?'Activate requirement':'Deactivate requirement',
+    subject:r.country+' · '+r.item,
+    from:r.status,to:to,tone:to==='Active'?'ok':'bad',
+    confirmLabel:to==='Active'?'Activate':'Deactivate',
+    onConfirm:function(v){
+      r.status=to;
+      record('compliance',r,id,{
+        title:'Requirement '+to,comment:v.comment,statusLabel:to,
+        tone:to==='Active'?'ok':'bad',
+        toastTitle:'Requirement '+to.toLowerCase(),
+        toastKind:to==='Active'?'success':'info',
+        toastSub:r.country+' · '+r.item});
+    }});
 };
 
 window.qaPolicyToggle=function(id){
   var p=find(D().policies,id);if(!p)return;
-  p.status=p.status==='Active'?'Inactive':'Active';
-  qaCommit('#lp-row-'+id,p.status==='Active'?'ok':'bad');
-  toast('Policy '+p.status.toLowerCase(),p.status==='Active'?'success':'info',p.type);
+  var to=p.status==='Active'?'Inactive':'Active';
+  qaAsk({
+    title:to==='Active'?'Activate policy':'Deactivate policy',
+    subject:p.type,
+    from:p.status,to:to,tone:to==='Active'?'ok':'bad',
+    confirmLabel:to==='Active'?'Activate':'Deactivate',
+    onConfirm:function(v){
+      p.status=to;
+      record('leave-policies',p,id,{
+        title:'Policy '+to,comment:v.comment,statusLabel:to,
+        tone:to==='Active'?'ok':'bad',
+        toastTitle:'Policy '+to.toLowerCase(),
+        toastKind:to==='Active'?'success':'info',toastSub:p.type});
+    }});
 };
 window.qaPolicyEdit=function(id){
   if(typeof leaveEditId!=='undefined')leaveEditId=id;
@@ -495,41 +601,114 @@ window.qaPolicyEdit=function(id){
   if(typeof renderADTPage==='function')renderADTPage();
 };
 
-window.qaTicket=function(id,status){
+/* Tickets move by NAMED MOVE, not by "set the status to X". The move has to
+   be one the flow allows from where the ticket actually is, which is what
+   stops a listing click from closing a ticket that nobody has resolved: the
+   only move into `closed` lives on `resolved`, and `resolved` is the client's
+   to confirm. An out-of-date row (someone else moved it in another tab) fails
+   the lookup here rather than silently applying. */
+window.qaTicket=function(id,to){
   var t=find(D().tickets,id);if(!t)return;
-  t.status=status;
-  qaCommit('#tk-row-'+id,status==='closed'?'ok':status==='in_progress'?'info':'info');
-  var label=(typeof tkStatusLabel==='function')?tkStatusLabel(status):status;
-  toast('Ticket '+label.toLowerCase(),'success',t.ticketId+' · '+t.title);
+  if(typeof tkMoves!=='function')return;
+  var moves=tkMoves(t),mv=null,i;
+  for(i=0;i<moves.length;i++)if(moves[i].to===to)mv=moves[i];
+  if(!mv){toast('That is no longer possible','error',t.ticketId+' is now '+lbl(t.status));return;}
+
+  var fields=[];
+  if(mv.needs.indexOf('assignee')>=0)fields.push({
+    key:'assignee',label:'Assign to',type:'select',placeholder:'Choose an agent…',
+    options:(typeof TK_AGENTS!=='undefined'?TK_AGENTS:[]),value:t.assignedTo});
+  if(mv.needs.indexOf('waitingOn')>=0)fields.push({
+    key:'waitingOn',label:'Waiting on',type:'select',placeholder:'Who are we blocked on?…',
+    options:(typeof TK_BLOCKERS!=='undefined'?TK_BLOCKERS:[]),value:t.waitingOn});
+  qaAsk({
+    title:mv.label,subject:t.ticketId+' · '+t.title,
+    from:lbl(t.status),to:lbl(mv.to),tone:mv.tone,confirmLabel:mv.label,fields:fields,
+    /* The comment IS the record of what happened, so each move asks its own
+       question rather than a generic "why". On the move to Resolved that
+       question is "what did you do to resolve this?", and the answer is what
+       the panel later shows as the resolution. */
+    commentLabel:mv.commentLabel||'Comment',commentPlaceholder:mv.ask,
+    onConfirm:function(v){ tkApply(t,id,mv,v); }});
 };
+
+/* Shared by the row action, the panel's move buttons and the Logs form, so
+   all three produce identical history for the same move. */
+function tkApply(t,id,mv,v){
+  if(v.assignee)t.assignedTo=v.assignee;
+  /* waitingOn only means anything while blocked - carrying a stale value onto
+     an unblocked ticket would make the panel lie about who owes it. */
+  t.waitingOn=mv.to==='blocked'?v.waitingOn:'';
+  t.status=mv.to;
+  var owner=(typeof tkOwner==='function')?tkOwner(t):'';
+  record('support-tickets',t,id,{
+    title:mv.title,statusLabel:lbl(mv.to),tone:mv.tone,
+    comment:v.comment+(t.waitingOn?' (Waiting on: '+t.waitingOn+')':''),
+    toastTitle:'Ticket '+lbl(mv.to).toLowerCase(),
+    toastKind:mv.tone==='bad'?'error':mv.tone==='ok'?'success':'info',
+    toastSub:t.ticketId+' · next: '+owner});
+}
+/* The Logs form lives in pages.js but must commit through exactly this path. */
+window.qaTicketApply=function(id,to,vals){
+  var t=find(D().tickets,id);if(!t||typeof tkMoves!=='function')return false;
+  var moves=tkMoves(t),mv=null,i;
+  for(i=0;i<moves.length;i++)if(moves[i].to===to)mv=moves[i];
+  if(!mv)return false;
+  tkApply(t,id,mv,vals||{});
+  return true;
+};
+function lbl(s){return (typeof tkStatusLabel==='function')?tkStatusLabel(s):s;}
+
+/* The four status toggles are the same shape: one reversible flag, a comment,
+   and a line in the record's own history. */
+function toggleAsk(pg,rec,id,noun,subject,extra){
+  var to=rec.status==='Active'?'Inactive':'Active';
+  qaAsk({
+    title:(to==='Active'?'Activate ':'Deactivate ')+noun,
+    subject:subject,from:rec.status,to:to,tone:to==='Active'?'ok':'bad',
+    confirmLabel:to==='Active'?'Activate':'Deactivate',
+    onConfirm:function(v){
+      rec.status=to;
+      record(pg,rec,id,{
+        title:(extra||noun.charAt(0).toUpperCase()+noun.slice(1))+' '+to,
+        comment:v.comment,statusLabel:to,tone:to==='Active'?'ok':'bad',
+        toastTitle:noun.charAt(0).toUpperCase()+noun.slice(1)+' '+to.toLowerCase(),
+        toastKind:to==='Active'?'success':'info',toastSub:subject});
+    }});
+}
 
 window.qaRateToggle=function(id){
   var r=find(D().rates,id);if(!r)return;
-  r.status=r.status==='Active'?'Inactive':'Active';
-  qaCommit('#rr-row-'+id,r.status==='Active'?'ok':'bad');
-  toast('Rule '+r.status.toLowerCase(),r.status==='Active'?'success':'info',r.country+' · '+r.ruleName);
+  toggleAsk('rates-rules',r,id,'rule',r.country+' · '+r.ruleName);
 };
 
 window.qaTemplateToggle=function(id){
   var t=find(D().templates,id);if(!t)return;
-  t.status=t.status==='Active'?'Inactive':'Active';
-  qaCommit('#ctp-row-'+id,t.status==='Active'?'ok':'bad');
-  toast('Template '+t.status.toLowerCase(),t.status==='Active'?'success':'info',t.templateName+' · '+t.employmentType);
+  toggleAsk('contract-templates',t,id,'template',t.templateName+' · '+t.employmentType);
 };
 
 window.qaChat=function(id,status){
   var c=find(D().chats,id);if(!c)return;
-  c.status=status;
-  qaCommit('#chat-row-'+id,status==='inactive'?'idle':status==='active'?'ok':'info');
-  var label=(typeof chatStatusLabel==='function')?chatStatusLabel(status):status;
-  toast('Chat: '+label,'success',c.chatId+' · '+c.clientName);
+  var cl=function(s){return (typeof chatStatusLabel==='function')?chatStatusLabel(s):s;};
+  var tone=status==='inactive'?'idle':status==='active'?'ok':'info';
+  qaAsk({
+    title:status==='inactive'?'Close chat':status==='active'?'Reopen chat':'Mark replied',
+    subject:c.chatId+' · '+c.clientName,
+    from:cl(c.status),to:cl(status),tone:status==='inactive'?'bad':'ok',
+    confirmLabel:status==='inactive'?'Close chat':status==='active'?'Reopen':'Mark replied',
+    onConfirm:function(v){
+      c.status=status;
+      record('chats',c,id,{
+        title:'Chat '+cl(status),comment:v.comment,statusLabel:cl(status),tone:tone,
+        toastTitle:'Chat: '+cl(status),
+        toastKind:status==='inactive'?'info':'success',
+        toastSub:c.chatId+' · '+c.clientName});
+    }});
 };
 
 window.qaTeamToggle=function(id){
   var t=find(D().teams,id);if(!t)return;
-  t.status=t.status==='Active'?'Inactive':'Active';
-  qaCommit('#tm-row-'+id,t.status==='Active'?'ok':'bad');
-  toast('Team '+t.status.toLowerCase(),t.status==='Active'?'success':'info',t.name+' · '+t.dept);
+  toggleAsk('teams',t,id,'team',t.name+' · '+t.dept);
 };
 
 /* Contracts do not commit from the row: advancing a stage needs a note and a
@@ -547,6 +726,10 @@ window.qaEmpTimesheet=function(empId,name,initials,role){
   if(typeof atViewCalendar==='function')atViewCalendar(empId,name,initials,role);
 };
 
+/* The generic listings hold rows as plain arrays behind getPageMeta(), with
+   no record object and no history store, so there is nowhere to file a log
+   entry. The comment is still required and still shown back in the toast -
+   an action that cannot be justified should not be one click here either. */
 window.qaGeneric=function(pg,id,status){
   var meta=getPageMeta(pg)||{};
   var cols=meta.columns||[],rows=meta.rows||[];
@@ -555,37 +738,17 @@ window.qaGeneric=function(pg,id,status){
   var row=null;
   for(var i=0;i<rows.length;i++)if(String(rows[i][0])===String(id)){row=rows[i];break;}
   if(!row)return;
-  row[si]=status;
-  qaCommit('tr[data-row-id="'+id+'"]',status==='Active'?'ok':'bad');
   var nameIdx=cols.length>1?1:0;
-  toast('Marked '+status.toLowerCase(),status==='Active'?'success':'info',String(row[nameIdx]));
-};
-
-/* ── bulk handlers ─────────────────────────────────────────────────────── */
-function bulkDone(n,verb,kind){
-  qaClearSelection();
-  qaCommit(null);
-  toast(n+' '+(n===1?'record':'records')+' '+verb,kind||'success');
-}
-window.qaBulkLeave=function(status){
-  var ids=selectedIds(),n=0;
-  var arr=D().leaves;ids.forEach(function(id){var l=find(arr,id);if(l){l.status=status;n++;}});
-  bulkDone(n,status.toLowerCase(),status==='Approved'?'success':'error');
-};
-window.qaBulkPayment=function(status){
-  var ids=selectedIds(),n=0;
-  var arr=D().payments;ids.forEach(function(id){var p=find(arr,id);if(p){p.invoiceStatus=status;n++;}});
-  bulkDone(n,'marked '+status.toLowerCase());
-};
-window.qaBulkCompliance=function(status){
-  var ids=selectedIds(),n=0;
-  var arr=D().compliance;ids.forEach(function(id){var r=find(arr,id);if(r){r.status=status;n++;}});
-  bulkDone(n,'marked '+status.toLowerCase());
-};
-window.qaBulkTicket=function(status){
-  var ids=selectedIds(),n=0;
-  var arr=D().tickets;ids.forEach(function(id){var t=find(arr,id);if(t){t.status=status;n++;}});
-  bulkDone(n,'closed');
+  var name=String(row[nameIdx]);
+  qaAsk({
+    title:status==='Active'?'Mark active':'Mark inactive',
+    subject:name,from:String(row[si]),to:status,tone:status==='Active'?'ok':'bad',
+    confirmLabel:status==='Active'?'Mark active':'Mark inactive',
+    onConfirm:function(v){
+      row[si]=status;
+      qaCommit('tr[data-row-id="'+id+'"]',status==='Active'?'ok':'bad');
+      toast('Marked '+status.toLowerCase(),status==='Active'?'success':'info',name+' · '+v.comment);
+    }});
 };
 
 /* ── boot ──────────────────────────────────────────────────────────────── */

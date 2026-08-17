@@ -69,6 +69,13 @@ tr.lp-row-selected>td:first-child,
 .sb-status.info{color:var(--st-info-fg)}
 .lp-sb-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .lp-sb-section-title{font-size:13px;font-weight:700;color:var(--navy)}
+/* Sends you to the tab a derived value was read from, so a panel never shows
+   a value whose source the reader cannot get to. */
+.lp-sb-section-link{
+  background:none;border:0;padding:0;cursor:pointer;font-family:inherit;
+  font-size:11.5px;font-weight:600;color:var(--gray);
+  transition:color var(--t-micro) ease}
+.lp-sb-section-link:hover{color:var(--navy);text-decoration:underline}
 /* Record header for a detail panel. Panels that had nothing to put beside the
    Edit button were pushing it right with an empty <span>, which left the whole
    left half of the row blank. This gives that row the record's own identity —
@@ -263,13 +270,43 @@ tr.lp-row-selected>td:first-child,
 .lp-logs-form-sel-wrap{position:relative;margin-bottom:12px}
 .lp-logs-form-sel-wrap svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca3af}
 .lp-logs-form-select{width:100%;height:40px;padding:0 34px 0 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none;appearance:none;cursor:pointer;transition:.15s;box-sizing:border-box}
-.lp-logs-form-select:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.09)}
+/* One quiet ring: the border darkens, nothing glows. Orange is the accent for
+   things you PRESS (the Save button below is orange); a field you are typing
+   in only needs to say "focus is here", which a darker border already does. */
+.lp-logs-form-select:focus{border-color:#94a3b8;box-shadow:none}
 .lp-logs-form-textarea{width:100%;height:88px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:var(--r-control);font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none;resize:none;line-height:1.5;transition:.15s;box-sizing:border-box;margin-bottom:12px}
-.lp-logs-form-textarea:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.09)}
+.lp-logs-form-textarea:focus{border-color:#94a3b8;box-shadow:none}
 .lp-logs-form-textarea::placeholder{color:#b0b8c4}
 .lp-logs-save-btn{width:100%;height:40px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-control);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s;letter-spacing:.01em}
 /* hover handled by the button system (colour only) - no lift, no shadow */
 .lp-logs-save-btn:active{transform:none}
+/* ── Ticket "who owes the next action" card ───────────────────────────────
+   Sits at the top of the ticket panel because it answers the only question a
+   support queue asks. The left rail takes the colour of the state, so the
+   panel reads the same way the row's badge does. The buttons here are the
+   SAME moves the row offers - both go through the confirm dialog, so there
+   is no path to a status change that skips the comment. */
+.tk-owner-card{
+  background:#f8fafc;border:1px solid var(--border);border-left:3px solid var(--st-idle-bd);
+  border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.tk-owner-open{border-left-color:var(--st-info-bd);background:var(--st-info-bg)}
+.tk-owner-in_progress{border-left-color:var(--st-wait-bd);background:var(--st-wait-bg)}
+.tk-owner-blocked{border-left-color:var(--st-bad-bd);background:var(--st-bad-bg)}
+.tk-owner-resolved{border-left-color:var(--st-ok-bd);background:var(--st-ok-bg)}
+.tk-owner-label{font-size:10.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px}
+.tk-owner-who{font-size:14px;font-weight:700;color:var(--navy);margin-top:3px}
+.tk-owner-moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.tk-owner-btn{
+  height:30px;padding:0 13px;border-radius:var(--r-control);
+  background:#fff;border:1.5px solid var(--border);color:var(--navy);
+  font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
+  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
+/* Hover takes the colour of the RESULT, the same rule the row clusters use. */
+.tk-owner-btn-ok:hover{background:var(--st-ok-bg);border-color:var(--st-ok-bd);color:var(--st-ok-fg)}
+.tk-owner-btn-bad:hover{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
+.tk-owner-btn-wait:hover{background:var(--st-wait-bg);border-color:var(--st-wait-bd);color:var(--st-wait-fg)}
+.tk-owner-btn-info:hover{background:var(--st-info-bg);border-color:var(--st-info-bd);color:var(--st-info-fg)}
+
 .lp-logs-empty{font-size:13px;color:#9ca3af;text-align:center;padding:32px 16px;background:#f9fafb;border-radius:10px;border:1px dashed #e5e7eb}
 /* LP WORKFLOW TIMELINE */
 .lp-wf-wrap{display:flex;flex-direction:column}

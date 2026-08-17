@@ -228,7 +228,7 @@ function buildDirectListingHTML(){
   if(deBranchFilter)deRows=deRows.filter(e=>e.branch===deBranchFilter);
   if(deStatusFilter)deRows=deRows.filter(e=>e.status===deStatusFilter);
   if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
-  const rows=deRows.length?deRows.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
+  const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter].join('|'),deRows.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
@@ -237,7 +237,7 @@ function buildDirectListingHTML(){
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openDeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>').join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>';
+    +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=deSelectedId?renderDeSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
@@ -251,7 +251,8 @@ function buildDirectListingHTML(){
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>BRANCH</th><th>JOB TITLE</th><th>STATUS</th><th>ACTION</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(deSelectedId?' open':'')+'" id="de-split-sb"><div class="lp-isb" id="de-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -423,7 +424,7 @@ function buildGlobalListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   const filtered=geStatusFilter?globalEmpData.filter(e=>e.status===geStatusFilter):globalEmpData;
   if(geSelectedId&&!filtered.some(e=>e.id===geSelectedId))geSelectedId=null;
-  const rows=filtered.length?filtered.map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
+  const pgn=listPage('global-employees',geStatusFilter,filtered.map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
@@ -433,7 +434,7 @@ function buildGlobalListingHTML(){
     +'<td>'+(e.workerType?'<span class="lp-status-badge tone-info">'+e.workerType+'</span>':d)+'</td>'
     +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openGeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>').join(''):'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>';
+    +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
@@ -448,7 +449,8 @@ function buildGlobalListingHTML(){
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(geSelectedId?' open':'')+'" id="ge-split-sb"><div class="lp-isb" id="ge-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -589,7 +591,7 @@ function buildTeamsListingHTML(){
   if(tmTeamFilter)tmRows=tmRows.filter(t=>t.name===tmTeamFilter);
   if(tmStatusFilter)tmRows=tmRows.filter(t=>t.status===tmStatusFilter);
   if(tmSelectedId&&!tmRows.some(t=>t.id===tmSelectedId))tmSelectedId=null;
-  const rows=tmRows.length?tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
+  const pgn=listPage('teams',[tmTeamFilter,tmStatusFilter].join('|'),tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.name+'</td>'
     +'<td>'+(t.dept||d)+'</td>'
@@ -597,7 +599,7 @@ function buildTeamsListingHTML(){
     +'<td style="font-weight:600;color:var(--navy)">'+t.members+'</td>'
     +'<td><span class="lp-status-badge '+t.status.toLowerCase()+'">'+t.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openTmSidebar('+t.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>').join(''):'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No teams match this filter.</td></tr>';
+    +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No teams match this filter.</td></tr>');
   const sbInner=tmSelectedId?renderTmSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
@@ -610,7 +612,8 @@ function buildTeamsListingHTML(){
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>TEAM NAME</th><th>DEPARTMENT</th><th>COUNTRY</th><th>MEMBERS</th><th>STATUS</th><th>ACTION</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(tmSelectedId?' open':'')+'" id="tm-split-sb"><div class="lp-isb" id="tm-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -941,7 +944,7 @@ function buildAllLeavesHTML(){
   const stClass={Approved:'approved',Pending:'pending',Unapproved:'inactive',Rejected:'inactive'};
   const filtered=alStatusFilter?allLeavesData.filter(l=>l.status===alStatusFilter):allLeavesData;
   if(alSelectedId&&!filtered.some(l=>l.id===alSelectedId))alSelectedId=null;
-  const rows=filtered.length?filtered.map((l,i)=>'<tr class="al-row'+(alSelectedId===l.id?' lp-row-selected':'')+'" id="al-row-'+l.id+'" style="cursor:pointer" onclick="openAlSidebar('+l.id+')">'
+  const pgn=listPage('all-leaves',alStatusFilter,filtered.map((l,i)=>'<tr class="al-row'+(alSelectedId===l.id?' lp-row-selected':'')+'" id="al-row-'+l.id+'" style="cursor:pointer" onclick="openAlSidebar('+l.id+')">'
     +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+l.leaveId+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+l.name+'</td>'
@@ -949,7 +952,7 @@ function buildAllLeavesHTML(){
     +'<td>'+l.leaveFrom+'</td>'
     +'<td>'+l.leaveTo+'</td>'
     +'<td><span class="lp-status-badge '+(stClass[l.status]||'pending')+'">'+l.status+'</span></td>'    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openAlSidebar('+l.id+')" title="More actions">'+hamburger+'</button></td>'
-    +'</tr>').join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No leave requests match this filter.</td></tr>';
+    +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No leave requests match this filter.</td></tr>');
   const approvedCount=allLeavesData.filter(l=>l.status==='Approved').length;
   const unapprovedCount=allLeavesData.filter(l=>l.status==='Unapproved').length;
   const pendingCount=allLeavesData.filter(l=>l.status==='Pending').length;
@@ -971,14 +974,8 @@ function buildAllLeavesHTML(){
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S.No</th><th>Key ID</th><th>Full Name</th><th>Leave Hours</th><th>From Date</th><th>To Date</th><th>Status</th><th>Action</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="lp-pagination">'
-    +'<span class="lp-pagination-info">Showing 1&ndash;'+filtered.length+' of '+allLeavesData.length+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
-    +'<button class="lp-pg-btn active">1</button>'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'</div></div>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(alSelectedId?' open':'')+'" id="al-split-sb"><div class="lp-isb" id="al-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -1218,7 +1215,7 @@ function buildPaymentsHTML(){
   const closedCount=paymentsData.filter(p=>p.invoiceStatus==='Closed').length;
   const filtered=pmInvoiceStatusFilter?(pmInvoiceStatusFilter==='__pending_group__'?paymentsData.filter(p=>p.invoiceStatus==='Unpaid'||p.invoiceStatus==='Pending'):paymentsData.filter(p=>p.invoiceStatus===pmInvoiceStatusFilter)):paymentsData;
   if(pmSelectedId&&!filtered.some(p=>p.id===pmSelectedId))pmSelectedId=null;
-  const rows=filtered.length?filtered.map((p,i)=>{
+  const pgn=listPage('payments',pmInvoiceStatusFilter,filtered.map((p,i)=>{
     const menuItems=pmInvoiceFlow.map(s=>{
       const isCurrent=p.invoiceStatus===s;
       return '<div class="ct-act-item'+(isCurrent?' current':'')+'" '+(isCurrent?'':'onclick="closePmMenus()"')+'>'
@@ -1238,7 +1235,7 @@ function buildPaymentsHTML(){
       +'<td onclick="event.stopPropagation()">'+statusBtn+'</td>'
       +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openPmSidebar('+p.id+')" title="More actions">'+dotsIco+'</button></td>'
       +'</tr>';
-  }).join(''):'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No payments match this filter.</td></tr>';
+  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No payments match this filter.</td></tr>');
   const sbInner=pmSelectedId?renderPmSidebar():'';
   return '<div class="lp-page">'
     +dashboardBackHTML()
@@ -1259,14 +1256,8 @@ function buildPaymentsHTML(){
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S. No</th><th>Order ID</th><th>Name</th><th>Amount Due</th><th>Type</th><th>Order Status</th><th>Invoice Status</th><th>Action</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="lp-pagination">'
-    +'<span class="lp-pagination-info">Showing 1&ndash;'+filtered.length+' of '+paymentsData.length+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
-    +'<button class="lp-pg-btn active">1</button>'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'</div></div>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(pmSelectedId?' open':'')+'" id="pm-split-sb"><div class="lp-isb" id="pm-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -1305,9 +1296,9 @@ function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk
 function navTkTab(tab){tkTab=tab;const inner=document.getElementById('tk-isb-inner');if(inner){inner.innerHTML=renderTkSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tk-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
 // Stored keys are snake_case; these are how they read. Shared by the table pill
 // and by sbStatus() in the detail panel so the two never drift apart.
-const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',closed:'Closed'};
+const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',resolved:'Resolved',closed:'Closed'};
 function tkStatusLabel(s){return TK_STATUS_LABEL[s]||s;}
-function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+tkStatusLabel(s)+'</span>';}
+function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'},resolved:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+tkStatusLabel(s)+'</span>';}
 // ── CHATS SIDEBAR ──
 function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('chat-isb-inner');if(inner)inner.innerHTML=renderChatSidebar();document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
@@ -1809,15 +1800,15 @@ function buildComplianceItemsHTML(){
   const totalActive=complianceItemsData.filter(r=>r.status==='Active').length;
   const totalInactive=complianceItemsData.filter(r=>r.status==='Inactive').length;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const tableRows=rows.length?rows.map((r,i)=>'<tr class="cmp-row'+(complianceSelectedId===r.id?' lp-row-selected':'')+'" id="cmp-row-'+r.id+'" style="cursor:pointer" onclick="openComplianceSidebar('+r.id+')">'
+  const pgn=listPage('compliance',[complianceCountryFilter,complianceModelFilter,complianceStatusFilter].join('|'),rows.map((r,i)=>'<tr class="cmp-row'+(complianceSelectedId===r.id?' lp-row-selected':'')+'" id="cmp-row-'+r.id+'" style="cursor:pointer" onclick="openComplianceSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
     +'<td>'+r.model+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openComplianceSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
-    +'</tr>').join('')
-    :'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+    +'</tr>'),
+    '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=complianceSelectedId?renderComplianceSidebar():'';
   return '<div class="lp-page">'
     +dashboardBackHTML()
@@ -1839,7 +1830,8 @@ function buildComplianceItemsHTML(){
     +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S. NO</th><th>COUNTRY</th><th>COMPLIANCE ITEM</th><th>EMPLOYMENT MODEL</th><th>STATUS</th><th>ACTION</th>'
-    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(complianceSelectedId?' open':'')+'" id="cmp-split-sb"><div class="lp-isb" id="cmp-isb-inner">'+sbInner+'</div></div>'
     +'</div>'
@@ -1874,9 +1866,6 @@ function buildOcaHeaderHTML(){
     +'<div class="oca-head-title">Opendhi Compliance Admin<span class="oca-role">COMPLIANCE ADMIN</span></div>'
     +'<div class="oca-head-sub">You are looking after '+total+' compliance items — '+open+' still need action.</div>'
     +'</div>'
-    +'<button class="oca-primary" onclick="navigatePage(\'compliance\',true)">'
-    +'<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
-    +'Open Compliance Hub</button>'
     +'</div>';
 }
 function buildOcaTilesHTML(){
@@ -1951,8 +1940,7 @@ function renderOcaSidebar(){
     const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
     const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
-    // The header's "Open Compliance Hub" button already covers the jump to the
-    // Hub, so the panel head carries the record and its status, nothing more.
+    // The panel head carries the record and its status, nothing more.
     body=lpRecordHead('Compliance Item',item.item,sbStatus(item.status))
       +'<div class="lp-sb-detail-grid">'
       +fc(iUser,'Employee / Client',item.who)+fc(iHash,'Reference',ocaRef(item))
@@ -2169,7 +2157,7 @@ function buildRatesRulesHTML(){
   if(ratesRuleStatusFilter)rows=rows.filter(r=>r.status===ratesRuleStatusFilter);
   if(ratesRuleSelectedId&&!rows.some(r=>r.id===ratesRuleSelectedId))ratesRuleSelectedId=null;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const tableRows=rows.length?rows.map((r,i)=>'<tr class="rr-row'+(ratesRuleSelectedId===r.id?' lp-row-selected':'')+'" id="rr-row-'+r.id+'" style="cursor:pointer" onclick="openRatesRuleSidebar('+r.id+')">'
+  const pgn=listPage('rates-rules',[ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter].join('|'),rows.map((r,i)=>'<tr class="rr-row'+(ratesRuleSelectedId===r.id?' lp-row-selected':'')+'" id="rr-row-'+r.id+'" style="cursor:pointer" onclick="openRatesRuleSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.ruleName+'</span></td>'
@@ -2178,8 +2166,8 @@ function buildRatesRulesHTML(){
     +'<td style="font-weight:600;color:var(--navy)">'+r.valueRate+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openRatesRuleSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
-    +'</tr>').join('')
-    :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+    +'</tr>'),
+    '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ratesRuleSelectedId?renderRatesRuleSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar">'
@@ -2194,7 +2182,8 @@ function buildRatesRulesHTML(){
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S. No</th><th>Country</th><th>Rule Name</th><th>Category</th><th>Applicable To</th><th>Value / Rate</th><th>Status</th><th>Action</th>'
-    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(ratesRuleSelectedId?' open':'')+'" id="rr-split-sb"><div class="lp-isb" id="rr-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>'
@@ -2435,7 +2424,7 @@ function buildContractTemplatesHTML(){
   if(ctpStatusFilter)rows=rows.filter(r=>r.status===ctpStatusFilter);
   if(ctpSelectedId&&!rows.some(r=>r.id===ctpSelectedId))ctpSelectedId=null;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const tableRows=rows.length?rows.map((r,i)=>'<tr class="ctp-row'+(ctpSelectedId===r.id?' lp-row-selected':'')+'" id="ctp-row-'+r.id+'" style="cursor:pointer" onclick="openCtpSidebar('+r.id+')">'
+  const pgn=listPage('contract-templates',[ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter].join('|'),rows.map((r,i)=>'<tr class="ctp-row'+(ctpSelectedId===r.id?' lp-row-selected':'')+'" id="ctp-row-'+r.id+'" style="cursor:pointer" onclick="openCtpSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.templateName+'</span></td>'
     +'<td>'+r.employmentType+'</td>'
@@ -2444,8 +2433,8 @@ function buildContractTemplatesHTML(){
     +'<td>'+r.category+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openCtpSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
-    +'</tr>').join('')
-    :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>';
+    +'</tr>'),
+    '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ctpSelectedId?renderCtpSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar">'
@@ -2460,7 +2449,8 @@ function buildContractTemplatesHTML(){
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S. No</th><th>Template Name</th><th>Employment Type</th><th>Template ID</th><th>Country</th><th>Category</th><th>Status</th><th>Action</th>'
-    +'</tr></thead><tbody>'+tableRows+'</tbody></table>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(ctpSelectedId?' open':'')+'" id="ctp-split-sb"><div class="lp-isb" id="ctp-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>'
@@ -2944,7 +2934,7 @@ function buildContractsListingHTML(){
   const types=[...new Set(contractsData.map(c=>c.type))];
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const filteredContracts=ctQuickStatusFilter?contractsData.filter(c=>c.status===ctQuickStatusFilter):contractsData;
-  const rows=filteredContracts.map((c,ctRowIdx)=>{
+  const pgn=listPage('contracts',ctQuickStatusFilter,filteredContracts.map((c,ctRowIdx)=>{
     const flowIdx=ctFlow.indexOf(c.status);
     const menuItems=ctFlow.map((step,i)=>{
       const isDone=flowIdx>i;
@@ -2972,7 +2962,7 @@ function buildContractsListingHTML(){
       +'<td>'+ctStatusBadge(c.status)+'</td>'
       +'<td onclick="event.stopPropagation()">'+actionBtn+'</td>'
       +'</tr>';
-  }).join('')||'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No contracts match this filter.</td></tr>';
+  }),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No contracts match this filter.</td></tr>');
   const sbInner=ctSelectedId?renderCtSidebar():'';
   return '<div class="lp-page">'
     +dashboardBackHTML()
@@ -2994,14 +2984,8 @@ function buildContractsListingHTML(){
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>S.No</th><th>Contract ID</th><th>Employee Name</th><th>Country</th><th>Type</th><th>Compliance</th><th>Date</th><th>Status</th><th>Action</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="lp-pagination">'
-    +'<span class="lp-pagination-info">Showing 1–'+filteredContracts.length+' of '+contractsData.length+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
-    +'<button class="lp-pg-btn active">1</button>'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'</div></div>'
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(ctSelectedId?' open':'')+'" id="ct-split-sb"><div class="lp-isb" id="ct-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -3207,13 +3191,8 @@ function submitEditLeavePolicy(){
 function buildLeavePoliciesHTML(){
   const numVal=(v)=>v!==null&&v!==undefined?'<span style="color:var(--black);font-weight:600">'+v+'</span>':'<span style="color:#9ca3af">-</span>';
   const ynCell=(v)=>'<span style="color:'+(v?'#16a34a':'#374151')+';font-weight:500">'+(v?'Yes':'No')+'</span>';
-  const total=leavePoliciesData.length;
-  const totalPages=Math.max(1,Math.ceil(total/LP_PAGE_SIZE));
-  if(lpCurrentPage>totalPages)lpCurrentPage=totalPages;
-  const start=(lpCurrentPage-1)*LP_PAGE_SIZE;
-  const pageData=leavePoliciesData.slice(start,start+LP_PAGE_SIZE);
-  const rows=pageData.map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
-    +'<td style="color:var(--gray);font-size:13px">'+(start+i+1)+'</td>'
+  const pgn=listPage('leave-policies',[lpFilterField,lpFilterStatus].join('|'),leavePoliciesData.map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
+    +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+p.type+'</td>'
     +'<td>'+numVal(p.yearly)+'</td>'
     +'<td>'+numVal(p.monthly)+'</td>'
@@ -3224,17 +3203,7 @@ function buildLeavePoliciesHTML(){
     +'<td><button class="lp-action-btn" title="View Details" onclick="event.stopPropagation();openLPSidebar('+p.id+')">'
     +'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>'
     +'</button></td>'
-    +'</tr>').join('');
-  const prevArrow='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
-  const nextArrow='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
-  const pageButtons=Array.from({length:totalPages},(_,i)=>'<button class="lp-pg-btn'+(lpCurrentPage===i+1?' active':'')+'" onclick="lpGoToPage('+(i+1)+')">'+(i+1)+'</button>').join('');
-  const pagination='<div class="lp-pagination">'
-    +'<span class="lp-pagination-info">Showing '+(total===0?0:start+1)+'&ndash;'+Math.min(start+LP_PAGE_SIZE,total)+' of '+total+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" onclick="lpGoToPage('+(lpCurrentPage-1)+')" '+(lpCurrentPage===1?'disabled':'')+'>'+prevArrow+'</button>'
-    +pageButtons
-    +'<button class="lp-pg-btn lp-pg-arrow" onclick="lpGoToPage('+(lpCurrentPage+1)+')" '+(lpCurrentPage===totalPages?'disabled':'')+'>'+nextArrow+'</button>'
-    +'</div></div>';
+    +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No leave policies match this filter.</td></tr>');
   const sbInner=lpSidebarPolicyId?renderLPSidebar():'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar">'
@@ -3251,8 +3220,8 @@ function buildLeavePoliciesHTML(){
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>TYPE NAME</th><th>YEARLY COUNT</th><th>MONTHLY LIMIT</th>'
     +'<th>CARRY FORWARD LIMIT</th><th>PROBATION ALLOWED</th><th>PRORATE</th><th>STATUS</th><th>ACTION</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +pagination
+    +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(lpSidebarPolicyId?' open':'')+'" id="lp-isb">'
     +'<div class="lp-isb" id="lp-isb-inner">'+sbInner+'</div>'
@@ -3821,8 +3790,6 @@ function buildAllTimesheetHTML(){
 
   const calIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const listIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
-  const prevSvg='<svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>';
-  const nextSvg='<svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>';
 
   // Filter bar
   const filterBar='<div class="at-top">'
@@ -3844,16 +3811,15 @@ function buildAllTimesheetHTML(){
     +'</div>';
 
   // Table rows
-  let rows='';
   const filteredTs=atTsQuickFilter?data.filter(function(d){return d.tsStatus===atTsQuickFilter;}):data;
-  filteredTs.forEach(function(emp){
+  const pgn=listPage('all-timesheet',atTsQuickFilter,filteredTs.map(function(emp){
     const empBadge=emp.empStatus==='Active'
       ?'<span class="at-badge-active">Active</span>'
       :'<span class="at-badge-inactive">Inactive</span>';
     const tsBadge=emp.tsStatus==='Filled'
       ?'<span class="at-badge-filled">Filled</span>'
       :'<span class="at-badge-unfilled">Unfilled</span>';
-    rows+='<tr class="at-tr">'
+    return '<tr class="at-tr">'
       +'<td class="at-td"><span class="at-sno">'+emp.id+'</span></td>'
       +'<td class="at-td"><span class="at-emp-id">'+emp.empId+'</span></td>'
       +'<td class="at-td"><span class="at-emp-name">'+emp.name+'</span></td>'
@@ -3865,7 +3831,7 @@ function buildAllTimesheetHTML(){
       +'<button class="at-act-btn" title="View Details">'+listIco+'</button>'
       +'</div></td>'
       +'</tr>';
-  });
+  }),'<tr><td class="at-td" colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No timesheets match this filter.</td></tr>');
 
   const table='<div class="at-card">'
     +'<table class="at-table">'
@@ -3878,13 +3844,9 @@ function buildAllTimesheetHTML(){
     +'<th class="at-th">Timesheet Status</th>'
     +'<th class="at-th">Action</th>'
     +'</tr></thead>'
-    +'<tbody>'+rows+'</tbody>'
+    +'<tbody>'+pgn.rows+'</tbody>'
     +'</table>'
-    +'<div class="at-pagination">'
-    +'<button class="at-pg-arr">'+prevSvg+'</button>'
-    +'<button class="at-pg-btn active">1</button>'
-    +'<button class="at-pg-arr">'+nextSvg+'</button>'
-    +'</div>'
+    +pgn.pager
     +'</div>';
 
   return filterBar+table;
@@ -4495,10 +4457,10 @@ function buildCompanySettingsHTML(){
   const rows=(csStatFilter&&statusIdx>=0)?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()===csStatFilter.toLowerCase()):allRows;
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>'<th>'+c+'</th>').join('')+'<th>ACTION</th>';
-  const tableRows=rows.length?rows.map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" onclick="openCsSidebar('+row[0]+')">'
+  const pgn=listPage('settings',csStatFilter,rows.map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" onclick="openCsSidebar('+row[0]+')">'
     +row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')
     +'<td><button class="lp-action-btn" title="More actions" onclick="event.stopPropagation();openCsSidebar('+row[0]+')">'+hamburger+'</button></td>'
-    +'</tr>').join(''):'<tr><td colspan="'+(cols.length+1)+'" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>';
+    +'</tr>'),'<tr><td colspan="'+(cols.length+1)+'" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>');
   const filters=(meta.filters||[]).map((f,i)=>apCS('lst-settings-f'+i,getFilterOptions(f).slice(1),f==='Status'?csStatFilter:'',f)).join('');
   const sbInner=csSelectedItem?renderCsSidebar():'';
   return '<div class="listing-page">'
@@ -4514,8 +4476,8 @@ function buildCompanySettingsHTML(){
     +'<div class="lp-split-wrap">'
       +'<div class="lp-split-main">'
         +'<div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-          +'<table class="lp-table" style="min-width:600px"><thead><tr>'+headers+'</tr></thead><tbody>'+tableRows+'</tbody></table>'
-          +'<div class="pagination"><button class="page-btn">&lt;</button><button class="page-btn active">1</button><button class="page-btn">&gt;</button></div>'
+          +'<table class="lp-table" style="min-width:600px"><thead><tr>'+headers+'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+          +pgn.pager
         +'</div>'
       +'</div>'
       +'<div class="lp-split-sb'+(csSelectedItem?' open':'')+'" id="cs-isb">'
@@ -4875,7 +4837,7 @@ function renderLstSidebar(){
 // ── TICKETS PAGE ──
 function renderTkSidebar(){
   const t=ticketsData.find(x=>x.id===tkSelectedId);if(!t)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'conversation',label:'Conversation'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'conversation',label:'Conversation'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'tk-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="tk-isb-tabs">'+tabs.map(tb=>'<button class="lp-isb-tab'+(tkTab===tb.id?' active':'')+'" onclick="navTkTab(\''+tb.id+'\')">'+tb.label+'</button>').join('')+'</div>'
@@ -4894,7 +4856,19 @@ function renderTkSidebar(){
   const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
   let body='';
   if(tkTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Client Information</span></div>'
+    // The panel opens on the one question a support queue is actually asking:
+    // who has the ball, and what moves it. Everything else is reference.
+    const moves=tkMoves(t);
+    const res=tkResolution(t);
+    const owed='<div class="tk-owner-card tk-owner-'+t.status+'">'
+      +'<div class="tk-owner-label">Next action on</div>'
+      +'<div class="tk-owner-who">'+tkOwner(t)+'</div>'
+      +(moves.length
+        ? '<div class="tk-owner-moves">'+moves.map(mv=>'<button class="tk-owner-btn tk-owner-btn-'+mv.tone+'" onclick="qaTicket('+t.id+',\''+mv.to+'\')">'+mv.label+'</button>').join('')+'</div>'
+        : '')
+      +'</div>';
+    body=owed
+      +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Client Information</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
       +fc(iUser,'Client Name',t.clientName)+fc(iMail,'Email',t.clientEmail)
       +fc(iPhone,'Phone',t.clientPhone)+fc(iGlobe,'Country',t.country)
@@ -4904,7 +4878,19 @@ function renderTkSidebar(){
       +fc(iTag,'Ticket ID',t.ticketId)+fc(iTag,'Category',t.category)
       +fc(iCal,'Created At',t.createdAt)+fc(iUser,'Assigned To',t.assignedTo)
       +fc(iTag,'Status',sbStatus(t.status,tkStatusLabel(t.status)))
+      +(t.status==='blocked'?fc(iGlobe,'Blocked On',t.waitingOn):'')
       +'</div>'
+      // Read out of the Logs, not out of a field on the ticket - see the note
+      // on TK_FLOW. The link goes to the entry it came from.
+      +(res
+        ? '<div class="lp-sb-view-header"><span class="lp-sb-section-title">'
+          // After a rejection the ticket is back in progress but the entry is
+          // still in the log, and it is the most useful thing on the panel -
+          // it says what has already been tried. The heading is what changes.
+          +(t.status==='resolved'||t.status==='closed'?'Resolution':'Last Proposed Resolution')+'</span>'
+          +'<button class="lp-sb-section-link" onclick="navTkTab(\'logs\')">View in Logs</button></div>'
+          +'<div style="display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:16px">'+fcW(iDoc,'What was done',res)+'</div>'
+        : '')
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Description</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr;gap:10px">'+fcW(iDoc,'Details',t.description)+'</div>';
   }else if(tkTab==='conversation'){
@@ -4931,21 +4917,162 @@ function renderTkSidebar(){
       +'<tbody>'+atts.map(a=>'<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 10px;font-size:12px;color:#6b7280">'+a.no+'</td><td style="padding:8px 10px;font-size:12px;font-weight:500;color:var(--navy)">'+a.name+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.by+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.type+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.src+'</td><td style="padding:8px 10px"><button style="background:none;border:none;cursor:pointer;color:var(--orange);font-size:11px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:3px">'+dIco+' Download</button></td></tr>').join('')
       +'</tbody></table>';
   }else if(tkTab==='assignment'){
+    // The agent list comes from TK_AGENTS so this tab and the confirm dialog's
+    // "Assign to" field can never offer different people.
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Current Assignment</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
       +fc(iUser,'Assigned To',t.assignedTo)+fc(iCal,'Since',t.createdAt)
+      +fc(iUser,'Next Action On',tkOwner(t))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Reassign Ticket</span></div>'
       +'<div style="display:flex;flex-direction:column;gap:10px">'
-      +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Select Agent</div>'
-      +'<select style="width:100%;height:38px;border:1.5px solid var(--border);border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);background:#fff"><option value="">Choose assignee…</option><option>Pallavi Parate</option><option>Rahul Mehta</option><option>Aman Singh</option><option>Neha Sharma</option><option>Olivia Clark</option></select></div>'
-      +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Note (optional)</div><textarea style="width:100%;height:72px;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);resize:none;box-sizing:border-box" placeholder="Add a note for the new assignee…"></textarea></div>'
-      +'<button style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
+      +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Select Agent <span class="lp-logs-form-req">*</span></div>'
+      +'<select id="tk-reassign-sel" style="width:100%;height:38px;border:1.5px solid var(--border);border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);background:#fff"><option value="">Choose assignee…</option>'
+      +TK_AGENTS.map(a=>'<option'+(a===t.assignedTo?' selected':'')+'>'+a+'</option>').join('')
+      +'</select></div>'
+      +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Reason <span class="lp-logs-form-req">*</span></div><textarea id="tk-reassign-note" style="width:100%;height:72px;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);resize:none;box-sizing:border-box" placeholder="Why is this moving, and what does the new assignee need to know?"></textarea></div>'
+      +'<button onclick="tkReassign('+t.id+')" style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
       +'</div>';
+  }else if(tkTab==='logs'){
+    body=tkLogsTabHTML(t);
   }else if(tkTab==='workflow'){
     body=wfTimelineHTML(tkWorkflowData[t.id]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+
+// ── Ticket Logs tab ───────────────────────────────────────────────────────
+// The same two-part layout every other module's Logs tab uses: the history,
+// then the form that adds to it. What differs is the status field - it is not
+// a free list of every status, it is exactly the moves TK_FLOW allows out of
+// where this ticket is now. So the form cannot write a transition the row
+// action would refuse, and "Closed" simply is not on the menu until somebody
+// has resolved the ticket.
+// Maps to the tone modifiers leaves.css already defines, and to the same tone
+// each status gets in tkStatusBadge(), so the log dot and the table pill agree.
+function tkLogStatusKey(s){
+  return ({Open:'info','In Progress':'wait',Blocked:'bad',Resolved:'ok',Closed:'idle'})[s]||'default';
+}
+function tkLogsTabHTML(t){
+  const logs=seedLogs(t,tkLogsData[t.id]);
+  const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  const timeline=logs.length
+    ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      const sk=tkLogStatusKey(l.status);
+      return '<div class="lp-log-row">'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-card">'
+        +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>'
+    :'<div class="lp-logs-empty">No activity logs yet.</div>';
+
+  const moves=tkMoves(t);
+  const csk=tkLogStatusKey(tkStatusLabel(t.status));
+  const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+  if(!moves.length)return '<div class="lp-logs-wrap">'+timeline+'</div>';
+  const form='<div class="lp-logs-form">'
+    +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+tkStatusLabel(t.status)+'</div>'
+    +'<p class="lp-logs-form-sub">Next action on <strong>'+tkOwner(t)+'</strong></p>'
+    +'<div class="lp-logs-form-label">Move to <span class="lp-logs-form-req">*</span></div>'
+    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-status-sel" onchange="tkLogFormSync('+t.id+')">'
+    +'<option value="">Select the next step</option>'
+    +moves.map(mv=>'<option value="'+mv.to+'">'+mv.label+' → '+tkStatusLabel(mv.to)+'</option>').join('')
+    +'</select>'+chev+'</div>'
+    // Only rendered when the chosen move needs it; tkLogFormSync toggles these.
+    +'<div id="tk-log-assignee-wrap" style="display:none">'
+    +'<div class="lp-logs-form-label">Assign to <span class="lp-logs-form-req">*</span></div>'
+    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-assignee-sel">'
+    +TK_AGENTS.map(a=>'<option'+(a===t.assignedTo?' selected':'')+'>'+a+'</option>').join('')
+    +'</select>'+chev+'</div></div>'
+    +'<div id="tk-log-waiting-wrap" style="display:none">'
+    +'<div class="lp-logs-form-label">Waiting on <span class="lp-logs-form-req">*</span></div>'
+    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-waiting-sel">'
+    +'<option value="">Who are we blocked on?</option>'
+    +TK_BLOCKERS.map(b=>'<option'+(b===t.waitingOn?' selected':'')+'>'+b+'</option>').join('')
+    +'</select>'+chev+'</div></div>'
+    +'<div class="lp-logs-form-label" id="tk-log-comment-label">Comment <span class="lp-logs-form-req">*</span></div>'
+    +'<textarea class="lp-logs-form-textarea" id="tk-log-comment-inp" placeholder="Pick a step above, then say what happened"></textarea>'
+    +'<div style="display:flex;gap:10px;margin-top:12px">'
+    +'<button class="ep-cancel-btn" style="flex:1" onclick="tkCancelLog()">Cancel</button>'
+    +'<button class="lp-logs-save-btn" style="flex:1" onclick="tkSaveLog('+t.id+')">Submit</button>'
+    +'</div></div>';
+  return '<div class="lp-logs-wrap">'+timeline+form+'</div>';
+}
+// Show only the extra fields the chosen move actually needs, and ask that
+// move's own question in the comment label.
+function tkLogFormSync(id){
+  const t=ticketsData.find(x=>x.id===id);if(!t)return;
+  const sel=document.getElementById('tk-log-status-sel');
+  const mv=tkMoves(t).find(m=>m.to===(sel?sel.value:''));
+  const show=(el,on)=>{const n=document.getElementById(el);if(n)n.style.display=on?'':'none';};
+  show('tk-log-assignee-wrap',!!(mv&&mv.needs.indexOf('assignee')>=0));
+  show('tk-log-waiting-wrap',!!(mv&&mv.needs.indexOf('waitingOn')>=0));
+  const lab=document.getElementById('tk-log-comment-label');
+  const inp=document.getElementById('tk-log-comment-inp');
+  if(lab)lab.innerHTML=(mv&&mv.commentLabel?mv.commentLabel:'Comment')+' <span class="lp-logs-form-req">*</span>';
+  if(inp)inp.placeholder=mv?mv.ask:'Pick a step above, then say what happened';
+}
+function tkCancelLog(){
+  const sel=document.getElementById('tk-log-status-sel');
+  const inp=document.getElementById('tk-log-comment-inp');
+  if(sel)sel.value='';
+  if(inp)inp.value='';
+  if(typeof tkLogFormSync==='function'&&tkSelectedId)tkLogFormSync(tkSelectedId);
+}
+// Commits through qaTicketApply so this form, the row button and the panel
+// button all write the same history for the same move.
+function tkSaveLog(id){
+  const t=ticketsData.find(x=>x.id===id);if(!t)return;
+  const sel=document.getElementById('tk-log-status-sel');
+  const inp=document.getElementById('tk-log-comment-inp');
+  const asg=document.getElementById('tk-log-assignee-sel');
+  const wait=document.getElementById('tk-log-waiting-sel');
+  const flash=el=>{if(el){el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
+  const to=sel?sel.value:'';
+  if(!to){flash(sel);return;}
+  const mv=tkMoves(t).find(m=>m.to===to);
+  if(!mv){flash(sel);return;}
+  const vals={comment:inp?inp.value.trim():''};
+  if(mv.needs.indexOf('assignee')>=0){
+    vals.assignee=asg?asg.value:'';
+    if(!vals.assignee){flash(asg);return;}
+  }
+  if(mv.needs.indexOf('waitingOn')>=0){
+    vals.waitingOn=wait?wait.value:'';
+    if(!vals.waitingOn){flash(wait);return;}
+  }
+  if(!vals.comment){flash(inp);return;}
+  tkTab='logs';                       // stay where the user was working
+  qaTicketApply(id,to,vals);
+}
+
+// Reassignment is an action like any other: it needs a person AND a reason,
+// and it lands in the ticket's timeline so the next agent can see why it
+// arrived. A reassign does not change the status - only who owes the action.
+function tkReassign(id){
+  const t=ticketsData.find(x=>x.id===id);if(!t)return;
+  const sel=document.getElementById('tk-reassign-sel');
+  const note=document.getElementById('tk-reassign-note');
+  const who=sel?sel.value:'';
+  const why=note?note.value.trim():'';
+  const flash=el=>{if(el){el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
+  if(!who){flash(sel);return;}
+  if(!why){flash(note);return;}
+  if(who===t.assignedTo){flash(sel);showToast('Already assigned','info',t.ticketId+' is already with '+who);return;}
+  const from=t.assignedTo;
+  t.assignedTo=who;
+  // Both histories, same as every other ticket action. A reassign does not
+  // move the status, so the log entry keeps the status the ticket is already
+  // in rather than inventing one.
+  wfPush(tkWorkflowData,id,'Reassigned',why+' (from '+from+' to '+who+')');
+  logPush(t,tkLogsData[id],tkStatusLabel(t.status),why+' (Reassigned from '+from+' to '+who+')');
+  renderADTPage();
+  showToast('Ticket reassigned','success',t.ticketId+' · '+from+' → '+who);
 }
 
 function tkToggleStatFilter(v){
@@ -4971,19 +5098,23 @@ function buildTicketsPageHTML(){
   const openCount=ticketsData.filter(t=>t.status==='open').length;
   const inProgressCount=ticketsData.filter(t=>t.status==='in_progress').length;
   const blockedCount=ticketsData.filter(t=>t.status==='blocked').length;
+  const resolvedCount=ticketsData.filter(t=>t.status==='resolved').length;
   const filteredTickets=tkQuickStatusFilter?ticketsData.filter(t=>t.status===tkQuickStatusFilter):ticketsData;
-  const rows=filteredTickets.map((t,i)=>(
+  const pgn=listPage('support-tickets',tkQuickStatusFilter,filteredTickets.map((t,i)=>(
     '<tr class="tk-row'+(tkSelectedId===t.id?' lp-row-selected':'')+'" id="tk-row-'+t.id+'" style="cursor:pointer" onclick="openTkSidebar('+t.id+')">'
     +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
-    +'<td style="font-weight:600;color:var(--navy)">'+t.ticketId+'</td>'
+    +'<td style="font-weight:600;color:var(--navy);white-space:nowrap">'+t.ticketId+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.clientName+'</td>'
     +'<td style="color:#64748b;font-size:13px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t.title+'</td>'
     +'<td>'+t.category+'</td>'
-    +'<td style="font-size:12px;color:#64748b">'+t.createdAt+'</td>'
+    +'<td style="font-size:12px;color:#64748b;white-space:nowrap">'+t.createdAt+'</td>'
     +'<td>'+tkStatusBadge(t.status)+'</td>'
+    // Who the queue is actually waiting on. A status alone does not say that -
+    // "Blocked" and "Resolved" both mean "not us", but by different people.
+    +'<td style="font-size:12px;color:#64748b;white-space:nowrap" title="'+tkOwner(t)+'">'+tkOwnerShort(t)+'</td>'
     +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openTkSidebar('+t.id+')" title="View Details">'+dotsIco+'</button></td>'
     +'</tr>'
-  )).join('')||'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>';
+  )),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>');
   const sbInner=tkSelectedId?renderTkSidebar():'';
   return '<div class="lp-page">'
     +dashboardBackHTML()
@@ -4993,7 +5124,7 @@ function buildTicketsPageHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('tk-f-country',countries,'','All Countries')
     +apCS('tk-f-category',categories,'','All Categories')
-    +apCS('tk-f-status',['open','in_progress','blocked','closed'],tkQuickStatusFilter,'All Statuses')
+    +apCS('tk-f-status',['open','in_progress','blocked','resolved','closed'],tkQuickStatusFilter,'All Statuses')
     +clearFiltersBtn([tkQuickStatusFilter],'resetTkFilters()')
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
@@ -5001,16 +5132,12 @@ function buildTicketsPageHTML(){
     +'<div class="listing-stat'+(tkQuickStatusFilter==='open'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'open\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+openCount+'</div><div class="listing-stat-label">Open</div></div>'
     +'<div class="listing-stat'+(tkQuickStatusFilter==='in_progress'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'in_progress\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+inProgressCount+'</div><div class="listing-stat-label">In Progress</div></div>'
     +'<div class="listing-stat'+(tkQuickStatusFilter==='blocked'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'blocked\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+blockedCount+'</div><div class="listing-stat-label">Blocked</div></div>'
+    +'<div class="listing-stat'+(tkQuickStatusFilter==='resolved'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'resolved\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+resolvedCount+'</div><div class="listing-stat-label">Awaiting Client</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client Name</th><th>Title</th><th>Category</th><th>Created At</th><th>Status</th><th>Action</th></tr></thead>'
-    +'<tbody>'+rows+'</tbody></table>'
-    +'<div class="lp-pagination"><span class="lp-pagination-info">Showing 1–'+filteredTickets.length+' of '+ticketsData.length+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
-    +'<button class="lp-pg-btn active">1</button>'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'</div></div>'
+    +'<table class="lp-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client Name</th><th>Title</th><th>Category</th><th>Created At</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
+    +'<tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(tkSelectedId?' open':'')+'" id="tk-split-sb"><div class="lp-isb" id="tk-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
@@ -5124,7 +5251,7 @@ function buildChatsPageHTML(){
   const waitingCount=chatsData.filter(c=>c.status==='waiting_client'||c.status==='waiting_csm').length;
   const inactiveCount=chatsData.filter(c=>c.status==='inactive').length;
   const filteredChats=chatQuickStatusFilter?(chatQuickStatusFilter==='__waiting_group__'?chatsData.filter(c=>c.status==='waiting_client'||c.status==='waiting_csm'):chatsData.filter(c=>c.status===chatQuickStatusFilter)):chatsData;
-  const rows=filteredChats.map((c,i)=>(
+  const pgn=listPage('chats',chatQuickStatusFilter,filteredChats.map((c,i)=>(
     '<tr class="chat-row'+(chatSelectedId===c.id?' lp-row-selected':'')+'" id="chat-row-'+c.id+'" style="cursor:pointer" onclick="openChatSidebar('+c.id+')">'
     +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+c.chatId+'</td>'
@@ -5134,7 +5261,7 @@ function buildChatsPageHTML(){
     +'<td>'+chatStatusBadge(c.status)+'</td>'
     +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openChatSidebar('+c.id+')" title="View Details">'+dotsIco+'</button></td>'
     +'</tr>'
-  )).join('')||'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No chats match this filter.</td></tr>';
+  )),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No chats match this filter.</td></tr>');
   const sbInner=chatSelectedId?renderChatSidebar():'';
   return '<div class="lp-page">'
     +dashboardBackHTML()
@@ -5155,13 +5282,8 @@ function buildChatsPageHTML(){
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr><th>S.No</th><th>Chat ID</th><th>Client Name</th><th>Assigned To</th><th>Last Activity</th><th>Status</th><th>Action</th></tr></thead>'
-    +'<tbody>'+rows+'</tbody></table>'
-    +'<div class="lp-pagination"><span class="lp-pagination-info">Showing 1–'+filteredChats.length+' of '+chatsData.length+' entries</span>'
-    +'<div class="lp-pagination-controls">'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg></button>'
-    +'<button class="lp-pg-btn active">1</button>'
-    +'<button class="lp-pg-btn lp-pg-arrow" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>'
-    +'</div></div>'
+    +'<tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(chatSelectedId?' open':'')+'" id="chat-split-sb"><div class="lp-isb" id="chat-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';

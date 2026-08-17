@@ -61,7 +61,8 @@
    6px and 260ms: enough to read as "this is new", short enough that a filter
    change doesn't feel like a page load.                                    */
 @keyframes m-page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-#adt-content>*{animation:m-page-in var(--t-base) var(--e-out) both}
+/* `backwards`, NOT `both` - see the note on m-sec-in below. */
+#adt-content>*{animation:m-page-in var(--t-base) var(--e-out) backwards}
 
 /* An inline row action repaints the whole page to keep counts honest, but the
    user's mental model is that ONE ROW changed. Replaying the page entrance
@@ -76,9 +77,19 @@
 #adt-content.m-quiet .at-table tbody tr{animation:none!important}
 
 /* Sections inside a page come in behind the page itself, lightly staggered,
-   so the eye is led top-to-bottom instead of everything landing at once. */
+   so the eye is led top-to-bottom instead of everything landing at once.
+
+   FILL MODE IS LOAD-BEARING. It must be `backwards`, never `both`.
+   `both` keeps the animation FILLING after it ends, and an element with a
+   filling transform creates a stacking context permanently - not just while
+   it moves. Every page section then became its own stacking context, which
+   trapped each filter dropdown's z-index inside the filter bar and let the
+   table card, a later sibling, paint straight over the open menu on every
+   listing in the app. `backwards` covers the delay (the only thing `both`
+   was buying here, since these keyframes end on the element's own resting
+   style) and leaves nothing applied once the section has landed. */
 @keyframes m-sec-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.listing-page>*,.lp-page>*,.ep-page>*{animation:m-sec-in var(--t-base) var(--e-out) both}
+.listing-page>*,.lp-page>*,.ep-page>*{animation:m-sec-in var(--t-base) var(--e-out) backwards}
 .listing-page>*:nth-child(1),.lp-page>*:nth-child(1),.ep-page>*:nth-child(1){animation-delay:0ms}
 .listing-page>*:nth-child(2),.lp-page>*:nth-child(2),.ep-page>*:nth-child(2){animation-delay:40ms}
 .listing-page>*:nth-child(3),.lp-page>*:nth-child(3),.ep-page>*:nth-child(3){animation-delay:80ms}
@@ -88,8 +99,15 @@
    Rows arrive in sequence rather than as a block. Capped at 10 (rule 4);
    row 11 onward shares row 10's delay so a long table still finishes fast. */
 @keyframes m-row-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+/* `backwards`, not `both` - the same rule as the page sections above, and now
+   load-bearing for a second reason. A FILLING transform animation leaves the
+   row animating transform forever, which gives it its own coordinate space and
+   takes the pinned ACTION cell inside it out of the card's scrollport - the
+   column silently stops sticking. `backwards` still covers the stagger delay,
+   and these keyframes end on the row's own resting style, so nothing is lost
+   by not filling forwards. See css/quick-actions.css. */
 .lp-table tbody tr,.listing-table tbody tr,.at-table tbody tr{
-  animation:m-row-in var(--t-base) var(--e-out) both;
+  animation:m-row-in var(--t-base) var(--e-out) backwards;
 }
 .lp-table tbody tr:nth-child(1),.listing-table tbody tr:nth-child(1),.at-table tbody tr:nth-child(1){animation-delay:0ms}
 .lp-table tbody tr:nth-child(2),.listing-table tbody tr:nth-child(2),.at-table tbody tr:nth-child(2){animation-delay:22ms}
@@ -167,12 +185,24 @@ button,.btn,[role="button"]{transition:background var(--t-micro) ease,border-col
   transition:border-color var(--t-fast) var(--e-out),box-shadow var(--t-fast) var(--e-out),background var(--t-micro) ease;
 }
 
-/* Keyboard focus, one ring for the whole app. Never on mouse press. */
-a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,
+/* Keyboard focus, one ring for the whole app. Never on mouse press.
+
+   Form controls are deliberately NOT in this list. Every input, select and
+   textarea in the app already states its own focus in its own rule - the
+   border changes colour and a soft shadow comes up - so adding an offset
+   outline on top gave focused fields two concentric rings in two different
+   colours. One ring per control: bespoke where the control defines one,
+   this outline everywhere else. */
+a:focus-visible,button:focus-visible,
 [tabindex]:focus-visible,.lp-row:focus-visible,.listing-stat:focus-visible{
   outline:2px solid var(--btn-accent,#de7909);
   outline-offset:2px;
   border-radius:var(--r-control);
+}
+/* The fallback for any field that never got a bespoke :focus of its own. */
+input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:none;
+  border-color:#94a3b8;
 }
 
 /* Segmented controls and pill filters slide their thumb rather than blink. */
@@ -225,8 +255,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .sb-item span,.sb-parent span{transition:opacity var(--t-fast) var(--e-out)}
 
 /* Module tab bars and page pagination. */
-.lp-pg-btn,.page-btn{transition:background var(--t-micro) ease,color var(--t-micro) ease,transform var(--t-fast) var(--e-out)}
-.lp-pg-btn:active:not(:disabled),.page-btn:active{transform:scale(.9)}
+.lp-pg-btn{transition:background var(--t-micro) ease,color var(--t-micro) ease,border-color var(--t-micro) ease,transform var(--t-fast) var(--e-out)}
+.lp-pg-btn:active:not(:disabled){transform:scale(.9)}
 
 /* ── 7. FEEDBACK ──────────────────────────────────────────────────────────
    The three ways the app tells you something happened.                    */
@@ -239,10 +269,15 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
    itself confirms it - so the eye never has to leave the row to find out
    whether the click worked. Green for a positive result, red for a
    negative one, matching the status tokens exactly. */
-@keyframes m-flash-ok{0%{background:var(--st-ok-bg)}100%{background:transparent}}
-@keyframes m-flash-bad{0%{background:var(--st-bad-bg)}100%{background:transparent}}
-@keyframes m-flash-info{0%{background:var(--st-info-bg)}100%{background:transparent}}
-@keyframes m-flash-idle{0%{background:var(--st-idle-bg)}100%{background:transparent}}
+/* Fading out to --cell-bg rather than to transparent: on a listing the last
+   cell is pinned over the scrolling columns, and a transparent pinned cell
+   lets them show through it for the length of the flash. --cell-bg is that
+   row's own current background (see css/quick-actions.css) and falls back to
+   transparent everywhere else, so every other table flashes as it always did. */
+@keyframes m-flash-ok{0%{background:var(--st-ok-bg)}100%{background:var(--cell-bg,transparent)}}
+@keyframes m-flash-bad{0%{background:var(--st-bad-bg)}100%{background:var(--cell-bg,transparent)}}
+@keyframes m-flash-info{0%{background:var(--st-info-bg)}100%{background:var(--cell-bg,transparent)}}
+@keyframes m-flash-idle{0%{background:var(--st-idle-bg)}100%{background:var(--cell-bg,transparent)}}
 tr.m-flash-ok>td{animation:m-flash-ok 900ms var(--e-out)}
 tr.m-flash-bad>td{animation:m-flash-bad 900ms var(--e-out)}
 tr.m-flash-info>td{animation:m-flash-info 900ms var(--e-out)}

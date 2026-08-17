@@ -391,17 +391,43 @@ function lpCommitLog(rec,statusSelId,commentInpId,fixture){
   const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!status){flash(sel);return false;}
   if(!comment){flash(inp);return false;}
+  const s=stampNow();
+  seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:CURRENT_USER,status:status,action:comment});
+  rec.status=status;
+  return true;
+}
+
+// ── Timestamps and history ────────────────────────────────────────────────
+// One clock for every log and timeline entry, in the format the fixtures
+// already use ("18 Jun 2026" / "04:40:00 PM"), so entries the user adds sit
+// in the same list as the seeded ones without looking foreign.
+const CURRENT_USER='Shaun Test1';
+function stampNow(){
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let h=now.getHours();const ampm=h>=12?'PM':'AM';h=h%12||12;
   const p=function(n){return n<10?'0'+n:''+n;};
-  seedLogs(rec,fixture).unshift({
+  return {
     date:now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear(),
-    time:p(h)+':'+p(now.getMinutes())+':'+p(now.getSeconds())+' '+ampm,
-    user:'Shaun Test1',status:status,action:comment
-  });
-  rec.status=status;
-  return true;
+    time:p(h)+':'+p(now.getMinutes())+':'+p(now.getSeconds())+' '+ampm
+  };
+}
+// Prepend a real entry to a record's Workflow timeline. These maps are keyed
+// by record id and read newest-first, hence unshift. Creating the array when
+// a record has no history yet is deliberate: a ticket raised in this session
+// still deserves a timeline.
+function wfPush(map,id,title,description,user){
+  if(!map)return;
+  const s=stampNow();
+  if(!map[id])map[id]=[];
+  map[id].unshift({title:title,user:user||CURRENT_USER,date:s.date,time:s.time,description:description});
+}
+// Append to a record's Logs tab without moving its status. lpCommitLog() is
+// the form version of this (status + comment together); this is for the
+// inline actions, which already know the status they are moving to.
+function logPush(rec,fixture,status,comment,user){
+  const s=stampNow();
+  seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
 function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Messages',context:'Messages',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
@@ -794,19 +820,10 @@ function dismissToastEl(el){
 // Buttons in this mockup with no dedicated handler get plausible demo
 // behaviour + a toast here, so every visible control responds. Buttons with an
 // inline onclick are left alone.
-function handleDemoPagination(btn){
-  const wrap=btn.parentElement;if(!wrap)return;
-  const t=btn.textContent.trim();
-  if(t==='...')return;
-  const nums=[].slice.call(wrap.querySelectorAll('button')).filter(function(b){return /^\d+$/.test(b.textContent.trim());});
-  if(!nums.length)return;
-  if(/^\d+$/.test(t)){nums.forEach(function(b){b.classList.remove('active');});btn.classList.add('active');return;}
-  const cur=nums.findIndex(function(b){return b.classList.contains('active');});
-  const isPrev=t==='<'||btn.innerHTML.indexOf('15 18 9 12')>=0;
-  const ni=Math.min(nums.length-1,Math.max(0,(cur<0?0:cur)+(isPrev?-1:1)));
-  nums.forEach(function(b){b.classList.remove('active');});
-  nums[ni].classList.add('active');
-}
+// Pagination used to be faked here: a handler that moved the .active class
+// between static page buttons under a table already showing every row it had.
+// Every pager in the app now carries a real goListPage() onclick, so there is
+// nothing left for this delegation to catch - see listPage() below.
 document.addEventListener('click',function(e){
   const btn=e.target.closest('button');
   if(!btn||btn.disabled)return;
@@ -814,8 +831,6 @@ document.addEventListener('click',function(e){
   if(btn.closest('#toast-stack'))return;
   const cls=btn.classList;
   const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
-  // Pagination (static demo pagers)
-  if(cls.contains('page-btn')||cls.contains('lp-pg-btn')||cls.contains('at-pg-btn')||cls.contains('at-pg-arr')||cls.contains('lp-pg-arrow')){handleDemoPagination(btn);return;}
   // Notifications panel
   if(cls.contains('np-mark')){notifData.forEach(function(n){n.pending=false;});renderNotif();showToast('All notifications marked as read');return;}
   if(cls.contains('np-iconbtn')&&btn.title==='Refresh'){renderNotif();showToast('Notifications refreshed','info');return;}
@@ -1173,6 +1188,73 @@ function buildListingCell(cell,column){
   return `<td>${cell}</td>`;
 }
 
+/* ══ LISTING PAGINATION ═══════════════════════════════════════════════════
+   ONE pager for every listing in the app.
+
+   Before this there were three: .lp-pagination on seven pages, .pagination
+   with the smaller .page-btn on two, .at-pagination on one, and nothing at
+   all on six more - and of the ten that had a control, only two of them
+   actually turned a page. The rest were static markup a delegated click
+   handler moved an .active class around inside, under a table that had
+   quietly rendered every row it owned. So a listing's length told you
+   nothing, "Showing 1-7 of 7 entries" sat under a table showing 24, and the
+   same product had three different answers to what a page control looks like.
+
+   All of it now comes through listPage(). One control, one page size, one
+   behaviour, and the table below it really is holding LIST_PAGE_SIZE rows.
+
+   WHY IT SLICES RENDERED ROWS RATHER THAN DATA.  Every builder already maps
+   its filtered array with the row index in hand - that index IS the S. No
+   column - so cutting the page out after the map keeps that numbering running
+   continuously across pages for free. Slicing the data instead would mean
+   finding and offsetting the S. No expression in fourteen builders, which is
+   an off-by-one waiting to happen in fourteen places. These lists are tens of
+   rows; building a string we then drop costs nothing measurable.
+   ═══════════════════════════════════════════════════════════════════════ */
+const LIST_PAGE_SIZE=10;
+const listPageNo={};    // listing key -> the 1-based page it is on
+const listPageSig={};   // listing key -> the filter state that page belongs to
+
+const PG_PREV='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
+const PG_NEXT='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+function goListPage(key,n){listPageNo[key]=n;renderADTPage();}
+
+/* key       stable name for this listing, used to remember its page
+   sig       its current filter state, joined into a string - see below
+   rowsHTML  every row the filter left, already rendered, in order
+   emptyHTML the "nothing matches" row to show when there are none      */
+function listPage(key,sig,rowsHTML,emptyHTML){
+  const total=rowsHTML.length;
+  const pages=Math.max(1,Math.ceil(total/LIST_PAGE_SIZE));
+  /* A FILTER CHANGE is the one thing that should throw you back to page 1 -
+     page 4 of an unfiltered list has nothing to do with page 4 of a filtered
+     one. Everything else that repaints a listing must leave the page alone,
+     which is why this keys off the filter state and not off the row count:
+     approving the last Pending row on page 3 changes the count too, and being
+     bounced to page 1 for it is the exact jolt qaCommit exists to avoid. */
+  if(listPageSig[key]!==sig){listPageSig[key]=sig;listPageNo[key]=1;}
+  const p=Math.min(Math.max(1,listPageNo[key]||1),pages);
+  listPageNo[key]=p;
+  const from=(p-1)*LIST_PAGE_SIZE;
+  const slice=rowsHTML.slice(from,from+LIST_PAGE_SIZE);
+  /* A window of five, so the control is the same width on a 3-page list as on
+     an 86-page one and the arrows never move out from under the pointer. */
+  let lo=Math.max(1,p-2),hi=Math.min(pages,lo+4);lo=Math.max(1,hi-4);
+  let nums='';
+  for(let n=lo;n<=hi;n++)nums+=`<button class="lp-pg-btn${n===p?' active':''}" onclick="goListPage('${key}',${n})">${n}</button>`;
+  return {
+    rows:slice.join('')||emptyHTML,
+    pager:'<div class="lp-pagination">'
+      +`<span class="lp-pagination-info">Showing ${total?from+1:0}&ndash;${from+slice.length} of ${total} entries</span>`
+      +'<div class="lp-pagination-controls">'
+      +`<button class="lp-pg-btn lp-pg-arrow" onclick="goListPage('${key}',${p-1})"${p===1?' disabled':''} aria-label="Previous page">${PG_PREV}</button>`
+      +nums
+      +`<button class="lp-pg-btn lp-pg-arrow" onclick="goListPage('${key}',${p+1})"${p===pages?' disabled':''} aria-label="Next page">${PG_NEXT}</button>`
+      +'</div></div>'
+  };
+}
+
 // The rows a listing page is currently showing, after its status filter. The
 // table and the row action menu both read from here so a menu can never act on
 // a different record than the one the user clicked.
@@ -1209,11 +1291,12 @@ function buildListingHTML(pg){
   const isPr=pg==='payroll';
   const openCall=row=>isPr?`openPrSidebar(${row[0]})`:`openLstSidebar('${pg}',${row[0]})`;
   const selId=isPr?prSelectedId:(lstSelectedPg===pg?lstSelectedId:null);
-  const tableRows=rows.length?rows.map(row=>
+  const pgn=listPage(pg,statusFilter,rows.map(row=>
     `<tr class="lp-row${selId!=null&&String(selId)===String(row[0])?' lp-row-selected':''}" data-row-id="${row[0]}" style="cursor:pointer" onclick="${openCall(row)}">`
       +row.map((cell,ci)=>buildListingCell(cell,cols[ci])).join('')
       +`<td><button class="lp-action-btn" title="View details" onclick="event.stopPropagation();${openCall(row)}">${hamburger}</button></td>`
-    +`</tr>`).join(''):`<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`;
+    +`</tr>`),
+    `<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`);
   const sbOpen=isPr?!!prSelectedId:(lstSelectedPg===pg&&lstSelectedId!=null);
   const sidebar=isPr
     ? `<div class="lp-split-sb${sbOpen?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${sbOpen?renderPrSidebar():''}</div></div>`
@@ -1231,8 +1314,8 @@ function buildListingHTML(pg){
     +`<div class="lp-split-wrap">`
       +`<div class="lp-split-main">`
         +`<div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">`
-          +`<table class="lp-table" style="min-width:700px"><thead><tr>${headers}</tr></thead><tbody>${tableRows}</tbody></table>`
-          +`<div class="pagination"><button class="page-btn">&lt;</button><button class="page-btn">1</button><button class="page-btn active">2</button><button class="page-btn">3</button><button class="page-btn">4</button><button class="page-btn">...</button><button class="page-btn">86</button><button class="page-btn">&gt;</button></div>`
+          +`<table class="lp-table" style="min-width:700px"><thead><tr>${headers}</tr></thead><tbody>${pgn.rows}</tbody></table>`
+          +pgn.pager
         +`</div>`
       +`</div>`
       +sidebar
@@ -1313,10 +1396,9 @@ const filterData={
 let selectedEmps=new Set();
 let apFilterType='',apFilterValue='';
 let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,lpEmpEditMode=false;
-let lpFilterField='',lpFilterStatus='',lpCurrentPage=1;
+let lpFilterField='',lpFilterStatus='';
 let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
-const LP_PAGE_SIZE=10;
 const lpLogsData={
   1:[
     {date:'22 Apr 2026',time:'05:44:07 PM',user:'Admin',status:'Active',action:'Policy reactivated after review'},
@@ -1453,8 +1535,7 @@ function csSelect(opt,val,csid){
 }
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policies';renderADTPage();}
-function resetLpFilters(){lpFilterField='';lpFilterStatus='';lpCurrentPage=1;renderADTPage();}
-function lpGoToPage(n){lpCurrentPage=n;renderADTPage();}
+function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
 function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
 // Demo add for the Employees page: appends a plausible record to the active tab.
 const demoEmpNames=['Arjun Kapoor','Sara Ali','Vikram Rao','Neha Gupta','Tom Becker','Julia Costa'];
@@ -2334,13 +2415,116 @@ const tkWorkflowData={
 };
 const ticketsData=[
   {id:1,ticketId:'TCK-1021',clientName:'John Doe',title:'Issue with compliance doc',category:'Compliance',createdAt:'Jun 12, 2026',status:'open',clientEmail:'john.doe@example.com',clientPhone:'+1 555-0101',country:'United States',assignedTo:'Pallavi Parate',description:'Client reported missing compliance documentation for Q2 audit. Follow-up required with legal team.'},
-  {id:2,ticketId:'TCK-1025',clientName:'Thijs Verbeek',title:'Salary document missing',category:'Document',createdAt:'Jun 14, 2026',status:'blocked',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Rahul Mehta',description:'Monthly salary document not uploaded for May 2026. Awaiting finance team confirmation.'},
+  {id:2,ticketId:'TCK-1025',clientName:'Thijs Verbeek',title:'Salary document missing',category:'Document',createdAt:'Jun 14, 2026',status:'blocked',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Rahul Mehta',waitingOn:'Finance team',description:'Monthly salary document not uploaded for May 2026. Awaiting finance team confirmation.'},
   {id:3,ticketId:'TCK-1019',clientName:'Alice Smith',title:'Contract renewal request',category:'Contract',createdAt:'Jun 10, 2026',status:'open',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Aman Singh',description:'Client has requested renewal of EOR contract expiring July 2026.'},
   {id:4,ticketId:'TCK-1100',clientName:'Mark Lee',title:'Tax form not received',category:'Compliance',createdAt:'Jun 18, 2026',status:'in_progress',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Pallavi Parate',description:'Client has not received the annual tax form for the 2025-26 fiscal year. Currently being processed.'},
   {id:5,ticketId:'TCK-1201',clientName:'Thijs Verbeek',title:'Contract draft review',category:'Contract',createdAt:'Jun 20, 2026',status:'open',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Neha Sharma',description:'New EOR contract draft sent for client review. Awaiting feedback.'},
-  {id:6,ticketId:'TCK-1298',clientName:'Alice Smith',title:'Missing compliance certificate',category:'Compliance',createdAt:'Jun 22, 2026',status:'blocked',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Rahul Mehta',description:'Certificate of compliance for UK operations not obtained. Blocked pending local authority approval.'},
+  {id:6,ticketId:'TCK-1298',clientName:'Alice Smith',title:'Missing compliance certificate',category:'Compliance',createdAt:'Jun 22, 2026',status:'blocked',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Rahul Mehta',waitingOn:'Local authority',description:'Certificate of compliance for UK operations not obtained. Blocked pending local authority approval.'},
   {id:7,ticketId:'TCK-1921',clientName:'Mark Lee',title:'Invoice document request',category:'Document',createdAt:'Jun 25, 2026',status:'closed',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Aman Singh',description:'Client requested invoice copies for Q1 2026. All documents sent and acknowledged.'}
 ];
+// ── Ticket lifecycle ──────────────────────────────────────────────────────
+// A ticket is not resolved because somebody clicked a tick. Each state names
+// the party who owes the NEXT action, and lists the only moves legal from it.
+//
+// The shape of the flow is the point:
+//   open -> in_progress -> resolved -> closed
+//                  \-> blocked -/
+// Nothing reaches `closed` except from `resolved`, and `resolved` means "the
+// agent has proposed an answer and the CLIENT has not confirmed it yet". So
+// an agent can never close a ticket on their own from the listing - the row
+// action offers `Propose resolution`, and only after the client confirms does
+// a Close action appear. `blocked` is the other honest state: it must name
+// the party being waited on, and it cannot skip to resolved without coming
+// back through in_progress first.
+//
+// THE COMMENT IS THE RECORD. A ticket carries no "resolution" field, because
+// what was done to resolve it is not a property of the ticket - it is the
+// thing that happened at the moment it moved to Resolved, which is exactly
+// what a log entry is. So every move asks its own question (`ask`) and the
+// answer is stored as that entry's comment; the panel reads the resolution
+// back out of the log rather than out of the record. One place to write it,
+// one place to read it, and no field that can silently disagree with the
+// history next to it.
+//
+// `needs` lists extra required inputs the form must collect on top of the
+// comment, which is required for every move without exception.
+const TK_FLOW={
+  open:{
+    owner:function(t){return t.assignedTo?'Agent · '+t.assignedTo:'Unassigned';},
+    next:[{to:'in_progress',label:'Start work',tone:'wait',icon:'play',needs:['assignee'],
+           title:'Work Started',ask:'What is your plan for this ticket?'}]
+  },
+  in_progress:{
+    owner:function(t){return 'Agent · '+t.assignedTo;},
+    next:[{to:'resolved',label:'Propose resolution',tone:'ok',icon:'check',needs:[],
+           title:'Resolution Proposed',ask:'What did you do to resolve this?',
+           commentLabel:'Resolution'},
+          {to:'blocked',label:'Mark blocked',tone:'bad',icon:'pause',needs:['waitingOn'],
+           title:'Ticket Blocked',ask:'What is it blocked on, and what unblocks it?'}]
+  },
+  blocked:{
+    owner:function(t){return t.waitingOn?'Waiting on '+t.waitingOn:'Waiting on a third party';},
+    next:[{to:'in_progress',label:'Unblock',tone:'wait',icon:'play',needs:[],
+           title:'Ticket Unblocked',ask:'What changed that unblocked this?'}]
+  },
+  resolved:{
+    owner:function(t){return 'Client · '+t.clientName;},
+    next:[{to:'closed',label:'Client confirmed - close',tone:'ok',icon:'check',needs:[],
+           title:'Ticket Closed',ask:'How did the client confirm?'},
+          {to:'in_progress',label:'Client rejected - resume',tone:'bad',icon:'undo',needs:[],
+           title:'Resolution Rejected',ask:'Why was the resolution rejected?'}]
+  },
+  closed:{
+    owner:function(){return 'Nobody - closed';},
+    next:[{to:'in_progress',label:'Reopen ticket',tone:'info',icon:'undo',needs:[],
+           title:'Ticket Reopened',ask:'Why is this being reopened?'}]
+  }
+};
+// Who owes the next action on this ticket, in words. The long form names the
+// ROLE as well as the person, which is what the detail panel wants.
+function tkOwner(t){const f=TK_FLOW[t&&t.status];return f?f.owner(t):'-';}
+// The same answer for a table cell, where a ninth column cannot afford the
+// role prefix. The column header already says "Next Action On", so the bare
+// name is not ambiguous - and the full form stays in the cell's tooltip.
+function tkOwnerShort(t){
+  if(!t)return '-';
+  if(t.status==='blocked')return t.waitingOn||'Third party';
+  if(t.status==='resolved')return t.clientName;
+  if(t.status==='closed')return '-';
+  return t.assignedTo||'Unassigned';
+}
+// The legal moves out of this ticket's current state.
+function tkMoves(t){const f=TK_FLOW[t&&t.status];return f?f.next:[];}
+// The agents a ticket can be assigned to. One list, used by the Assignment
+// tab and by the confirm dialog's assignee field so the two cannot drift.
+const TK_AGENTS=['Pallavi Parate','Rahul Mehta','Aman Singh','Neha Sharma','Olivia Clark'];
+// The parties a ticket can be blocked on.
+const TK_BLOCKERS=['Client','Finance team','Legal team','Payroll team','Local authority','Third-party vendor'];
+
+// A ticket's history, seeded the same way every other module seeds its Logs
+// tab. These read newest-first and are copied onto the record by seedLogs().
+const tkLogsData={
+  1:[{date:'13 Jun 2026',time:'10:20:00 AM',user:'Pallavi Parate',status:'Open',action:'Requested the corrected compliance document from John Doe. Waiting on the client before this can move.'}],
+  2:[{date:'15 Jun 2026',time:'04:40:00 PM',user:'Rahul Mehta',status:'Blocked',action:'Salary document cannot be issued until payroll data is confirmed. Waiting on: Finance team.'},
+     {date:'14 Jun 2026',time:'01:35:00 PM',user:'Rahul Mehta',status:'In Progress',action:'Picked this up and pulled the May payroll register to check what is missing.'}],
+  3:[{date:'11 Jun 2026',time:'11:00:00 AM',user:'Aman Singh',status:'Open',action:'Renewal terms shared with the contracts team for review.'}],
+  4:[{date:'19 Jun 2026',time:'09:45:00 AM',user:'Pallavi Parate',status:'In Progress',action:'Re-issued the 2025-26 tax form from the payroll portal and emailed it to Mark Lee.'}],
+  5:[{date:'21 Jun 2026',time:'10:30:00 AM',user:'Neha Sharma',status:'Open',action:'Contract draft shared with Thijs Verbeek for review.'}],
+  6:[{date:'23 Jun 2026',time:'02:15:00 PM',user:'Rahul Mehta',status:'Blocked',action:'Certificate of compliance for UK operations cannot be obtained until the authority responds. Waiting on: Local authority.'}],
+  7:[{date:'26 Jun 2026',time:'09:05:00 AM',user:'Aman Singh',status:'Closed',action:'Client acknowledged receipt on the call. Closing.'},
+     {date:'25 Jun 2026',time:'04:20:00 PM',user:'Aman Singh',status:'Resolved',action:'Re-sent all Q1 2026 invoice copies from the billing portal and confirmed the client could open them.'}]
+};
+// What was done to resolve this ticket, read back out of the history rather
+// than out of the record. The newest entry that moved it to Resolved is the
+// answer; if it was never resolved there is nothing to show, which is the
+// honest result rather than an empty field pretending to be data.
+function tkResolution(t){
+  if(!t)return '';
+  const logs=seedLogs(t,tkLogsData[t.id]);
+  for(let i=0;i<logs.length;i++)if(logs[i].status==='Resolved')return logs[i].action;
+  return '';
+}
+
 // Chat workflow - keyed by chatsData id. Ends on each chat's real status.
 const chatWorkflowData={
   1:[{title:'Waiting for CSM',user:'Pallavi Parate',date:'Jun 26, 2026',time:'09:40:00 AM',description:'Client reply received on TCK-1021. Awaiting CSM response.'},
