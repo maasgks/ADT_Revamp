@@ -74,11 +74,12 @@
 .qa-btn.qa-wait:hover{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
 .qa-btn.qa-info:hover{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
 .qa-btn.qa-idle:hover{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
-/* Actions that only navigate - "open the timesheet", "edit" - take brand
-   orange, matching every other navigation button's hover in the app. */
-.qa-btn.qa-nav:hover {background:#f8f9fb;color:var(--btn-accent,#de7909);border-color:var(--btn-accent,#de7909)}
+/* Actions that only navigate - "open the timesheet", "edit" - carry no result
+   colour. They darken to --btn-accent instead, the same hover every other
+   navigation button in the app uses. */
+.qa-btn.qa-nav:hover {background:#f8f9fb;color:var(--btn-accent,#1a1a1a);border-color:var(--btn-accent,#1a1a1a)}
 
-.qa-btn:focus-visible{outline:2px solid var(--btn-accent,#de7909);outline-offset:2px}
+.qa-btn:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
 
 /* The lead pill on a waiting row carries a slow breathing dot so an
    unattended queue is visible from across the room without adding a colour

@@ -26,9 +26,14 @@
    .btn-positive / .btn-negative / .btn-success are kept as aliases of
    .btn-outline so existing markup keeps working; they no longer differ visually.
 
-   HOVER is the only place colour appears. Each variant keeps its own weight:
-     filled   -> fill goes brand orange, label stays white
-     outline  -> NO fill; label and border go brand orange
+   HOVER darkens; it does not change hue. Each variant keeps its own weight:
+     filled   -> fill deepens #353535 -> #1a1a1a, label stays white
+     outline  -> NO fill; label and border go to #1a1a1a from a light stroke
+   --btn-accent used to be brand orange, and it was the last orange left in the
+   app: --orange is itself #1a1a1a in this theme, so every other hover had
+   already gone black and only buttons still changed hue on the way. A hover is
+   a "you are on it" signal, not a state change, and going darker says that
+   without introducing a colour the rest of the interface no longer uses.
    Buttons carry NO shadow or glow in any state - hover is expressed purely by
    the colour change above. Do not reintroduce box-shadow here.
    :focus-visible uses a crisp outline (keyboard only, never on mouse hover) so
@@ -38,7 +43,8 @@
 :root{
   --btn-ink:#353535;                          /* label on outline, fill on primary */
   --btn-stroke:var(--border);                 /* light grey stroke on outline */
-  --btn-accent:#de7909;                       /* brand orange, hover only */
+  --btn-accent:#1a1a1a;                       /* hover ink + focus ring, same
+                                                 near-black as --orange */
 }
 .ap-pill-btn,.se-cancel,.se-proceed,.tb-cost-calc,.at-btn-reset,.at-btn-search,.btn,.btn-negative,.btn-outline,.btn-positive,.btn-primary,.btn-secondary,.btn-success,.cc-export-btn,.ccn-calc-btn,.ccn-export-btn,.clock-btn,.cost-calc-btn,.cost-calc-nav-btn,.cs-edit-btn,.ct-action-btn,.emp-support-btn,.ep-cancel-btn,.ep-file-btn,.ep-save-btn,.fcmp-footer-btn,.filter-reset,.filter-search,.hr-action-btn,.hr-action-btn.approve,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-add-btn,.lp-clear-btn,.lp-edit-btn,.lp-logs-save-btn,.lp-pill-clear,.lp-pill-search,.lp-sb-view-edit-btn,.ts-btn-reset,.ts-btn-search,.ts-sb-submit,.ts-submit-btn,.wb-btn.primary,.wb-btn.secondary{
   --btn-h:34px; --btn-px:18px; --btn-fs:13px;
@@ -47,7 +53,15 @@
   font-family:inherit;font-size:var(--btn-fs);font-weight:600;line-height:1;
   border:1px solid transparent;border-radius:var(--r-control);
   cursor:pointer;white-space:nowrap;box-shadow:none;
-  transition:background .15s ease,border-color .15s ease,color .15s ease;
+  /* TRANSFORM BELONGS IN THIS LIST even though motion.css owns the press
+     itself. motion.css declares the transition on `button,.btn,[role=button]`,
+     which is element-level specificity, and this rule is a list of classes -
+     so this one wins the whole `transition` shorthand no matter which file
+     loads last, and every button's :active scale(.97) was snapping on and off
+     with nothing to ease it. Duration and curve still come from the motion
+     tokens; only the property name is repeated here. */
+  transition:background .15s ease,border-color .15s ease,color .15s ease,
+             transform var(--t-fast) var(--e-out);
 }
 .hr-action-btn,.btn-sm,.tb-cost-calc,.cost-calc-btn,.cost-calc-nav-btn,.cs-edit-btn,.ct-action-btn,.ep-file-btn,.fcmp-footer-btn,.filter-reset,.filter-search,.hr-action-btn.approve,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-edit-btn,.lp-sb-view-edit-btn{--btn-h:28px;--btn-px:12px;--btn-fs:12px}
 .btn-lg,.ap-pill-btn,.se-proceed,.se-cancel,.ccn-calc-btn,.ccn-export-btn,.lp-logs-save-btn,.ts-sb-submit{--btn-h:40px;--btn-px:24px;--btn-fs:13.5px}
@@ -58,7 +72,7 @@
 
 /* -- filled: the affirmative / main action ------------------------------ */
 .btn-primary,.at-btn-search,.cc-export-btn,.ccn-calc-btn,.ccn-export-btn,.cs-edit-btn,.ct-action-btn,.emp-support-btn,.ep-file-btn,.ep-save-btn,.fcmp-footer-btn,.filter-search,.hr-action-btn.approve,.lp-add-btn,.lp-edit-btn,.lp-logs-save-btn,.lp-pill-search,.lp-sb-view-edit-btn,.ts-btn-search,.ts-sb-submit,.ts-submit-btn,.wb-btn.primary{background:var(--btn-ink);color:#fff;border-color:var(--btn-ink)}
-/* hover drops the dark fill entirely and goes brand orange - see header note */
+/* hover deepens the fill rather than changing it - see header note */
 .btn-primary:hover,.at-btn-search:hover,.cc-export-btn:hover,.ccn-calc-btn:hover,.ccn-export-btn:hover,.cs-edit-btn:hover,.ct-action-btn:hover,.emp-support-btn:hover,.ep-file-btn:hover,.ep-save-btn:hover,.fcmp-footer-btn:hover,.filter-search:hover,.hr-action-btn.approve:hover,.lp-add-btn:hover,.lp-edit-btn:hover,.lp-logs-save-btn:hover,.lp-pill-search:hover,.lp-sb-view-edit-btn:hover,.ts-btn-search:hover,.ts-sb-submit:hover,.ts-submit-btn:hover,.wb-btn.primary:hover{background:var(--btn-accent);color:#fff;border-color:var(--btn-accent)}
 
 /* -- keyboard focus: crisp outline, never shown on mouse hover --------- */
@@ -70,10 +84,16 @@
 
 /* --------------------------------------------------------------------------
    ON-DARK SURFACES.  Not a separate variant: the same two, inverted for the
-   dark panels (support banner, switch-entity). Same orange glow on hover.
+   dark panels (support banner, switch-entity).
    Add .on-dark alongside the variant class on any dark surface.
+
+   THIS IS WHERE HOVER INVERTS. On a light surface hover goes darker; on a dark
+   one there is nowhere darker to go - --btn-accent is very nearly the panel
+   itself, so a black label on a black panel would simply vanish. These go the
+   other way and brighten to white, which is the same move: hover pushes
+   further from the surface it sits on.
    -------------------------------------------------------------------------- */
 .btn-primary.on-dark,.se-proceed{background:#fff;color:#1a1a1a;border-color:#fff}
-.btn-primary.on-dark:hover,.se-proceed:hover{background:var(--btn-accent);color:#fff;border-color:var(--btn-accent)}
+.btn-primary.on-dark:hover,.se-proceed:hover{background:#e2e8f0;color:#1a1a1a;border-color:#e2e8f0}
 .btn-outline.on-dark,.btn-secondary.on-dark,.se-cancel,.emp-support-btn.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
-.btn-outline.on-dark:hover,.btn-secondary.on-dark:hover,.se-cancel:hover,.emp-support-btn.ghost:hover{background:rgba(255,255,255,.14);color:var(--btn-accent);border-color:var(--btn-accent)}
+.btn-outline.on-dark:hover,.btn-secondary.on-dark:hover,.se-cancel:hover,.emp-support-btn.ghost:hover{background:rgba(255,255,255,.24);color:#fff;border-color:rgba(255,255,255,.75)}

@@ -18,8 +18,32 @@
 .hr-header{margin-bottom:20px}
 .hr-header-title{font-size:var(--ds-h1);font-weight:700;color:var(--navy);margin-bottom:4px;letter-spacing:-.3px}
 .hr-header-desc{font-size:var(--ds-body);color:var(--gray);line-height:1.5;font-weight:400}
-.hr-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.hr-stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;text-align:left}
+/* ══ ONE CARD SIZE, EVERY DASHBOARD ═══════════════════════════════════════
+   A KPI tile is the same object wherever it appears, so it is the same size
+   wherever it appears. It wasn't: the column count was set inline on each
+   grid - 5 on Ops, 4 on Super Admin, 3 on Finance, 2 on the Finance basic
+   second row - so one component rendered at 228, 289, 324, 389 and 591px,
+   and three dashboards changed their card width halfway down the page.
+
+   Worse, an inline grid-template-columns outranks the media queries at the
+   bottom of this file, so those grids never responded to viewport width at
+   all: the 5-col Ops strip stayed 5-col down to phone size.
+
+   The track now lives here and only here. Rules:
+     · 4 equal columns, one 14px gutter in both axes.
+     · A dashboard's tiles are ONE grid, however many rows they take. Splitting
+       them into a grid per row made each row's height independent and forced a
+       hand-set margin-bottom to imitate the row gap.
+     · A short last row is left short. Cards keep the standard width and stay
+       aligned with the rows above instead of stretching to fill.
+     · Anything wider than a tile spans whole columns (.hr-stat-span2), so it
+       is still measured in the same track.                                  */
+.hr-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;align-items:stretch}
+.hr-stat-span2{grid-column:span 2}
+/* Column, so the caption can be pinned to the bottom edge: a wrapped label on
+   one card then pushes nothing out of line on its neighbours - label, metric
+   and caption stay on their own baselines right across the row. */
+.hr-stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;text-align:left;display:flex;flex-direction:column;min-height:106px}
 
 /* ══ TWO KINDS OF DASHBOARD CARD ═══════════════════════════════════════════
    A dashboard tile is one of exactly two things, and they used to look
@@ -98,7 +122,7 @@
   transform:translateX(2px);
 }
 .hr-stat-card.is-link:active{transform:translateY(0) scale(.995)}
-.hr-stat-card.is-link:focus-visible{outline:2px solid var(--btn-accent,#de7909);outline-offset:2px}
+.hr-stat-card.is-link:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
 
 /* Read-only: an ordinary card. It is not styled here because there is nothing
    to add - it keeps the base .hr-stat-card exactly. The one thing it must not
@@ -121,7 +145,7 @@
 .hr-stat-number.green{color:var(--st-ok-fg)}
 .hr-stat-number.orange{color:var(--st-wait-fg)}
 .hr-stat-number.red{color:var(--st-bad-fg)}
-.hr-stat-sub{font-size:var(--ds-caption);color:var(--gray);display:flex;align-items:center;gap:4px;font-weight:400}
+.hr-stat-sub{font-size:var(--ds-caption);color:var(--gray);display:flex;align-items:center;gap:4px;font-weight:400;margin-top:auto}
 .hr-stat-sub.green{color:#16a34a}
 .hr-stat-sub.orange{color:#b45309}
 .hr-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
@@ -272,7 +296,7 @@
    only the alignment and border treatment differ. */
 .pipeline-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
 .pipeline-card{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--border);border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;transition:border-color .2s}
-.pipeline-card:hover{border-color:#de7909}
+.pipeline-card:hover{border-color:#1a1a1a}
 .pipeline-label{font-size:var(--ds-label);font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
 .pipeline-value{font-size:var(--ds-metric);font-weight:700;color:var(--navy);letter-spacing:-.5px;line-height:1.2}
 .pipeline-sub{font-size:var(--ds-caption);font-weight:400;margin-top:6px;color:var(--gray)}

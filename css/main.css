@@ -90,7 +90,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sidebar-toggle:hover{background:#f1f3f5}
 .sidebar-toggle svg{width:18px;height:18px}
 .page-add-btn{width:22px;height:22px;border:0;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;flex-shrink:0}
-.page-add-btn:hover{background:#c76d08;transform:scale(1.04)}
+/* These two sit outside the button system and are already --orange (#1a1a1a)
+   at rest, so --btn-accent would be no change at all - they go to pure black.
+   Same direction as every other hover: darker, never a different hue. */
+.page-add-btn:hover{background:#000;transform:scale(1.04)}
 .page-add-btn svg{width:12px;height:12px}
 .tb-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:10px;border:none;cursor:pointer;background:0;color:var(--gray);transition:.2s}
 .tb-icon:hover{background:#f1f3f5}
@@ -608,9 +611,8 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-role-badge.hr{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
 .lp-role-badge.super-admin{background:#faf5ff;color:#7e22ce;border-color:#e9d5ff}
 .lp-add-btn{display:flex;align-items:center;gap:6px;padding:9px 18px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.2s;white-space:nowrap;flex-shrink:0}
-.lp-add-btn:hover{background:#c76d08}
 .tb-page-add{width:22px;height:22px;border-radius:50%;background:var(--orange);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:.15s;flex-shrink:0;padding:0;margin-left:6px}
-.tb-page-add:hover{background:#c76d08;transform:scale(1.1)}
+.tb-page-add:hover{background:#000;transform:scale(1.1)}
 .tb-cost-calc{display:flex;align-items:center;gap:6px;height:28px;padding:0 12px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--navy);background:#fff;font-family:inherit;transition:.15s;margin-left:8px;white-space:nowrap}
 .tb-cost-calc:hover{border-color:var(--orange);color:var(--orange)}
 /* The filter bar sits ABOVE the table it filters, in paint order as well as on
@@ -692,7 +694,6 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ep-cancel-btn{padding:8px 20px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:600;color:var(--navy);background:var(--card);cursor:pointer;font-family:inherit;transition:.15s}
 .ep-cancel-btn:hover{border-color:#94a3b8;background:#f8f9fb}
 .ep-save-btn{padding:8px 20px;border:none;border-radius:8px;font-size:13px;font-weight:600;color:#fff;background:var(--orange);cursor:pointer;font-family:inherit;transition:.15s}
-.ep-save-btn:hover{background:#c76d08}
 .ep-summary-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;min-width:0;overflow:hidden}
 .ep-summary-left{display:flex;align-items:center;gap:14px}
 .ep-summary-icon{width:46px;height:46px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -951,10 +952,15 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-day-cell.st-absent{border-left-color:#f87171}
 .ts-day-cell.st-inprog{border-left-color:#fb923c}
 .ts-empty{background:transparent;cursor:default}
-/* Date anchors the top-left so the eye reads date -> value; it used to be
-   absolutely positioned top-right, which made every cell read value -> date. */
-.ts-day-num{font-size:11.5px;font-weight:700;color:#9ca3af;line-height:1;letter-spacing:.2px}
-.ts-day-num.today{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin:-4px 0 -1px -4px;background:var(--orange);border-radius:50%;color:#fff}
+/* Date sits at the TOP-RIGHT of the cell. It stays the first child, so it is
+   still first in the reading and tab order and still owns the top line - only
+   its alignment within that line changes. The value below it keeps the left
+   edge, which is what puts every hour figure in the grid on one vertical line
+   down each column, with the dates on another. */
+.ts-day-num{font-size:11.5px;font-weight:700;color:#9ca3af;line-height:1;letter-spacing:.2px;text-align:right}
+/* margin-left:auto pushes the today disc across; the negative margins that
+   used to pull it into the LEFT corner are mirrored to the right one. */
+.ts-day-num.today{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin:-4px -4px -1px auto;background:var(--orange);border-radius:50%;color:#fff}
 .ts-day-cell.we .ts-day-num{color:#c4a97a}
 .ts-day-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r-status);display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;width:fit-content;margin-top:2px}
 .ts-day-pill.present{background:var(--st-ok-bg);color:var(--st-ok-fg)}
@@ -962,7 +968,9 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-day-pill.inprog{background:var(--st-wait-bg);color:var(--st-wait-fg)}
 .ts-day-pill.future{color:#cbd5e1}
 .ts-day-hrs{font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
-.ts-day-peek{position:absolute;top:8px;right:9px;color:#9ca3af;opacity:0;transition:opacity .12s;pointer-events:none}
+/* Moved to the left corner, which the date has just vacated. Left where it
+   was it would sit under the date on every cell it appears on. */
+.ts-day-peek{position:absolute;top:8px;left:10px;color:#9ca3af;opacity:0;transition:opacity .12s;pointer-events:none}
 .ts-day-peek svg{width:12px;height:12px}
 .ts-day-cell:hover .ts-day-peek{opacity:1}
 .ts-day-src{font-size:9.5px;color:#a5adba;font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-top:auto}

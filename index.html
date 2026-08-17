@@ -150,23 +150,24 @@
              Admin, Ops and Entity Owner, and Latest Payslip here, which is the
              only payroll fact an employee acts on.
 
-             The grids keep their original column count. This one is the
-             exception: it was 3 tiles + a wide attendance card, so it drops to
-             repeat(2,1fr) rather than leave a hole mid-row. Every other
-             dashboard's grid stays 4-col and simply ends one card short, so
-             its cards stay aligned with the rows above them. -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(2,1fr) 1.6fr;align-items:stretch">
-          <div class="hr-stat-card is-link" style="display:flex;flex-direction:column;justify-content:space-between" role="button" tabindex="0">
+             This row is 2 tiles + a wide attendance card. It used to buy that
+             width with its own column count (repeat(2,1fr) 1.6fr), which made
+             its tiles 324px against every other dashboard's 289px. It now sits
+             in the standard 4-col track and the attendance card spans two
+             columns, so the tiles measure the same here as everywhere else and
+             the row still ends flush. -->
+        <div class="hr-stat-grid">
+          <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Leave Balance</div>
             <div class="hr-stat-number">12</div>
             <div class="hr-stat-sub green">&#x2191; 3 days remaining this month</div>
           </div>
-          <div class="hr-stat-card is-link" style="display:flex;flex-direction:column;justify-content:space-between" role="button" tabindex="0">
+          <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Latest Payslip</div>
             <div class="hr-stat-number">Apr</div>
             <div class="hr-stat-sub">April 2025 available</div>
           </div>
-          <div class="attendance-card" style="min-width:0">
+          <div class="attendance-card hr-stat-span2" style="min-width:0">
             <div class="att-title">Attendance <a href="#">View</a></div>
             <div class="att-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Clock-in Time <span class="att-val">00:00 AM/PM</span></div>
             <div class="att-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Location <span class="att-val">Hyderabad</span></div>
@@ -867,8 +868,9 @@
           <div class="hr-header-desc">Full Opendhi access across the selected entity — entity setup, contracts, invoices, compliance, tickets, and access control.</div>
         </div>
 
-        <!-- Stat cards — row 1: 4-col -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <!-- Stat cards — one grid, 11 tiles, flowing 4 / 4 / 3 down the
+             standard track. (Was three separate grids with hand-set margins.) -->
+        <div class="hr-stat-grid">
           <div class="hr-stat-card is-static">
             <div class="hr-stat-label">Selected Entity</div>
             <div class="hr-stat-number is-text">Dhi Hyperlocal</div>
@@ -889,9 +891,6 @@
             <div class="hr-stat-number">9</div>
             <div class="hr-stat-sub orange">3 pending review</div>
           </div>
-        </div>
-        <!-- Stat cards — row 2: 4-col -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Contracts</div>
             <div class="hr-stat-number">25</div>
@@ -912,11 +911,9 @@
             <div class="hr-stat-number">3</div>
             <div class="hr-stat-sub orange">Awaiting setup</div>
           </div>
-        </div>
-        <!-- Stat cards — row 3. Three cards in the same 4-col track, so they
-             stay aligned with rows 1 and 2 above.
-             No Payroll Status card - see the note on #employee-view. -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr)">
+          <!-- Last row runs three wide and is left short, so these stay
+               aligned with the rows above.
+               No Payroll Status card - see the note on #employee-view. -->
           <div class="hr-stat-card is-static">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -1072,8 +1069,8 @@
           <div class="hr-header-desc">Track invoices, payments, contract billing, payment compliance, and financial activity across all entities.</div>
         </div>
 
-        <!-- Stat cards — 3-col grid, 3 rows -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(3,1fr)">
+        <!-- Stat cards — 9 tiles on the standard track: 4 / 4 / 1 -->
+        <div class="hr-stat-grid">
           <div class="hr-stat-card is-static">
             <div class="hr-stat-label">Total Invoiced</div>
             <div class="hr-stat-number">₹14.3L</div>
@@ -1251,8 +1248,10 @@
           <div class="hr-header-desc">View invoices and payment visibility with finance-only access.</div>
         </div>
 
-        <!-- Stat cards — row 1: 3-col -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+        <!-- Stat cards — 5 tiles on the standard track: 4 / 1.
+             (Was a 3-col row then a 2-col row, so the same card was 389px wide
+             above and 591px wide below.) -->
+        <div class="hr-stat-grid">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="finance-stat-row">
               <div>
@@ -1289,9 +1288,6 @@
               </div>
             </div>
           </div>
-        </div>
-        <!-- Stat cards — row 2: 2-col -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(2,1fr)">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="finance-stat-row">
               <div>
@@ -1579,8 +1575,9 @@
           <div class="hr-header-desc">Track contract pipeline, active contracts, compliance items, and pending entities across the selected entity.</div>
         </div>
 
-        <!-- Top stat cards — row 1: 5-col grid -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
+        <!-- Stat cards — 8 tiles on the standard track: 4 / 4.
+             (Was a 5-col row of 228px cards then a 4-col row of 289px ones.) -->
+        <div class="hr-stat-grid">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Active Contracts</div>
             <div class="hr-stat-number">25</div>
@@ -1606,10 +1603,7 @@
             <div class="hr-stat-number">25</div>
             <div class="hr-stat-sub green">Cleared this cycle</div>
           </div>
-        </div>
-        <!-- Top stat cards — row 2: 4-col grid (full width) -->
-        <!-- No Payroll Status card - see the note on #employee-view. -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr)">
+          <!-- No Payroll Status card - see the note on #employee-view. -->
           <div class="hr-stat-card is-static">
             <div class="hr-stat-label">Payroll Blockers</div>
             <div class="hr-stat-number">4</div>
@@ -1802,8 +1796,9 @@
           <div class="hr-header-desc">Full visibility into your entity — workforce, contracts, compliance, invoices, tickets, and team access.</div>
         </div>
 
-        <!-- Stat cards — row 1 & 2: 4-col grid -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:14px">
+        <!-- Stat cards — 10 tiles on the standard track: 4 / 4 / 2.
+             (Was 7 cards at 289px then a 3-col row at 389px.) -->
+        <div class="hr-stat-grid">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Total Workforce</div>
             <div class="hr-stat-number">148</div>
@@ -1840,9 +1835,6 @@
             <div class="hr-stat-number">4</div>
             <div class="hr-stat-sub orange">Resolve before payroll run</div>
           </div>
-        </div>
-        <!-- Stat cards — row 3: 3-col grid (full width) -->
-        <div class="hr-stat-grid" style="grid-template-columns:repeat(3,1fr)">
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Pending Approvals</div>
             <div class="hr-stat-number">6</div>

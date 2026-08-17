@@ -344,8 +344,7 @@ tr.lp-row-selected>td:first-child,
 .lp-wf-empty{font-size:13px;color:#9ca3af;text-align:center;padding:32px 16px;background:#f9fafb;border-radius:10px;border:1px dashed #e5e7eb}
 .ct-action-wrap{position:relative;display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
 .ct-action-btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:0 10px 0 12px;height:28px;line-height:28px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap;width:80px;transition:.15s;vertical-align:middle}
-.ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
-.ct-action-btn:hover{background:#c76d08}
+.ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
 .ct-dots-btn{border:none;background:transparent;border-radius:6px;width:28px;height:28px;line-height:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#64748b;padding:0;transition:.15s;flex-shrink:0;vertical-align:middle}
 .ct-dots-btn:hover{background:#f1f5f9;color:var(--navy)}
 .ct-action-menu{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.13);z-index:1000;min-width:200px;overflow:hidden;display:none}
