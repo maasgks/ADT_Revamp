@@ -254,9 +254,70 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
    only - they fire on state change, not on being re-created. */
 .sb-item span,.sb-parent span{transition:opacity var(--t-fast) var(--e-out)}
 
-/* Module tab bars and page pagination. */
+/* Page pagination. */
 .lp-pg-btn{transition:background var(--t-micro) ease,color var(--t-micro) ease,border-color var(--t-micro) ease,transform var(--t-fast) var(--e-out)}
 .lp-pg-btn:active:not(:disabled){transform:scale(.9)}
+
+/* ── 6b. TAB BARS: ONE MARKER THAT TRAVELS ────────────────────────────────
+   Seven tab bars, three shapes, one behaviour. Each used to draw its active
+   marker on the active tab itself, so every switch was one marker blinking
+   out and another blinking in - two events the eye has to join up. It is one
+   marker moving between two tabs, so it is drawn as one marker that moves.
+
+   The marker is a sibling of the tabs, absolutely positioned inside the bar.
+   The bars that scroll (.prof-tab-bar, .cs-tab-strip, .lp-isb-tabs) keep it
+   glued to its tab, because an absolutely positioned child of a scroll
+   container scrolls with the content. js/tab-slide.js writes the coordinates;
+   the travel is the transition below.
+
+   THE SHAPES, and which bars wear them:
+     --box    a 1.5px outline round the whole tab    detail panel tabs
+     --pill   a raised white tile behind the tab     module + form segmenteds
+     --under  a bar along the tab's bottom edge      the four underline bars
+
+   Each family then has to STOP drawing its own marker, which is the block at
+   the end. Only the marker moves out of the tab - colour and weight stay on
+   the tab itself, so a tab still looks selected the instant it is clicked,
+   before the marker has finished arriving.
+
+   Not included: .dashboard-tabs. Those are separated chips, each with its own
+   border and opaque white fill, not a track with a marker running along it -
+   a marker behind them would simply be invisible. Different pattern, and
+   giving it this one would mean redesigning the row rather than animating it.
+   ──────────────────────────────────────────────────────────────────────── */
+.lp-isb-tabs,.mod-tabs,.segmented,.cs-tab-strip,.cs-sub-tabs,.prof-tab-bar,.pm-user-subtabs{position:relative}
+
+.tab-ind{
+  position:absolute;left:0;top:0;
+  box-sizing:border-box;
+  pointer-events:none;
+  opacity:0;
+  z-index:0;
+  transition:transform var(--t-base) var(--e-out),
+             width var(--t-base) var(--e-out),
+             height var(--t-base) var(--e-out),
+             opacity var(--t-fast) ease;
+}
+.tab-ind.on{opacity:1}
+/* Set for the one frame a marker is planted rather than moved - a bar that
+   was rebuilt, or one being seen for the first time. */
+.tab-ind.no-anim{transition:none}
+
+/* A --pill marker sits BEHIND its tab, so the tabs need a layer of their own
+   or the white tile would cover the label it is meant to sit under. */
+.lp-isb-tab,.mod-tab,.seg-btn,.cs-page-tab,.cs-sub-tab,.prof-tab,.pm-user-subtab{position:relative;z-index:1}
+
+.tab-ind--box{border:1.5px solid var(--orange);border-radius:4px}
+.tab-ind--pill{background:var(--card);border-radius:8px;box-shadow:0 1px 3px rgba(15,23,42,.12)}
+.tab-ind--under{background:var(--orange);border-radius:2px}
+
+/* Markers off. Colour and weight stay - see the note above. */
+.mod-tab.active,.seg-btn.active{background:transparent;box-shadow:none}
+.cs-page-tab.active,.cs-sub-tab.active,.prof-tab.active,.pm-user-subtab.active{border-bottom-color:transparent}
+
+@media (prefers-reduced-motion:reduce){
+  .tab-ind{transition:opacity var(--t-fast) ease}
+}
 
 /* ── 7. FEEDBACK ──────────────────────────────────────────────────────────
    The three ways the app tells you something happened.                    */

@@ -143,6 +143,20 @@
   transition:background var(--t-fast) ease,box-shadow var(--t-fast) ease;
 }
 
+/* A POPOVER INSIDE A PINNED CELL HAS TO LIFT THE CELL WITH IT.
+   z-index above turns every ACTION cell into a stacking context, and a
+   stacking context is a ceiling: the stage menu on Contracts and Payments is
+   position:fixed at z-index 1000 and STILL came out painted underneath the
+   pinned cells of the rows below it, because those cells are later siblings at
+   the same level and 1000 counts for nothing across that boundary. Lifting the
+   whole cell is the fix - the menu rides up inside it.
+
+   9, not 1000: it has to clear the sibling cells (3) and nothing else. The
+   detail panel sits at 10 and must keep winning, since a menu belonging to a
+   row the panel is covering has no business painting over the panel. */
+.lp-table td:has(.ct-action-menu.open),
+.listing-table td:has(.ct-action-menu.open){z-index:9}
+
 /* The "no records match this filter" row is one colspan cell that already
    spans every column. There is no action in it to keep on screen, and pinning
    a cell as wide as the table only risks it drifting inside its own row. */

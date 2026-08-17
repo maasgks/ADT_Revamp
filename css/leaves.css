@@ -8,13 +8,27 @@
 .lp-isb-tabbar{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0;min-height:46px}
 .lp-isb-back{width:42px;border-radius:0;border:none;border-right:1px solid var(--border);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;padding:0;font-family:inherit;transition:.15s}
 .lp-isb-back:hover{background:#f8fafc;color:var(--orange)}
-.lp-isb-tabs{display:flex;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
+.lp-isb-tabs{display:flex;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;position:relative}
 .lp-isb-tabs::-webkit-scrollbar{display:none}
+
+/* The active tab's outline is not drawn by the tab - it is a .tab-ind--box
+   marker that travels between them. Shared with six other tab bars; the
+   marker, its shapes and the rule that keeps each bar from drawing its own
+   are all in the TAB BARS section of css/motion.css. */
 .lp-isb-nav-btn{width:30px;border:none;background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#94a3b8;padding:0;transition:background .15s,color .15s;border-right:1px solid var(--border)}
 .lp-isb-nav-btn.nav-right{border-right:none;border-left:1px solid var(--border)}
 .lp-isb-nav-btn:hover{background:#f8fafc;color:var(--orange)}
-.lp-isb-tab{padding:0 16px;align-self:stretch;border:1.5px solid transparent;border-radius:4px;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--gray);font-family:inherit;transition:.15s;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;margin:0 4px}
-.lp-isb-tab.active{color:var(--orange);border-color:var(--orange);font-weight:600}
+/* The transparent 1.5px border stays on EVERY tab even though none of them
+   draws it any more: it is what makes a tab's offset box the exact size the
+   sliding indicator has to match, and it keeps that size identical whether
+   the tab is active or not. */
+.lp-isb-tab{padding:0 16px;align-self:stretch;border:1.5px solid transparent;border-radius:4px;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--gray);font-family:inherit;transition:color .15s;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;margin:0 4px}
+/* Weight is faked with a hairline shadow rather than switched to 600. A real
+   weight change would re-measure the label mid-slide, so the tab you are
+   travelling towards would grow while the box was still on its way to it and
+   the box would land a few pixels short. This reads the same and cannot
+   move anything. */
+.lp-isb-tab.active{color:var(--orange);text-shadow:0 0 .45px currentColor}
 .lp-isb-tab:hover:not(.active){color:var(--navy)}
 .lp-isb-right{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);flex-shrink:0}
 .lp-isb-close{width:26px;height:26px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray);transition:.15s;padding:0}

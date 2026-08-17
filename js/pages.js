@@ -9,7 +9,7 @@ function closeDeSidebar(){
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.de-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navDeTab(tab){deTab=tab;deEditMode=false;const inner=document.getElementById('de-isb-inner');if(inner){inner.innerHTML=renderDeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('de-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navDeTab(tab){deTab=tab;deEditMode=false;isbTab('de',renderDeSidebar);}
 function scrollTabRow(dir,id){const el=document.getElementById(id);if(!el)return;const t=el.querySelector('.lp-isb-tab');const w=t?t.offsetWidth*2+32:160;el.scrollBy({left:dir==='right'?w:-w,behavior:'smooth'});}
 function applyDeFilters(){
   const dept=getCSValue('de-f-dept'),branch=getCSValue('de-f-branch'),status=getCSValue('de-f-status');
@@ -268,7 +268,7 @@ function closeGeSidebar(){
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navGeTab(tab){geTab=tab;geEditMode=false;const inner=document.getElementById('ge-isb-inner');if(inner){inner.innerHTML=renderGeSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ge-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navGeTab(tab){geTab=tab;geEditMode=false;isbTab('ge',renderGeSidebar);}
 function renderGeSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
@@ -477,7 +477,7 @@ function closeTmSidebar(){
   const sb=document.getElementById('tm-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.tm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navTmTab(tab){tmTab=tab;const inner=document.getElementById('tm-isb-inner');if(inner){inner.innerHTML=renderTmSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tm-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navTmTab(tab){tmTab=tab;isbTab('tm',renderTmSidebar);}
 function renderTmSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const team=teamsData.find(t=>t.id===tmSelectedId);if(!team)return '';
@@ -629,7 +629,7 @@ function closeAlSidebar(){
   const sb=document.getElementById('al-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.al-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navAlTab(tab){alTab=tab;const inner=document.getElementById('al-isb-inner');if(inner){inner.innerHTML=renderAlSidebar();requestAnimationFrame(function(){const nt=document.getElementById('al-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navAlTab(tab){alTab=tab;isbTab('al',renderAlSidebar);}
 // Payroll cycle detail sidebar. Opened by the row action button on the payroll
 // listing. Tabs mirror the other listing sidebars so the pattern is consistent.
 function renderPrSidebar(){
@@ -771,13 +771,22 @@ function renderAlSidebar(){
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    const statusOpsOpts=['Approved','Unapproved','Pending'].map(s=>'<option>'+s+'</option>').join('');
+    /* This select used to wear .lp-logs-form-textarea, the class for the
+       COMMENT box below it. That class has no appearance:none and no wrapper,
+       so the browser drew its own control here - native arrow, native focus
+       ring, its own idea of the height - and this was the one dropdown in the
+       app that did not look like the app. Same markup as every other logs
+       form now: .lp-logs-form-select inside .lp-logs-form-sel-wrap, with the
+       chevron the wrapper positions. */
+    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const statusOpsOpts=['Approved','Unapproved','Pending']
+      .map(s=>'<option'+(l.status===s?' selected':'')+'>'+s+'</option>').join('');
     const actionPanel='<div class="lp-logs-form">'
-      +'<div class="lp-logs-form-header"><span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0"></span>Update Status</div>'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+String(l.status||'').toLowerCase()+'"></span>Update Status</div>'
       +'<p class="lp-logs-form-sub">Change the leave status and add a note.</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<select class="lp-logs-form-textarea" style="height:36px;padding:0 10px;resize:none">'+statusOpsOpts+'</select>'
-      +'<div class="lp-logs-form-label" style="margin-top:10px">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select">'+statusOpsOpts+'</select>'+chevSvg+'</div>'
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" placeholder="Add a note..."></textarea>'
       +'<button class="lp-logs-save-btn">Update</button>'
       +'</div>';
@@ -1025,7 +1034,7 @@ function closePmSidebar(){
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navPmTab(tab){pmTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner){inner.innerHTML=renderPmSidebar();requestAnimationFrame(function(){const nt=document.getElementById('pm-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navPmTab(tab){pmTab=tab;isbTab('pm',renderPmSidebar);}
 function pmSetUserSubTab(tab){pmUserSubTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();}
 function pmCancelLog(){const sel=document.getElementById('pm-log-status-sel');const inp=document.getElementById('pm-log-comment-inp');if(sel)sel.value='';if(inp)inp.value='';}
 function pmSaveLog(orderId){
@@ -1293,7 +1302,7 @@ function toggleCtAction(id,e){
 // ── TICKETS SIDEBAR ──
 function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('tk-isb-inner');if(inner)inner.innerHTML=renderTkSidebar();document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
 function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.tk-row').forEach(r=>r.classList.remove('lp-row-selected'));}
-function navTkTab(tab){tkTab=tab;const inner=document.getElementById('tk-isb-inner');if(inner){inner.innerHTML=renderTkSidebar();requestAnimationFrame(function(){const nt=document.getElementById('tk-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navTkTab(tab){tkTab=tab;isbTab('tk',renderTkSidebar);}
 // Stored keys are snake_case; these are how they read. Shared by the table pill
 // and by sbStatus() in the detail panel so the two never drift apart.
 const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',resolved:'Resolved',closed:'Closed'};
@@ -1302,7 +1311,7 @@ function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info
 // ── CHATS SIDEBAR ──
 function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('chat-isb-inner');if(inner)inner.innerHTML=renderChatSidebar();document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
-function navChatTab(tab){chatTab=tab;const inner=document.getElementById('chat-isb-inner');if(inner){inner.innerHTML=renderChatSidebar();requestAnimationFrame(function(){const nt=document.getElementById('chat-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navChatTab(tab){chatTab=tab;isbTab('chat',renderChatSidebar);}
 function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage();}
 const CHAT_STATUS_LABEL={active:'Active',waiting_client:'Waiting for Client',waiting_csm:'Waiting for CSM',inactive:'Inactive'};
 function chatStatusLabel(s){return CHAT_STATUS_LABEL[s]||s;}
@@ -1336,7 +1345,7 @@ function closeCtSidebar(){
   const sb=document.getElementById('ct-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ct-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navCtTab(tab){ctTab=tab;const inner=document.getElementById('ct-isb-inner');if(inner){inner.innerHTML=renderCtSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ct-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navCtTab(tab){ctTab=tab;isbTab('ct',renderCtSidebar);}
 function pmToggleStatFilter(v){
   pmInvoiceStatusFilter=pmInvoiceStatusFilter===v?'':v;
   pmSelectedId=null;
@@ -1688,7 +1697,7 @@ function closeComplianceSidebar(){
   const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navComplianceTab(tab){complianceTab=tab;const inner=document.getElementById('cmp-isb-inner');if(inner){inner.innerHTML=renderComplianceSidebar();requestAnimationFrame(function(){const nt=document.getElementById('cmp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navComplianceTab(tab){complianceTab=tab;isbTab('cmp',renderComplianceSidebar);}
 function complianceCancelLog(){
   const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';
   const sel=document.getElementById('cmp-log-status-sel');if(sel)sel.value='';
@@ -1899,15 +1908,7 @@ function closeOcaSidebar(){
   const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.remove('has-sb');
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
-function navOcaTab(tab){
-  ocaTab=tab;
-  const inner=document.getElementById('oca-isb-inner');if(!inner)return;
-  inner.innerHTML=renderOcaSidebar();
-  requestAnimationFrame(function(){
-    const nt=document.getElementById('oca-isb-tabs');if(!nt)return;
-    const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});
-  });
-}
+function navOcaTab(tab){ocaTab=tab;isbTab('oca',renderOcaSidebar);}
 function ocaCancelLog(){
   const inp=document.getElementById('oca-log-comment-inp');if(inp)inp.value='';
   const sel=document.getElementById('oca-log-status-sel');if(sel)sel.value='';
@@ -2066,7 +2067,7 @@ function closeRatesRuleSidebar(){
   const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navRatesRuleTab(tab){ratesRuleTab=tab;const inner=document.getElementById('rr-isb-inner');if(inner){inner.innerHTML=renderRatesRuleSidebar();requestAnimationFrame(function(){const nt=document.getElementById('rr-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navRatesRuleTab(tab){ratesRuleTab=tab;isbTab('rr',renderRatesRuleSidebar);}
 function ratesRuleCancelLog(){
   const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';
   const sel=document.getElementById('rr-log-status-sel');if(sel)sel.value='';
@@ -2316,7 +2317,7 @@ function closeCtpSidebar(){
   const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navCtpTab(tab){ctpTab=tab;const inner=document.getElementById('ctp-isb-inner');if(inner){inner.innerHTML=renderCtpSidebar();requestAnimationFrame(function(){const nt=document.getElementById('ctp-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
+function navCtpTab(tab){ctpTab=tab;isbTab('ctp',renderCtpSidebar);}
 function ctpCancelLog(){
   const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';
   const sel=document.getElementById('ctp-log-status-sel');if(sel)sel.value='';
@@ -3451,7 +3452,8 @@ function refreshLPSidebar(){
   if(inner)inner.innerHTML=renderLPSidebar();
 }
 function navLPSidebar(tabId){
-  lpSidebarTab=tabId;lpSidebarEditMode=false;lpEmpEditMode=false;refreshLPSidebar();
+  lpSidebarTab=tabId;lpSidebarEditMode=false;lpEmpEditMode=false;
+  isbTab('lp',renderLPSidebar);
 }
 function saveLPSidebarEdit(){
   const p=leavePoliciesData.find(x=>x.id===lpSidebarPolicyId);if(!p)return;

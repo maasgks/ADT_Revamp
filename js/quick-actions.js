@@ -105,25 +105,11 @@ var REGISTRY={
     return [A('Mark paid',I.cash,'ok','qaPayment('+id+',\'Paid\')',{lead:true,dot:p.invoiceStatus==='Unpaid'})];
   },
 
-  /* Compliance requirements. Reversible both ways, so both directions get
-     an icon rather than a pill - neither is "the thing you are waiting for". */
-  compliance:function(id){
-    var r=find(D().compliance,id);if(!r)return [];
-    return r.status==='Active'
-      ? [A('Deactivate',I.power,'bad','qaCompliance('+id+')')]
-      : [A('Activate',I.power,'ok','qaCompliance('+id+')')];
-  },
-
   /* Leave policies. Editing is the whole reason anyone opens this table, and
      it was behind the panel like everything else. */
   'leave-policies':function(id){
     var p=find(D().policies,id);if(!p)return [];
-    return [
-      A('Edit policy',I.pencil,'nav','qaPolicyEdit('+id+')'),
-      p.status==='Active'
-        ? A('Deactivate',I.power,'bad','qaPolicyToggle('+id+')')
-        : A('Activate',I.power,'ok','qaPolicyToggle('+id+')')
-    ];
+    return [A('Edit policy',I.pencil,'nav','qaPolicyEdit('+id+')')];
   },
 
   /* Support tickets. The row offers exactly the moves TK_FLOW allows out of
@@ -162,29 +148,6 @@ var REGISTRY={
   direct:function(id){return empActions(D().direct,id);},
   global:function(id){return empActions(D().global,id);},
 
-  /* Teams. */
-  teams:function(id){
-    var t=find(D().teams,id);if(!t)return [];
-    return t.status==='Active'
-      ? [A('Deactivate team',I.power,'bad','qaTeamToggle('+id+')')]
-      : [A('Activate team',I.power,'ok','qaTeamToggle('+id+')')];
-  },
-
-  /* Rates & rules and contract templates. Same shape, same one reversible
-     decision anyone ever makes from the table: is this in force or not. */
-  'rates-rules':function(id){
-    var r=find(D().rates,id);if(!r)return [];
-    return r.status==='Active'
-      ? [A('Deactivate rule',I.power,'bad','qaRateToggle('+id+')')]
-      : [A('Activate rule',I.power,'ok','qaRateToggle('+id+')')];
-  },
-  'contract-templates':function(id){
-    var t=find(D().templates,id);if(!t)return [];
-    return t.status==='Active'
-      ? [A('Deactivate template',I.power,'bad','qaTemplateToggle('+id+')')]
-      : [A('Activate template',I.power,'ok','qaTemplateToggle('+id+')')];
-  },
-
   /* Messages. The only status here that means "someone is waiting on US" is
      waiting_csm, so that is the one that earns the pill. */
   chats:function(id){
@@ -210,39 +173,30 @@ function empActions(data,id){
   return acts;
 };
 
-/* Generic listings (People, Pay Runs, Users, Payheads, Settings, Support…)
-   are arrays-of-arrays behind getPageMeta, with a Status column somewhere.
-   One rule covers all of them: flip that column. */
-function genericActions(pg,id){
-  if(typeof getPageMeta!=='function')return [];
-  var meta=getPageMeta(pg)||{};
-  var cols=meta.columns||[],rows=meta.rows||[];
-  var si=cols.findIndex(function(c){return c==='Status'||c==='status';});
-  if(si<0)return [];
-  var row=null;
-  for(var i=0;i<rows.length;i++)if(String(rows[i][0])===String(id)){row=rows[i];break;}
-  if(!row)return [];
-  var st=String(row[si]);
-  /* A row mid-flight (Pending) is the one asking a question - give it the
-     pill. A settled row just gets the reversible toggle. */
-  if(st==='Pending')return [
-    A('Mark active',I.check,'ok','qaGeneric(\''+pg+'\','+id+',\'Active\')',{lead:true,dot:true}),
-    A('Mark inactive',I.x,'bad','qaGeneric(\''+pg+'\','+id+',\'Inactive\')')
-  ];
-  return st==='Active'
-    ? [A('Mark inactive',I.power,'bad','qaGeneric(\''+pg+'\','+id+',\'Inactive\')')]
-    : [A('Mark active',I.power,'ok','qaGeneric(\''+pg+'\','+id+',\'Active\')')];
-}
+/* ── ACTIVATE / DEACTIVATE IS NOT A ROW ACTION ─────────────────────────────
+   Six listings used to end every row in a power button that flipped the record
+   between Active and Inactive - Compliance, Leave Policies, Teams, Rates &
+   Rules, Contract Templates, and every generic listing (People, Pay Runs,
+   Users, Payheads, Settings, Support) through genericActions(). All of it is
+   gone from the row, deliberately, and none of it was replaced.
 
-/* Pages that render through the shared buildListingHTML and have no bespoke
-   builder of their own. Teams/contracts/payments deliberately are NOT here:
-   they share a name with a generic meta entry but render their own table, and
-   they already have a REGISTRY entry keyed to their real data. */
-var GENERIC=['people','leaves','payroll','support','payheads','all-users','settings'];
+   Everything else this file offers moves a record ALONG a path it was always
+   going to travel: approve the leave that was filed to be approved, mark paid
+   the invoice that was raised to be paid, advance the contract to its next
+   stage. Retiring a record is not that. It is not the next step in anything,
+   it is not what the row is waiting for, and it takes effect across every
+   place the record is used - which is exactly the kind of decision the detail
+   panel exists to be read before making. A one-click toggle sitting at the end
+   of a scanning gesture is the wrong shape for it.
+
+   The status is still changed from the record's own panel, where the rest of
+   the record is visible while you change it. What used to be here and now
+   isn't: qaCompliance, qaPolicyToggle, qaTeamToggle, qaRateToggle,
+   qaTemplateToggle, qaGeneric, genericActions and the GENERIC page list.
+   ──────────────────────────────────────────────────────────────────────── */
 
 function actionsFor(pg,id,tr){
   if(REGISTRY[pg])return REGISTRY[pg](id,tr)||[];
-  if(GENERIC.indexOf(pg)>=0)return genericActions(pg,id);
   return [];
 }
 
@@ -558,44 +512,7 @@ window.qaPayment=function(id,status){
         toastSub:p.orderId+' · '+p.name+' · '+p.amountDue});
     }});
 };
-
-window.qaCompliance=function(id){
-  var r=find(D().compliance,id);if(!r)return;
-  var to=r.status==='Active'?'Inactive':'Active';
-  qaAsk({
-    title:to==='Active'?'Activate requirement':'Deactivate requirement',
-    subject:r.country+' · '+r.item,
-    from:r.status,to:to,tone:to==='Active'?'ok':'bad',
-    confirmLabel:to==='Active'?'Activate':'Deactivate',
-    onConfirm:function(v){
-      r.status=to;
-      record('compliance',r,id,{
-        title:'Requirement '+to,comment:v.comment,statusLabel:to,
-        tone:to==='Active'?'ok':'bad',
-        toastTitle:'Requirement '+to.toLowerCase(),
-        toastKind:to==='Active'?'success':'info',
-        toastSub:r.country+' · '+r.item});
-    }});
-};
-
-window.qaPolicyToggle=function(id){
-  var p=find(D().policies,id);if(!p)return;
-  var to=p.status==='Active'?'Inactive':'Active';
-  qaAsk({
-    title:to==='Active'?'Activate policy':'Deactivate policy',
-    subject:p.type,
-    from:p.status,to:to,tone:to==='Active'?'ok':'bad',
-    confirmLabel:to==='Active'?'Activate':'Deactivate',
-    onConfirm:function(v){
-      p.status=to;
-      record('leave-policies',p,id,{
-        title:'Policy '+to,comment:v.comment,statusLabel:to,
-        tone:to==='Active'?'ok':'bad',
-        toastTitle:'Policy '+to.toLowerCase(),
-        toastKind:to==='Active'?'success':'info',toastSub:p.type});
-    }});
-};
-window.qaPolicyEdit=function(id){
+window.qaPolicyEdit=function(id){
   if(typeof leaveEditId!=='undefined')leaveEditId=id;
   page='leave-policy-edit';
   if(typeof renderADTPage==='function')renderADTPage();
@@ -658,35 +575,7 @@ window.qaTicketApply=function(id,to,vals){
   return true;
 };
 function lbl(s){return (typeof tkStatusLabel==='function')?tkStatusLabel(s):s;}
-
-/* The four status toggles are the same shape: one reversible flag, a comment,
-   and a line in the record's own history. */
-function toggleAsk(pg,rec,id,noun,subject,extra){
-  var to=rec.status==='Active'?'Inactive':'Active';
-  qaAsk({
-    title:(to==='Active'?'Activate ':'Deactivate ')+noun,
-    subject:subject,from:rec.status,to:to,tone:to==='Active'?'ok':'bad',
-    confirmLabel:to==='Active'?'Activate':'Deactivate',
-    onConfirm:function(v){
-      rec.status=to;
-      record(pg,rec,id,{
-        title:(extra||noun.charAt(0).toUpperCase()+noun.slice(1))+' '+to,
-        comment:v.comment,statusLabel:to,tone:to==='Active'?'ok':'bad',
-        toastTitle:noun.charAt(0).toUpperCase()+noun.slice(1)+' '+to.toLowerCase(),
-        toastKind:to==='Active'?'success':'info',toastSub:subject});
-    }});
-}
-
-window.qaRateToggle=function(id){
-  var r=find(D().rates,id);if(!r)return;
-  toggleAsk('rates-rules',r,id,'rule',r.country+' · '+r.ruleName);
-};
-
-window.qaTemplateToggle=function(id){
-  var t=find(D().templates,id);if(!t)return;
-  toggleAsk('contract-templates',t,id,'template',t.templateName+' · '+t.employmentType);
-};
-
+
 window.qaChat=function(id,status){
   var c=find(D().chats,id);if(!c)return;
   var cl=function(s){return (typeof chatStatusLabel==='function')?chatStatusLabel(s):s;};
@@ -705,12 +594,7 @@ window.qaChat=function(id,status){
         toastSub:c.chatId+' · '+c.clientName});
     }});
 };
-
-window.qaTeamToggle=function(id){
-  var t=find(D().teams,id);if(!t)return;
-  toggleAsk('teams',t,id,'team',t.name+' · '+t.dept);
-};
-
+
 /* Contracts do not commit from the row: advancing a stage needs a note and a
    document, so this lands you IN that form with the next stage preselected -
    one click instead of row, dropdown, stage, tab. */
@@ -725,32 +609,7 @@ window.qaContractAdvance=function(id){
 window.qaEmpTimesheet=function(empId,name,initials,role){
   if(typeof atViewCalendar==='function')atViewCalendar(empId,name,initials,role);
 };
-
-/* The generic listings hold rows as plain arrays behind getPageMeta(), with
-   no record object and no history store, so there is nowhere to file a log
-   entry. The comment is still required and still shown back in the toast -
-   an action that cannot be justified should not be one click here either. */
-window.qaGeneric=function(pg,id,status){
-  var meta=getPageMeta(pg)||{};
-  var cols=meta.columns||[],rows=meta.rows||[];
-  var si=cols.findIndex(function(c){return c==='Status'||c==='status';});
-  if(si<0)return;
-  var row=null;
-  for(var i=0;i<rows.length;i++)if(String(rows[i][0])===String(id)){row=rows[i];break;}
-  if(!row)return;
-  var nameIdx=cols.length>1?1:0;
-  var name=String(row[nameIdx]);
-  qaAsk({
-    title:status==='Active'?'Mark active':'Mark inactive',
-    subject:name,from:String(row[si]),to:status,tone:status==='Active'?'ok':'bad',
-    confirmLabel:status==='Active'?'Mark active':'Mark inactive',
-    onConfirm:function(v){
-      row[si]=status;
-      qaCommit('tr[data-row-id="'+id+'"]',status==='Active'?'ok':'bad');
-      toast('Marked '+status.toLowerCase(),status==='Active'?'success':'info',name+' · '+v.comment);
-    }});
-};
-
+
 /* ── boot ──────────────────────────────────────────────────────────────── */
 function start(){
   var root=document.getElementById('adt-content');

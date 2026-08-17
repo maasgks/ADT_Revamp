@@ -20,7 +20,96 @@
 .hr-header-desc{font-size:var(--ds-body);color:var(--gray);line-height:1.5;font-weight:400}
 .hr-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
 .hr-stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;text-align:left}
-.hr-stat-card:hover{border-color:#cbd5e1;box-shadow:0 2px 10px rgba(15,23,42,.07);transition:.2s}
+
+/* ══ TWO KINDS OF DASHBOARD CARD ═══════════════════════════════════════════
+   A dashboard tile is one of exactly two things, and they used to look
+   identical: every card lifted its border and took a shadow on hover, so all
+   56 of them promised a click and none of them delivered one. A promise every
+   tile makes and none keeps is worse than no promise at all - it teaches the
+   user to stop trying, including on the tiles that would have worked.
+
+   THE DIRECTION OF THE DIFFERENCE IS THE WHOLE DESIGN.  The first attempt
+   separated them by fill: doors stayed white, read-only tiles were painted in
+   --light so they sat flush with the page. It separated them, and it was
+   wrong. Greying a surface is the one visual move the whole interface already
+   reserves for "you cannot use this", so "Total Invoiced ₹14.3L" - the single
+   most important number on the Finance dashboard - came out looking switched
+   off. Nothing was disabled; it just looked it.
+
+   So the difference now runs the other way. Read-only tiles are left exactly
+   as they always were: white, same border, same everything, a perfectly
+   ordinary card. Nothing is taken away from them, because there is nothing
+   wrong with them. The DOORS are what gain, and they gain the two marks that
+   have meant "you can press this" since long before screens:
+
+     1. ELEVATION. A resting shadow, so a door sits physically proud of the
+        page while a read-only tile lies flat on it. Deepens on hover, and the
+        card lifts 2px into it. Same fill, different plane.
+     2. A CONTROL, VISIBLE AT REST. A round chevron chip in the bottom-right -
+        the app's own "go this way" shape, borrowed straight from the tab-strip
+        scroll buttons (.dt-scroll-btn). A bare chevron was too quiet to carry
+        this on its own. A chip is unmistakably a thing you press, and it
+        reacts to hover on the CARD, not on itself, which is what teaches that
+        the whole tile is the target and the chip is only its mark.
+
+   No colour separates the two. Label, metric, caption, fill and border are
+   identical on both; a read-only tile differs only in what it does NOT have.
+
+   Which is which is decided in one place, by data - see DASH_CARD_LINK in
+   js/core.js. A card is a door if, and only if, a listing exists that holds
+   the records it is counting. ═══════════════════════════════════════════ */
+
+.hr-stat-card.is-link{
+  position:relative;
+  cursor:pointer;
+  box-shadow:0 1px 2px rgba(15,23,42,.05),0 2px 6px rgba(15,23,42,.045);
+  transition:border-color var(--t-fast) var(--e-out),
+             box-shadow var(--t-fast) var(--e-out),
+             transform var(--t-fast) var(--e-out);
+}
+
+/* Bottom-right, not top-right: the finance tiles already own their top-right
+   corner with a 40px icon, and this is the one corner every card has free. */
+.hr-stat-card.is-link::after{
+  content:'';
+  position:absolute;right:16px;bottom:14px;
+  width:26px;height:26px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") center/11px 11px no-repeat;
+  transition:border-color var(--t-fast) var(--e-out),
+             background-color var(--t-fast) var(--e-out),
+             transform var(--t-fast) var(--e-out);
+}
+/* keep a long caption clear of the chip */
+.hr-stat-card.is-link .hr-stat-sub{padding-right:36px}
+
+.hr-stat-card.is-link:hover{
+  border-color:#cbd5e1;
+  box-shadow:0 10px 26px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05);
+  transform:translateY(-2px);
+}
+/* The chip answers to the CARD's hover, never its own - the tile is the
+   target, the chip is only the sign that says so. */
+.hr-stat-card.is-link:hover::after{
+  border-color:#0f172a;
+  background-color:#0f172a;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
+  transform:translateX(2px);
+}
+.hr-stat-card.is-link:active{transform:translateY(0) scale(.995)}
+.hr-stat-card.is-link:focus-visible{outline:2px solid var(--btn-accent,#de7909);outline-offset:2px}
+
+/* Read-only: an ordinary card. It is not styled here because there is nothing
+   to add - it keeps the base .hr-stat-card exactly. The one thing it must not
+   inherit is a hover response, which the base no longer has. */
+.hr-stat-card.is-static{cursor:default}
+
+@media (prefers-reduced-motion:reduce){
+  .hr-stat-card.is-link,.hr-stat-card.is-link::after{transition:none}
+  .hr-stat-card.is-link:hover{transform:none}
+  .hr-stat-card.is-link:hover::after{transform:none}
+}
 .hr-stat-label{font-size:var(--ds-label);color:var(--gray);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
 /* Every widget value renders at the same size so metric baselines line up across a row.
    Numeric ("12") and short word values ("Ready", "Apr") share --ds-metric. */

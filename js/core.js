@@ -262,11 +262,7 @@ function markPrSelectedRow(){
     r.classList.toggle('lp-row-selected',prSelectedId!=null&&r.dataset.rowId===String(prSelectedId));
   });
 }
-function navPrTab(tab){
-  prTab=tab;
-  const inner=document.getElementById('pr-isb-inner');
-  if(inner){inner.innerHTML=renderPrSidebar();requestAnimationFrame(function(){var nt=document.getElementById('pr-isb-tabs');if(nt){var a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}
-}
+function navPrTab(tab){prTab=tab;isbTab('pr',renderPrSidebar);}
 
 // ── GENERIC LISTING SIDEBAR ──
 // Payroll and Company Settings each own a hand-built detail panel. Every other
@@ -288,14 +284,13 @@ function closeLstSidebar(){
   const sb=document.getElementById('lst-split-sb');if(sb)sb.classList.remove('open');
   markLstSelectedRow();
 }
-function navLstTab(tab){lstTab=tab;refreshLstSidebar();}
+function navLstTab(tab){lstTab=tab;isbTab('lst',renderLstSidebar);}
+/* Opening/closing a record is a full rebuild - a different record is a
+   different panel. Only navLstTab() above swaps the body alone. */
 function refreshLstSidebar(){
   const inner=document.getElementById('lst-isb-inner');if(!inner)return;
   inner.innerHTML=lstSelectedId!=null?renderLstSidebar():'';
-  requestAnimationFrame(function(){
-    const nt=document.getElementById('lst-isb-tabs');
-    if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}
-  });
+  isbRevealTab('lst');
 }
 // Highlight the row the panel is describing. Done by hand rather than through a
 // re-render so the open/close width transition is not thrown away mid-flight.
@@ -1071,6 +1066,158 @@ function navigatePage(pg,fromDashboard){
   if(view==='adt'){renderADTPage();return;}
   if(view==='agent-active'){showAgentModule(pg);return;}
 }
+
+/* ══ DETAIL PANEL: SWITCHING A TAB REPLACES THE BODY, NOTHING ELSE ════════
+   Every one of the sixteen detail panels used to answer a tab click with
+
+       inner.innerHTML = renderXSidebar();
+
+   which throws away and rebuilds the ENTIRE panel - the back button, the tab
+   strip, the scroll arrows, the close button - in order to change the one
+   thing below them. Everything visibly reloaded to swap a form. The tab strip
+   lost its horizontal scroll position, anything focused was blurred, and the
+   active-tab box could not animate because the element carrying it no longer
+   existed a frame later.
+
+   isbTab() still calls the same builder - the builders are untouched - but it
+   takes only the .lp-isb-body out of the result and swaps that one node in.
+   The tab strip is left alone entirely; its buttons just have the .active
+   class moved between them, in place.
+
+   THE FALLBACK IS THE POINT. A panel whose tab strip does not match the one
+   already on screen - a different set of tabs, a different order - is not a
+   tab switch at all, and gets the old wholesale replacement. Same for any
+   panel that does not follow the shared tabbar/body shape. This can degrade
+   to exactly the previous behaviour; it can never render the wrong panel.
+   ═══════════════════════════════════════════════════════════════════════ */
+function isbTab(prefix,render){
+  var inner=document.getElementById(prefix+'-isb-inner');
+  if(!inner)return;
+  var oldBody=inner.querySelector('.lp-isb-body');
+  var oldTabs=inner.querySelector('.lp-isb-tabs');
+
+  var tpl=document.createElement('div');
+  tpl.innerHTML=render();
+  var newBody=tpl.querySelector('.lp-isb-body');
+  var newTabs=tpl.querySelector('.lp-isb-tabs');
+
+  if(!oldBody||!newBody||!oldTabs||!newTabs||!sameTabs(oldTabs,newTabs)){
+    inner.innerHTML=tpl.innerHTML;
+    isbRevealTab(prefix);
+    return;
+  }
+  oldBody.replaceWith(newBody);
+  /* Move the highlight without touching the buttons themselves. */
+  var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
+  for(var i=0;i<a.length;i++)a[i].classList.toggle('active',b[i].classList.contains('active'));
+  isbRevealTab(prefix);
+}
+
+function sameTabs(oldTabs,newTabs){
+  var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
+  if(!a.length||a.length!==b.length)return false;
+  for(var i=0;i<a.length;i++)if(a[i].textContent!==b[i].textContent)return false;
+  return true;
+}
+
+/* 'nearest', not 'start'. Scrolling the chosen tab to the left edge made sense
+   when the strip was being rebuilt anyway; against a strip that now stays put
+   it would yank the whole row sideways on every click. This only scrolls when
+   the tab is actually out of view. */
+function isbRevealTab(prefix){
+  requestAnimationFrame(function(){
+    var t=document.getElementById(prefix+'-isb-tabs');
+    if(!t)return;
+    var a=t.querySelector('.lp-isb-tab.active');
+    if(a)a.scrollIntoView({inline:'nearest',block:'nearest'});
+  });
+}
+
+/* ══ DASHBOARD CARDS THAT OPEN SOMETHING ══════════════════════════════════
+   Every dashboard tile counts records that live somewhere - or it doesn't.
+   "Pending Requests 8" is eight rows on All Leaves. "Total Invoiced ₹14.3L"
+   is a sum with no list behind it. This table is where that call is made, so
+   it is made ONCE for a label rather than fifty-one times in the markup, and
+   so a label that appears on four dashboards ("Pending Invoices" does) cannot
+   drift into behaving differently on each of them.
+
+   Keyed on the tile's own label text. Every label not in here is a static
+   tile; the two are styled apart in css/dashboard-multiview.css.
+
+   [page, filter] - filter is optional and only ever a value the destination's
+   own filter control can actually produce, so landing there shows a list the
+   user could have reached by hand. Where a card's wording has no equivalent
+   in the destination's vocabulary ("Escalated Tickets" is not a ticket status)
+   it links unfiltered rather than inventing one. */
+var DASH_CARD_LINK={
+  /* people */
+  'Total Employees':              ['employees'],
+  'Total Workforce':              ['employees'],
+  'Active People':                ['employees'],
+  'My Team':                      ['teams'],
+  'Present Today':                ['attendance'],
+  /* leave */
+  'Leave Balance':                ['all-leaves'],
+  'On Leave today':               ['all-leaves','Approved'],
+  'On Leave Today':               ['all-leaves','Approved'],
+  'Pending Requests':             ['all-leaves','Pending'],
+  'Pending Approvals':            ['all-leaves','Pending'],
+  /* contracts - Onboarding and Ready for Payroll are both real ctFlow stages */
+  'Contracts':                    ['contracts'],
+  'Active Contracts':             ['contracts'],
+  'Onboarding Pending':           ['contracts','Onboarding'],
+  'Ready for Payroll':            ['contracts','Ready for Payroll'],
+  /* money - counts of invoices, not sums of them */
+  'Pending Invoices':             ['payments','__pending_group__'],
+  'Paid Invoices':                ['payments','Paid'],
+  'Paid This Month':              ['payments','Paid'],
+  'Overdue Invoices':             ['payments','Unpaid'],  /* overdue ⊂ unpaid */
+  /* the rest */
+  'Tickets':                      ['support-tickets'],
+  'Escalated Tickets':            ['support-tickets'],
+  'Compliance Items':             ['compliance'],
+  'Latest Payslip':               ['payroll']
+};
+
+/* Each destination keeps its filter in its own global. Setting it to '' is
+   as important as setting it to a value: arriving from a card must never
+   inherit the filter left behind by the last visit. */
+var DASH_CARD_FILTER={
+  'all-leaves':      function(v){alStatusFilter=v;alSelectedId=null;},
+  'payments':        function(v){pmInvoiceStatusFilter=v;pmSelectedId=null;},
+  'contracts':       function(v){ctQuickStatusFilter=v;ctSelectedId=null;},
+  'support-tickets': function(v){tkQuickStatusFilter=v;tkSelectedId=null;},
+  'compliance':      function(v){complianceStatusFilter=v;complianceSelectedId=null;}
+};
+
+function openDashCard(label){
+  var target=DASH_CARD_LINK[label];
+  if(!target)return false;
+  var apply=DASH_CARD_FILTER[target[0]];
+  if(apply)apply(target[1]||'');
+  navigatePage(target[0],true);
+  return true;
+}
+
+/* One delegated listener rather than fifty-one inline onclicks - and it takes
+   the keyboard too, since a tile that is a button to the mouse has to be one
+   to everything else. Space is prevented so it opens the card instead of
+   scrolling the dashboard under it. */
+document.addEventListener('click',function(e){
+  var card=e.target.closest&&e.target.closest('.hr-stat-card.is-link');
+  if(!card)return;
+  var lab=card.querySelector('.hr-stat-label');
+  if(lab)openDashCard(lab.textContent.trim());
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  var card=document.activeElement;
+  if(!card||!card.classList||!card.classList.contains('is-link'))return;
+  if(!card.classList.contains('hr-stat-card'))return;
+  e.preventDefault();
+  var lab=card.querySelector('.hr-stat-label');
+  if(lab)openDashCard(lab.textContent.trim());
+});
 
 function buildQuickActions(){
   const g=document.getElementById('qa-grid');g.innerHTML='';
@@ -2697,9 +2844,10 @@ const csLogsData=[
 ];
 function openCsSidebar(item){csSelectedItem=item;csTab='basic-details';renderADTPage();}
 function closeCsSidebar(){csSelectedItem=null;renderADTPage();}
-function refreshCsSidebar(){const inner=document.getElementById('cs-isb-inner');if(inner){inner.innerHTML=renderCsSidebar();requestAnimationFrame(function(){const nt=document.getElementById('cs-isb-tabs');if(nt){const a=nt.querySelector('.lp-isb-tab.active');if(a)a.scrollIntoView({inline:'start',block:'nearest'});}});}}
-function csSetTab(tab){csTab=tab;refreshCsSidebar();}
-function csSetStructureTab(tab){csStructureTab=tab;refreshCsSidebar();}
+function refreshCsSidebar(){const inner=document.getElementById('cs-isb-inner');if(inner){inner.innerHTML=renderCsSidebar();isbRevealTab('cs');}}
+function csSetTab(tab){csTab=tab;isbTab('cs',renderCsSidebar);}
+/* The structure sub-tab lives inside the body, so the body swap covers it. */
+function csSetStructureTab(tab){csStructureTab=tab;isbTab('cs',renderCsSidebar);}
 function csSaveLog(){
   const sel=document.getElementById('cs-log-status-sel');
   const inp=document.getElementById('cs-log-comment-inp');

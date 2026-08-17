@@ -144,7 +144,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    rounded item it curved around the corners into a bracket — hence the square
    corners above and the pseudo-element here. The AI launcher is excluded: its
    ::before is the animated gradient border, not a marker. */
-.sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none}
+/* Square on the left, rounded on the right. The two ends are doing different
+   jobs: the left is where the 3px marker sits and it has to read as one solid
+   edge with it, so a radius there would leave a sliver of background curving
+   past the bar. The right end is just where the highlight stops, and a
+   rounded end makes it read as a tab attached to the rail rather than a strip
+   cut out of the sidebar. Marker stays square because it is positioned inside
+   the left edge, which keeps its own 0 radius. */
+.sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none;border-radius:0 var(--r-control) var(--r-control) 0}
 .sb-item.active:not(.sb-item-ai)::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:0;background:var(--orange)}
 .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
 /* -- Icon wrap -- */
@@ -172,7 +179,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .sb-children .sb-item:hover{background:#f1f5f9;color:#111827}
 .sb-children .sb-item:hover .sb-ico-wrap{background:#e2e8f0;color:#475569;transform:scale(1.08)}
 /* marker comes from .sb-item.active::before above — same bar as the top level */
-.sb-children .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none}
+/* Restated here only because `.sb-children .sb-item` resets border-radius to 0
+   further down the file at equal specificity, which would otherwise square a
+   child item back off. Same shape as the top level. */
+.sb-children .sb-item.active{color:var(--orange);font-weight:600;background:#f1f5f9;box-shadow:none;border-radius:0 var(--r-control) var(--r-control) 0}
 .sb-children .sb-item.active .sb-ico-wrap{background:#e2e8f0;color:var(--orange)}
 .sb-spacer{flex:1}
 .sb-agent-launcher{margin:8px;padding:10px;border-radius:12px;background:var(--ol);border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--orange);transition:.2s}
