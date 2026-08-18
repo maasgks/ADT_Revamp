@@ -211,10 +211,14 @@
 .hr-leave-table tr:hover td{background:#fafbfc}
 .hr-leave-table tr:last-child td{border-bottom:0}
 .hr-emp-name{font-weight:600;color:var(--navy);font-size:var(--ds-body)}
-.hr-leave-badge{display:inline-block;padding:3px 9px;border-radius:var(--r-status);font-size:var(--ds-micro);font-weight:600;white-space:nowrap;letter-spacing:.2px}
-.hr-leave-badge.pending{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.hr-leave-badge.approved{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.hr-leave-badge.rejected{background:var(--st-bad-bg);color:var(--st-bad-fg)}
+/* Status pills on these dashboards are the listing page's .lp-status-badge,
+   not a lookalike. Three near-copies used to live in this file - .hr-leave-badge,
+   .csm-status-pill and .manager-expense-status - and each dropped the 1.5px tone
+   border and picked its own padding, weight and font-size, so the same "Pending"
+   read three ways depending on which dashboard you were on. One rule in main.css
+   now, and its tone modifiers (.approved, .pending, .blocked, .active ...) are the
+   ones generated from SB_STATUS_TONE, so a dashboard pill cannot drift from the
+   listing pill for the same status. */
 .hr-action-btn{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:var(--r-control);font-size:var(--ds-micro);font-weight:600;white-space:nowrap;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:.15s}
 .hr-action-btn.approve{background:#dcfce7;color:#16a34a}
 .hr-action-btn.approve:hover{background:#bbf7d0}
@@ -253,7 +257,6 @@
 .manager-expense-tag{display:inline-block;font-size:var(--ds-micro);font-weight:600;padding:2px 7px;border-radius:var(--r-status);background:#f1f3f5;color:#64748b;letter-spacing:.1px}
 .manager-expense-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
 .manager-expense-amount{font-size:var(--ds-title);font-weight:700;color:var(--navy)}
-.manager-expense-status{font-size:var(--ds-micro);font-weight:600;padding:2px 8px;border-radius:var(--r-status);background:var(--st-wait-bg);color:var(--st-wait-fg)}
 .manager-leave-table{table-layout:fixed}
 .manager-leave-table th,.manager-leave-table td{padding-left:12px;padding-right:12px}
 .manager-leave-table th:first-child,.manager-leave-table td:first-child{padding-left:0}
@@ -294,10 +297,6 @@
 .csm-ticket-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);margin-bottom:3px}
 .csm-ticket-desc{font-size:var(--ds-caption);color:var(--gray);line-height:1.45;margin-bottom:5px}
 .csm-ticket-time{font-size:var(--ds-caption);color:#94a3b8;font-weight:500}
-.csm-status-pill{display:inline-flex;align-items:center;justify-content:center;padding:3px 9px;border-radius:var(--r-status);font-size:var(--ds-micro);font-weight:700;white-space:nowrap}
-.csm-status-pill.blocked{background:var(--st-bad-bg);color:var(--st-bad-fg)}
-.csm-status-pill.pending{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.csm-status-pill.active{background:var(--st-ok-bg);color:var(--st-ok-fg)}
 .csm-chat-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f3f5;transition:background .15s;border-radius:10px}
 .csm-chat-row:hover{background:#f8f9fb;margin-left:-8px;margin-right:-8px;padding-left:8px;padding-right:8px}
 .csm-chat-row:last-child{border-bottom:0;padding-bottom:0}
@@ -402,7 +401,7 @@
 @media(max-width:520px){
   .csm-status-grid{grid-template-columns:1fr}
   .csm-ticket-row{grid-template-columns:1fr}
-  .csm-status-pill{justify-self:flex-start}
+  .csm-ticket-row .lp-status-badge{justify-self:flex-start}
 }
 
 

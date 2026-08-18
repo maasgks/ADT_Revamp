@@ -656,13 +656,19 @@ function renderPrSidebar(){
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value||'-')+'</div></div></div>';
   let body='';
   if(prTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Cycle Details</span>'
-        +sbStatus(r.status)+'</div>'
+    // Status is a field card in the grid, not loose text in the header. Every
+    // other detail panel in the app states it that way - see the Status cards
+    // on Employees, Compliance, Rates & Rules, Contract Templates, Tickets and
+    // Chats - and the generic listing panel turns a Status column into the same
+    // card. Hung off the section title instead, it read as a heading colour
+    // rather than a value the record carries.
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Cycle Details</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
       +fc(iHash,'Payroll ID',r.payrollId)+fc(iCal,'Cycle',r.cycle)
       +fc(iCal,'Pay Period',r.period)+fc(iCal,'Frequency',r.frequency)
       +fc(iGlobe,'Country',r.country)+fc(iBank,'Entity',r.entity)
       +fc(iCash,'Currency',r.currency)+fc(iUsers,'Employees',String(r.employees))
+      +fc(iCheck,'Status',sbStatus(r.status))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Schedule &amp; Ownership</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
@@ -1730,26 +1736,21 @@ function buildCreateComplianceModalHTML(){
 // A detail panel's header: eyebrow, the record's own name, its status and the
 // primary action. Replaces the `<span></span>` spacer that panels used to push
 // the Edit button right with, which left the rest of the row empty.
-/* The head says WHAT this record is and where it stands - the type, the status,
-   the Edit button. `title` is optional and these Compliance Hub panels no longer
-   pass one: the record's own name is a value like every other value it has, so
-   it is read in the grid below with a label next to it (sbWideField) rather than
-   set as a headline in a place nothing else is read from. */
-function lpRecordHead(eyebrow,title,statusHTML,actionHTML){
-  return '<div class="lp-sb-record"'+(title?'':' data-no-title="1"')+'>'
-    +'<div class="lp-sb-record-id">'
-    +'<div class="lp-sb-record-eyebrow">'+eyebrow+'</div>'
-    +(title?'<div class="lp-sb-record-title">'+title+'</div>':'')+'</div>'
-    +'<div class="lp-sb-record-side">'+(statusHTML||'')+(actionHTML||'')+'</div>'
-    +'</div>';
-}
-/* A field card that spans both columns. Used for the record name, which is the
-   longest value a panel holds and the one that should be read first - and which
-   would otherwise leave the two-column grid with a dangling odd card. */
-function sbWideField(ico,label,val){
-  return '<div class="lp-sb-field-card lp-sb-field-card--wide"><div class="lp-sb-field-icon">'+ico+'</div>'
-    +'<div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div>'
-    +'<div class="lp-sb-field-value">'+val+'</div></div></div>';
+/* EVERYTHING THE PANEL KNOWS IS A FIELD.
+
+   These panels used to open with a header band: the record type in small caps,
+   the record name as a headline, and the status off to the right. None of the
+   three was readable the way the rest of the record is. The type repeated the
+   listing you opened the row from; the name was a headline in a place nothing
+   else is read from; and the status floated with no label saying what it was
+   the status OF. All three are gone from the head - the name and the status are
+   now the first two cards in the grid, labelled like every other value.
+
+   What is left above the grid is the Edit button, which is an action and not a
+   value, and so is the one thing that does not belong in the grid. Panels with
+   no Edit button render nothing here at all. */
+function sbActionRow(actionHTML){
+  return actionHTML?'<div class="lp-sb-action-row">'+actionHTML+'</div>':'';
 }
 function lpFlagValue(v){return v?'<span class="lp-sb-flag">Yes</span>':'<span class="lp-sb-flag no">No</span>';}
 // '15 Jun 2026 | 01:30:34 PM' reads better split across two fields than crammed
@@ -1805,9 +1806,9 @@ function renderComplianceSidebar(){
     // Country / model / category / the three rules / who and when — eight fields
     // that fill the two-column grid evenly. The name leads the grid as a full-width
     // field, and the three rule flags the create form collects are shown here too.
-    body=lpRecordHead('Compliance Requirement','',sbStatus(item.status),editBtn)
+    body=sbActionRow(editBtn)
       +'<div class="lp-sb-detail-grid">'
-      +sbWideField(iClip,'Requirement',item.item)
+      +fc(iClip,'Requirement',item.item)+fc(iCheck,'Status',sbStatus(item.status))
       +fc(iGlobe,'Country',item.country)+fc(iDoc,'Employment Model',item.model)
       +fc(iTag,'Category',item.category)+fc(iCheck,'Mandatory',lpFlagValue(item.mandatory))
       +fc(iLock,'Payroll Blocking',lpFlagValue(item.payrollBlocking))+fc(iClip,'Evidence Required',lpFlagValue(item.evidenceRequired))
@@ -2080,9 +2081,8 @@ function renderOcaSidebar(){
     const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
     const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
     // The panel head carries the record and its status, nothing more.
-    body=lpRecordHead('Compliance Item','',sbStatus(item.status))
-      +'<div class="lp-sb-detail-grid">'
-      +sbWideField(iTag,'Item',item.item)
+    body='<div class="lp-sb-detail-grid">'
+      +fc(iTag,'Item',item.item)+fc(iCheck,'Status',sbStatus(item.status))
       +fc(iUser,'Employee / Client',item.who)+fc(iHash,'Reference',ocaRef(item))
       +fc(iTag,'Category',cat?cat.label:item.cat)+fc(iFlag,'Priority',item.priority)
       +fc(iCal,'Due','<span class="oca-due'+(item.due==='Today'?' is-now':'')+'">'+item.due+'</span>')
@@ -2243,9 +2243,10 @@ function renderRatesRuleSidebar(){
     // Same treatment as the Compliance panel: the name leads the grid as a
     // full-width field, and the six that follow fill the two columns evenly.
     const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
-    body=lpRecordHead('Rate Rule','',sbStatus(item.status),editBtn)
+    const iDot='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/></svg>';
+    body=sbActionRow(editBtn)
       +'<div class="lp-sb-detail-grid">'
-      +sbWideField(iTag,'Rule Name',item.ruleName)
+      +fc(iTag,'Rule Name',item.ruleName)+fc(iDot,'Status',sbStatus(item.status))
       +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
       +fc(iId,'Applicable To',item.applicableTo)+fc(iDollar,'Value / Rate',item.valueRate)
       +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
