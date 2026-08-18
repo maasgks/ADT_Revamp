@@ -1,7 +1,7 @@
 ﻿function openDeSidebar(id){
   deSelectedId=id;deTab='basic-details';deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('de-isb-inner');if(inner)inner.innerHTML=renderDeSidebar();
+  isbTab('de',renderDeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.de-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='de-row-'+id));
 }
 function closeDeSidebar(){
@@ -111,7 +111,7 @@ function renderDeSidebar(){
         +'<div class="ep-form-grid">'
           +'<div class="ep-form-group"><label class="ep-form-label">Base Salary <span class="req">*</span></label><input class="ep-form-input" type="number" placeholder="Enter base salary"></div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label><select class="ep-form-select"><option value="">Select frequency</option><option>Monthly</option><option>Biweekly</option><option>Weekly</option></select></div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label><input class="ep-form-input" type="date"></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label>'+apCD('ph-eff-date-1','','Select date')+'</div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Currency</label><select class="ep-form-select"><option>INR (₹)</option><option>USD ($)</option><option>EUR (€)</option><option>GBP (£)</option></select></div>'
         +'</div>'
       +'</div>'
@@ -260,7 +260,7 @@ function buildDirectListingHTML(){
 function openGeSidebar(id){
   geSelectedId=id;geTab='basic-details';geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('ge-isb-inner');if(inner)inner.innerHTML=renderGeSidebar();
+  isbTab('ge',renderGeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ge-row-'+id));
 }
 function closeGeSidebar(){
@@ -349,7 +349,7 @@ function renderGeSidebar(){
         +'<div class="ep-form-grid">'
           +'<div class="ep-form-group"><label class="ep-form-label">Base Salary <span class="req">*</span></label><input class="ep-form-input" type="number" placeholder="Enter base salary"></div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label><select class="ep-form-select"><option value="">Select frequency</option><option>Monthly</option><option>Biweekly</option><option>Weekly</option></select></div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label><input class="ep-form-input" type="date"></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label>'+apCD('ph-eff-date-2','','Select date')+'</div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Currency</label><select class="ep-form-select"><option>EUR (€)</option><option>GBP (£)</option><option>INR (₹)</option><option>USD ($)</option></select></div>'
         +'</div>'
       +'</div>'
@@ -469,7 +469,7 @@ function resetGeFilters(){
 function openTmSidebar(id){
   tmSelectedId=id;tmTab='basic-details';
   const sb=document.getElementById('tm-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('tm-isb-inner');if(inner)inner.innerHTML=renderTmSidebar();
+  isbTab('tm',renderTmSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.tm-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tm-row-'+id));
 }
 function closeTmSidebar(){
@@ -621,7 +621,7 @@ function buildTeamsListingHTML(){
 function openAlSidebar(id){
   alSelectedId=id;alTab='basic-details';
   const sb=document.getElementById('al-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('al-isb-inner');if(inner)inner.innerHTML=renderAlSidebar();
+  isbTab('al',renderAlSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.al-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='al-row-'+id));
 }
 function closeAlSidebar(){
@@ -681,12 +681,15 @@ function renderPrSidebar(){
       +fc(iCheck,'Approved By',r.approver)+fc(iCal,'Approved On',r.approvedOn)
       +'</div>';
   }else if(prTab==='logs'){
-    const logs=prLogsData[r.id]||[];
+    // seedLogs copies the fixture onto the record once, then reads only
+    // r.logs - otherwise the fixture wins on every repaint and an entry the
+    // user just submitted disappears the moment they switch tabs.
+    const logs=seedLogs(r,prLogsData[r.id]);
     const prLogKey=(st)=>({Active:'active',Inactive:'inactive',Pending:'default'}[st]||'default');
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    body=logs.length
+    const timelineHTML=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map((entry,i)=>{
           const sk=prLogKey(entry.status);
           return '<div class="lp-log-row">'
@@ -698,6 +701,22 @@ function renderPrSidebar(){
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
+    // The log action the tab was missing. Same markup Rates & Rules, Compliance
+    // and Contract Templates use, so a Pay Runs log reads and behaves exactly
+    // like a log anywhere else.
+    const csk=prLogKey(r.status);
+    const formHTML='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+r.status+'</div>'
+      +'<p class="lp-logs-form-sub">Update cycle status and add a comment</p>'
+      +lpLogStatusField('pr-log-status-sel',r.status,['Active','Pending','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="pr-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="prCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="prSaveLog('+r.id+')">Submit</button>'
+      +'</div>'
+      +'</div>';
+    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
   }else if(prTab==='workflow'){
     body=wfTimelineHTML(prWorkflowData[r.id]);
   }
@@ -915,9 +934,9 @@ function buildAddLeaveHTML(){
     +'<div class="policy-form-section" id="al-add-date-row" style="border-top:1px dashed #e5e7eb">'
     +'<div class="policy-form-grid">'
     +'<div class="ep-form-group" id="al-add-from-group"><label class="ep-form-label">From Date <span class="req">*</span></label>'
-    +'<input id="al-from-date" class="ep-form-input" type="date"></div>'
+    +apCD('al-from-date','','Select date')+'</div>'
     +'<div class="ep-form-group" id="al-add-to-group"><label class="ep-form-label">To Date <span class="req">*</span></label>'
-    +'<input id="al-to-date" class="ep-form-input" type="date"></div>'
+    +apCD('al-to-date','','Select date')+'</div>'
     +'</div></div>'
 
     // Row 4: Email section
@@ -1023,20 +1042,37 @@ function resetAlFilters(){
   alSelectedId=null;
   renderADTPage();
 }
-function openPmSidebar(id){
-  pmSelectedId=id;pmTab='basic-details';pmUserSubTab='company-details';
+/* `tab` and `pendingStatus` are what the row's Invoice Status menu passes in -
+   a plain row click still lands on Basic Details with nothing pending. */
+function openPmSidebar(id,tab,pendingStatus){
+  pmSelectedId=id;pmTab=tab||'basic-details';pmUserSubTab='company-details';
+  pmPendingStatus=pendingStatus||'';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();
+  isbTab('pm',renderPmSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='pm-row-'+id));
 }
+/* Picking a step from the row menu used to close the menu and do nothing else -
+   the four entries were a dead control. It now does what the same menu on
+   Contracts does (ctPickStatus): open the record's panel on Logs with that step
+   already selected, so the move is recorded with a reason instead of silently. */
+function pmPickStatus(id,status){
+  closePmMenus();
+  openPmSidebar(id,'logs',status);
+}
 function closePmSidebar(){
-  pmSelectedId=null;
+  pmSelectedId=null;pmPendingStatus='';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navPmTab(tab){pmTab=tab;isbTab('pm',renderPmSidebar);}
 function pmSetUserSubTab(tab){pmUserSubTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();}
-function pmCancelLog(){const sel=document.getElementById('pm-log-status-sel');const inp=document.getElementById('pm-log-comment-inp');if(sel)sel.value='';if(inp)inp.value='';}
+// Cancel drops the pending step too, so the form falls back to the plain
+// "add a log" state rather than still claiming a move the user backed out of.
+function pmCancelLog(){
+  const sel=document.getElementById('pm-log-status-sel');const inp=document.getElementById('pm-log-comment-inp');
+  if(sel)sel.value='';if(inp)inp.value='';
+  if(pmPendingStatus){pmPendingStatus='';isbTab('pm',renderPmSidebar);}
+}
 function pmSaveLog(orderId){
   const sel=document.getElementById('pm-log-status-sel');
   const inp=document.getElementById('pm-log-comment-inp');
@@ -1045,16 +1081,21 @@ function pmSaveLog(orderId){
   const comment=inp.value.trim();
   if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
   if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
-  const now=new Date();
-  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
-  let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-  const ampm=h>=12?'PM':'AM';h=h%12||12;
-  const timeStr=(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  const st=stampNow();
   if(!pmLogsData[orderId])pmLogsData[orderId]=[];
-  pmLogsData[orderId].unshift({date:dateStr,time:timeStr,user:'Shaun Test1',status,action:comment});
-  const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();
-  showToast('Log added','success','Payment log saved with status "'+status+'".');
+  pmLogsData[orderId].unshift({date:st.date,time:st.time,user:CURRENT_USER,status,action:comment});
+  pmPendingStatus='';
+  /* A status that belongs to the invoice flow is a real move: the row badge,
+     the menu's checkmark and the Active/Pending/Closed counters all read from
+     invoiceStatus, so they need the new value. The free-form log statuses
+     (Follow Up, Revision…) are notes and deliberately leave it alone. */
+  const p=paymentsData.find(x=>x.id===orderId);
+  const moved=!!p&&pmInvoiceFlow.indexOf(status)>=0&&p.invoiceStatus!==status;
+  if(moved)p.invoiceStatus=status;
+  if(moved)renderADTPage();else isbTab('pm',renderPmSidebar);
+  showToast('Log added','success',moved
+    ? 'Order '+p.orderId+' moved to '+status+'.'
+    : 'Payment log saved with status "'+status+'".');
 }
 function renderPmSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
@@ -1189,11 +1230,25 @@ function renderPmSidebar(){
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>').join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    const statusOpts=pmLogStatusOptions.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+    /* The invoice flow and the free-form log statuses are two different lists,
+       and a step picked from the row menu comes from the first one - so the
+       select has to offer both or the pre-selection would match nothing. The
+       flow leads, since that is the move being recorded. */
+    const seen={};
+    const statusOpts=pmInvoiceFlow.concat(pmLogStatusOptions).filter(s=>seen[s]?false:(seen[s]=true))
+      .map(s=>'<option value="'+s+'"'+(s===pmPendingStatus?' selected':'')+'>'+s+'</option>').join('');
+    // Opened from the row menu the form states the move it is about; opened from
+    // the tab it is the plain "add a log" form it has always been.
+    const headHTML=pmPendingStatus
+      ?'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+pmLogKey(pmPendingStatus)+'"></span>Next: '+pmPendingStatus+'</div>'
+       +'<p class="lp-logs-form-sub">Move order '+p.orderId+' from '+p.invoiceStatus+' to '+pmPendingStatus+' and record why.</p>'
+      :'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+pmLogKey(p.invoiceStatus)+'"></span>'+p.invoiceStatus+'</div>'
+       +'<p class="lp-logs-form-sub">Update invoice status and add a comment</p>';
     const formHTML='<div class="lp-logs-form">'
-      +'<div class="lp-logs-form-label">Status</div>'
+      +headHTML
+      +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
       +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="pm-log-status-sel"><option value="">None - Please Select Status</option>'+statusOpts+'</select>'+chevSvg+'</div>'
-      +'<div class="lp-logs-form-label">Comment</div>'
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="pm-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">'
       +'<button class="ep-cancel-btn" onclick="pmCancelLog()">Cancel</button>'
@@ -1227,7 +1282,7 @@ function buildPaymentsHTML(){
   const pgn=listPage('payments',pmInvoiceStatusFilter,filtered.map((p,i)=>{
     const menuItems=pmInvoiceFlow.map(s=>{
       const isCurrent=p.invoiceStatus===s;
-      return '<div class="ct-act-item'+(isCurrent?' current':'')+'" '+(isCurrent?'':'onclick="closePmMenus()"')+'>'
+      return '<div class="ct-act-item'+(isCurrent?' current':'')+'" '+(isCurrent?'':'onclick="event.stopPropagation();pmPickStatus('+p.id+',\''+s+'\')"')+'>'
         +'<span class="ct-act-step '+(isCurrent?'current':'next')+'">'+(isCurrent?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(pmInvoiceFlow.indexOf(s)+1))+'</span>'+s+'</div>';
     }).join('');
     const statusBtn='<div class="ct-action-wrap">'
@@ -1254,7 +1309,7 @@ function buildPaymentsHTML(){
     +'<input class="ct-search-input" placeholder="Search ID" type="text">'
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
     +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
-    +'<input type="date" style="height:34px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 12px;font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;cursor:pointer">'
+    +apCD('pm-f-date',pmDateFilter,'Select date')
     +clearFiltersBtn([pmInvoiceStatusFilter],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
@@ -1300,7 +1355,7 @@ function toggleCtAction(id,e){
   }
 }
 // ── TICKETS SIDEBAR ──
-function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('tk-isb-inner');if(inner)inner.innerHTML=renderTkSidebar();document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
+function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');isbTab('tk',renderTkSidebar);document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
 function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.tk-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navTkTab(tab){tkTab=tab;isbTab('tk',renderTkSidebar);}
 // Stored keys are snake_case; these are how they read. Shared by the table pill
@@ -1309,7 +1364,7 @@ const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',r
 function tkStatusLabel(s){return TK_STATUS_LABEL[s]||s;}
 function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'},resolved:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+tkStatusLabel(s)+'</span>';}
 // ── CHATS SIDEBAR ──
-function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');const inner=document.getElementById('chat-isb-inner');if(inner)inner.innerHTML=renderChatSidebar();document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
+function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');isbTab('chat',renderChatSidebar);document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navChatTab(tab){chatTab=tab;isbTab('chat',renderChatSidebar);}
 function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage();}
@@ -1337,7 +1392,7 @@ function openCtSidebar(id,tab,pendingStatus){
   ctSelectedId=id;ctTab=tab||'basic-details';
   if(pendingStatus)window._ctPendingStatus=pendingStatus;else delete window._ctPendingStatus;
   const sb=document.getElementById('ct-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('ct-isb-inner');if(inner)inner.innerHTML=renderCtSidebar();
+  isbTab('ct',renderCtSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ct-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ct-row-'+id));
 }
 function closeCtSidebar(){
@@ -1354,11 +1409,14 @@ function pmToggleStatFilter(v){
 function applyPmFilters(){
   const status=getCSValue('pm-f-status');
   pmInvoiceStatusFilter=status&&status!=='Status'?status:'';
+  // Held so the picked date survives the repaint. It does not narrow the rows
+  // yet — the control was decorative before this and still is; only its UI changed.
+  pmDateFilter=getCDValue('pm-f-date')||'';
   pmSelectedId=null;
   renderADTPage();
 }
 function resetPmFilters(){
-  pmInvoiceStatusFilter='';
+  pmInvoiceStatusFilter='';pmDateFilter='';
   pmSelectedId=null;
   renderADTPage();
 }
@@ -1689,7 +1747,7 @@ function lpCreatedOn(v){return String(v==null?'':v).replace(' | ',', ');}
 function openComplianceSidebar(id){
   complianceSelectedId=id;complianceTab='basic-details';
   const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('cmp-isb-inner');if(inner)inner.innerHTML=renderComplianceSidebar();
+  isbTab('cmp',renderComplianceSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='cmp-row-'+id));
 }
 function closeComplianceSidebar(){
@@ -1858,6 +1916,60 @@ function buildComplianceItemsHTML(){
 const OCA_NEXT={'Blocking':'Resolve to unblock','Needs Review':'Review and sign off','Pending':'Awaiting response','Ready':'Nothing pending'};
 function ocaRef(r){return 'CMP-'+(4000+r.id);}
 
+/* ── Line-item history ────────────────────────────────────────────────────
+   The panel opened on a row could say what its status IS and nothing about
+   how it got there: the Logs tab seeded from an empty array so it always read
+   "No activity logs yet", and there was no Workflow tab at all - the only two
+   listings in the app without one.
+
+   Both are DERIVED from the item rather than written out 48 times. Hand-typed
+   fixtures for 48 rows would disagree with the rows the first time a status
+   changed in Logs, and a history that ends on a different status than the
+   record is showing is worse than no history. Derived, they cannot drift:
+   every entry is built from the item's own category, owner, priority, status
+   and due date, and the newest one always states the status the row is in.
+   Seeded once per item, then appended to - so a move made in Logs during the
+   session stays on the timeline. */
+const ocaWorkflowData={};
+const OCA_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const OCA_STAGE={
+  'Blocking':    {title:'Blocked — Action Required',desc:'Item is blocking payroll readiness and cannot clear until it is resolved.'},
+  'Needs Review':{title:'Sent for Review',          desc:'Raised for compliance review and sign-off.'},
+  'Pending':     {title:'Awaiting Response',        desc:'Waiting on a response before the item can move on.'},
+  'Ready':       {title:'Cleared',                  desc:'Verified and closed off. Nothing further pending on this item.'}
+};
+// "22 May" / "Today" is all a row carries, so the timeline dates are worked
+// back from that one anchor rather than invented per entry.
+function ocaDueObj(r){
+  if(r.due==='Today')return new Date();
+  const p=String(r.due).split(' '),d=parseInt(p[0],10),m=OCA_MONTHS.indexOf(p[1]);
+  return (d&&m>=0)?new Date(2026,m,d):new Date();
+}
+function ocaFmtDate(dt){return dt.getDate()+' '+OCA_MONTHS[dt.getMonth()]+' '+dt.getFullYear();}
+function ocaBackDate(dt,days){const d=new Date(dt.getTime());d.setDate(d.getDate()-days);return ocaFmtDate(d);}
+function ocaWorkflow(r){
+  if(!ocaWorkflowData[r.id]){
+    const due=ocaDueObj(r);
+    const cat=ocaCategories.find(function(c){return c.key===r.cat;});
+    const stage=OCA_STAGE[r.status]||OCA_STAGE.Pending;
+    ocaWorkflowData[r.id]=[   // newest first, same order every other Workflow tab uses
+      {title:stage.title,user:CURRENT_USER,date:ocaBackDate(due,1),time:'04:15:00 PM',description:stage.desc},
+      {title:'Assigned to Compliance Admin',user:'System',date:ocaBackDate(due,8),time:'11:30:00 AM',
+       description:'Routed to Opendhi Compliance Admin as a '+String(r.priority).toLowerCase()+'-priority item, due '+r.due+'.'},
+      {title:'Item Raised',user:'System',date:ocaBackDate(due,9),time:'09:00:00 AM',
+       description:(cat?cat.label:r.cat)+' item raised for '+r.who+' ('+ocaRef(r)+').'}
+    ];
+  }
+  return ocaWorkflowData[r.id];
+}
+function ocaSeedLogs(r){
+  const due=ocaDueObj(r);
+  return seedLogs(r,[
+    {date:ocaBackDate(due,1),time:'04:15:00 PM',user:CURRENT_USER,status:r.status,action:(OCA_STAGE[r.status]||OCA_STAGE.Pending).desc},
+    {date:ocaBackDate(due,8),time:'11:30:00 AM',user:'System',status:'Pending',action:'Item raised and assigned for compliance review.'}
+  ]);
+}
+
 function ocaSetFilter(key){
   ocaFilter=ocaFilter===key?'':key;   // clicking the active tile clears it
   ocaPage=1;
@@ -1899,7 +2011,7 @@ function openOcaSidebar(id){
   const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.add('open');
   // a short page must not leave the panel hanging out of the card
   const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.add('has-sb');
-  const inner=document.getElementById('oca-isb-inner');if(inner)inner.innerHTML=renderOcaSidebar();
+  isbTab('oca',renderOcaSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='oca-row-'+id);});
 }
 function closeOcaSidebar(){
@@ -1916,7 +2028,20 @@ function ocaCancelLog(){
 function ocaSaveLog(id){
   const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
   const was=item.status;
-  if(!lpCommitLog(item,'oca-log-status-sel','oca-log-comment-inp',[]))return;
+  // Read the comment before committing - lpCommitLog consumes the field.
+  const inp=document.getElementById('oca-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
+  ocaSeedLogs(item);      // seed first, or the fixture would land on top of the new entry
+  if(!lpCommitLog(item,'oca-log-status-sel','oca-log-comment-inp',item.logs))return;
+  /* This is the "maintained" half: a move made here is appended to the item's
+     Workflow too, so the two tabs cannot end on different stories. A comment
+     that does not move the status is a log entry only - the workflow records
+     stages, not chatter. */
+  if(item.status!==was){
+    ocaWorkflow(item);    // seed first, so the new stage sits on top of the history
+    wfPush(ocaWorkflowData,id,(OCA_STAGE[item.status]||OCA_STAGE.Pending).title,
+      'Moved from '+was+' to '+item.status+'. '+comment);
+  }
   renderOcaDashboard();   // status drives the tiles and the row, so redraw both
   showToast('Log added','success',item.status!==was
     ? '"'+item.item+'" moved to '+item.status+'.'
@@ -1925,7 +2050,7 @@ function ocaSaveLog(id){
 function renderOcaSidebar(){
   const item=ocaItems.find(function(x){return x.id===ocaSelectedId;});if(!item)return'';
   const cat=ocaCategories.find(function(c){return c.key===item.cat;});
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="oca-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(ocaTab===t.id?' active':'')+'" onclick="navOcaTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -1950,7 +2075,7 @@ function renderOcaSidebar(){
       +fc(iCheck,'What to do next',OCA_NEXT[item.status]||'—')
       +'</div>';
   }else if(ocaTab==='logs'){
-    const logs=seedLogs(item,[]);
+    const logs=ocaSeedLogs(item);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
@@ -1981,6 +2106,8 @@ function renderOcaSidebar(){
       +'</div>'
       +'</div>';
     body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+  }else if(ocaTab==='workflow'){
+    body=wfTimelineHTML(ocaWorkflow(item));   // shared renderer, so it reads like every other Workflow tab
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -2059,7 +2186,7 @@ function renderOcaDashboard(){
 function openRatesRuleSidebar(id){
   ratesRuleSelectedId=id;ratesRuleTab='basic-details';
   const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('rr-isb-inner');if(inner)inner.innerHTML=renderRatesRuleSidebar();
+  isbTab('rr',renderRatesRuleSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='rr-row-'+id));
 }
 function closeRatesRuleSidebar(){
@@ -2283,8 +2410,8 @@ function buildCreateRuleModalHTML(){
     +'<div class="ep-form-card">'
     +'<div class="ep-form-title">Validity</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Effective From</label><input type="date" class="ep-form-input" id="rr-new-efffrom"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Effective To</label><input type="date" class="ep-form-input" id="rr-new-effto"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective From</label>'+apCD('rr-new-efffrom','','Select date')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective To</label>'+apCD('rr-new-effto','','Select date')+'</div>'
     +'</div>'
     +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Status</div><div class="cmp-rule-hint">Rule is applied to payroll calculations when active</div></div><label class="cs-toggle"><input type="checkbox" id="rr-new-status" checked><span class="cs-toggle-slider"></span></label></div>'
     +'</div>'
@@ -2309,7 +2436,7 @@ function buildRuleSuccessModalHTML(){
 function openCtpSidebar(id){
   ctpSelectedId=id;ctpTab='basic-details';
   const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('ctp-isb-inner');if(inner)inner.innerHTML=renderCtpSidebar();
+  isbTab('ctp',renderCtpSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ctp-row-'+id));
 }
 function closeCtpSidebar(){
@@ -2622,7 +2749,7 @@ function buildContractStepCards(includeStep,prefill){
       +'</select>'
       +'<input id="peo-mobile" class="ep-form-input" type="tel" placeholder="Mobile Number" style="flex:1" value="'+(prefill.mobile||'')+'"></div></div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Date of Birth <span class="req">*</span></label>'
-      +'<input id="peo-dob" class="ep-form-input" type="date" value="'+(prefill.dob||'')+'"></div>'
+      +apCD('peo-dob',prefill.dob||'','Select date')+'</div>'
       +'</div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Address <span class="req">*</span></label>'
       +'<textarea id="peo-address" class="ep-form-input" rows="3" placeholder="Address" style="resize:vertical;min-height:70px;line-height:1.5">'+(prefill.address||'')+'</textarea>'
@@ -2667,8 +2794,8 @@ function buildContractStepCards(includeStep,prefill){
       // Employment Duration
       +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Employment Duration</div>'
       +'<div style="display:flex;gap:16px;margin-bottom:6px">'
-      +'<div style="flex:1"><input id="peo-from" class="ep-form-input" type="date" value="'+(prefill.fromDate||today)+'"></div>'
-      +'<div style="flex:1"><input id="peo-to" class="ep-form-input" type="date" value="'+(prefill.toDate||'')+'"></div>'
+      +'<div style="flex:1">'+apCD('peo-from',prefill.fromDate||today,'Select date')+'</div>'
+      +'<div style="flex:1">'+apCD('peo-to',prefill.toDate||'','Select date')+'</div>'
       +'</div>'
       +'<div style="display:flex;gap:16px;margin-bottom:20px">'
       +'<div style="flex:1;font-size:11.5px;color:#64748b">Start Date <span class="req">*</span></div>'
@@ -3303,7 +3430,7 @@ function openLPSidebar(id){
   const sb=document.getElementById('lp-isb');
   if(!sb){page='leave-policies';renderADTPage();return;}
   sb.classList.add('open');
-  const inner=document.getElementById('lp-isb-inner');if(inner)inner.innerHTML=renderLPSidebar();
+  isbTab('lp',renderLPSidebar);   // body-only swap when the panel is already open
   markLPSelectedRow(id);
 }
 function closeLPSidebar(){
@@ -3561,8 +3688,11 @@ function buildTsRangePickerHTML() {
     + '<div class="ts-rp-panel" onclick="event.stopPropagation()">'
     + '<div class="ts-rp-title">Date range</div>'
     + '<div class="ts-rp-fields">'
-    + '<label class="ts-rp-fld"><span>From</span><input type="date" value="'+tsRangeDraft.from+'" onchange="tsRangeDraftSet(\'from\',this.value)"></label>'
-    + '<label class="ts-rp-fld"><span>To</span><input type="date" value="'+tsRangeDraft.to+'" onchange="tsRangeDraftSet(\'to\',this.value)"></label>'
+    /* <div>, not <label>: a <button> is a labelable element, so with the trigger
+       inside a label every click in the open calendar would forward a second
+       click to the trigger and shut the panel again. */
+    + '<div class="ts-rp-fld"><span>From</span>'+apCD('ts-rp-from',tsRangeDraft.from,'Start date','tsRangeFrom')+'</div>'
+    + '<div class="ts-rp-fld"><span>To</span>'+apCD('ts-rp-to',tsRangeDraft.to,'End date','tsRangeTo')+'</div>'
     + '</div>'
     + '<div class="ts-rp-presets">'+preset('month','Full month')+preset('first-half','1st–15th')+preset('second-half','16th–end')+'</div>'
     + '<div class="ts-rp-actions">'
@@ -4459,7 +4589,8 @@ function buildCompanySettingsHTML(){
   const rows=(csStatFilter&&statusIdx>=0)?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()===csStatFilter.toLowerCase()):allRows;
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>'<th>'+c+'</th>').join('')+'<th>ACTION</th>';
-  const pgn=listPage('settings',csStatFilter,rows.map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" onclick="openCsSidebar('+row[0]+')">'
+  // data-row-id is what markCsSelectedRow() moves the highlight by, without a repaint.
+  const pgn=listPage('settings',csStatFilter,rows.map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" data-row-id="'+row[0]+'" onclick="openCsSidebar('+row[0]+')">'
     +row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')
     +'<td><button class="lp-action-btn" title="More actions" onclick="event.stopPropagation();openCsSidebar('+row[0]+')">'+hamburger+'</button></td>'
     +'</tr>'),'<tr><td colspan="'+(cols.length+1)+'" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>');
@@ -6334,7 +6465,7 @@ function aiWizardBasicDetailsHTML(j){
     +'<div class="ep-form-group"><label class="ep-form-label">Entity</label><select class="ep-form-select" id="ai-auto-entity">'+aiOptsHTML(aiEntityOptions,d.entity)+'</select></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country</label><select class="ep-form-select" id="ai-auto-country">'+aiOptsHTML(aiCountryOptions,d.country)+'</select></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label><select class="ep-form-select" id="ai-auto-emp-type">'+aiOptsHTML(aiEmploymentTypeOptions,d.empType)+'</select></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Effective From Date</label><input class="ep-form-input" type="date" id="ai-auto-effective" value="'+(d.effective||'')+'"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective From Date</label>'+apCD('ai-auto-effective',d.effective||'','Select date')+'</div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status</label><div class="segmented" id="ai-auto-status-seg" style="max-width:240px"><button type="button" class="seg-btn'+(!activeStatus?' active':'')+'" onclick="selSeg(this)">Draft</button><button type="button" class="seg-btn'+(activeStatus?' active':'')+'" onclick="selSeg(this)">Active</button></div></div>'
     +'</div></div>';
 }

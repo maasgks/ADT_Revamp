@@ -245,7 +245,12 @@ function openPrSidebar(id){
   if(String(prSelectedId)===String(id)){closePrSidebar();return;}  // clicking the open row closes it again
   prSelectedId=id;prTab='basic-details';
   const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.add('open');
-  const inner=document.getElementById('pr-isb-inner');if(inner)inner.innerHTML=renderPrSidebar();
+  /* isbTab() rather than a wholesale innerHTML write: moving from one cycle to
+     the next is the same panel showing a different record, so only the body
+     needs replacing. The tab strip stays put instead of being rebuilt and
+     re-animated under the pointer. It falls back to a full rebuild on its own
+     when the panel is opening from empty. */
+  isbTab('pr',renderPrSidebar);
   markPrSelectedRow();
 }
 function closePrSidebar(){
@@ -263,6 +268,30 @@ function markPrSelectedRow(){
   });
 }
 function navPrTab(tab){prTab=tab;isbTab('pr',renderPrSidebar);}
+/* Pay Runs shipped with a Logs tab that could only be read. Every other module
+   in the app also lets you POST one - pick the status the record is moving to,
+   say why - so this is the same form on the same helpers, not a new mechanism.
+   Clearing the two fields is all Cancel means here: the panel stays open. */
+function prCancelLog(){
+  const sel=document.getElementById('pr-log-status-sel');if(sel)sel.value='';
+  const inp=document.getElementById('pr-log-comment-inp');if(inp)inp.value='';
+}
+function prSaveLog(id){
+  const r=payrollRecords[id];if(!r)return;
+  const was=r.status;
+  if(!lpCommitLog(r,'pr-log-status-sel','pr-log-comment-inp',prLogsData[id]))return;
+  /* The listing draws its Status column from supportPageMeta.payroll.rows,
+     which is a different object than the record - leaving it alone would show
+     a row badge and a set of counters that disagree with the log just written. */
+  const meta=getPageMeta('payroll');
+  const si=(meta.columns||[]).findIndex(function(c){return c==='Status'||c==='status';});
+  const row=(meta.rows||[]).find(function(x){return String(x[0])===String(id);});
+  if(row&&si>=0)row[si]=r.status;
+  renderADTPage();
+  showToast('Log added','success',r.status!==was
+    ? r.cycle+' '+r.country+' moved to '+r.status+'.'
+    : 'Comment saved to '+r.cycle+' '+r.country+'.');
+}
 
 // ── GENERIC LISTING SIDEBAR ──
 // Payroll and Company Settings each own a hand-built detail panel. Every other
@@ -285,12 +314,14 @@ function closeLstSidebar(){
   markLstSelectedRow();
 }
 function navLstTab(tab){lstTab=tab;isbTab('lst',renderLstSidebar);}
-/* Opening/closing a record is a full rebuild - a different record is a
-   different panel. Only navLstTab() above swaps the body alone. */
+/* A different record is the same panel showing different values, so this goes
+   through isbTab() too: the tab strip is left alone and only .lp-isb-body is
+   replaced. isbTab falls back to the wholesale rebuild by itself whenever the
+   tab set actually differs, or when the panel is opening from empty. */
 function refreshLstSidebar(){
   const inner=document.getElementById('lst-isb-inner');if(!inner)return;
-  inner.innerHTML=lstSelectedId!=null?renderLstSidebar():'';
-  isbRevealTab('lst');
+  if(lstSelectedId==null){inner.innerHTML='';return;}
+  isbTab('lst',renderLstSidebar);
 }
 // Highlight the row the panel is describing. Done by hand rather than through a
 // re-render so the open/close width transition is not thrown away mid-flight.
@@ -502,7 +533,7 @@ function toggleCustomSelect(event,id){
 }
 function selectCustomOption(event,opt){event.stopPropagation();const root=opt.closest('.custom-select');if(!root)return;const label=opt.querySelector('.custom-select-text');const trigger=root.querySelector('.custom-select-trigger span');root.dataset.value=label?label.textContent.trim():opt.textContent.trim();if(trigger&&label){trigger.innerHTML=label.innerHTML;trigger.classList.remove('placeholder');}root.querySelectorAll('.custom-select-option').forEach(o=>o.classList.remove('selected'));opt.classList.add('selected');root.classList.remove('open');}
 function getCustomSelectValue(id){const root=document.getElementById(id);if(!root)return'';const span=root.querySelector('.custom-select-trigger span');if(span&&span.classList.contains('placeholder'))return'';return root.dataset.value||'';}
-document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))closeCustomSelects();if(!e.target.closest('.cs-wrap')){document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');});}if(!e.target.closest('.ct-action-wrap'))document.querySelectorAll('.ct-action-menu.open').forEach(m=>m.classList.remove('open'));if(!e.target.closest('.se-dd-wrap')){const p=document.getElementById('se-dd-panel');if(p)p.classList.remove('open');}});
+document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))closeCustomSelects();if(!e.target.closest('.cs-wrap')){document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');});}if(!e.target.closest('.cd-wrap'))cdCloseAll();if(!e.target.closest('.ct-action-wrap'))document.querySelectorAll('.ct-action-menu.open').forEach(m=>m.classList.remove('open'));if(!e.target.closest('.se-dd-wrap')){const p=document.getElementById('se-dd-panel');if(p)p.classList.remove('open');}});
 const filterOptionMap={Country:['Country','Netherlands','India','Germany','Spain','United Kingdom'],Status:['Status','Active','Pending','Inactive'],Team:['Team','Engineering','Product','Finance','Operations'],Department:['Department','Finance','HR','Legal','Operations','Support'],Area:['Area','Company','Finance','Access','Workspace','Security'],Owner:['Owner','Pallavi Parate','Finance Ops','Admin','System'],Topic:['Topic','Payroll question','Contract review','Compliance rates','Payment proof'],Priority:['Priority','High','Medium','Low'],Category:['Category','Payroll','Contractor','Compliance','Benefits'],Cycle:['Cycle','May 2026','April 2026','March 2026'],Type:['Type','Earning','Deduction','EOR','PEO','Contractor'],Role:['Role','Entity Super Admin','Admin','Deal Manager','Ops Manager','Finance Approver','Employee'],'Worker Type':['Worker Type','EOR','PEO','Contractor'],'Leave Type':['Leave Type','Annual Leave','Sick Leave','Parental Leave','Holiday']};
 function getFilterOptions(label){return filterOptionMap[label]||[label,'All','Active','Pending','Inactive'];}
 function isCreateContractRequest(text){const q=String(text).toLowerCase();return q.includes('create')&&q.includes('contract');}
@@ -720,7 +751,8 @@ function buildSbEditForm(prefix,fields,rec,onCancel,onSave){
       ctl='<select class="ep-form-select" id="'+id+'">'
         +opts.map(o=>'<option'+(o===raw?' selected':'')+'>'+sbEsc(o)+'</option>').join('')+'</select>';
     }else if(f.type==='date'){
-      ctl='<input class="ep-form-input" id="'+id+'" type="date" value="'+sbDateToISO(raw)+'">';
+      // apCD still carries the value on an <input id> — sbCollect reads .value unchanged.
+      ctl=apCD(id,sbDateToISO(raw),'Select date');
     }else{
       ctl='<input class="ep-form-input" id="'+id+'" type="'+f.type+'" value="'+sbEsc(raw)+'"'
         +(f.readonly?' disabled':'')+'>';
@@ -1544,7 +1576,7 @@ let selectedEmps=new Set();
 let apFilterType='',apFilterValue='';
 let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,lpEmpEditMode=false;
 let lpFilterField='',lpFilterStatus='';
-let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='';
+let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='',pmDateFilter='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
 const lpLogsData={
   1:[
@@ -1680,6 +1712,127 @@ function csSelect(opt,val,csid){
   else if(csid==='lp-filter-field')lpFilterField=val;
   else if(csid==='lp-filter-status')lpFilterStatus=val;
 }
+/* ── CUSTOM DATE PICKER (apCD) ─────────────────────────────────────────────
+   A drop-in replacement for <input type="date">, whose calendar is drawn by
+   the browser and cannot be styled - it landed in our filter bars as a piece
+   of stray Chrome UI with its own type, spacing and blue selection.
+
+   IT KEEPS THE INPUT. The element carrying `id` is still an <input> holding
+   the same ISO yyyy-mm-dd value, just hidden behind the widget, so every
+   existing reader - getElementById(id).value - keeps working untouched and
+   swapping a native picker for this one is a one-line change at the call site.
+
+   `onpick` is an optional function NAME, called with the ISO value, for the
+   call sites that used onchange.                                            */
+const cdView={};   // id -> {y,m} the panel is currently showing
+const CD_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const CD_MON_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function cdISO(dt){const p=n=>(n<10?'0':'')+n;return dt.getFullYear()+'-'+p(dt.getMonth()+1)+'-'+p(dt.getDate());}
+function cdParse(iso){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||'');
+  return m?new Date(+m[1],+m[2]-1,+m[3]):null;
+}
+// "18 Aug 2026" reads at a glance; "2026-08-18" and "dd-mm-yyyy" do not.
+function cdLabel(iso){const d=cdParse(iso);return d?d.getDate()+' '+CD_MON_SHORT[d.getMonth()]+' '+d.getFullYear():'';}
+function getCDValue(id){const el=document.getElementById(id);return el?el.value:'';}
+function apCD(id,value,placeholder,onpick){
+  const iso=value||'';
+  const lbl=cdLabel(iso);
+  const calIco='<svg class="cd-cal-ico" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  return '<div class="cd-wrap" id="cdw-'+id+'">'
+    +'<input type="hidden" id="'+id+'" value="'+iso+'"'+(onpick?' data-cdpick="'+onpick+'"':'')+'>'
+    // The placeholder rides on the trigger so Clear can restore it verbatim.
+    +'<button type="button" class="cd-trigger'+(lbl?'':' cd-placeholder')+'" data-cdid="'+id+'" data-cdph="'+(placeholder||'Select date')+'" onclick="cdToggle(this)">'
+      +'<span class="cd-value">'+(lbl||placeholder||'Select date')+'</span>'+calIco
+    +'</button>'
+    +'<div class="cd-panel" id="cdp-'+id+'"></div>'
+  +'</div>';
+}
+function cdToggle(btn){
+  const id=btn.dataset.cdid;
+  const panel=document.getElementById('cdp-'+id);if(!panel)return;
+  const wasOpen=panel.classList.contains('cd-open');
+  cdCloseAll();
+  if(wasOpen)return;                       // clicking the open trigger closes it
+  const cur=cdParse(getCDValue(id))||new Date();
+  cdView[id]={y:cur.getFullYear(),m:cur.getMonth()};   // always reopen on the selected month
+  cdPaint(id);
+  panel.classList.add('cd-open');
+  btn.classList.add('cd-open');
+  cdPlace(btn,panel);
+}
+/* Measured, not guessed: the panel is fixed-positioned, so it needs real
+   coordinates. Aligned to the trigger's left edge and dropped below it, unless
+   that would run past an edge - then it flips to the right of the trigger or
+   opens upward, the way the row action menus already do. */
+function cdPlace(btn,panel){
+  const a=btn.getBoundingClientRect();
+  const w=panel.offsetWidth,h=panel.offsetHeight,gap=6,pad=8;
+  let left=a.left;
+  if(left+w>window.innerWidth-pad)left=Math.max(pad,a.right-w);
+  const below=window.innerHeight-a.bottom-gap;
+  const top=(below>=h||a.top<h+gap)?a.bottom+gap:a.top-h-gap;
+  panel.style.left=Math.round(left)+'px';
+  panel.style.top=Math.round(top)+'px';
+}
+function cdCloseAll(){
+  document.querySelectorAll('.cd-panel.cd-open').forEach(p=>p.classList.remove('cd-open'));
+  document.querySelectorAll('.cd-trigger.cd-open').forEach(t=>t.classList.remove('cd-open'));
+}
+function cdNav(id,delta){
+  const v=cdView[id]||{y:new Date().getFullYear(),m:new Date().getMonth()};
+  const d=new Date(v.y,v.m+delta,1);
+  cdView[id]={y:d.getFullYear(),m:d.getMonth()};
+  cdPaint(id);
+}
+function cdPaint(id){
+  const panel=document.getElementById('cdp-'+id);if(!panel)return;
+  const v=cdView[id],sel=getCDValue(id),todayISO=cdISO(new Date());
+  const first=new Date(v.y,v.m,1);
+  const lead=first.getDay();                       // Sunday-first, matching the native picker's week
+  const start=new Date(v.y,v.m,1-lead);
+  const chev=d=>'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="'+(d<0?'15 18 9 12 15 6':'9 18 15 12 9 6')+'"/></svg>';
+  let cells='';
+  for(let i=0;i<42;i++){                           // 6 rows always, so the panel never changes height month to month
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const iso=cdISO(d);
+    const cls='cd-day'+(d.getMonth()!==v.m?' cd-mute':'')+(iso===todayISO?' cd-today':'')+(sel&&iso===sel?' cd-sel':'');
+    cells+='<button type="button" class="'+cls+'" onclick="cdPick(\''+id+'\',\''+iso+'\')">'+d.getDate()+'</button>';
+  }
+  panel.innerHTML='<div class="cd-head">'
+      +'<button type="button" class="cd-nav" onclick="cdNav(\''+id+'\',-1)" title="Previous month">'+chev(-1)+'</button>'
+      +'<span class="cd-title">'+CD_MONTHS[v.m]+' '+v.y+'</span>'
+      +'<button type="button" class="cd-nav" onclick="cdNav(\''+id+'\',1)" title="Next month">'+chev(1)+'</button>'
+    +'</div>'
+    +'<div class="cd-grid">'+['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>'<div class="cd-dow">'+d+'</div>').join('')+cells+'</div>'
+    +'<div class="cd-foot">'
+      +'<button type="button" class="cd-link" onclick="cdClear(\''+id+'\')">Clear</button>'
+      +'<button type="button" class="cd-link cd-strong" onclick="cdPick(\''+id+'\',\''+todayISO+'\')">Today</button>'
+    +'</div>';
+}
+// One path for every value change, so the hidden input, the trigger label and
+// any onpick hook can never disagree about what the field holds.
+function cdSet(id,iso){
+  const inp=document.getElementById(id);if(!inp)return;
+  inp.value=iso;
+  const trigger=document.querySelector('[data-cdid="'+id+'"]');
+  if(trigger){
+    trigger.querySelector('.cd-value').textContent=cdLabel(iso)||trigger.dataset.cdph||'Select date';
+    trigger.classList.toggle('cd-placeholder',!iso);
+  }
+  const hook=inp.dataset.cdpick;
+  if(hook&&typeof window[hook]==='function')window[hook](iso);
+}
+function cdPick(id,iso){cdSet(id,iso);cdCloseAll();}
+function cdClear(id){cdSet(id,'');cdCloseAll();}
+/* A fixed panel does not travel with its trigger, so any scroll underneath it
+   would leave the calendar stranded. Capture phase, because scroll does not
+   bubble - one listener covers every scroll container there will ever be. */
+document.addEventListener('scroll',function(){
+  if(document.querySelector('.cd-panel.cd-open'))cdCloseAll();
+},true);
+window.addEventListener('resize',cdCloseAll);
+
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policies';renderADTPage();}
 function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
@@ -2404,6 +2557,11 @@ const pmLogsData={
 const pmLogStatusOptions=['Follow Up','Onboarding','Closed','Inactive','Logistic Terminated','Logistic Completed','Offboarding','Finance Termination','Finance Completed','Confirmation Vendor','initial discussion done','Order Extension','Revision'];
 const pmInvoiceFlow=['Unpaid','Pending','Paid','Closed'];
 let pmSelectedId=null,pmTab='basic-details',pmUserSubTab='company-details';
+/* The step picked from the row's Invoice Status menu, carried into the Logs
+   tab so the form opens already set to the move the user asked for. Cleared
+   the moment the log is saved or the panel closes - it describes one click,
+   not a state the record is in. */
+let pmPendingStatus='';
 
 // ── COMPLIANCE ITEMS DATA & STATE ──
 const complianceItemsData=[
@@ -2778,6 +2936,11 @@ function tsToggleRangePicker(ev){
 }
 function tsCloseRangePicker(){if(!tsRangeOpen)return;tsRangeOpen=false;renderADTPage();}
 function tsRangeDraftSet(which,val){tsRangeDraft[which]=val;renderADTPage();}
+/* apCD's onpick hook passes only the value, so one named wrapper per field.
+   They must be reachable as window.<name> — function declarations in a classic
+   script are, which is why these are declarations and not consts. */
+function tsRangeFrom(v){tsRangeDraftSet('from',v);}
+function tsRangeTo(v){tsRangeDraftSet('to',v);}
 function tsRangePreset(kind,ev){
   if(ev)ev.stopPropagation();
   const y=tsMonth.year,m=tsMonth.month;
@@ -2842,8 +3005,32 @@ const csLogsData=[
   {date:'14 Apr 2026',time:'11:28:08 PM',user:'Shaun Test1',status:'Pending',action:'Yes'},
   {date:'14 Apr 2026',time:'11:02:44 PM',user:'Shaun Test1',status:'Active',action:'Yes'}
 ];
-function openCsSidebar(item){csSelectedItem=item;csTab='basic-details';renderADTPage();}
-function closeCsSidebar(){csSelectedItem=null;renderADTPage();}
+/* Company Settings was the last page still answering a row click with a full
+   renderADTPage(): the filter bar, the counters, the table and the panel were
+   all thrown away and rebuilt to show a different record in a panel that was
+   already open. Everything visible flinched, the entrance animations replayed,
+   and any scroll position in the table was lost. Now it behaves like every
+   other listing - the row highlight moves by hand, and isbTab() replaces the
+   panel BODY alone, because a different record is the same tab strip. */
+function openCsSidebar(item){
+  if(csSelectedItem===item){closeCsSidebar();return;}   // clicking the open row closes it again
+  csSelectedItem=item;csTab='basic-details';
+  const sb=document.getElementById('cs-isb');if(sb)sb.classList.add('open');
+  markCsSelectedRow();
+  isbTab('cs',renderCsSidebar);
+}
+function closeCsSidebar(){
+  csSelectedItem=null;
+  const sb=document.getElementById('cs-isb');if(sb)sb.classList.remove('open');
+  markCsSelectedRow();
+  /* The body is left in place on purpose - clearing it here would blank the
+     panel instantly and the closing width transition would animate nothing. */
+}
+function markCsSelectedRow(){
+  document.querySelectorAll('#adt-content tr.lp-row[data-row-id]').forEach(function(r){
+    r.classList.toggle('lp-row-selected',csSelectedItem!=null&&r.dataset.rowId===String(csSelectedItem));
+  });
+}
 function refreshCsSidebar(){const inner=document.getElementById('cs-isb-inner');if(inner){inner.innerHTML=renderCsSidebar();isbRevealTab('cs');}}
 function csSetTab(tab){csTab=tab;isbTab('cs',renderCsSidebar);}
 /* The structure sub-tab lives inside the body, so the body swap covers it. */

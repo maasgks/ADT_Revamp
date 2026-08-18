@@ -38,8 +38,45 @@
        aligned with the rows above instead of stretching to fill.
      · Anything wider than a tile spans whole columns (.hr-stat-span2), so it
        is still measured in the same track.                                  */
-.hr-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;align-items:stretch}
-.hr-stat-span2{grid-column:span 2}
+/* ══ A GRID THAT NEVER ENDS ON A HOLE ══════════════════════════════════════
+   The track is 12 columns, not 4, and a tile spans 3 of them - so four to a
+   row, laid out exactly as before. 12 is the point: it divides by 4, 3, 2 and
+   1, which is what lets a SHORT LAST ROW share the full width instead of
+   stopping early and leaving a gap at the right-hand end. Eleven tiles used to
+   run 4 / 4 / 3-and-a-hole; they now run 4 / 4 / 3-across-the-full-width.
+
+   The rules below read as "this tile starts a row (:nth-child(4n+1)) AND only
+   k tiles remain (:nth-last-child(k))" - which can only be true of a final row
+   holding k tiles. The `~` picks up the one or two that follow it. Nothing is
+   hard-coded to a card count, so a dashboard gaining or losing a tile keeps
+   working on its own.
+
+   The trade the user chose: last-row tiles are wider than the rows above, so
+   the columns no longer line up all the way down. A visible hole was the worse
+   of the two.                                                              */
+.hr-stat-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:22px;align-items:stretch}
+.hr-stat-grid>*{grid-column:span 3}
+.hr-stat-span2{grid-column:span 6}
+/* The orphan rules count ELEMENTS, so they are only sound where every tile is
+   one slot wide. The employee dashboard puts a double-width attendance card in
+   its grid, which makes "starts a row" stop meaning :nth-child(4n+1) — :has()
+   keeps these rules away from any grid like that, and it keeps its own layout
+   exactly as it was. */
+/* 2 left over — half each. */
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*{grid-column:span 6}
+/* 3 left over — a third each. */
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*{grid-column:span 4}
+/* 1 LEFT OVER is the case that has no good answer on its own: stretching a
+   lone tile across the full width turns one number into a banner, and leaving
+   it at a quarter width puts the hole back. So the split is moved a row
+   earlier instead — the last FIVE tiles are dealt 3 + 2 rather than 4 + 1, and
+   both rows fill. Nine tiles run 4 / 3 / 2; five run 3 / 2. */
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*{grid-column:span 4}
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
+.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child{grid-column:span 6}
 /* Column, so the caption can be pinned to the bottom edge: a wrapped label on
    one card then pushes nothing out of line on its neighbours - label, metric
    and caption stay on their own baselines right across the row. */
@@ -96,7 +133,12 @@
    corner with a 40px icon, and this is the one corner every card has free. */
 .hr-stat-card.is-link::after{
   content:'';
-  position:absolute;right:16px;bottom:14px;
+  /* right:20px, not 16px — the card's padding is 18px 20px, so at 16px the chip
+     sat 4px nearer the edge than every piece of text beside it and a row of
+     tiles read as if the chips were drifting out of their cards.
+     bottom:13px centres it on the caption: 18px padding + half of the 11px/1.45
+     line box (8px) is 26px to the line's centre, less half the 26px chip. */
+  position:absolute;right:20px;bottom:13px;
   width:26px;height:26px;
   border:1px solid var(--border);
   border-radius:50%;
@@ -105,8 +147,8 @@
              background-color var(--t-fast) var(--e-out),
              transform var(--t-fast) var(--e-out);
 }
-/* keep a long caption clear of the chip */
-.hr-stat-card.is-link .hr-stat-sub{padding-right:36px}
+/* Keep a long caption clear of the chip: 26px chip + 14px of air. */
+.hr-stat-card.is-link .hr-stat-sub{padding-right:40px}
 
 .hr-stat-card.is-link:hover{
   border-color:#cbd5e1;
@@ -145,7 +187,9 @@
 .hr-stat-number.green{color:var(--st-ok-fg)}
 .hr-stat-number.orange{color:var(--st-wait-fg)}
 .hr-stat-number.red{color:var(--st-bad-fg)}
-.hr-stat-sub{font-size:var(--ds-caption);color:var(--gray);display:flex;align-items:center;gap:4px;font-weight:400;margin-top:auto}
+/* line-height is stated rather than inherited so the caption's line box is a
+   known 16px — the chevron chip above is positioned against it. */
+.hr-stat-sub{font-size:var(--ds-caption);line-height:1.45;color:var(--gray);display:flex;align-items:center;gap:4px;font-weight:400;margin-top:auto}
 .hr-stat-sub.green{color:#16a34a}
 .hr-stat-sub.orange{color:#b45309}
 .hr-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
@@ -313,14 +357,41 @@
 .setup-step-status{font-size:var(--ds-caption);font-weight:500;margin-top:3px;color:var(--gray)}
 .setup-step-status.done{color:#16a34a}
 @media(max-width:1200px){
-  .hr-stat-grid{grid-template-columns:repeat(2,1fr)}
+  /* Two to a row: a tile takes 6 of the 12. Every 4-per-row orphan rule above
+     has to be cancelled first — at two columns a :nth-child(4n+1) tile is not
+     the start of a short row at all. An odd count leaves one tile over, and
+     here it does take the full row, because at this width "full row" is only
+     two tiles wide, not four. */
+  .hr-stat-grid>*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child{grid-column:span 6}
+  .hr-stat-grid>.hr-stat-span2{grid-column:span 12}   /* a double tile is the whole row here */
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:last-child:nth-child(2n+1){grid-column:span 12}
   .hr-grid-2{grid-template-columns:1fr}
   .hr-actions{grid-template-columns:repeat(2,1fr)}
   .finance-action-grid{grid-template-columns:repeat(2,1fr)}
   .csm-main-grid{grid-template-columns:1fr}
 }
 @media(max-width:768px){
-  .hr-stat-grid{grid-template-columns:1fr}
+  /* One to a row: every tile takes the full track and no short row can exist,
+     so all the orphan rules are cancelled outright. */
+  .hr-stat-grid>*,
+  .hr-stat-grid>.hr-stat-span2,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child,
+  .hr-stat-grid:not(:has(.hr-stat-span2))>*:last-child:nth-child(2n+1){grid-column:span 12}
   .hr-actions{grid-template-columns:1fr}
   .emp-support-card{flex-direction:column;gap:14px}
   .tab-btn{padding:8px 14px;font-size:12px}

@@ -188,6 +188,54 @@ tr.lp-row-selected>td:first-child,
 .cs-option:hover,.cs-option.cs-selected{background:#f1f5f9}
 .cs-check{flex-shrink:0;display:none;color:var(--orange)}
 .cs-option.cs-selected .cs-check{display:block}
+
+/* CUSTOM DATE PICKER (apCD)
+   <input type="date"> hands its popup to the browser, and that popup cannot be
+   styled at all - so next to our own dropdowns it arrived as a stray piece of
+   Chrome UI: different type, different weights, blue selection, its own idea of
+   spacing. This is the same panel built in markup we control, deliberately
+   sharing the trigger geometry and the shadow/radius language of .cs-* above so
+   a date filter and a status filter read as one row of controls. */
+.cd-wrap{position:relative;width:100%}
+.cd-trigger{width:100%;height:42px;border:1.5px solid var(--border);border-radius:var(--r-control);background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;font-size:13px;color:var(--navy);font-family:inherit;outline:none;transition:.15s;box-sizing:border-box;text-align:left;gap:8px}
+.cd-trigger.cd-placeholder .cd-value{color:#b0b8c4}
+.cd-trigger.cd-open{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.08)}
+.cd-trigger:hover:not(.cd-open){border-color:#cbd5e1}
+.cd-cal-ico{flex-shrink:0;color:#6b7280;transition:color .15s}
+.cd-trigger.cd-open .cd-cal-ico{color:var(--orange)}
+/* position:fixed, like .ct-action-menu below, and for the same reason: these
+   fields sit inside .lp-isb-body and other overflow:auto containers, which
+   would clip an absolutely-positioned panel. The browser's own popup never had
+   that problem because it was never in the document. cdToggle() measures and
+   places it. */
+.cd-panel{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.14);z-index:1000;display:none;padding:12px;width:266px;box-sizing:border-box}
+.cd-panel.cd-open{display:block;animation:cdIn .16s cubic-bezier(.16,1,.3,1)}
+@keyframes cdIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.cd-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px}
+.cd-title{font-size:13px;font-weight:700;color:var(--navy);letter-spacing:.1px}
+.cd-nav{width:26px;height:26px;flex-shrink:0;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.13s;padding:0}
+.cd-nav:hover{background:#f1f5f9;border-color:#cbd5e1}
+.cd-nav:active{transform:scale(.94)}
+.cd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cd-dow{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0 6px}
+.cd-day{height:32px;border:none;background:none;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--navy);cursor:pointer;transition:background .12s,color .12s;padding:0}
+.cd-day:hover:not(.cd-sel){background:#f1f5f9}
+.cd-day.cd-mute{color:#cbd5e1}          /* leading/trailing days of the neighbouring months */
+.cd-day.cd-today{font-weight:700;color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--border)}
+.cd-day.cd-sel{background:var(--orange);color:#fff;font-weight:700}
+.cd-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9}
+.cd-link{border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;padding:2px 4px;border-radius:6px;transition:.13s}
+.cd-link:hover{color:var(--orange);background:#f1f5f9}
+.cd-link.cd-strong{color:var(--orange)}
+/* Filter bars run 34px-high controls; forms run the taller field.
+   The width:auto/min-width pair matches .lp-filter-bar-row .cs-wrap exactly —
+   without it the wrapper keeps width:100% and takes the whole flex row to
+   itself, pushing Search onto its own line. */
+.lp-filter-bar-row .cd-wrap{width:auto;min-width:120px}
+.lp-filter-bar-row .cd-trigger{height:34px;padding:0 14px;font-size:13px;white-space:nowrap}
+.ep-form-group .cd-trigger,.policy-form-grid .cd-trigger{height:38px;border-width:1px;border-radius:var(--r-input);padding:0 12px}
+.ts-rp-fld .cd-trigger{height:34px;border-width:1px;padding:0 10px;font-size:12.5px}
+
 /* APPLICABLE EMPLOYEES */
 .ap-filter-section{margin-bottom:16px}
 .ap-filter-row{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:4px}
@@ -344,7 +392,7 @@ tr.lp-row-selected>td:first-child,
 .lp-wf-empty{font-size:13px;color:#9ca3af;text-align:center;padding:32px 16px;background:#f9fafb;border-radius:10px;border:1px dashed #e5e7eb}
 .ct-action-wrap{position:relative;display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
 .ct-action-btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:0 10px 0 12px;height:28px;line-height:28px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap;width:80px;transition:.15s;vertical-align:middle}
-.ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
+.ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
 .ct-dots-btn{border:none;background:transparent;border-radius:6px;width:28px;height:28px;line-height:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#64748b;padding:0;transition:.15s;flex-shrink:0;vertical-align:middle}
 .ct-dots-btn:hover{background:#f1f5f9;color:var(--navy)}
 .ct-action-menu{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.13);z-index:1000;min-width:200px;overflow:hidden;display:none}
