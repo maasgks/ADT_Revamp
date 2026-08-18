@@ -19,8 +19,7 @@
        do not bubble. One listener, forever, for every card there will ever be.
      - a MutationObserver picks up new cards after a repaint. It watches
        childList only, and everything this file writes is a class - which a
-       childList observer cannot see - so there is no feedback loop to close
-       the way js/quick-actions.js has to close its own.
+       childList observer cannot see - so there is no feedback loop to close.
    ========================================================================== */
 (function(){
 'use strict';

@@ -1,311 +1,46 @@
 /* ==========================================================================
-   ROW QUICK ACTIONS  -  engine.
+   TICKET MOVES  -  the confirm step, and the history every move writes.
 
-   HOW THIS ATTACHES.  Not by editing the twelve listing builders. Every one
-   of them already ends its rows with the same thing: a <td> containing a
-   .lp-action-btn whose onclick names the record's id. That is a reliable
-   anchor, so this file is a POST-RENDER ENHANCER: a MutationObserver watches
-   #adt-content, and whenever a listing is (re)painted it injects the cluster
-   into that cell. Adding a listing page later needs no change here beyond an
-   entry in REGISTRY, and a page with no entry is simply left alone.
+   WHAT THIS FILE USED TO BE.  A post-render enhancer: a MutationObserver on
+   #adt-content that injected a cluster of commit buttons into every listing
+   row - approve, reject, mark paid, close chat. That is gone. A listing row
+   is for READING; acting on a record happens in the record, where the rest
+   of it is on screen while you decide. Every listing therefore ends in the
+   hamburger and nothing else, exactly as it did before the clusters.
 
-   WHY AN OBSERVER RATHER THAN A CALL IN renderADTPage().  Panels, tabs and
-   filters all repaint fragments of the page by writing innerHTML directly,
-   without going through renderADTPage. An observer catches all of them; a
-   single call site would catch about half and the bugs would be invisible
-   until a user hit that one path.
+   WHAT SURVIVES, AND WHY.  The confirm dialog and the commit path, because
+   the support-ticket panel still moves a ticket through TK_FLOW and those
+   moves must keep behaving identically wherever they are triggered from -
+   the panel buttons (tk-owner-btn in pages.js) and the Logs form both come
+   through qaTicket / qaTicketApply below.
 
-   THE CONTRACT EVERY ACTION KEEPS.  An action mutates the data array, then
-   calls qaCommit(). qaCommit repaints the page WITHOUT the entrance
-   animation, then flashes the row it changed and pops the new badge. That is
-   the whole feedback loop and it happens in the row you clicked, so the eye
-   never leaves it. A toast is secondary - it names the record for the undo
-   trail; the flash is what actually tells you it worked.
-
-   WHAT DOES NOT GET A QUICK ACTION.  Anything irreversible, anything that
-   costs money, and anything needing input beyond the click. Those still open
-   the detail panel, which is the right place for a decision that deserves a
-   form. Deactivating a record is reversible by the same button, so it counts
-   as reversible.
+   THE CONTRACT A MOVE KEEPS.  Ask for a comment, mutate the ticket, write
+   the same line into both histories, then qaCommit(): repaint WITHOUT the
+   entrance animation and flash the row that changed. The comment is not
+   optional - a status no one can explain later is worse than no status.
    ========================================================================== */
 (function(){
 'use strict';
 
 /* ── icons ─────────────────────────────────────────────────────────────── */
 var I={
-  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-  x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-  undo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
-  pencil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-  power:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>',
-  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
-  cash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>',
-  play:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>',
-  pause:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="8" y1="4" x2="8" y2="20"/><line x1="16" y1="4" x2="16" y2="20"/></svg>',
-  copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>'
+  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
 };
 
 /* ── helpers ───────────────────────────────────────────────────────────── */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function find(arr,id){if(!arr)return null;for(var i=0;i<arr.length;i++)if(String(arr[i].id)===String(id))return arr[i];return null;}
 function toast(t,kind,sub){if(typeof showToast==='function')showToast(t,kind||'success',sub);}
-/* The page data arrays are `const` at the top level of core.js, which puts
-   them in SCRIPT scope: reachable by name from this file, but NOT present on
-   `window`. Everything below therefore goes through D(), which names each
-   identifier literally and guards it with typeof. A window['allLeavesData']
-   probe returns undefined for every one of them, which is a silent failure -
-   the enhancer runs, finds no record, and renders no actions at all. */
+/* ticketsData is a `const` at the top level of core.js, which puts it in
+   SCRIPT scope: reachable by name from this file, but NOT present on
+   `window`. Hence the literal name and the typeof guard - a
+   window['ticketsData'] probe would just return undefined and fail silently.
+   */
 function D(){
   return {
-    leaves:    typeof allLeavesData      !=='undefined'?allLeavesData      :null,
-    payments:  typeof paymentsData       !=='undefined'?paymentsData       :null,
-    compliance:typeof complianceItemsData!=='undefined'?complianceItemsData:null,
-    policies:  typeof leavePoliciesData  !=='undefined'?leavePoliciesData  :null,
-    tickets:   typeof ticketsData        !=='undefined'?ticketsData        :null,
-    contracts: typeof contractsData      !=='undefined'?contractsData      :null,
-    teams:     typeof teamsData          !=='undefined'?teamsData          :null,
-    direct:    typeof directEmpData      !=='undefined'?directEmpData      :null,
-    global:    typeof globalEmpData      !=='undefined'?globalEmpData      :null,
-    rates:     typeof ratesRulesData     !=='undefined'?ratesRulesData     :null,
-    templates: typeof contractTemplatesData!=='undefined'?contractTemplatesData:null,
-    chats:     typeof chatsData          !=='undefined'?chatsData          :null,
-    ctFlow:    typeof ctFlow             !=='undefined'?ctFlow             :null
+    tickets: typeof ticketsData!=='undefined'?ticketsData:null
   };
 }
-
-/* An action descriptor. `lead:true` promotes it to the labelled pill - see
-   the "one per row, maximum" rule in quick-actions.css. */
-function A(label,icon,tone,call,opts){
-  opts=opts||{};
-  return {label:label,icon:icon,tone:tone,call:call,lead:!!opts.lead,dot:!!opts.dot};
-}
-
-/* ── the registry ──────────────────────────────────────────────────────────
-   page id -> function(rowId, trElement) -> array of actions.
-   Return [] to leave a page's rows exactly as they were.                  */
-var REGISTRY={
-
-  /* Leave requests. The queue this whole feature was written for. */
-  'all-leaves':function(id){
-    var l=find(D().leaves,id);if(!l)return [];
-    if(l.status==='Pending')return [
-      A('Approve',I.check,'ok','qaLeave('+id+',\'Approved\')',{lead:true,dot:true}),
-      A('Reject',I.x,'bad','qaLeave('+id+',\'Unapproved\')')
-    ];
-    if(l.status==='Approved')return [A('Move back to pending',I.undo,'wait','qaLeave('+id+',\'Pending\')')];
-    return [A('Approve',I.check,'ok','qaLeave('+id+',\'Approved\')')];
-  },
-
-  /* Invoices. "Paid" is the only state anyone is ever hunting for. */
-  payments:function(id){
-    var p=find(D().payments,id);if(!p)return [];
-    if(p.invoiceStatus==='Paid')return [A('Reopen invoice',I.undo,'wait','qaPayment('+id+',\'Pending\')')];
-    if(p.invoiceStatus==='Closed')return [];
-    return [A('Mark paid',I.cash,'ok','qaPayment('+id+',\'Paid\')',{lead:true,dot:p.invoiceStatus==='Unpaid'})];
-  },
-
-  /* Leave policies. Editing is the whole reason anyone opens this table, and
-     it was behind the panel like everything else. */
-  'leave-policies':function(id){
-    var p=find(D().policies,id);if(!p)return [];
-    return [A('Edit policy',I.pencil,'nav','qaPolicyEdit('+id+')')];
-  },
-
-  /* Support tickets. The row offers exactly the moves TK_FLOW allows out of
-     the state the ticket is actually in - so there is no Close button on an
-     unresolved ticket to click by mistake. The pill goes on the move that WE
-     owe: an open ticket needs picking up, a resolved one is the client's to
-     confirm and gets no pill, because nothing there is waiting on us. */
-  'support-tickets':function(id){
-    var t=find(D().tickets,id);if(!t)return [];
-    if(typeof tkMoves!=='function')return [];
-    var ours=t.status==='open'||t.status==='in_progress';
-    return tkMoves(t).map(function(mv,i){
-      return A(mv.label,I[mv.icon]||I.arrow,mv.tone,'qaTicket('+id+',\''+mv.to+'\')',
-               {lead:ours&&i===0,dot:t.status==='open'&&i===0});
-    });
-  },
-
-  /* Contracts. The pipeline dropdown in this table already lets you PICK a
-     stage; what it does not do is answer "just move it along", which is what
-     is wanted on nearly every row. One click to the next stage's form. */
-  contracts:function(id){
-    var d=D();
-    var c=find(d.contracts,id);if(!c||!d.ctFlow)return [];
-    var i=d.ctFlow.indexOf(c.status);
-    if(i<0||i>=d.ctFlow.length-1)return [];
-    /* Icon-only, deliberately. Stage names here run to 18 characters, and the
-       row already carries the current stage twice (badge + dropdown) - a
-       third full-width label would be the widest thing in the row while
-       saying the least. The tooltip carries the destination. */
-    return [A('Move to '+d.ctFlow[i+1],I.arrow,'nav','qaContractAdvance('+id+')')];
-  },
-
-  /* Employees. Nothing here is safely one-click reversible, so both actions
-     navigate rather than commit - the win is skipping a module hop, not
-     skipping a decision. */
-  direct:function(id){return empActions(D().direct,id);},
-  global:function(id){return empActions(D().global,id);},
-
-  /* Messages. The only status here that means "someone is waiting on US" is
-     waiting_csm, so that is the one that earns the pill. */
-  chats:function(id){
-    var c=find(D().chats,id);if(!c)return [];
-    if(c.status==='waiting_csm')return [
-      A('Mark replied',I.check,'ok','qaChat('+id+',\'waiting_client\')',{lead:true,dot:true}),
-      A('Close chat',I.x,'idle','qaChat('+id+',\'inactive\')')
-    ];
-    if(c.status==='inactive')return [A('Reopen chat',I.undo,'info','qaChat('+id+',\'active\')')];
-    return [A('Close chat',I.x,'idle','qaChat('+id+',\'inactive\')')];
-  }
-};
-
-/* Employees in both listings share a shape, so they share their actions. */
-function empActions(data,id){
-  var e=find(data,id);if(!e)return [];
-  var acts=[];
-  if(typeof atViewCalendar==='function'){
-    var initials=String(e.name||'').split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-    acts.push(A('Open timesheet',I.cal,'nav',
-      'qaEmpTimesheet(\''+esc(e.empId||'')+'\',\''+esc(e.name||'')+'\',\''+initials+'\',\''+esc(e.jobTitle||'Employee')+'\')'));
-  }
-  return acts;
-};
-
-/* ── ACTIVATE / DEACTIVATE IS NOT A ROW ACTION ─────────────────────────────
-   Six listings used to end every row in a power button that flipped the record
-   between Active and Inactive - Compliance, Leave Policies, Teams, Rates &
-   Rules, Contract Templates, and every generic listing (People, Pay Runs,
-   Users, Payheads, Settings, Support) through genericActions(). All of it is
-   gone from the row, deliberately, and none of it was replaced.
-
-   Everything else this file offers moves a record ALONG a path it was always
-   going to travel: approve the leave that was filed to be approved, mark paid
-   the invoice that was raised to be paid, advance the contract to its next
-   stage. Retiring a record is not that. It is not the next step in anything,
-   it is not what the row is waiting for, and it takes effect across every
-   place the record is used - which is exactly the kind of decision the detail
-   panel exists to be read before making. A one-click toggle sitting at the end
-   of a scanning gesture is the wrong shape for it.
-
-   The status is still changed from the record's own panel, where the rest of
-   the record is visible while you change it. What used to be here and now
-   isn't: qaCompliance, qaPolicyToggle, qaTeamToggle, qaRateToggle,
-   qaTemplateToggle, qaGeneric, genericActions and the GENERIC page list.
-   ──────────────────────────────────────────────────────────────────────── */
-
-function actionsFor(pg,id,tr){
-  if(REGISTRY[pg])return REGISTRY[pg](id,tr)||[];
-  return [];
-}
-
-/* Row selection and the bulk bar used to live here. They only ever reached
-   four of the ~19 listings - the four with an obvious bulk verb - which made
-   the hover checkbox read as an accident on the pages that had it rather than
-   a feature the pages without it were missing. The per-row cluster below is
-   uniform across every listing, so that is the whole interaction now. */
-
-/* ── injection ─────────────────────────────────────────────────────────── */
-/* Every listing's ACTION cell ends in one of these two: the hamburger that
-   opens the detail panel, or - on Contracts, which shows a stage dropdown
-   instead - the dots button next to it. Anchoring on them is what lets this
-   file stay out of the twelve builders. */
-var ANCHOR='.lp-action-btn,.ct-dots-btn';
-
-function rowIdFrom(tr){
-  if(tr.hasAttribute('data-row-id'))return tr.getAttribute('data-row-id');
-  /* Bespoke builders stamp id="<prefix>-row-<id>" on every row. */
-  var m=/(?:^|-)row-(\w+)$/.exec(tr.id||'');
-  if(m)return m[1];
-  /* Last resort - and the only route for Company Settings, whose rows carry
-     neither an id nor data-row-id: the record id is already an argument in
-     the anchor button's own onclick. */
-  var btn=tr.querySelector(ANCHOR);
-  var oc=btn&&btn.getAttribute('onclick');
-  var n=oc&&/\((\d+)/.exec(oc);
-  return n?n[1]:null;
-}
-
-function buildCluster(actions){
-  var span=document.createElement('span');
-  span.className='qa-cluster';
-  span.setAttribute('data-qa','1');
-  span.innerHTML=actions.map(function(a){
-    var lead=a.lead?' qa-lead':'';
-    /* A lead button carries EITHER the breathing dot or its icon, never both.
-       The dot says "waiting on you" and the label says what to do; adding a
-       tick between them is a third thing saying nothing new. */
-    var glyph=(a.lead&&a.dot)?'<span class="qa-dot"></span>':a.icon;
-    return '<button type="button" class="qa-btn qa-'+a.tone+lead+'" title="'+esc(a.label)+'" aria-label="'+esc(a.label)+'"'
-      +' onclick="event.stopPropagation();'+a.call+'">'
-      +glyph
-      +(a.lead?'<span>'+esc(a.label)+'</span>':'')
-      +'</button>';
-  }).join('');
-  return span;
-}
-
-function enhanceRow(pg,tr){
-  var btn=tr.querySelector(ANCHOR);
-  if(!btn)return;
-  var cell=btn.closest('td');
-  if(!cell)return;
-  /* On Contracts the anchor is nested inside .ct-action-wrap, so the anchor
-     itself is not a child of the cell and insertBefore(anchor) throws. Walk
-     up to whichever direct child of the cell contains it - which also puts
-     the cluster to the LEFT of the whole stage control rather than inside
-     it, keeping "existing controls stay put" true on that page too. */
-  var before=btn;
-  while(before.parentElement&&before.parentElement!==cell)before=before.parentElement;
-  if(before.parentElement!==cell)return;
-
-  /* Mark the table BEFORE deciding whether this row gets any actions. The
-     class right-aligns the ACTION column, which is what keeps the hamburger
-     on a single vertical line across the whole table: clusters differ in
-     width row to row, so a left-aligned column would push the one control
-     the user's hand already knows to a different x on every row. Marking
-     only rows that got actions would re-create exactly that problem. */
-  var table=tr.closest('table');
-  if(table)table.classList.add('qa-right');
-  if(!cell.hasAttribute('data-qa-cell')){
-    cell.setAttribute('data-qa-cell','1');
-    /* The cell must swallow clicks on our buttons: some builders put the
-       stopPropagation on the button, others on the cell, and a stray click
-       would open the detail panel on top of the action just taken. */
-    cell.addEventListener('click',function(e){if(e.target.closest('[data-qa]'))e.stopPropagation();});
-  }
-
-  var existing=cell.querySelector(':scope > [data-qa]');
-  if(existing)existing.remove();
-  var id=rowIdFrom(tr);
-  if(id==null)return;
-  var actions=actionsFor(pg,id,tr);
-  if(!actions.length)return;
-  cell.insertBefore(buildCluster(actions),before);
-}
-
-/* ── the enhancer ──────────────────────────────────────────────────────────
-   enhance() WRITES to the same subtree the observer WATCHES, so it has to
-   close the loop itself: takeRecords() at the end throws away the records its
-   own writes just queued. Without that line every listing repaint becomes an
-   infinite rAF loop that pins a core. A boolean guard is not enough - records
-   are delivered as a microtask after enhance() has already returned.      */
-var scheduled=false,observer=null;
-function enhance(){
-  scheduled=false;
-  var pg=(typeof page!=='undefined')?page:null;
-  var root=document.getElementById('adt-content');
-  if(!pg||!root){if(observer)observer.takeRecords();return;}
-  var rows=root.querySelectorAll('table tbody tr');
-  for(var i=0;i<rows.length;i++){
-    var tr=rows[i];
-    if(!tr.querySelector(ANCHOR))continue;   /* empty-state row */
-    enhanceRow(pg,tr);
-  }
-  if(observer)observer.takeRecords();
-}
-function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(enhance);}
 
 /* ── commit + feedback ─────────────────────────────────────────────────── */
 /* Repaint without the entrance animation, then confirm in the row itself.
@@ -317,7 +52,6 @@ window.qaCommit=function(rowSelector,tone){
   if(content)content.classList.add('m-quiet');
   if(typeof renderADTPage==='function')renderADTPage();
   requestAnimationFrame(function(){
-    enhance();
     var tr=rowSelector?document.querySelector(rowSelector):null;
     if(tr){
       tr.classList.add('m-flash-'+(tone||'ok'));
@@ -435,33 +169,9 @@ function qaAsk(opts){
    either way, because the confirm step is what makes the action deliberate,
    not what happens to be persisted afterwards. */
 var HISTORY={
-  'all-leaves':{row:'#al-row-',
-    wf:function(){return typeof alWorkflowData!=='undefined'?alWorkflowData:null;},
-    logs:function(id){return (typeof alLogsData!=='undefined'&&alLogsData[id])||[];}},
-  payments:{row:'#pm-row-',
-    wf:function(){return typeof pmWorkflowData!=='undefined'?pmWorkflowData:null;},
-    logs:function(id){return (typeof pmLogsData!=='undefined'&&pmLogsData[id])||[];}},
-  compliance:{row:'#cmp-row-',
-    wf:function(){return null;},
-    logs:function(id){return (typeof complianceLogsData!=='undefined'&&complianceLogsData[id])||[];}},
-  'leave-policies':{row:'#lp-row-',
-    wf:function(){return typeof lpWorkflowData!=='undefined'?lpWorkflowData:null;},
-    logs:function(id){return (typeof lpLogsData!=='undefined'&&lpLogsData[id])||[];}},
   'support-tickets':{row:'#tk-row-',
     wf:function(){return typeof tkWorkflowData!=='undefined'?tkWorkflowData:null;},
-    logs:function(id){return (typeof tkLogsData!=='undefined'&&tkLogsData[id])||[];}},
-  teams:{row:'#tm-row-',
-    wf:function(){return typeof tmWorkflowData!=='undefined'?tmWorkflowData:null;},
-    logs:function(id){return (typeof tmLogsData!=='undefined'&&tmLogsData[id])||[];}},
-  'rates-rules':{row:'#rr-row-',
-    wf:function(){return null;},
-    logs:function(id){return (typeof ratesRulesLogsData!=='undefined'&&ratesRulesLogsData[id])||[];}},
-  'contract-templates':{row:'#ctp-row-',
-    wf:function(){return null;},
-    logs:function(id){return (typeof ctpLogsData!=='undefined'&&ctpLogsData[id])||[];}},
-  chats:{row:'#chat-row-',
-    wf:function(){return typeof chatWorkflowData!=='undefined'?chatWorkflowData:null;},
-    logs:function(){return [];}}
+    logs:function(id){return (typeof tkLogsData!=='undefined'&&tkLogsData[id])||[];}}
 };
 
 /* Write the action into both histories the record has, then repaint. */
@@ -475,52 +185,10 @@ function record(pg,rec,id,o){
   toast(o.toastTitle,o.toastKind||'success',o.toastSub);
 }
 
-/* ── action handlers ───────────────────────────────────────────────────── */
-window.qaLeave=function(id,status){
-  var l=find(D().leaves,id);if(!l)return;
-  var span=l.leaveFrom+(l.leaveTo&&l.leaveTo!==l.leaveFrom?' to '+l.leaveTo:'');
-  var tone=status==='Approved'?'ok':status==='Pending'?'info':'bad';
-  qaAsk({
-    title:status==='Approved'?'Approve leave request':status==='Pending'?'Move back to pending':'Reject leave request',
-    subject:l.name+' · '+span,
-    from:l.status,to:status,tone:tone,
-    confirmLabel:status==='Approved'?'Approve':status==='Pending'?'Move back':'Reject',
-    onConfirm:function(v){
-      l.status=status;
-      record('all-leaves',l,id,{
-        title:'Leave '+status,comment:v.comment,statusLabel:status,tone:tone,
-        toastTitle:'Leave '+status.toLowerCase(),
-        toastKind:status==='Approved'?'success':status==='Pending'?'info':'error',
-        toastSub:l.name+' · '+span});
-    }});
-};
-
-window.qaPayment=function(id,status){
-  var p=find(D().payments,id);if(!p)return;
-  qaAsk({
-    title:status==='Paid'?'Mark invoice paid':'Reopen invoice',
-    subject:p.orderId+' · '+p.name+' · '+p.amountDue,
-    from:p.invoiceStatus,to:status,tone:status==='Paid'?'ok':'wait',
-    confirmLabel:status==='Paid'?'Mark paid':'Reopen',
-    onConfirm:function(v){
-      p.invoiceStatus=status;
-      record('payments',p,id,{
-        title:'Invoice '+status,comment:v.comment,statusLabel:status,
-        tone:status==='Paid'?'ok':'info',
-        toastTitle:'Invoice marked '+status.toLowerCase(),
-        toastKind:status==='Paid'?'success':'info',
-        toastSub:p.orderId+' · '+p.name+' · '+p.amountDue});
-    }});
-};
-window.qaPolicyEdit=function(id){
-  if(typeof leaveEditId!=='undefined')leaveEditId=id;
-  page='leave-policy-edit';
-  if(typeof renderADTPage==='function')renderADTPage();
-};
-
+/* ── the move itself ───────────────────── */
 /* Tickets move by NAMED MOVE, not by "set the status to X". The move has to
    be one the flow allows from where the ticket actually is, which is what
-   stops a listing click from closing a ticket that nobody has resolved: the
+   stops a stale panel from closing a ticket that nobody has resolved: the
    only move into `closed` lives on `resolved`, and `resolved` is the client's
    to confirm. An out-of-date row (someone else moved it in another tab) fails
    the lookup here rather than silently applying. */
@@ -549,8 +217,8 @@ window.qaTicket=function(id,to){
     onConfirm:function(v){ tkApply(t,id,mv,v); }});
 };
 
-/* Shared by the row action, the panel's move buttons and the Logs form, so
-   all three produce identical history for the same move. */
+/* Shared by the panel's move buttons and the Logs form, so both
+   produce identical history for the same move. */
 function tkApply(t,id,mv,v){
   if(v.assignee)t.assignedTo=v.assignee;
   /* waitingOn only means anything while blocked - carrying a stale value onto
@@ -575,50 +243,5 @@ window.qaTicketApply=function(id,to,vals){
   return true;
 };
 function lbl(s){return (typeof tkStatusLabel==='function')?tkStatusLabel(s):s;}
-
-window.qaChat=function(id,status){
-  var c=find(D().chats,id);if(!c)return;
-  var cl=function(s){return (typeof chatStatusLabel==='function')?chatStatusLabel(s):s;};
-  var tone=status==='inactive'?'idle':status==='active'?'ok':'info';
-  qaAsk({
-    title:status==='inactive'?'Close chat':status==='active'?'Reopen chat':'Mark replied',
-    subject:c.chatId+' · '+c.clientName,
-    from:cl(c.status),to:cl(status),tone:status==='inactive'?'bad':'ok',
-    confirmLabel:status==='inactive'?'Close chat':status==='active'?'Reopen':'Mark replied',
-    onConfirm:function(v){
-      c.status=status;
-      record('chats',c,id,{
-        title:'Chat '+cl(status),comment:v.comment,statusLabel:cl(status),tone:tone,
-        toastTitle:'Chat: '+cl(status),
-        toastKind:status==='inactive'?'info':'success',
-        toastSub:c.chatId+' · '+c.clientName});
-    }});
-};
 
-/* Contracts do not commit from the row: advancing a stage needs a note and a
-   document, so this lands you IN that form with the next stage preselected -
-   one click instead of row, dropdown, stage, tab. */
-window.qaContractAdvance=function(id){
-  var d=D();
-  var c=find(d.contracts,id);if(!c||!d.ctFlow)return;
-  var i=d.ctFlow.indexOf(c.status);
-  if(i<0||i>=d.ctFlow.length-1)return;
-  if(typeof ctPickStatus==='function')ctPickStatus(id,d.ctFlow[i+1]);
-};
-
-window.qaEmpTimesheet=function(empId,name,initials,role){
-  if(typeof atViewCalendar==='function')atViewCalendar(empId,name,initials,role);
-};
-
-/* ── boot ──────────────────────────────────────────────────────────────── */
-function start(){
-  var root=document.getElementById('adt-content');
-  if(!root){setTimeout(start,50);return;}
-  observer=new MutationObserver(schedule);
-  observer.observe(root,{childList:true,subtree:true});
-  schedule();
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);
-else start();
-
 })();

@@ -1,104 +1,19 @@
 /* ==========================================================================
-   ROW QUICK ACTIONS  -  the action a row exists for, done from the row.
+   THE ACTION COLUMN, AND THE CONFIRM DIALOG.
 
-   THE PROBLEM THIS SOLVES.  Every listing in this app ends in one hamburger
-   that opens a detail panel. Approving a leave was: click row -> panel opens
-   -> Logs tab -> pick status -> Save. Five interactions to answer a yes/no
-   question that the row already showed you the answer to. The detail panel is
-   right for reading a record. It is wrong as the only door to acting on one.
+   This file once styled a cluster of commit buttons injected into every
+   listing row - a labelled pill for the decision a row was waiting on, icon
+   buttons for the rest. That is gone: a listing row is for reading, and the
+   hamburger is the only control in the ACTION cell again.
 
-   WHAT THIS ADDS.  A cluster of small buttons in the same ACTION cell, to the
-   LEFT of the hamburger. The hamburger never moves and never changes: "open
-   the full record" stays exactly where a returning user's hand already goes.
-
-   THE THREE SHAPES, and why a row only ever shows one or two of them.
-     .qa-lead   labelled pill. The one thing this row is WAITING for. Only
-                appears on rows that are actually blocked on a decision
-                (Pending leave, Unpaid invoice) - never on settled rows, so
-                a labelled pill anywhere in a table means "this one needs you"
-                and a table with none means "nothing here needs you". That
-                signal only survives if it stays rare. One per row, maximum.
-     .qa-btn    icon-only, 26px. Everything else a row can do.
-     hamburger  untouched, always last. See above.
-
-   COLOUR.  buttons.css sets the house rule: buttons are navigation, they get
-   no semantic colour, and hover is the only place colour appears at all.
-   These are the one deliberate exception to the first half of that rule and
-   they still obey the second. A quick action does not navigate - it COMMITS a
-   result, in place, with no confirmation step. So at rest it is neutral grey
-   like every other button, and on hover it takes the colour of the RESULT it
-   is about to write, drawn from the same --st-* tokens the resulting status
-   badge will use. Hover green means the badge is about to go green. That is
-   the confirmation step, and it costs nothing because it is just hover.
+   What is left is the two things that outlived it. The ACTION column still
+   pins itself to the right edge of its card, because the hamburger is the
+   one cell that must never scroll off screen; and the confirm dialog is
+   still how a support ticket changes state, from the detail panel.
    ========================================================================== */
-
-.qa-cluster{
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  vertical-align:middle;
-  margin-right:4px;
-}
-
-/* -- icon-only ---------------------------------------------------------- */
-.qa-btn{
-  display:inline-flex;align-items:center;justify-content:center;
-  width:26px;height:26px;padding:0;
-  border:1px solid transparent;
-  border-radius:var(--r-control);      /* square-ish: it is a control, not a badge */
-  background:transparent;
-  color:#8b93a1;
-  cursor:pointer;
-  font-family:inherit;
-  flex-shrink:0;
-  transition:background var(--t-micro) ease,color var(--t-micro) ease,
-             border-color var(--t-micro) ease,transform var(--t-fast) var(--e-out);
-}
-.qa-btn svg{width:14px;height:14px;pointer-events:none}
-.qa-btn:hover{transform:translateY(-1px)}
-.qa-btn:active{transform:translateY(0) scale(.9)}
-
-/* -- labelled lead ------------------------------------------------------ */
-.qa-btn.qa-lead{
-  width:auto;height:26px;padding:0 10px;gap:5px;
-  font-size:11.5px;font-weight:600;letter-spacing:.1px;
-  border-color:var(--border);
-  background:var(--card);
-  color:var(--btn-ink,#353535);
-}
-.qa-btn.qa-lead svg{width:12px;height:12px}
-
-/* -- hover tones: the colour of the RESULT, not of the button ----------- */
-.qa-btn.qa-ok:hover  {background:var(--st-ok-bg);  color:var(--st-ok-fg);  border-color:var(--st-ok-bd)}
-.qa-btn.qa-bad:hover {background:var(--st-bad-bg); color:var(--st-bad-fg); border-color:var(--st-bad-bd)}
-.qa-btn.qa-wait:hover{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
-.qa-btn.qa-info:hover{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
-.qa-btn.qa-idle:hover{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
-/* Actions that only navigate - "open the timesheet", "edit" - carry no result
-   colour. They darken to --btn-accent instead, the same hover every other
-   navigation button in the app uses. */
-.qa-btn.qa-nav:hover {background:#f8f9fb;color:var(--btn-accent,#1a1a1a);border-color:var(--btn-accent,#1a1a1a)}
-
-.qa-btn:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
-
-/* The lead pill on a waiting row carries a slow breathing dot so an
-   unattended queue is visible from across the room without adding a colour
-   to the table itself. It stops the moment the row stops waiting, because
-   the button is then no longer rendered at all. */
-.qa-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;animation:qa-breathe 2.6s ease-in-out infinite}
-@keyframes qa-breathe{0%,100%{opacity:.35}50%{opacity:1}}
-@media (prefers-reduced-motion:reduce){.qa-dot{animation:none;opacity:.8}}
 
 /* Keep the ACTION cell from wrapping onto two lines on a narrow table. */
 .lp-table td:last-child,.listing-table td:last-child{white-space:nowrap}
-
-/* The ACTION column right-aligns once any row in the table carries a cluster.
-   Clusters are different widths on different rows - a Pending row shows two
-   buttons, a settled one shows none - so a left-aligned column would land the
-   hamburger at a different x on every row. Anchored to the right edge, it
-   stays on one vertical line and the clusters grow leftwards into the gap. */
-.qa-right td[data-qa-cell],.qa-right th:last-child{text-align:right}
-.qa-right td[data-qa-cell]>*{vertical-align:middle}
 
 /* ==========================================================================
    THE ACTION COLUMN NEVER SCROLLS AWAY
@@ -106,11 +21,9 @@
    Every listing here runs eight to ten columns inside a card that is narrower
    than that - narrower still once a detail panel slides over 68% of it - so
    ACTION, being last, was the first cell to fall off the right edge. That is
-   the one cell that must never be off screen: it holds the hamburger, and
-   since the clusters above it holds the row's decision buttons as well. So
-   "scroll right, then click" had become the cost of every inline action -
-   the exact friction this whole file exists to remove, reintroduced one
-   column over. A cheap action you cannot see is not a cheap action.
+   the one cell that must never be off screen: it is the only door into the
+   record, so "scroll right, then click" was the cost of opening any row on a
+   table wide enough to need it - a door you cannot see is barely a door.
 
    So the last column pins itself to the right edge of the card and the other
    columns travel underneath it. Nothing about the row moves and no builder
@@ -275,10 +188,10 @@ select.qa-ask-input{height:38px;padding:0 12px;cursor:pointer}
 /* ==========================================================================
    COMMAND PALETTE  (Ctrl/Cmd-K)
 
-   Lives in this file rather than main.css because it solves the same problem
-   the row clusters solve one level up: the distance between wanting to do a
-   thing and doing it. The clusters shorten it inside a table; this shortens
-   it across the whole product.
+   Lives in this file rather than main.css for historical reasons: it was
+   written alongside the row actions that used to sit here, as the same idea
+   one level up - shortening the distance between wanting to do a thing and
+   doing it, across the whole product rather than inside one table.
 
    The overlay shell - backdrop, box, input row, footer - is already styled in
    main.css. Everything here is the results list that replaced the five fixed

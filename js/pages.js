@@ -3766,10 +3766,10 @@ function buildMyTimesheetHTML(viewingOther) {
 
   // ── Stats ──
   const statsHtml = '<div class="ts-stats">'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico" style="background:#eff6ff"><svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+presentCount+'</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs pos">+'+presentCount+' days vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico" style="background:#fff7ed"><svg viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">0</div><div class="ts-stat-sub">No leaves taken</div><div class="ts-stat-vs neu">+0 days vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico" style="background:#f0fdf4"><svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+totalHoursNum.toFixed(0)+'h</div><div class="ts-stat-sub">8h average/day</div><div class="ts-stat-vs pos">+0% vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico" style="background:#faf5ff"><svg viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">0h</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs neu">+0h vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+presentCount+'</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs pos">+'+presentCount+' days vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">0</div><div class="ts-stat-sub">No leaves taken</div><div class="ts-stat-vs neu">+0 days vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+totalHoursNum.toFixed(0)+'h</div><div class="ts-stat-sub">8h average/day</div><div class="ts-stat-vs pos">+0% vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">0h</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs neu">+0h vs last month</div></div>'
     + '</div>';
 
   // ── Calendar ──
@@ -4302,10 +4302,41 @@ function buildSwitchEntityHTML(){
 }
 
 // ── MY PROFILE PAGE ──
-function setProfTab(tab){profTab=tab;const el=document.getElementById('adt-content');if(el)el.innerHTML=buildMyProfileHTML();}
+/* A tab click changes a SECTION, not the page. Only .prof-tab-body is
+   rewritten: the hero card keeps its place, the tab bar keeps its DOM (so the
+   underline marker travels rather than being rebuilt beneath itself), and the
+   scroll position is left where the user put it. */
+function setProfTab(tab){
+  if(profTab===tab)return;
+  profTab=tab;
+  const body=profTabBody();
+  if(!body){refreshProfile();return;}
+  document.querySelectorAll("#adt-content .prof-tab").forEach(function(b){
+    b.classList.toggle("active",b.dataset.tab===tab);
+  });
+  profPaintTabBody(body);
+}
+function profTabBody(){return document.querySelector("#adt-content .prof-tab-body");}
+/* Replay the enter animation on the new body. The class has to come off and
+   the layout be read before it goes back on, or the second click re-adds a
+   class that is already there and nothing animates. */
+function profPaintTabBody(body){
+  body.innerHTML=buildProfTabContent();
+  body.classList.remove("prof-tab-in");
+  void body.offsetWidth;
+  body.classList.add("prof-tab-in");
+}
 // ── PROFILE ATTACHMENTS ──
 const PROF_DOCS=['Resume','Relieving Letter','Address Proof','Qualification Proof','Passport Photo','Photo Id Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Aadhar Back','Aadhar Front','Last Offer Letter'];
-function refreshProfile(){const el=document.getElementById('adt-content');if(el)el.innerHTML=buildMyProfileHTML();}
+/* Uploading or removing an attachment only ever changes what is inside the
+   tab, so it repaints the tab body alone. The full page build is the fallback
+   for the first paint, when there is no body to write into yet. */
+function refreshProfile(){
+  const body=profTabBody();
+  if(body){profPaintTabBody(body);return;}
+  const el=document.getElementById("adt-content");
+  if(el)el.innerHTML=buildMyProfileHTML();
+}
 function profFormatSize(bytes){
   if(bytes<1024)return bytes+' B';
   if(bytes<1024*1024)return (bytes/1024).toFixed(1)+' KB';
@@ -4360,24 +4391,8 @@ function profDrop(e,el,docName){
 }
 
 function buildMyProfileHTML(){
-  const iUser='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  const iMail='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
-  const iPhone='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.2.73.43 1.44.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.9-.87a2 2 0 0 1 2.11-.45c1.37.27 2.08.5 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
-  const iShield='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
-  const iGlobe='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-  const iCal='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  const iLock='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
-  const iEdit='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-  const iKey='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>';
-  const iBell='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
   const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-  const iPaperclip='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
-  const iUpload='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  const iBank='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>';
-  const iHash='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
-  const iDl='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-
-  const fc=(ico,label,val)=>`<div class="prof-field"><div class="prof-field-icon">${ico}</div><div class="prof-field-body"><div class="prof-field-label">${label}</div><div class="prof-field-val">${val}</div></div></div>`;
+  const iEdit='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 
   const profTabs=[
     {id:'basic-details',label:'Basic Details'},
@@ -4386,7 +4401,7 @@ function buildMyProfileHTML(){
     {id:'salary-slip',label:'Salary Slip'},
     {id:'change-password',label:'Change Password'},
   ];
-  const tabBar=`<div class="prof-tab-bar">${profTabs.map(t=>`<button class="prof-tab${profTab===t.id?' active':''}" onclick="setProfTab('${t.id}')">${t.label}</button>`).join('')}</div>`;
+  const tabBar=`<div class="prof-tab-bar">${profTabs.map(t=>`<button class="prof-tab${profTab===t.id?' active':''}" data-tab="${t.id}" onclick="setProfTab('${t.id}')">${t.label}</button>`).join('')}</div>`;
 
   const heroCard=`
     <div class="prof-hero-card">
@@ -4401,6 +4416,32 @@ function buildMyProfileHTML(){
       </div>
       <button class="ep-save-btn prof-edit-btn">${iEdit} Edit Profile</button>
     </div>`;
+
+  return `<div class="ep-page prof-page">${heroCard}${tabBar}<div class="prof-tab-body">${buildProfTabContent()}</div></div>`;
+}
+
+/* The body of the selected tab, and nothing around it. Kept separate from
+   buildMyProfileHTML so setProfTab() can swap ONLY .prof-tab-body: the hero
+   card and the tab bar stay in the DOM, which is what lets the underline
+   marker travel between tabs instead of being rebuilt under it. */
+function buildProfTabContent(){
+  const iUser='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iMail='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+  const iPhone='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.2.73.43 1.44.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.9-.87a2 2 0 0 1 2.11-.45c1.37.27 2.08.5 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
+  const iShield='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+  const iGlobe='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  const iCal='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const iLock='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+  const iKey='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>';
+  const iBell='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+  const iPaperclip='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
+  const iUpload='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+  const iBank='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>';
+  const iHash='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+  const iDl='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+  const fc=(ico,label,val)=>`<div class="prof-field"><div class="prof-field-icon">${ico}</div><div class="prof-field-body"><div class="prof-field-label">${label}</div><div class="prof-field-val">${val}</div></div></div>`;
 
   let tabContent='';
 
@@ -4480,9 +4521,9 @@ function buildMyProfileHTML(){
   }
 
   else if(profTab==='bank-details'){
-    tabContent=`<div class="ep-form-card" style="max-width:680px">
+    tabContent=`<div class="ep-form-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Bank Account Details</span></div>
-      <div class="prof-field-grid">
+      <div class="prof-field-grid prof-field-grid-wide">
         ${fc(iGlobe,'Country / Location','India')}
         ${fc(iUser,'Account Holder Name','Pallavi Parate')}
         ${fc(iBank,'Bank Name','ICICI Bank')}
@@ -4559,9 +4600,9 @@ function buildMyProfileHTML(){
 
   else if(profTab==='change-password'){
     const inp=(id,label,ph)=>`<div><div style="font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px">${label}</div><input id="${id}" type="password" placeholder="${ph}" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:var(--r-input);padding:0 14px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);box-sizing:border-box"></div>`;
-    tabContent=`<div class="ep-form-card" style="max-width:480px">
+    tabContent=`<div class="ep-form-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Change Password</span></div>
-      <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:16px;max-width:480px">
         ${inp('cp-current','Current Password','Enter current password')}
         ${inp('cp-new','New Password','Enter new password')}
         ${inp('cp-confirm','Confirm New Password','Re-enter new password')}
@@ -4573,7 +4614,7 @@ function buildMyProfileHTML(){
     </div>`;
   }
 
-  return `<div class="ep-page prof-page">${heroCard}${tabBar}<div class="prof-tab-body">${tabContent}</div></div>`;
+  return tabContent;
 }
 
 // ── COMPANY SETTINGS PAGE ──

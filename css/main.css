@@ -60,12 +60,19 @@
 }
 /* Line-item selection — ONE feedback for every clickable row/cell in the app:
    table rows (listings, leaves, policies, payroll, tickets…), timesheet day
-   cells, picker list items. Light blue on click, same fade, same orange rail.
-   Never hard-code a selected background; use these three. */
+   cells, picker list items. Grey on click, same fade, same orange rail.
+   Never hard-code a selected background; use these three.
+
+   GREY, NOT BLUE. These were --st-info-bg blue, which put a status colour on
+   a row for a reason that has nothing to do with its status - an open record
+   read as an informational one, and next to a real blue badge the two argued.
+   Grey says "this is the one you are looking at" and says nothing else, which
+   is all selection ever means. The orange rail is what makes it unmistakable;
+   the fill only has to be a step darker than --row-hover. */
 :root{
   --row-hover:#fafbfc;      /* pointer is over it, nothing committed yet */
-  --row-sel:#eff6ff;        /* clicked / open — light blue, same hue as --st-info-bg */
-  --row-sel-hover:#dbeafe;  /* clicked AND hovered */
+  --row-sel:#f1f3f5;        /* clicked / open — the same neutral as the icon chips */
+  --row-sel-hover:#e7eaee;  /* clicked AND hovered */
   --row-sel-rail:var(--orange);  /* 3px inset accent rail on the leading edge */
   --row-fade:background-color .16s ease;
 }
@@ -916,8 +923,12 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
 .ts-stat-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
 .ts-stat-label{font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.3px}
-.ts-stat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.ts-stat-ico svg{width:15px;height:15px;fill:none}
+/* The fill and the glyph colour live here, not in the four inline styles the
+   builder used to carry (blue, orange, green, purple - one per card). Same
+   neutral chip as .csm-status-icon and .hr-action-icon: four cards side by
+   side are one row of numbers, not four different kinds of news. */
+.ts-stat-ico{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#f1f3f5;color:var(--navy)}
+.ts-stat-ico svg{width:15px;height:15px;fill:none;stroke:currentColor}
 .ts-stat-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1}
 .ts-stat-sub{font-size:11px;color:var(--gray);margin-top:4px}
 .ts-stat-vs{font-size:11px;font-weight:500;margin-top:10px;display:flex;align-items:center;gap:4px}
@@ -1116,6 +1127,11 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .prof-section-hdr .policy-section-title{margin-bottom:0}
 .prof-section-hdr svg{color:var(--gray)}
 .prof-field-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Two columns is right inside the narrow left column of Basic Details. A card
+   that spans the full page - Bank Details - would stretch the same two columns
+   to twice the width of every other field in the profile, so it fills by size
+   instead and its fields end up the same width as the ones next door. */
+.prof-field-grid-wide{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .prof-field{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--light)}
 .prof-field-icon{width:32px;height:32px;border-radius:8px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gray)}
 .prof-field-body{min-width:0}

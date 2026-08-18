@@ -6,13 +6,14 @@
    should occupy, and writes that as width/height/transform. The travel is a
    plain CSS transition (see the TAB BARS section of css/motion.css).
 
-   THE PART THAT NEEDS EXPLAINING is that only one of these bars survives a
-   tab click. The detail panels do, since isbTab() in js/core.js swaps only
-   the panel body, and the form segmenteds do, since selSeg() just moves a
-   class. The rest - module tabs, profile tabs, both Company Settings bars -
-   answer a click with renderADTPage() or an innerHTML swap that rebuilds the
-   whole page. Their marker is therefore a BRAND NEW element by the time we
-   are asked to move it, and a transition needs two states of one element.
+   THE PART THAT NEEDS EXPLAINING is that not every bar survives a tab click.
+   The detail panels do, since isbTab() in js/core.js swaps only the panel
+   body; the form segmenteds do, since selSeg() just moves a class; and the
+   profile bar does, since setProfTab() swaps only .prof-tab-body. The rest -
+   module tabs, both Company Settings bars - answer a click with
+   renderADTPage() or an innerHTML swap that rebuilds the whole page. Their
+   marker is therefore a BRAND NEW element by the time we are asked to move
+   it, and a transition needs two states of one element.
 
    So each bar's last rectangle is remembered. When a bar comes back rebuilt,
    its fresh marker is planted at the remembered rectangle with transitions

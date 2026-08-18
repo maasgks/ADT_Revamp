@@ -64,11 +64,11 @@
 /* `backwards`, NOT `both` - see the note on m-sec-in below. */
 #adt-content>*{animation:m-page-in var(--t-base) var(--e-out) backwards}
 
-/* An inline row action repaints the whole page to keep counts honest, but the
+/* A ticket move repaints the whole page to keep counts honest, but the
    user's mental model is that ONE ROW changed. Replaying the page entrance
-   there would read as a reload and undo the point of acting inline, so the
-   commit path sets .m-quiet for that one repaint. The row's own flash is the
-   feedback instead - see qaCommit() in js/quick-actions.js. */
+   there would read as a reload, so the commit path sets .m-quiet for that one
+   repaint. The row's own flash is the feedback instead - see qaCommit() in
+   js/quick-actions.js. */
 #adt-content.m-quiet>*,
 #adt-content.m-quiet .listing-page>*,
 #adt-content.m-quiet .lp-page>*,
@@ -334,6 +334,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 @media (prefers-reduced-motion:reduce){
   .tab-ind{transition:opacity var(--t-fast) ease}
 }
+
+/* My Profile swaps only .prof-tab-body when a tab is clicked - the hero card
+   and the bar above it are never rebuilt. Without this the new section would
+   simply appear, which after a page that used to repaint entirely reads as
+   nothing having happened. Same curve as a page entering, half the travel:
+   this is a section changing inside a page, not a page arriving. */
+@keyframes m-tabbody-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+/* `backwards`, not `both`, for the stacking-context reason spelled out on
+   m-sec-in above - this body holds form controls with menus. */
+.prof-tab-body.prof-tab-in{animation:m-tabbody-in var(--t-base) var(--e-out) backwards}
 
 /* ── 7. FEEDBACK ──────────────────────────────────────────────────────────
    The three ways the app tells you something happened.                    */
