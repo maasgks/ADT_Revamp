@@ -7,7 +7,7 @@
 .lp-isb{display:flex;flex-direction:column;flex:1;min-height:0}
 .lp-isb-tabbar{display:flex;align-items:stretch;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0;min-height:46px}
 .lp-isb-back{width:42px;border-radius:0;border:none;border-right:1px solid var(--border);background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#64748b;padding:0;font-family:inherit;transition:.15s}
-.lp-isb-back:hover{background:#f8fafc;color:var(--orange)}
+.lp-isb-back:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .lp-isb-tabs{display:flex;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;position:relative}
 .lp-isb-tabs::-webkit-scrollbar{display:none}
 
@@ -17,7 +17,7 @@
    are all in the TAB BARS section of css/motion.css. */
 .lp-isb-nav-btn{width:30px;border:none;background:transparent;flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#94a3b8;padding:0;transition:background .15s,color .15s;border-right:1px solid var(--border)}
 .lp-isb-nav-btn.nav-right{border-right:none;border-left:1px solid var(--border)}
-.lp-isb-nav-btn:hover{background:#f8fafc;color:var(--orange)}
+.lp-isb-nav-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 /* The transparent 1.5px border stays on EVERY tab even though none of them
    draws it any more: it is what makes a tab's offset box the exact size the
    sliding indicator has to match, and it keeps that size identical whether
@@ -29,10 +29,10 @@
    the box would land a few pixels short. This reads the same and cannot
    move anything. */
 .lp-isb-tab.active{color:var(--orange);text-shadow:0 0 .45px currentColor}
-.lp-isb-tab:hover:not(.active){color:var(--navy)}
+.lp-isb-tab:hover:not(.active){color:var(--btn-accent)}
 .lp-isb-right{display:flex;align-items:center;gap:5px;padding:0 10px;border-left:1px solid var(--border);flex-shrink:0}
 .lp-isb-close{width:26px;height:26px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray);transition:.15s;padding:0}
-.lp-isb-close:hover{background:#e2e8f0;color:var(--navy)}
+.lp-isb-close:hover{background:var(--btn-tint-bg);color:var(--btn-accent)}
 .lp-isb-body{flex:1;overflow-y:auto;padding:18px 20px;background:#fff;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.07) transparent}
 .lp-isb-body::-webkit-scrollbar{width:3px}
 .lp-isb-body::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:99px}
@@ -64,7 +64,7 @@ tbody tr.lp-row-selected:hover>td,
 tr.lp-row-selected>td:first-child,
 .lp-table tr.lp-row-selected td:first-child{box-shadow:inset 3px 0 0 var(--row-sel-rail)}
 .lp-action-btn{display:inline-flex;align-items:center;justify-content:center;width:32px;height:30px;border:none;border-radius:7px;color:#334155;background:transparent;cursor:pointer;transition:.15s;font-family:inherit;padding:0;flex-shrink:0}
-.lp-action-btn:hover{background:#f1f5f9;color:var(--orange)}
+.lp-action-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 /* LP SIDEBAR DETAIL/EDIT */
 .lp-sb-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .lp-sb-field-card{background:#f8f9fb;border:1px solid #eef0f3;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px}
@@ -85,6 +85,10 @@ tr.lp-row-selected>td:first-child,
 .sb-status.bad{color:var(--st-bad-fg)}
 .sb-status.wait{color:var(--st-wait-fg)}
 .sb-status.info{color:var(--st-info-fg)}
+/* The one "no value here" marker for these panels. It is a muted DASH, not a
+   muted value: it stands in for a field that is empty, so it is the absence
+   that is greyed, never a real answer. */
+.sb-dash{color:#9ca3af;font-weight:400}
 .lp-sb-view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .lp-sb-section-title{font-size:13px;font-weight:700;color:var(--navy)}
 /* Sends you to the tab a derived value was read from, so a panel never shows
@@ -93,7 +97,9 @@ tr.lp-row-selected>td:first-child,
   background:none;border:0;padding:0;cursor:pointer;font-family:inherit;
   font-size:11.5px;font-weight:600;color:var(--gray);
   transition:color var(--t-micro) ease}
-.lp-sb-section-link:hover{color:var(--navy);text-decoration:underline}
+/* Underline dropped for the same reason as .hr-section-link - it drew through
+   the chevron. See the NAVIGATION LINKS note in css/dashboard-multiview.css. */
+.lp-sb-section-link:hover{color:var(--btn-accent)}
 /* Record header for a detail panel. Panels that had nothing to put beside the
    Edit button were pushing it right with an empty <span>, which left the whole
    left half of the row blank. This gives that row the record's own identity —
@@ -111,8 +117,10 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-record-title{
   font-size:17px;font-weight:700;color:#1e293b;line-height:1.3;margin-top:6px;overflow-wrap:anywhere}
 .lp-sb-record-side{display:flex;align-items:center;gap:14px;flex-shrink:0}
-/* a "No" is the absence of a rule — it should not read as loudly as a "Yes" */
-.lp-sb-flag.no{color:#9ca3af;font-weight:500}
+/* .lp-sb-flag / .lp-sb-flag.no are gone with the span they styled. A "No" used
+   to render grey to read more quietly than a "Yes" - a fourth text colour in
+   the panel, and it made an answer look like a missing value. Both answers are
+   value ink now; only an EMPTY field is greyed, via .sb-dash above. */
 @media (max-width:640px){
   .lp-sb-record{flex-direction:column;gap:10px}
   .lp-sb-record-side{width:100%;justify-content:space-between}
@@ -120,7 +128,7 @@ tr.lp-row-selected>td:first-child,
 .pm-user-subtabs{display:flex;gap:20px;border-bottom:1px solid var(--border);margin-bottom:16px}
 .pm-user-subtab{border:none;background:none;padding:0 0 10px;font-size:13px;font-weight:600;color:var(--gray);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px}
 .pm-user-subtab.active{color:var(--navy);border-bottom-color:var(--orange)}
-.pm-user-subtab:hover:not(.active){color:var(--navy)}
+.pm-user-subtab:hover:not(.active){color:var(--btn-accent)}
 .pm-ts-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .pm-ts-stat{background:#f8f9fb;border:1px solid #eef0f3;border-radius:10px;padding:12px;text-align:center}
 .pm-ts-stat-val{font-size:20px;font-weight:800;line-height:1.2}
@@ -134,10 +142,10 @@ tr.lp-row-selected>td:first-child,
 .ep-file-name{font-size:13px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ep-file-name.chosen{color:var(--navy);font-weight:600}
 .rr-success-modal{background:#fff;border-radius:20px;padding:38px 32px 34px;width:min(360px,90vw);box-shadow:0 24px 60px rgba(15,23,42,.25);text-align:center;position:relative;animation:rr-modal-pop .25s cubic-bezier(.34,1.56,.64,1)}
-.rr-success-ring{width:76px;height:76px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;position:relative}
-.rr-success-ring::before,.rr-success-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid #86efac;opacity:0;animation:rr-ring-pulse 1.5s ease-out infinite}
+.rr-success-ring{width:76px;height:76px;border-radius:50%;background:var(--st-ok-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;position:relative}
+.rr-success-ring::before,.rr-success-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--st-ok-bd);opacity:0;animation:rr-ring-pulse 1.5s ease-out infinite}
 .rr-success-ring::after{animation-delay:.5s}
-.rr-success-check{width:54px;height:54px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(34,197,94,.35);animation:rr-check-pop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
+.rr-success-check{width:54px;height:54px;border-radius:50%;background:var(--st-ok-fg);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(22,163,74,.35);animation:rr-check-pop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
 .rr-success-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:8px}
 .rr-success-sub{font-size:13px;color:var(--gray);line-height:1.5;max-width:280px;margin:0 auto}
 @keyframes rr-modal-pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
@@ -160,7 +168,7 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-emp-avatar{width:32px;height:32px;border-radius:50%;background:var(--ol);color:var(--orange);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;text-transform:uppercase}
 .lp-sb-emp-name{font-size:13px;color:var(--navy);font-weight:500;flex:1}
 .lp-sb-emp-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:18px;line-height:1;padding:2px 6px;border-radius:4px;transition:.15s;flex-shrink:0}
-.lp-sb-emp-remove:hover{color:#ef4444;background:#fee2e2}
+.lp-sb-emp-remove:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .lp-sb-emp-search{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:#fff;margin-bottom:10px;transition:.15s}
 .lp-sb-emp-search input{border:none;outline:none;font-size:13px;color:var(--navy);background:transparent;flex:1;font-family:inherit}
 .lp-sb-emp-selector{display:flex;gap:12px;flex-direction:column}
@@ -168,7 +176,7 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-sel-pane-title{font-size:12px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
 .lp-avail-emp-list,.lp-sb-sel-emp-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto}
 .lp-avail-emp-btn{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:#f8f9fb;cursor:pointer;transition:.15s;width:100%;text-align:left;font-family:inherit}
-.lp-avail-emp-btn:hover{border-color:var(--orange);background:#f1f5f9}
+.lp-avail-emp-btn:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .lp-ae-info{display:flex;flex-direction:column;gap:1px}
 .lp-ae-name{font-size:13px;color:var(--navy);font-weight:500}
 .lp-ae-key{font-size:11px;color:var(--gray)}
@@ -221,7 +229,7 @@ tr.lp-row-selected>td:first-child,
 .cd-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px}
 .cd-title{font-size:13px;font-weight:700;color:var(--navy);letter-spacing:.1px}
 .cd-nav{width:26px;height:26px;flex-shrink:0;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.13s;padding:0}
-.cd-nav:hover{background:#f1f5f9;border-color:#cbd5e1}
+.cd-nav:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .cd-nav:active{transform:scale(.94)}
 .cd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
 .cd-dow{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0 6px}
@@ -232,7 +240,7 @@ tr.lp-row-selected>td:first-child,
 .cd-day.cd-sel{background:var(--orange);color:#fff;font-weight:700}
 .cd-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9}
 .cd-link{border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;padding:2px 4px;border-radius:6px;transition:.13s}
-.cd-link:hover{color:var(--orange);background:#f1f5f9}
+.cd-link:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .cd-link.cd-strong{color:var(--orange)}
 /* Filter bars run 34px-high controls; forms run the taller field.
    The width:auto/min-width pair matches .lp-filter-bar-row .cs-wrap exactly —
@@ -293,21 +301,24 @@ tr.lp-row-selected>td:first-child,
 .lp-logs-timeline{display:flex;flex-direction:column}
 .lp-log-row{display:flex;gap:10px;align-items:stretch}
 .lp-log-avatar-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:34px}
-.lp-log-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
-.lp-log-avatar--active{background:var(--st-ok-bg);color:var(--st-ok-fg);border:2px solid var(--st-ok-fg)}
-.lp-log-avatar--inactive{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
-.lp-log-avatar--default,.lp-log-avatar--idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border:2px solid var(--st-idle-bd)}
+/* The ring WIDTH lives here and only here - the --variants below set nothing
+   but its colour.  It used to be repeated as `border:2px solid <colour>` on all
+   eight of them, so thinning the ring meant finding and agreeing eight lines. */
+.lp-log-avatar{width:34px;height:34px;border-radius:50%;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s}
+.lp-log-avatar--active{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-fg)}
+.lp-log-avatar--inactive{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-fg)}
+.lp-log-avatar--default,.lp-log-avatar--idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
 /* Amber is "waiting", never "bad" — which is why Unapproved is red, not amber.
    See the status-token note in main.css. */
 /* The --ok/--bad/--wait/--info aliases are for panels whose statuses are not one
    of the named pairs; they pass statusTone() straight through. */
-.lp-log-avatar--approved,.lp-log-avatar--ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border:2px solid var(--st-ok-fg)}
-.lp-log-avatar--pending,.lp-log-avatar--wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border:2px solid var(--st-wait-fg)}
-.lp-log-avatar--unapproved,.lp-log-avatar--bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
-.lp-log-avatar--info{background:var(--st-info-bg);color:var(--st-info-fg);border:2px solid var(--st-info-fg)}
+.lp-log-avatar--approved,.lp-log-avatar--ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-fg)}
+.lp-log-avatar--pending,.lp-log-avatar--wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-fg)}
+.lp-log-avatar--unapproved,.lp-log-avatar--bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-fg)}
+.lp-log-avatar--info{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-fg)}
 /* An ordinary edit, not a status move - see logIsChange() in core.js. Grey and
    hollow so a coloured ring down the timeline always means the status changed. */
-.lp-log-avatar--event{background:var(--card);color:#9aa3b0;border:2px solid var(--border)}
+.lp-log-avatar--event{background:var(--card);color:#9aa3b0;border-color:var(--border)}
 .lp-log-connector{flex:1;width:2px;background:#e5e7eb;margin:3px auto;min-height:16px}
 .lp-log-card{flex:1;background:#fff;border:1px solid #eef0f3;border-radius:10px;padding:11px 13px;margin-bottom:10px;box-shadow:0 1px 4px rgba(15,23,42,.05);transition:.15s}
 .lp-log-card:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(15,23,42,.09)}
@@ -375,11 +386,12 @@ tr.lp-row-selected>td:first-child,
   background:#fff;border:1.5px solid var(--border);color:var(--navy);
   font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
   transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
-/* Hover takes the colour of the RESULT, the same rule the row clusters use. */
-.tk-owner-btn-ok:hover{background:var(--st-ok-bg);border-color:var(--st-ok-bd);color:var(--st-ok-fg)}
-.tk-owner-btn-bad:hover{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
-.tk-owner-btn-wait:hover{background:var(--st-wait-bg);border-color:var(--st-wait-bd);color:var(--st-wait-fg)}
-.tk-owner-btn-info:hover{background:var(--st-info-bg);border-color:var(--st-info-bd);color:var(--st-info-fg)}
+/* These four used to hover into the colour of the RESULT - green for Approve,
+   red for Reject.  Buttons carry no semantic colour (see buttons.css): the
+   label already says what the move is, and a green button next to a green
+   status badge made the two read as the same thing.  All four hover as the
+   OUTLINE variant now, which is what they already are at rest. */
+.tk-owner-btn-ok:hover,.tk-owner-btn-bad:hover,.tk-owner-btn-wait:hover,.tk-owner-btn-info:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 
 .lp-logs-empty{font-size:13px;color:#9ca3af;text-align:center;padding:32px 16px;background:#f9fafb;border-radius:10px;border:1px dashed #e5e7eb}
 /* LP WORKFLOW TIMELINE */
@@ -406,16 +418,16 @@ tr.lp-row-selected>td:first-child,
 .ct-action-btn{background:var(--orange);color:#fff;border:none;border-radius:8px;padding:0 10px 0 12px;height:28px;line-height:28px;font-size:12px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;white-space:nowrap;width:80px;transition:.15s;vertical-align:middle}
 .ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
 .ct-dots-btn{border:none;background:transparent;border-radius:6px;width:28px;height:28px;line-height:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#64748b;padding:0;transition:.15s;flex-shrink:0;vertical-align:middle}
-.ct-dots-btn:hover{background:#f1f5f9;color:var(--navy)}
+.ct-dots-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .ct-action-menu{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.13);z-index:1000;min-width:200px;overflow:hidden;display:none}
 .ct-action-menu.open{display:block}
 .ct-act-item{padding:9px 14px;font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:9px;color:var(--navy);transition:.12s;border-bottom:1px solid #f1f5f9}
 .ct-act-item:last-child{border-bottom:none}
-.ct-act-item:hover:not(.done):not(.current){background:#f1f5f9;color:var(--orange)}
+.ct-act-item:hover:not(.done):not(.current){background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .ct-act-item.current{color:var(--orange);font-weight:700;background:#f1f5f9;cursor:default}
 .ct-act-item.done{color:#9ca3af;cursor:default}
 .ct-act-step{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
-.ct-act-step.done{background:#dcfce7;color:#16a34a}
+.ct-act-step.done{background:var(--st-ok-bg);color:var(--st-ok-fg)}
 .ct-act-step.current{background:var(--orange);color:#fff}
 .ct-act-step.next{background:#f1f5f9;color:#64748b}
 .ct-sb-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1.5px solid var(--btn-stroke);white-space:nowrap}
@@ -432,6 +444,7 @@ tr.lp-row-selected>td:first-child,
 .ct-modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .ct-modal-title{font-size:16px;font-weight:700;color:var(--navy)}
 .ct-modal-close{width:28px;height:28px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#64748b;padding:0}
+.ct-modal-close:hover{background:var(--btn-tint-bg);color:var(--btn-accent)}
 .ct-modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
 .ct-modal-field{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px}
 .ct-modal-flabel{font-size:11px;color:#9ca3af;font-weight:500;margin-bottom:3px}
@@ -444,7 +457,7 @@ tr.lp-row-selected>td:first-child,
 .lp-pagination-info{font-size:12.5px;color:#6b7280}
 .lp-pagination-controls{display:flex;align-items:center;gap:4px}
 .lp-pg-btn{min-width:32px;height:32px;padding:0 8px;border:1px solid #e2e8f0;border-radius:7px;background:#fff;font-size:13px;font-weight:500;color:#374151;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;transition:.15s}
-.lp-pg-btn:hover:not(:disabled){border-color:var(--orange);color:var(--orange);background:#f1f5f9}
+.lp-pg-btn:hover:not(:disabled){background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .lp-pg-btn.active{background:var(--orange);color:#fff;border-color:var(--orange);font-weight:700}
 .lp-pg-btn:disabled{opacity:.4;cursor:default}
 .lp-pg-arrow{color:#64748b}

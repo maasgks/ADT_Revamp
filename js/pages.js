@@ -1751,7 +1751,17 @@ function sbWideField(ico,label,val){
     +'<div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div>'
     +'<div class="lp-sb-field-value">'+val+'</div></div></div>';
 }
-function lpFlagValue(v){return v?'<span class="lp-sb-flag">Yes</span>':'<span class="lp-sb-flag no">No</span>';}
+/* Yes/No is a VALUE, not a status, so it is rendered in the panel's one value
+   colour and nothing else. The leave-policy panel used to paint its own pair
+   green (#16a34a) and red (#ef4444) at weight 700, which put three more text
+   colours into a card that already had a label grey and a value ink - and,
+   worse, spent the status palette on fields that carry no status. Green there
+   said "good" about "Carry Forward Allowed: Yes", which is not a judgement the
+   panel is entitled to make; it is a setting, and it is simply on.
+
+   ONE COLOURED FIELD PER PANEL, and it is Status - sbStatus() in core.js, on
+   the --st-* tokens. Everything else is value ink. */
+function lpFlagValue(v){return v?'Yes':'No';}
 // '15 Jun 2026 | 01:30:34 PM' reads better split across two fields than crammed
 // into one as "Name ( date | time )".
 function lpCreatedOn(v){return String(v==null?'':v).replace(' | ',', ');}
@@ -3482,10 +3492,11 @@ function renderLPSidebar(){
         +'<button class="ep-save-btn" onclick="saveLPSidebarEdit()">Save</button>'
         +'</div></div></div>';
     }else{
-      const dash='<span style="color:#9ca3af;font-size:15px;font-weight:400">ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â</span>';
-      const yesVal='<span style="color:#16a34a;font-weight:700">Yes</span>';
-      const noVal='<span style="color:#ef4444;font-weight:700">No</span>';
-      const ynVal=(v)=>v?yesVal:noVal;
+      /* The em-dash here was mojibake - the file had it multiply-encoded, so an
+         empty field rendered a run of Ã-junk under <meta charset="UTF-8">
+         rather than a dash. An entity cannot be re-encoded by accident. */
+      const dash='<span class="sb-dash">&mdash;</span>';
+      const ynVal=lpFlagValue;                    /* plain text - see lpFlagValue */
       const nullOrDash=(v)=>(v!==null&&v!==undefined&&v!=='')?v:dash;
       const statusVal=sbStatus(p.status);
       // icons
