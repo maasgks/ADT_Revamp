@@ -451,6 +451,38 @@ function wfPush(map,id,title,description,user){
 // Append to a record's Logs tab without moving its status. lpCommitLog() is
 // the form version of this (status + comment together); this is for the
 // inline actions, which already know the status they are moving to.
+/* == WHAT A STATUS ON A LOG ENTRY ACTUALLY MEANS =============================
+
+   Every entry carries the status the record was IN when that entry was written
+   - not a status change. Most entries are not changes at all: a template gets
+     sent to legal, reviewed, published, amended, and it is Active throughout.
+   The timeline printed that status as the headline of every card, so four
+   ordinary edits read as "changed to Active" four times over, which is not a
+   history any record could actually have - a record goes Active, then
+   Inactive; it does not go Active again and again.
+
+   So the headline is now the status only where the status MOVED. Everything
+   else is headed "Updated" in neutral grey, and the comment underneath - which
+   was always the real content of the entry - says what happened. Nothing about
+   the stored logs changed; only the claim the timeline was making about them.
+
+   LISTS ARE NEWEST FIRST, so the entry that came BEFORE this one in time is
+   list[i+1], not list[i-1]. The oldest entry always counts as a change: it is
+   the one that put the record in its first status. */
+function logIsChange(list,i){
+  if(!list||!list[i])return true;
+  const older=list[i+1];
+  return !older||older.status!==list[i].status;
+}
+/* The avatar ring and the dot follow the headline: coloured on a real move,
+   grey on an ordinary update. */
+function logDotKey(list,i,key){return logIsChange(list,i)?key:'event';}
+function logHeadRow(list,i,key,label){
+  const k=logIsChange(list,i)?key:'event';
+  const text=logIsChange(list,i)?label:'Updated';
+  return '<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+k+'"></span>'
+    +'<span class="lp-log-status-text lp-log-status-text--'+k+'">'+text+'</span></div>';
+}
 function logPush(rec,fixture,status,comment,user){
   const s=stampNow();
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
@@ -614,8 +646,22 @@ const formSteps=[
 ];
 
 // -- SIDEBAR BUILDER --
+/* WHAT THE SIDEBAR ACTUALLY DEPENDS ON, written down so a repaint can tell
+   whether it needs rebuilding at all. It is these three and nothing else: the
+   page (which item is active), the collapse state, and which dropdown is open.
+   renderADTPage() used to rebuild it on every call, which meant every filter
+   click threw away and rebuilt the whole nav - see the note there. */
+function sidebarSig(id,collapsed,activePg){
+  return id+'|'+(collapsed?1:0)+'|'+activePg+'|'+Array.from(openDropdowns).sort().join(',');
+}
+let lastSidebarSig=null;
+
 function buildSidebar(id,collapsed,activePg){
   const el=document.getElementById(id);if(!el)return;
+  /* Stamped here rather than at the call site so that EVERY route into a
+     rebuild - the collapse toggle, a dropdown click, a direct call - leaves the
+     signature describing what is really on screen. */
+  if(id==='adt-sidebar')lastSidebarSig=sidebarSig(id,collapsed,activePg);
   el.className='sidebar'+(collapsed?' collapsed':'');el.innerHTML='';
   const scope=id==='adt-sidebar'?'adt':'agent';
   const top=document.createElement('div');top.className='sb-top';

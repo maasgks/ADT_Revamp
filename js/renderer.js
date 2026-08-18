@@ -11,8 +11,11 @@
   if(page==='ai-onboarding-run'){el.innerHTML=buildAIOnboardingRunHTML();return;}
   if(page==='ai-journey-complete'){el.innerHTML=buildAIJourneyCompleteHTML();return;}
 }
-function renderPageContent(id){
-  const el=document.getElementById(id);
+/* Takes an element id OR an element. The element form is what lets a repaint
+   build the next version of a page into a detached node, off screen, so it can
+   be compared against what is on screen instead of replacing it. */
+function renderPageContent(target){
+  const el=typeof target==='string'?document.getElementById(target):target;
   if(!el)return;
   if(isAIContractWizardPage(page)){
     const cjStage=aiCtJourneyStage();
@@ -74,6 +77,124 @@ function renderPageContent(id){
   el.innerHTML=buildListingHTML(page);
 }
 
+/* == SURGICAL REPAINT =======================================================
+
+   THE PROBLEM. Everything in this app repaints by calling renderADTPage(),
+   which wrote the whole page into #adt-content again. That is right when you
+   NAVIGATE - a new page should arrive. It is wrong for everything else. A
+   filter, a Clear Filters, a page-number click, a status toggle: each of them
+   changes a handful of rows and a couple of counts, and each of them threw the
+   entire page away and built a new one. The costs were all visible - the
+   entrance animation replayed on every click so a filter felt like a page
+   load, the scroll jumped back to the top, an open detail panel was rebuilt
+   under the pointer, and a half-typed input lost what was in it.
+
+   WHAT HAPPENS NOW. The page is still BUILT the same way. The builders are
+   pure functions of state - they return markup and touch nothing - which is
+   what makes this safe to do globally rather than page by page. The new markup
+   is rendered into a DETACHED node and then PATCHED onto the live DOM:
+   patchDom walks both trees together and touches only what actually differs.
+   A subtree whose markup is unchanged is never visited, so everything that did
+   not change keeps its identity - its scroll offset, its focus, its canvas,
+   its listeners.
+
+   WHY isEqualNode IS THE WHOLE TRICK. It compares tag, attributes and the
+   entire subtree, and it ignores live PROPERTIES. So an <input> the user has
+   typed into still equals its freshly built twin - the typed text is a
+   property, not an attribute - and is left alone. That is exactly the
+   behaviour wanted here, and the opposite of what innerHTML did.
+
+   WHAT STILL REBUILDS WHOLESALE. Navigation, and the three page families whose
+   render does more than write markup: the AI contract wizard (starts a chat
+   panel and auto-advance timers), the cost calculator (initCostCalcPage) and
+   the dashboard (restores the active tab). All three run their init against
+   the document, so they cannot be built into a detached node. See
+   canPatchPage.
+   ========================================================================== */
+
+/* The page whose markup is currently in #adt-content. Null until first paint. */
+let renderedPage=null;
+
+function canPatchPage(pg){
+  if(renderedPage!==pg)return false;              /* navigation, not a repaint */
+  if(typeof isAIContractWizardPage==='function'&&isAIContractWizardPage(pg))return false;
+  return pg!=='cost-calculator'&&pg!=='dashboard';
+}
+
+/* Attributes only, never properties: what the user has typed, checked, opened
+   or scrolled lives in a property and none of it is ours to overwrite. */
+function syncAttrs(live,next){
+  const nx=next.attributes;
+  for(let i=0;i<nx.length;i++){
+    const a=nx[i];
+    if(live.getAttribute(a.name)!==a.value)live.setAttribute(a.name,a.value);
+  }
+  const lv=live.attributes;
+  for(let i=lv.length-1;i>=0;i--){
+    const a=lv[i];
+    if(!next.hasAttribute(a.name))live.removeAttribute(a.name);
+  }
+}
+
+/* A control that HAS been re-rendered needs its property put back in step with
+   its attribute, or a filter would keep showing the old choice while the markup
+   says otherwise. Only ever reached for controls that actually differ. */
+function syncFormState(live,next){
+  if(live.tagName==='INPUT'){
+    if(next.hasAttribute('value')&&live.value!==next.getAttribute('value'))live.value=next.getAttribute('value');
+    live.checked=next.hasAttribute('checked');
+  }else if(live.tagName==='OPTION'){
+    live.selected=next.hasAttribute('selected');
+  }
+}
+
+/* Walk the two trees together. Children are matched BY POSITION: every one of
+   these lists comes out of the same builder in the same order every time, so
+   position is a reliable key and a keyed diff would buy nothing for the extra
+   surface. Nodes are MOVED out of the new tree rather than cloned - it is
+   detached and thrown away straight after, and moving keeps any handler the
+   builder attached as a property. */
+function patchDom(live,next){
+  if(live.isEqualNode(next))return;               /* identical subtree - do not descend */
+  if(live.nodeType!==next.nodeType||live.nodeName!==next.nodeName){
+    live.replaceWith(next);
+    return;
+  }
+  if(live.nodeType!==1){                          /* text, comment */
+    if(live.nodeValue!==next.nodeValue)live.nodeValue=next.nodeValue;
+    return;
+  }
+  syncAttrs(live,next);
+  syncFormState(live,next);
+  /* Snapshot both child lists first: the loop moves nodes out of `next` and
+     removes them from `live`, and a live NodeList would shift underneath it. */
+  const a=Array.prototype.slice.call(live.childNodes);
+  const b=Array.prototype.slice.call(next.childNodes);
+  const n=Math.min(a.length,b.length);
+  for(let i=0;i<n;i++)patchDom(a[i],b[i]);
+  for(let i=n;i<a.length;i++)live.removeChild(a[i]);
+  for(let i=n;i<b.length;i++)live.appendChild(b[i]);
+}
+
+/* The children only. The staging <div> is a carrier, not part of the page:
+   syncing ITS attributes onto #adt-content would strip the id off the element
+   the whole app looks itself up by. */
+function patchChildren(live,next){
+  const x=Array.prototype.slice.call(live.childNodes);
+  const y=Array.prototype.slice.call(next.childNodes);
+  const n=Math.min(x.length,y.length);
+  for(let i=0;i<n;i++)patchDom(x[i],y[i]);
+  for(let i=n;i<x.length;i++)live.removeChild(x[i]);
+  for(let i=n;i<y.length;i++)live.appendChild(y[i]);
+}
+
+/* Build the page off screen, then patch it in. */
+function patchPageContent(el){
+  const stage=document.createElement('div');
+  renderPageContent(stage);
+  patchChildren(el,stage);
+}
+
 function renderADTPage(){
   const title=document.getElementById('adt-page-title');
   if(title)title.textContent=getPageTitle(page);
@@ -90,12 +211,26 @@ function renderADTPage(){
   }
   const ccBtn=document.getElementById('tb-cost-calc-btn');
   if(ccBtn)ccBtn.style.display=page==='contracts'?'':'none';
-  buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));
+  /* The sidebar depends on the page, the collapse state and which dropdown is
+     open - none of which a filter can touch. Rebuilding it on every repaint was
+     the other half of the page-reload feeling, so it is rebuilt only when one of
+     those actually differs. The signature is stamped by buildSidebar itself, so
+     a rebuild from anywhere else (the collapse toggle, a dropdown click) keeps
+     this check honest. */
+  if(sidebarSig('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page))!==lastSidebarSig)
+    buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));
   const sidebar=document.getElementById('adt-sidebar');
   if(sidebar)sidebar.style.display=page==='cost-calculator'?'none':'';
-  renderPageContent('adt-content');
   const content=document.getElementById('adt-content');
-  if(content)content.scrollTop=0;
+  if(canPatchPage(page)&&content&&content.firstChild){
+    patchPageContent(content);
+  }else{
+    renderPageContent('adt-content');
+    /* Only a NEW page starts at the top. Repainting the page you are already on
+       has to leave the scroll exactly where you left it. */
+    if(content)content.scrollTop=0;
+  }
+  renderedPage=page;
 }
 
 // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ INIT ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬

@@ -1158,21 +1158,34 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .prof-activity-dot.active{background:var(--orange)}
 .prof-activity-action{font-size:12.5px;font-weight:600;color:var(--navy);margin-bottom:2px}
 .prof-activity-time{font-size:11px;color:var(--gray)}
-/* ── SWITCH ENTITY PAGE ── */
-.se-page{position:fixed;inset:0;background:#0a0a14;display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:1000}
-.se-min-bg{position:absolute;inset:0;background:linear-gradient(145deg,#0d0d1f 0%,#110828 55%,#080e1e 100%)}
+/* ── SWITCH ENTITY PAGE ──
+   A warm, light screen rather than the dark glass panel this used to be. The
+   whole surface is orange-50; the card on top of it is plain white, so the
+   card reads as raised without needing a heavy shadow to say so. Everything
+   that was translucent-over-dark (the icon chip, the select, the buttons) is
+   now opaque, because on a light ground a white veil at 6% opacity is simply
+   invisible.
+
+   THE ORANGES ARE LITERAL HEXES, NOT --orange. --orange is #1a1a1a in this
+   theme - the brand ink, not a hue - so var(--orange) here would paint the
+   background black. The tints below are the same orange-50/100/200 family
+   already used by .se-dd-option:hover and the .prof-att drag state. */
+.se-page{position:fixed;inset:0;background:#fff7ed;display:flex;align-items:center;justify-content:center;overflow:hidden;z-index:1000}
+.se-min-bg{position:absolute;inset:0;background:linear-gradient(160deg,#fff7ed 0%,#ffe9d2 55%,#fff4e8 100%)}
 .se-center{position:relative;z-index:1;width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:0}
-.se-min-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px 28px 28px;box-shadow:0 4px 24px rgba(0,0,0,.35)}
-.se-icon-wrap{width:60px;height:60px;border-radius:18px;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;color:#fff;margin-bottom:18px;box-shadow:0 8px 32px rgba(0,0,0,.35)}
-.se-title{font-size:26px;font-weight:800;color:#fff;margin:0 0 8px;text-align:center;letter-spacing:-.3px;text-shadow:0 2px 16px rgba(0,0,0,.4)}
-.se-subtitle{font-size:13.5px;color:rgba(255,255,255,.55);text-align:center;margin:0 0 28px;line-height:1.6;max-width:320px}
+.se-min-card{background:var(--card);border:1px solid #fadfc2;border-radius:20px;padding:40px 28px 28px;box-shadow:0 18px 44px rgba(124,72,20,.10)}
+.se-icon-wrap{width:60px;height:60px;border-radius:18px;background:#fff2e2;border:1.5px solid #fadfc2;display:flex;align-items:center;justify-content:center;color:var(--navy);margin-bottom:18px}
+.se-title{font-size:26px;font-weight:800;color:var(--navy);margin:0 0 8px;text-align:center;letter-spacing:-.3px}
+.se-subtitle{font-size:13.5px;color:var(--gray);text-align:center;margin:0 0 28px;line-height:1.6;max-width:320px}
 .se-dd-wrap{position:relative;width:100%;margin-bottom:20px}
-.se-dd-trigger{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:rgba(255,255,255,.06);border-radius:14px;cursor:pointer;border:1.5px solid rgba(255,255,255,.14);box-shadow:0 8px 32px rgba(0,0,0,.3);transition:box-shadow .18s,border-color .18s,background .18s;user-select:none;backdrop-filter:blur(16px)}
-.se-dd-trigger:hover{box-shadow:0 10px 40px rgba(0,0,0,.4);border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.1)}
+/* The one field on the screen, tinted a step warmer than the card so it reads
+   as somewhere to click without a heavy border doing the work. */
+.se-dd-trigger{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;background:#fff7ed;border-radius:14px;cursor:pointer;border:1.5px solid #fadfc2;transition:box-shadow .18s,border-color .18s,background .18s;user-select:none}
+.se-dd-trigger:hover{background:#ffefdd;border-color:#f3c894;box-shadow:0 6px 18px rgba(124,72,20,.10)}
 .se-dd-sel-initials{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0}
-.se-dd-sel-name{flex:1;font-size:14px;font-weight:700;color:#fff}
-.se-dd-chev{color:rgba(255,255,255,.4);flex-shrink:0;transition:transform .2s}
-.se-dd-panel{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#fff;border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.2);border:1px solid rgba(0,0,0,.06);overflow:hidden;display:none;z-index:20;animation:seFadeIn .15s ease}
+.se-dd-sel-name{flex:1;font-size:14px;font-weight:700;color:var(--navy)}
+.se-dd-chev{color:var(--gray);flex-shrink:0;transition:transform .2s}
+.se-dd-panel{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--card);border-radius:14px;box-shadow:0 16px 40px rgba(124,72,20,.16);border:1px solid #fadfc2;overflow:hidden;display:none;z-index:20;animation:seFadeIn .15s ease}
 .se-dd-panel.open{display:block}
 @keyframes seFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 .se-dd-option{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background .12s}
@@ -1185,10 +1198,11 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .se-dd-opt-sub{font-size:11.5px;color:#9ca3af;margin-top:1px}
 .se-dd-check{color:var(--orange);display:flex;align-items:center}
 .se-btns{display:flex;gap:10px;width:100%}
-.se-cancel{flex:1;height:46px;background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:12px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;backdrop-filter:blur(8px);transition:background .15s}
-.se-cancel:hover{background:rgba(255,255,255,.26)}
-.se-proceed{flex:2;height:46px;background:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;color:var(--orange);cursor:pointer;font-family:inherit}
-/* .se-proceed hover handled by the button system (colour only) */
+/* Everything these two look like - fill, stroke, label, height, radius - now
+   comes from buttons.css, the same as every other button on a light surface.
+   All that is left here is the 2:1 split of the row they share. */
+.se-cancel{flex:1}
+.se-proceed{flex:2}
 .se-proceed:active{transform:translateY(0)}
 /* Profile tabs */
 /* Divider drawn as an inset shadow, not a border: the tabs' own 2px bottom

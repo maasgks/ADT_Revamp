@@ -167,15 +167,15 @@ function renderDeSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=deLogKey(l.status);
           return '<div class="lp-log-row">'
             +'<div class="lp-log-avatar-col">'
-            +'<div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'
+            +'<div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'
             +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')
             +'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +logHeadRow(_all,i,sk,l.status)
             +'<div class="lp-log-meta-row">'
             +'<span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'
             +(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')
@@ -381,12 +381,12 @@ function renderGeSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=geLogKey(l.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +logHeadRow(_all,i,sk,l.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
             +'</div></div>';
@@ -539,12 +539,12 @@ function renderTmSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=tmLogKey(l.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +logHeadRow(_all,i,sk,l.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
             +'</div></div>';
@@ -690,12 +690,12 @@ function renderPrSidebar(){
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((entry,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((entry,i,_all)=>{
           const sk=prLogKey(entry.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+entry.status+'</span></div>'
+            +logHeadRow(_all,i,sk,entry.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
             +'</div></div>';
@@ -779,12 +779,12 @@ function renderAlSidebar(){
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((entry,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((entry,i,_all)=>{
           const sk=alLogKey(entry.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+entry.status+'</span></div>'
+            +logHeadRow(_all,i,sk,entry.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
             +'</div></div>';
@@ -1222,10 +1222,10 @@ function renderPmSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>'<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+pmLogKey(l.status)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>'<div class="lp-log-row">'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,pmLogKey(l.status))+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+pmLogKey(l.status)+'"></span><span class="lp-log-status-text lp-log-status-text--'+pmLogKey(l.status)+'">'+l.status+'</span></div>'
+          +logHeadRow(_all,i,pmLogKey(l.status),l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>').join('')+'</div>'
@@ -1520,12 +1520,12 @@ function renderCtSidebar(){
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=ctLogKey(l.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +logHeadRow(_all,i,sk,l.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
             +'</div></div>';
@@ -1730,13 +1730,26 @@ function buildCreateComplianceModalHTML(){
 // A detail panel's header: eyebrow, the record's own name, its status and the
 // primary action. Replaces the `<span></span>` spacer that panels used to push
 // the Edit button right with, which left the rest of the row empty.
+/* The head says WHAT this record is and where it stands - the type, the status,
+   the Edit button. `title` is optional and these Compliance Hub panels no longer
+   pass one: the record's own name is a value like every other value it has, so
+   it is read in the grid below with a label next to it (sbWideField) rather than
+   set as a headline in a place nothing else is read from. */
 function lpRecordHead(eyebrow,title,statusHTML,actionHTML){
-  return '<div class="lp-sb-record">'
+  return '<div class="lp-sb-record"'+(title?'':' data-no-title="1"')+'>'
     +'<div class="lp-sb-record-id">'
     +'<div class="lp-sb-record-eyebrow">'+eyebrow+'</div>'
-    +'<div class="lp-sb-record-title">'+title+'</div></div>'
+    +(title?'<div class="lp-sb-record-title">'+title+'</div>':'')+'</div>'
     +'<div class="lp-sb-record-side">'+(statusHTML||'')+(actionHTML||'')+'</div>'
     +'</div>';
+}
+/* A field card that spans both columns. Used for the record name, which is the
+   longest value a panel holds and the one that should be read first - and which
+   would otherwise leave the two-column grid with a dangling odd card. */
+function sbWideField(ico,label,val){
+  return '<div class="lp-sb-field-card lp-sb-field-card--wide"><div class="lp-sb-field-icon">'+ico+'</div>'
+    +'<div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div>'
+    +'<div class="lp-sb-field-value">'+val+'</div></div></div>';
 }
 function lpFlagValue(v){return v?'<span class="lp-sb-flag">Yes</span>':'<span class="lp-sb-flag no">No</span>';}
 // '15 Jun 2026 | 01:30:34 PM' reads better split across two fields than crammed
@@ -1790,11 +1803,11 @@ function renderComplianceSidebar(){
     const iLock='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
     const iClip='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-8.49 8.49a5 5 0 0 1-7.07-7.07l8.49-8.49a3 3 0 0 1 4.24 4.24l-8.49 8.49a1 1 0 0 1-1.41-1.41l7.78-7.78"/></svg>';
     // Country / model / category / the three rules / who and when — eight fields
-    // that fill the two-column grid evenly. The name is the panel title now, so
-    // it is not repeated here, and the three rule flags the create form collects
-    // are shown for the first time.
-    body=lpRecordHead('Compliance Requirement',item.item,sbStatus(item.status),editBtn)
+    // that fill the two-column grid evenly. The name leads the grid as a full-width
+    // field, and the three rule flags the create form collects are shown here too.
+    body=lpRecordHead('Compliance Requirement','',sbStatus(item.status),editBtn)
       +'<div class="lp-sb-detail-grid">'
+      +sbWideField(iClip,'Requirement',item.item)
       +fc(iGlobe,'Country',item.country)+fc(iDoc,'Employment Model',item.model)
       +fc(iTag,'Category',item.category)+fc(iCheck,'Mandatory',lpFlagValue(item.mandatory))
       +fc(iLock,'Payroll Blocking',lpFlagValue(item.payrollBlocking))+fc(iClip,'Evidence Required',lpFlagValue(item.evidenceRequired))
@@ -1821,12 +1834,12 @@ function renderComplianceSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
         const sk=logStatusKey(l.status);
         return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +logHeadRow(_all,i,sk,l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
@@ -2067,8 +2080,9 @@ function renderOcaSidebar(){
     const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
     const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
     // The panel head carries the record and its status, nothing more.
-    body=lpRecordHead('Compliance Item',item.item,sbStatus(item.status))
+    body=lpRecordHead('Compliance Item','',sbStatus(item.status))
       +'<div class="lp-sb-detail-grid">'
+      +sbWideField(iTag,'Item',item.item)
       +fc(iUser,'Employee / Client',item.who)+fc(iHash,'Reference',ocaRef(item))
       +fc(iTag,'Category',cat?cat.label:item.cat)+fc(iFlag,'Priority',item.priority)
       +fc(iCal,'Due','<span class="oca-due'+(item.due==='Today'?' is-now':'')+'">'+item.due+'</span>')
@@ -2083,12 +2097,12 @@ function renderOcaSidebar(){
     // so the timeline colours come from the shared tone map instead.
     const tone=function(s){return statusTone(s);};
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i){
+      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
         const sk=tone(l.status);
         return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +logHeadRow(_all,i,sk,l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
@@ -2226,10 +2240,12 @@ function renderRatesRuleSidebar(){
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(ratesRuleTab==='basic-details'){
-    // Same treatment as the Compliance panel: name becomes the title, and the
-    // seven odd field cards become six that fill the grid evenly.
-    body=lpRecordHead('Rate Rule',item.ruleName,sbStatus(item.status),editBtn)
+    // Same treatment as the Compliance panel: the name leads the grid as a
+    // full-width field, and the six that follow fill the two columns evenly.
+    const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+    body=lpRecordHead('Rate Rule','',sbStatus(item.status),editBtn)
       +'<div class="lp-sb-detail-grid">'
+      +sbWideField(iTag,'Rule Name',item.ruleName)
       +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
       +fc(iId,'Applicable To',item.applicableTo)+fc(iDollar,'Value / Rate',item.valueRate)
       +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
@@ -2241,12 +2257,12 @@ function renderRatesRuleSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
         const sk=logStatusKey(l.status);
         return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +logHeadRow(_all,i,sk,l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
@@ -2508,12 +2524,12 @@ function renderCtpSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
         const sk=logStatusKey(l.status);
         return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+          +logHeadRow(_all,i,sk,l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
           +'</div></div>';
@@ -3519,15 +3535,15 @@ function renderLPSidebar(){
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
         const sk=logStatusKey(l.status||'Updated');
         return '<div class="lp-log-row">'
           +'<div class="lp-log-avatar-col">'
-          +'<div class="lp-log-avatar lp-log-avatar--'+sk+'">'+personSvg+'</div>'
+          +'<div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'
           +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')
           +'</div>'
           +'<div class="lp-log-card">'
-          +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+(l.status||'Updated')+'</span></div>'
+          +logHeadRow(_all,i,sk,(l.status||'Updated'))
           +'<div class="lp-log-meta-row">'
           +'<span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'
           +(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')
@@ -4850,12 +4866,12 @@ function renderCsSidebar(){
     const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-    const timeline='<div class="lp-logs-timeline">'+csLogsData.map((l,i)=>{
+    const timeline='<div class="lp-logs-timeline">'+csLogsData.map((l,i,_all)=>{
       const sk=lsk(l.status||'Active');
       return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(i<csLogsData.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<csLogsData.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
         +'<div class="lp-log-card">'
-        +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+(l.status||'Active')+'</span></div>'
+        +logHeadRow(_all,i,sk,(l.status||'Active'))
         +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span>'
         +(l.date?'<span class="lp-log-meta-item">'+cSvg+'<span>'+l.date+'</span></span>':'')
         +(l.time?'<span class="lp-log-meta-item">'+tSvg+'<span>'+l.time+'</span></span>':'')
@@ -4964,12 +4980,12 @@ function renderLstSidebar(){
     const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-    const timeline='<div class="lp-logs-timeline">'+logs.map(function(l,n){
+    const timeline='<div class="lp-logs-timeline">'+logs.map(function(l,n,_all){
       const sk=lsk(l.status);
       return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(n<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,n,sk)+'">'+pSvg+'</div>'+(n<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
         +'<div class="lp-log-card">'
-        +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+(l.status||'Active')+'</span></div>'
+        +logHeadRow(_all,n,sk,(l.status||'Active'))
         +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span>'
         +(l.date?'<span class="lp-log-meta-item">'+cSvg+'<span>'+l.date+'</span></span>':'')
         +(l.time?'<span class="lp-log-meta-item">'+tSvg+'<span>'+l.time+'</span></span>':'')
@@ -5133,12 +5149,12 @@ function tkLogsTabHTML(t){
   const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const timeline=logs.length
-    ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+    ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
       const sk=tkLogStatusKey(l.status);
       return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
         +'<div class="lp-log-card">'
-        +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+        +logHeadRow(_all,i,sk,l.status)
         +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
         +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
         +'</div></div>';
@@ -5384,12 +5400,12 @@ function renderChatSidebar(){
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     body=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i)=>{
+      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=chatLogKey(l.status);
           return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+sk+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
-            +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+sk+'"></span><span class="lp-log-status-text lp-log-status-text--'+sk+'">'+l.status+'</span></div>'
+            +logHeadRow(_all,i,sk,l.status)
             +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
             +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
             +'</div></div>';

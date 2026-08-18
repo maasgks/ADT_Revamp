@@ -68,6 +68,10 @@ tr.lp-row-selected>td:first-child,
 /* LP SIDEBAR DETAIL/EDIT */
 .lp-sb-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .lp-sb-field-card{background:#f8f9fb;border:1px solid #eef0f3;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px}
+/* The record name. Spans both columns because it is the longest value a panel
+   carries and the first one read - and because an odd card in a two-column grid
+   leaves a hole. Written by sbWideField() in pages.js. */
+.lp-sb-field-card--wide{grid-column:1/-1}
 .lp-sb-field-icon{flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;margin-top:1px}
 .lp-sb-field-icon svg{width:16px;height:16px}
 .lp-sb-field-content{flex:1;min-width:0}
@@ -99,6 +103,9 @@ tr.lp-row-selected>td:first-child,
   display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
   padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #eef0f3}
 .lp-sb-record-id{min-width:0;flex:1}
+/* With no title under it the eyebrow is a single line, so the row centres on it
+   rather than hanging the status and Edit button off the top of nothing. */
+.lp-sb-record[data-no-title]{align-items:center;padding-bottom:12px;margin-bottom:12px}
 .lp-sb-record-eyebrow{
   font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.6px;line-height:1}
 .lp-sb-record-title{
@@ -298,6 +305,9 @@ tr.lp-row-selected>td:first-child,
 .lp-log-avatar--pending,.lp-log-avatar--wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border:2px solid var(--st-wait-fg)}
 .lp-log-avatar--unapproved,.lp-log-avatar--bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border:2px solid var(--st-bad-fg)}
 .lp-log-avatar--info{background:var(--st-info-bg);color:var(--st-info-fg);border:2px solid var(--st-info-fg)}
+/* An ordinary edit, not a status move - see logIsChange() in core.js. Grey and
+   hollow so a coloured ring down the timeline always means the status changed. */
+.lp-log-avatar--event{background:var(--card);color:#9aa3b0;border:2px solid var(--border)}
 .lp-log-connector{flex:1;width:2px;background:#e5e7eb;margin:3px auto;min-height:16px}
 .lp-log-card{flex:1;background:#fff;border:1px solid #eef0f3;border-radius:10px;padding:11px 13px;margin-bottom:10px;box-shadow:0 1px 4px rgba(15,23,42,.05);transition:.15s}
 .lp-log-card:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(15,23,42,.09)}
@@ -310,6 +320,7 @@ tr.lp-row-selected>td:first-child,
 .lp-log-dot--pending,.lp-log-dot--wait{background:var(--st-wait-fg)}
 .lp-log-dot--unapproved,.lp-log-dot--bad{background:var(--st-bad-fg)}
 .lp-log-dot--info{background:var(--st-info-fg)}
+.lp-log-dot--event{background:#c3c9d2}
 .lp-log-status-text{font-size:13px;font-weight:700}
 .lp-log-status-text--active{color:var(--st-ok-fg)}
 .lp-log-status-text--inactive{color:var(--st-bad-fg)}
@@ -318,6 +329,7 @@ tr.lp-row-selected>td:first-child,
 .lp-log-status-text--pending,.lp-log-status-text--wait{color:var(--st-wait-fg)}
 .lp-log-status-text--unapproved,.lp-log-status-text--bad{color:var(--st-bad-fg)}
 .lp-log-status-text--info{color:var(--st-info-fg)}
+.lp-log-status-text--event{color:var(--gray);font-weight:600}
 .lp-log-meta-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#64748b;flex-wrap:wrap;margin-bottom:7px}
 .lp-log-meta-item{display:flex;align-items:center;gap:3px}
 .lp-log-meta-item svg{flex-shrink:0;opacity:.65}

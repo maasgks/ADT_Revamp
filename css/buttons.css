@@ -11,8 +11,9 @@
    In an Approve/Reject pair the DESTRUCTIVE one sits LEFT and outlined, the
    affirmative one sits RIGHT and filled - the eye lands on the filled button
    last, which is the one most rows end on.
-     + .on-dark     modifier   inverts either variant for the two dark panels
-                               (switch-entity screen, support banner).
+     + .on-dark     modifier   inverts either variant on a dark panel (the
+                               support banner - the switch-entity screen was
+                               the other one until it went light).
 
    SIZES
      .btn-sm   28px   dense rows, table actions, filter bars
@@ -67,13 +68,13 @@
 .btn-lg,.ap-pill-btn,.se-proceed,.se-cancel,.ccn-calc-btn,.ccn-export-btn,.lp-logs-save-btn,.ts-sb-submit{--btn-h:40px;--btn-px:24px;--btn-fs:13.5px}
 
 /* -- default: no fill, light grey stroke, --btn-ink label --------------- */
-.btn-outline,.at-btn-reset,.btn-negative,.btn-positive,.btn-secondary,.btn-success,.clock-btn,.cost-calc-btn,.cost-calc-nav-btn,.ep-cancel-btn,.filter-reset,.hr-action-btn,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-clear-btn,.lp-pill-clear,.tb-cost-calc,.ts-btn-reset,.wb-btn.secondary{background:var(--card);color:var(--btn-ink);border-color:var(--btn-stroke)}
-.btn-outline:hover,.at-btn-reset:hover,.btn-negative:hover,.btn-positive:hover,.btn-secondary:hover,.btn-success:hover,.clock-btn:hover,.cost-calc-btn:hover,.cost-calc-nav-btn:hover,.ep-cancel-btn:hover,.filter-reset:hover,.hr-action-btn:hover,.hr-action-btn.neutral:hover,.hr-action-btn.reject:hover,.lp-clear-btn:hover,.lp-pill-clear:hover,.tb-cost-calc:hover,.ts-btn-reset:hover,.wb-btn.secondary:hover{background:var(--card);color:var(--btn-accent);border-color:var(--btn-accent)}
+.btn-outline,.se-cancel,.at-btn-reset,.btn-negative,.btn-positive,.btn-secondary,.btn-success,.clock-btn,.cost-calc-btn,.cost-calc-nav-btn,.ep-cancel-btn,.filter-reset,.hr-action-btn,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-clear-btn,.lp-pill-clear,.tb-cost-calc,.ts-btn-reset,.wb-btn.secondary{background:var(--card);color:var(--btn-ink);border-color:var(--btn-stroke)}
+.btn-outline:hover,.se-cancel:hover,.at-btn-reset:hover,.btn-negative:hover,.btn-positive:hover,.btn-secondary:hover,.btn-success:hover,.clock-btn:hover,.cost-calc-btn:hover,.cost-calc-nav-btn:hover,.ep-cancel-btn:hover,.filter-reset:hover,.hr-action-btn:hover,.hr-action-btn.neutral:hover,.hr-action-btn.reject:hover,.lp-clear-btn:hover,.lp-pill-clear:hover,.tb-cost-calc:hover,.ts-btn-reset:hover,.wb-btn.secondary:hover{background:var(--card);color:var(--btn-accent);border-color:var(--btn-accent)}
 
 /* -- filled: the affirmative / main action ------------------------------ */
-.btn-primary,.at-btn-search,.cc-export-btn,.ccn-calc-btn,.ccn-export-btn,.cs-edit-btn,.ct-action-btn,.emp-support-btn,.ep-file-btn,.ep-save-btn,.fcmp-footer-btn,.filter-search,.hr-action-btn.approve,.lp-add-btn,.lp-edit-btn,.lp-logs-save-btn,.lp-pill-search,.lp-sb-view-edit-btn,.ts-btn-search,.ts-sb-submit,.ts-submit-btn,.wb-btn.primary{background:var(--btn-ink);color:#fff;border-color:var(--btn-ink)}
+.btn-primary,.se-proceed,.at-btn-search,.cc-export-btn,.ccn-calc-btn,.ccn-export-btn,.cs-edit-btn,.ct-action-btn,.emp-support-btn,.ep-file-btn,.ep-save-btn,.fcmp-footer-btn,.filter-search,.hr-action-btn.approve,.lp-add-btn,.lp-edit-btn,.lp-logs-save-btn,.lp-pill-search,.lp-sb-view-edit-btn,.ts-btn-search,.ts-sb-submit,.ts-submit-btn,.wb-btn.primary{background:var(--btn-ink);color:#fff;border-color:var(--btn-ink)}
 /* hover deepens the fill rather than changing it - see header note */
-.btn-primary:hover,.at-btn-search:hover,.cc-export-btn:hover,.ccn-calc-btn:hover,.ccn-export-btn:hover,.cs-edit-btn:hover,.ct-action-btn:hover,.emp-support-btn:hover,.ep-file-btn:hover,.ep-save-btn:hover,.fcmp-footer-btn:hover,.filter-search:hover,.hr-action-btn.approve:hover,.lp-add-btn:hover,.lp-edit-btn:hover,.lp-logs-save-btn:hover,.lp-pill-search:hover,.lp-sb-view-edit-btn:hover,.ts-btn-search:hover,.ts-sb-submit:hover,.ts-submit-btn:hover,.wb-btn.primary:hover{background:var(--btn-accent);color:#fff;border-color:var(--btn-accent)}
+.btn-primary:hover,.se-proceed:hover,.at-btn-search:hover,.cc-export-btn:hover,.ccn-calc-btn:hover,.ccn-export-btn:hover,.cs-edit-btn:hover,.ct-action-btn:hover,.emp-support-btn:hover,.ep-file-btn:hover,.ep-save-btn:hover,.fcmp-footer-btn:hover,.filter-search:hover,.hr-action-btn.approve:hover,.lp-add-btn:hover,.lp-edit-btn:hover,.lp-logs-save-btn:hover,.lp-pill-search:hover,.lp-sb-view-edit-btn:hover,.ts-btn-search:hover,.ts-sb-submit:hover,.ts-submit-btn:hover,.wb-btn.primary:hover{background:var(--btn-accent);color:#fff;border-color:var(--btn-accent)}
 
 /* -- keyboard focus: crisp outline, never shown on mouse hover --------- */
 .btn-outline:focus-visible,.btn-primary:focus-visible,.at-btn-reset:focus-visible,.at-btn-search:focus-visible,.btn:focus-visible,.clock-btn:focus-visible,.ep-cancel-btn:focus-visible,.ep-save-btn:focus-visible,.filter-reset:focus-visible,.filter-search:focus-visible,.hr-action-btn:focus-visible,.lp-clear-btn:focus-visible,.ts-btn-reset:focus-visible,.ts-btn-search:focus-visible{outline:2px solid var(--btn-accent);outline-offset:2px;border-color:var(--btn-accent)}
@@ -93,7 +94,10 @@
    other way and brighten to white, which is the same move: hover pushes
    further from the surface it sits on.
    -------------------------------------------------------------------------- */
-.btn-primary.on-dark,.se-proceed{background:#fff;color:#1a1a1a;border-color:#fff}
-.btn-primary.on-dark:hover,.se-proceed:hover{background:#e2e8f0;color:#1a1a1a;border-color:#e2e8f0}
-.btn-outline.on-dark,.btn-secondary.on-dark,.se-cancel,.emp-support-btn.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
-.btn-outline.on-dark:hover,.btn-secondary.on-dark:hover,.se-cancel:hover,.emp-support-btn.ghost:hover{background:rgba(255,255,255,.24);color:#fff;border-color:rgba(255,255,255,.75)}
+/* Switch Entity used to be the only screen in this group - a dark glass panel.
+   It is a light orange screen now, so .se-proceed / .se-cancel moved up into
+   the ordinary light lists above and nothing here targets them any more. */
+.btn-primary.on-dark{background:#fff;color:#1a1a1a;border-color:#fff}
+.btn-primary.on-dark:hover{background:#e2e8f0;color:#1a1a1a;border-color:#e2e8f0}
+.btn-outline.on-dark,.btn-secondary.on-dark,.emp-support-btn.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
+.btn-outline.on-dark:hover,.btn-secondary.on-dark:hover,.emp-support-btn.ghost:hover{background:rgba(255,255,255,.24);color:#fff;border-color:rgba(255,255,255,.75)}
