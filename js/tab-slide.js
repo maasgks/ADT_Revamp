@@ -81,6 +81,10 @@ function place(bar,fam,key){
   if(!ind){
     ind=document.createElement('div');
     ind.className='tab-ind tab-ind--'+fam.shape+' no-anim';
+    /* The page differ matches children by position and would treat this - a node
+       no builder emits - as a surplus trailing child to be removed on every
+       repaint. See patchVisible() in js/renderer.js. */
+    ind.setAttribute('data-patch-keep','');
     bar.appendChild(ind);
     fresh=true;
   }

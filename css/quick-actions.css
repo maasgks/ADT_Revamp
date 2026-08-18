@@ -181,9 +181,9 @@ select.qa-ask-input{height:38px;padding:0 12px;cursor:pointer}
   font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;
   transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
 .qa-ask-cancel{background:#fff;border:1.5px solid var(--border);color:var(--navy)}
-.qa-ask-cancel:hover{border-color:#c7ccd6;background:#f8fafc}
+.qa-ask-cancel:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .qa-ask-go{background:var(--navy);border:1.5px solid var(--navy);color:#fff}
-.qa-ask-go:hover{background:#1e293b;border-color:#1e293b}
+.qa-ask-go:hover{background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
 
 /* ==========================================================================
    COMMAND PALETTE  (Ctrl/Cmd-K)

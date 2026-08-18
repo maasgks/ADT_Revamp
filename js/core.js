@@ -2954,9 +2954,28 @@ function tsCloseDay(){tsSelectedDay=null;renderADTPage();}
 // ── TIMESHEET MONTH PICKER ──
 let tsMpOpen=false;
 let tsMpYear=tsMonth.year;
-function tsToggleMonthPicker(ev){if(ev)ev.stopPropagation();tsMpOpen=!tsMpOpen;tsMpYear=tsMonth.year;renderADTPage();}
-function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;renderADTPage();}
-function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;renderADTPage();}
+/* Opening, closing or paging the year changes NOTHING on the page behind the
+   panel, so none of the three repaints it. They used to call renderADTPage(),
+   which rebuilt the timesheet - tabs, stat tiles and the whole month grid - to
+   add two nodes inside .ts-month-wrap. That is what made clicking the month
+   button look like the page was reloading.
+
+   Picking a month is the other case and still repaints: tsMonth and tsRange
+   both move, so the grid and the stat tiles genuinely have to be rebuilt.
+
+   The helper returns false when the wrap is not on screen (a repaint is mid
+   flight, or the page changed underneath us); the callers fall back to a full
+   render so the flag can never end up disagreeing with the DOM. */
+function tsSyncMonthPicker(){
+  const wrap=document.querySelector('.ts-month-wrap');
+  if(!wrap)return false;
+  wrap.querySelectorAll('.ts-mp-overlay,.ts-mp-panel').forEach(function(n){n.remove();});
+  if(tsMpOpen)wrap.insertAdjacentHTML('beforeend',buildTsMonthPickerHTML());
+  return true;
+}
+function tsToggleMonthPicker(ev){if(ev)ev.stopPropagation();tsMpOpen=!tsMpOpen;tsMpYear=tsMonth.year;if(!tsSyncMonthPicker())renderADTPage();}
+function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;if(!tsSyncMonthPicker())renderADTPage();}
+function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;if(!tsSyncMonthPicker())renderADTPage();}
 // Picking a month re-spans the range to that month, so the filter label and the
 // grid can never disagree about which dates are in view.
 function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}

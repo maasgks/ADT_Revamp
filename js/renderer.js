@@ -154,6 +154,21 @@ function syncFormState(live,next){
    surface. Nodes are MOVED out of the new tree rather than cloned - it is
    detached and thrown away straight after, and moving keeps any handler the
    builder attached as a property. */
+/* Children the BUILDERS never emit are invisible to the differ. tab-slide.js
+   plants its .tab-ind marker straight into the live bar, so .mod-tabs has three
+   children on screen and two in the freshly built tree. Matching is positional,
+   so that surplus trailing node was removed on EVERY repaint and the observer
+   built a new one - and a new marker starts at opacity 0 and fades back in, so
+   the pill behind the active tab blinked every time anything on the page was
+   repainted. Skipping these keeps the positions lined up and leaves the marker
+   alone; it is absolutely positioned, so where it sits among its siblings does
+   not matter. */
+function patchVisible(nodes){
+  return nodes.filter(function(n){
+    return !(n.nodeType===1&&n.hasAttribute('data-patch-keep'));
+  });
+}
+
 function patchDom(live,next){
   if(live.isEqualNode(next))return;               /* identical subtree - do not descend */
   if(live.nodeType!==next.nodeType||live.nodeName!==next.nodeName){
@@ -168,7 +183,7 @@ function patchDom(live,next){
   syncFormState(live,next);
   /* Snapshot both child lists first: the loop moves nodes out of `next` and
      removes them from `live`, and a live NodeList would shift underneath it. */
-  const a=Array.prototype.slice.call(live.childNodes);
+  const a=patchVisible(Array.prototype.slice.call(live.childNodes));
   const b=Array.prototype.slice.call(next.childNodes);
   const n=Math.min(a.length,b.length);
   for(let i=0;i<n;i++)patchDom(a[i],b[i]);
@@ -180,7 +195,7 @@ function patchDom(live,next){
    syncing ITS attributes onto #adt-content would strip the id off the element
    the whole app looks itself up by. */
 function patchChildren(live,next){
-  const x=Array.prototype.slice.call(live.childNodes);
+  const x=patchVisible(Array.prototype.slice.call(live.childNodes));
   const y=Array.prototype.slice.call(next.childNodes);
   const n=Math.min(x.length,y.length);
   for(let i=0;i<n;i++)patchDom(x[i],y[i]);
