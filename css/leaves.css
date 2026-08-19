@@ -68,6 +68,25 @@ tr.lp-row-selected>td:first-child,
 /* LP SIDEBAR DETAIL/EDIT */
 .lp-sb-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .lp-sb-field-card{background:#f8f9fb;border:1px solid #eef0f3;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px}
+/* ── FULL-WIDTH FIELDS GO LAST ─────────────────────────────────────────────
+   A field too long for half a row — an address, a resolution note — has to
+   span the grid, and a spanning item mid-list breaks the two-column rhythm:
+   it ends whatever row it lands in, so the field that should have sat beside
+   its neighbour gets pushed down and the pairs below it all shift. On the
+   entity panel that put Address between "Entity Name" and "City" and left the
+   remaining ten fields reading as five unrelated rows.
+
+   `order:1` moves every wide card after the normal ones (default order:0) at
+   PLACEMENT time, so the markup can still declare a field wherever it belongs
+   logically and the grid still lays the pairs out cleanly with the wide ones
+   collected at the bottom. Being a grid-item property it needs no cooperation
+   from the container, which is why this one rule covers every detail grid in
+   the app — the class-based .lp-sb-detail-grid and the several inline
+   `display:grid` ones alike.
+
+   1/-1 rather than `span 2`: it fills the row whatever the column count, so a
+   three-column grid does not silently leave a hole. */
+.lp-sb-field-card.is-wide{grid-column:1/-1;order:1}
 .lp-sb-field-icon{flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#9ca3af;margin-top:1px}
 .lp-sb-field-icon svg{width:16px;height:16px}
 .lp-sb-field-content{flex:1;min-width:0}
@@ -221,7 +240,11 @@ tr.lp-row-selected>td:first-child,
 .cs-trigger.cs-open{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.08)}
 .cs-chevron{transition:transform .2s;flex-shrink:0;color:#6b7280}
 .cs-trigger.cs-open .cs-chevron{transform:rotate(180deg)}
-.cs-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(15,23,42,.10);z-index:300;display:none;padding:4px}
+/* Capped and scrollable. It had no max-height at all, so a long option list
+   (every country, every agent) simply grew past the bottom of the window with
+   no way to reach the end of it. overscroll-behavior stops a flick at the end
+   of the list carrying on into the page behind. */
+.cs-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1.5px solid var(--border);border-radius:10px;box-shadow:0 6px 20px rgba(15,23,42,.10);z-index:300;display:none;padding:4px;max-height:264px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 .cs-dropdown.cs-open{display:block}
 .cs-option{padding:10px 14px;font-size:13px;color:var(--navy);cursor:pointer;border-radius:8px;display:flex;align-items:center;justify-content:space-between;transition:.1s}
 .cs-option:hover,.cs-option.cs-selected{background:#f1f5f9}
@@ -322,6 +345,12 @@ tr.lp-row-selected>td:first-child,
 }
 /* LP LOGS TIMELINE */
 .lp-logs-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+/* A logs column that carries something above the form — the compliance panel's
+   approve/reject bar. The stickiness moves up to this wrapper so the bar rides
+   with the form instead of scrolling away from it; without that the form alone
+   would be sticky inside a box exactly its own height, which does nothing. */
+.lp-logs-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;min-width:0}
+.lp-logs-side .lp-logs-form{position:static;top:auto}
 .lp-logs-timeline{display:flex;flex-direction:column}
 .lp-log-row{display:flex;gap:10px;align-items:stretch}
 .lp-log-avatar-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:34px}
@@ -415,14 +444,23 @@ tr.lp-row-selected>td:first-child,
 .ct-action-btn span{overflow:hidden;text-overflow:ellipsis;max-width:80px}
 .ct-dots-btn{border:none;background:transparent;border-radius:6px;width:28px;height:28px;line-height:28px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:#64748b;padding:0;transition:.15s;flex-shrink:0;vertical-align:middle}
 .ct-dots-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
-.ct-action-menu{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.13);z-index:1000;min-width:200px;overflow:hidden;display:none}
+/* overflow-y:auto, not hidden: placeAnchoredMenu() caps max-height when the
+   viewport cannot hold the whole menu, and a capped menu that cannot scroll is
+   just a clipped one. overflow-x stays hidden so the rounded corners still cut
+   the first and last item. */
+.ct-action-menu{position:fixed;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.13);z-index:1000;min-width:200px;overflow:hidden auto;overscroll-behavior:contain;scrollbar-width:thin;display:none}
 .ct-action-menu.open{display:block}
-.ct-act-item{padding:9px 14px;font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:9px;color:var(--navy);transition:.12s;border-bottom:1px solid #f1f5f9}
+/* 7px rows, not 9px. Eight of them at the old height came to 304px, which is
+   taller than the space under a table row on a laptop viewport — so the menu
+   was being capped and scrolled on almost every open. At 33px a row the whole
+   flow is 264px and usually just fits, which is a better fix than making the
+   scrollbar look nicer. */
+.ct-act-item{padding:7px 14px;font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:9px;color:var(--navy);transition:.12s;border-bottom:1px solid #f1f5f9}
 .ct-act-item:last-child{border-bottom:none}
 .ct-act-item:hover:not(.done):not(.current){background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .ct-act-item.current{color:var(--orange);font-weight:700;background:#f1f5f9;cursor:default}
 .ct-act-item.done{color:#9ca3af;cursor:default}
-.ct-act-step{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.ct-act-step{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
 .ct-act-step.done{background:var(--st-ok-bg);color:var(--st-ok-fg)}
 .ct-act-step.current{background:var(--orange);color:#fff}
 .ct-act-step.next{background:#f1f5f9;color:#64748b}
@@ -457,3 +495,74 @@ tr.lp-row-selected>td:first-child,
 .lp-pg-btn.active{background:var(--orange);color:#fff;border-color:var(--orange);font-weight:700}
 .lp-pg-btn:disabled{opacity:.4;cursor:default}
 .lp-pg-arrow{color:#64748b}
+
+/* ══ PAYHEADS — SLAB CONFIGURATION ═════════════════════════════════════════
+   A slab row is four fields and a delete, on one line, because a slab is one
+   fact — "between here and there, apply this, this way" — and stacking it into
+   four labelled rows would hide that. The grid is fixed rather than equal
+   thirds: From and To hold short numbers, Value holds a short number, and Calc
+   Method holds a select whose longest option is "Percentage", so giving them
+   equal width would leave the numbers swimming and the select cramped. */
+.ph-slab-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:16px 22px;background:#fafbfc;border-bottom:1px solid var(--border)}
+.ph-add-slab{
+  display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 14px;
+  border-radius:var(--r-control);background:#fff;border:1.5px solid var(--orange);color:var(--orange);
+  font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background .15s ease,color .15s ease}
+.ph-add-slab:hover{background:var(--orange);color:#fff}
+.ph-slab-row{
+  display:grid;grid-template-columns:1fr 1fr 1fr 1.3fr auto;gap:12px;align-items:end;
+  padding-bottom:14px;margin-bottom:14px;border-bottom:1px dashed var(--border)}
+.ph-slab-row:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
+/* From Value is derived from the slab above, so it reads as a stated value
+   rather than an empty field inviting a number that would be overwritten. */
+.ph-slab-row input[readonly]{background:var(--light);color:var(--gray);cursor:default}
+.ph-hint{color:#9ca3af;cursor:help}
+.ph-slab-del{
+  width:34px;height:38px;flex-shrink:0;border:1px solid var(--border);border-radius:var(--r-control);
+  background:#fff;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;padding:0;transition:border-color .15s ease,color .15s ease,background .15s ease}
+.ph-slab-del:hover:not(:disabled){border-color:var(--st-bad-fg);color:var(--st-bad-fg);background:var(--st-bad-bg)}
+/* One slab left: it is the rule, so it cannot be removed. */
+.ph-slab-del:disabled{opacity:.4;cursor:not-allowed}
+@media (max-width:760px){
+  .ph-slab-row{grid-template-columns:1fr 1fr;gap:10px}
+  .ph-slab-del{grid-column:1/-1;width:100%}
+}
+
+/* The slab table in the detail panel, and anywhere else a saved rule is read
+   back. Same shape as the panel's other tables. */
+.ph-slab-table-wrap{border:1px solid var(--border);border-radius:10px;overflow:auto;background:#fff}
+.ph-slab-table{width:100%;border-collapse:collapse;min-width:380px}
+.ph-slab-table tbody tr:last-child td{border-bottom:none}
+.ph-slab-table tbody tr:hover td{background:#fafbfc}
+
+/* ── Create Ticket / Create Payhead: popup form extras ─────────────────────
+   Both use the shared .ct-modal shell; these are the few controls those forms
+   add that the shell does not already carry. */
+.ep-optional{color:var(--gray);font-weight:400;font-size:11px}
+.tk-ta{min-height:74px;resize:vertical;line-height:1.5;padding-top:9px;font-family:inherit}
+.tk-ta-lg{min-height:96px}
+/* Field and its Search share one line — the button is an action ON the field,
+   not a separate step under it. */
+.tk-link-row{display:flex;gap:10px;align-items:stretch}
+.tk-link-row .ep-form-input{flex:1;min-width:0}
+.tk-link-row .ep-cancel-btn{flex-shrink:0}
+/* A resolved link, shown as a chip rather than left as raw text in the input,
+   so "searched and found" is visibly different from "typed something". */
+.tk-link-chip{
+  display:inline-flex;align-items:center;gap:8px;margin-top:9px;
+  padding:6px 8px 6px 11px;border-radius:8px;
+  background:var(--st-ok-bg);border:1px solid var(--st-ok-bd);
+  font-size:12px;color:var(--navy);max-width:100%}
+.tk-link-chip b{font-weight:700;flex-shrink:0}
+.tk-link-chip span{color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-link-chip button{
+  flex-shrink:0;width:20px;height:20px;border:none;border-radius:5px;background:transparent;
+  color:var(--gray);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.tk-link-chip button:hover{background:rgba(15,23,42,.07);color:var(--navy)}
+/* Slab rows inside the popup: the modal supplies the padding the form card
+   used to, so the list gets its own. */
+.ph-slab-body{padding:18px 20px}

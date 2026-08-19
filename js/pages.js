@@ -1022,14 +1022,7 @@ function togglePmAction(id,e){
   m.classList.toggle('open');
   if(willOpen&&e){
     const wrap=e.target.closest('.ct-action-wrap');
-    const anchor=wrap?wrap.getBoundingClientRect():null;
-    if(anchor){
-      const menuH=m.offsetHeight;
-      const spaceBelow=window.innerHeight-anchor.bottom-8;
-      m.style.right=(window.innerWidth-anchor.right)+'px';m.style.left='auto';
-      if(spaceBelow>=menuH){m.style.top=(anchor.bottom+5)+'px';m.style.bottom='auto';}
-      else{m.style.bottom=(window.innerHeight-anchor.top+5)+'px';m.style.top='auto';}
-    }
+    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
   }
 }
 function alToggleStatFilter(v){
@@ -1071,7 +1064,45 @@ function closePmSidebar(){
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
 function navPmTab(tab){pmTab=tab;isbTab('pm',renderPmSidebar);}
-function pmSetUserSubTab(tab){pmUserSubTab=tab;const inner=document.getElementById('pm-isb-inner');if(inner)inner.innerHTML=renderPmSidebar();}
+/* ONE LEVEL DEEPER THAN isbTab(). The User tab has its own bar — Company
+   Details / Company Concern Person — and switching it used to write the whole
+   panel back with innerHTML: the outer tab bar, the sub-tab bar and the body,
+   all destroyed and rebuilt to change the half of the panel below the sub-tabs.
+
+   That is the same mistake isbTab() exists to avoid, so this fixes it the same
+   way: render the panel off-document, lift out only the sub-body, and swap
+   that. The two bars above it are never touched, so nothing flickers, focus
+   stays on the button you clicked, and the sliding marker actually TRAVELS
+   between the two sub-tabs instead of being re-planted by tab-slide.js's
+   rebuilt-bar fallback.
+
+   Falls back to the full write if the panel shape is not what we expect —
+   a correct repaint beats a clever one that quietly does nothing. */
+function pmSetUserSubTab(tab){
+  pmUserSubTab=tab;
+  const live=document.getElementById('pm-user-subbody');
+  const bar=document.querySelector('.pm-user-subtabs');
+  if(!live||!bar){
+    const inner=document.getElementById('pm-isb-inner');
+    if(inner)inner.innerHTML=renderPmSidebar();
+    return;
+  }
+  const tpl=document.createElement('div');
+  tpl.innerHTML=renderPmSidebar();
+  const next=tpl.querySelector('#pm-user-subbody');
+  if(!next){
+    const inner=document.getElementById('pm-isb-inner');
+    if(inner)inner.innerHTML=renderPmSidebar();
+    return;
+  }
+  live.innerHTML=next.innerHTML;
+  // The buttons stay; only the highlight moves, which is what lets the marker
+  // transition rather than appear.
+  bar.querySelectorAll('.pm-user-subtab').forEach(function(b,i){
+    b.classList.toggle('active',
+      tpl.querySelectorAll('.pm-user-subtab')[i].classList.contains('active'));
+  });
+}
 // Cancel drops the pending step too, so the form falls back to the plain
 // "add a log" state rather than still claiming a move the user backed out of.
 function pmCancelLog(){
@@ -1175,7 +1206,9 @@ function renderPmSidebar(){
         +fc(iDoc,'Users Company Website',co.website)+fc(iPin,'User Address',co.address)
         +'</div>';
     }
-    body=subTabBar+subBody;
+    // The id is the seam pmSetUserSubTab() swaps on — everything above it,
+    // including this bar, survives a sub-tab change untouched.
+    body=subTabBar+'<div id="pm-user-subbody">'+subBody+'</div>';
   }else if(pmTab==='employee'){
     const emp=p.emp;
     body='<div class="lp-sb-detail-grid">'
@@ -1344,20 +1377,7 @@ function toggleCtAction(id,e){
   m.classList.toggle('open');
   if(willOpen&&e){
     const wrap=e.target.closest('.ct-action-wrap');
-    const anchor=wrap?wrap.getBoundingClientRect():null;
-    if(anchor){
-      const menuH=m.offsetHeight;
-      const spaceBelow=window.innerHeight-anchor.bottom-8;
-      m.style.right=(window.innerWidth-anchor.right)+'px';
-      m.style.left='auto';
-      if(spaceBelow>=menuH){
-        m.style.top=(anchor.bottom+5)+'px';
-        m.style.bottom='auto';
-      }else{
-        m.style.bottom=(window.innerHeight-anchor.top+5)+'px';
-        m.style.top='auto';
-      }
-    }
+    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
   }
 }
 // ── TICKETS SIDEBAR ──
@@ -1373,6 +1393,42 @@ function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info
 function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');isbTab('chat',renderChatSidebar);document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navChatTab(tab){chatTab=tab;isbTab('chat',renderChatSidebar);}
+/* Seeded from the chat's own start details rather than written out per record,
+   so the two opening entries can never disagree with the chat above them. */
+function chatSeedLogs(c){
+  const parts=String(c.startedAt||'').split('|');
+  const d=(parts[0]||'').trim(),t=(parts[1]||'').trim();
+  if(!chatLogsData[c.id])chatLogsData[c.id]=[
+    {date:d,time:t,user:'System',status:chatStatusLabel(c.status),
+     action:'Auto-assigned to '+c.assignedTo+'.'},
+    {date:d,time:t,user:c.clientName,status:'Active',
+     action:'Chat opened by '+c.clientName+'.'}
+  ];
+  return chatLogsData[c.id];
+}
+function chatCancelLog(){isbTab('chat',renderChatSidebar);}
+/* Written by hand rather than through lpCommitLog because a chat's status is a
+   KEY ('waiting_csm') shown under a LABEL ('Waiting for CSM'). lpCommitLog
+   assigns the option text straight onto the record, which would have stored
+   the label and broken every status lookup on the listing. */
+function chatSaveLog(id){
+  const c=chatsData.find(function(x){return x.id===id;});if(!c)return;
+  const sel=document.getElementById('chat-log-status-sel');
+  const inp=document.getElementById('chat-log-comment-inp');
+  const to=sel?sel.value:'',comment=inp?inp.value.trim():'';
+  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  if(!to){flash(sel);return;}
+  if(!comment){flash(inp);return;}
+  const was=c.status;
+  chatSeedLogs(c);
+  const s=stampNow();
+  chatLogsData[c.id].unshift({date:s.date,time:s.time,user:CURRENT_USER,
+    status:chatStatusLabel(to),action:comment});
+  c.status=to;
+  renderADTPage();
+  showToast('Chat updated','success',c.chatId+' → '+chatStatusLabel(to)
+    +' · next action on '+chatOwner(c)+'.');
+}
 function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage();}
 const CHAT_STATUS_LABEL={active:'Active',waiting_client:'Waiting for Client',waiting_csm:'Waiting for CSM',inactive:'Inactive'};
 function chatStatusLabel(s){return CHAT_STATUS_LABEL[s]||s;}
@@ -2284,8 +2340,15 @@ function renderOcaSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ocaSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    // The decision bar opens the tab, above the history it is about to write into.
-    body='<div class="lp-logs-wrap">'+ocaActionsHTML(item)+timelineHTML+formHTML+'</div>';
+    /* .lp-logs-wrap is a TWO-COLUMN grid — timeline, then form — and every
+       other module gives it exactly those two children. Passing the decision
+       bar as a third made it a grid item in its own right: it took column one,
+       shoved the timeline into column two, and dropped the form onto a second
+       row. The bar belongs WITH the form, not beside it, so both go in one
+       column wrapper and the grid keeps the two children it expects. */
+    body='<div class="lp-logs-wrap">'+timelineHTML
+      +'<div class="lp-logs-side">'+ocaActionsHTML(item)+formHTML+'</div>'
+      +'</div>';
   }else if(ocaTab==='workflow'){
     body=wfTimelineHTML(ocaWorkflow(item));   // shared renderer, so it reads like every other Workflow tab
   }
@@ -3427,6 +3490,319 @@ function submitAddTeam(){
   page='teams';renderADTPage();
   showToast('Team created','success','"'+teamName+'" has been added to Teams.');
 }
+
+/* ══ PAYHEADS ══════════════════════════════════════════════════════════════
+   Listing, detail panel and creation page, built on the same parts every other
+   module uses: apCS filters + listing-stats above the table, .lp-table in a
+   .lp-split-wrap with the .lp-isb-* panel, and an .ep-page form for creation —
+   the shape Add Leave Policy already established. Nothing here is a new idea
+   about how a module works; only the payhead-specific parts are new. */
+function phToggleStatFilter(v){
+  phStatusFilter=phStatusFilter===v?'':v;
+  phSelectedId=null;renderADTPage();
+}
+function applyPhFilters(){
+  const cat=getCSValue('ph-f-cat'),st=getCSValue('ph-f-status');
+  phCategoryFilter=cat&&cat!=='All Categories'?cat:'';
+  phStatusFilter=st&&st!=='All Statuses'?st:'';
+  phSelectedId=null;renderADTPage();
+}
+function resetPhFilters(){phCategoryFilter='';phStatusFilter='';phSelectedId=null;renderADTPage();}
+
+// ── Detail panel ──
+function openPhSidebar(id,tab){
+  phSelectedId=id;phTab=tab||'basic-details';
+  const sb=document.getElementById('ph-split-sb');if(sb)sb.classList.add('open');
+  const wrap=document.getElementById('ph-split-wrap');if(wrap)wrap.classList.add('has-sb');
+  isbTab('ph',renderPhSidebar);
+  document.querySelectorAll('.ph-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='ph-row-'+id);});
+}
+function closePhSidebar(){
+  phSelectedId=null;
+  const sb=document.getElementById('ph-split-sb');if(sb)sb.classList.remove('open');
+  const wrap=document.getElementById('ph-split-wrap');if(wrap)wrap.classList.remove('has-sb');
+  document.querySelectorAll('.ph-row').forEach(function(r){r.classList.remove('lp-row-selected');});
+}
+function navPhTab(tab){phTab=tab;isbTab('ph',renderPhSidebar);}
+function phCancelLog(){isbTab('ph',renderPhSidebar);}
+function phSaveLog(id){
+  const p=payheadsData.find(function(x){return x.id===id;});if(!p)return;
+  phSeedLogs(p);
+  if(!lpCommitLog(p,'ph-log-status-sel','ph-log-comment-inp',p.logs))return;
+  renderADTPage();
+  showToast('Log added','success','"'+p.name+'" is now '+p.status+'.');
+}
+function phSeedLogs(p){
+  return seedLogs(p,[{date:p.createdAt.split(' | ')[0],time:p.createdAt.split(' | ')[1]||'09:00:00 AM',
+    user:p.createdBy,status:p.status,action:'Payhead created with '+p.slabs.length+' slab'+(p.slabs.length===1?'':'s')+'.'}]);
+}
+// Shared by the panel and the create page's preview, so a slab table always
+// reads the same wherever it appears.
+function phSlabTableHTML(slabs,calcOn){
+  const thS='padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap';
+  const tdS='padding:10px 12px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f3f5';
+  const rows=slabs.map(function(s,i){
+    // An empty `to` is not missing data — it is what closes the last band.
+    const range=s.to?(s.from+' – '+s.to):(s.from+' and above');
+    const val=s.method==='Percentage'?s.value+'%':s.value;
+    return '<tr><td style="'+tdS+';color:var(--gray)">'+(i+1)+'</td>'
+      +'<td style="'+tdS+';font-weight:600;white-space:nowrap">'+range+'</td>'
+      +'<td style="'+tdS+';white-space:nowrap">'+val+'</td>'
+      +'<td style="'+tdS+'">'+s.method+'</td></tr>';
+  }).join('');
+  return '<div class="ph-slab-table-wrap"><table class="ph-slab-table"><thead><tr>'
+    +'<th style="'+thS+'">#</th><th style="'+thS+'">Range on '+calcOn+'</th>'
+    +'<th style="'+thS+'">Value</th><th style="'+thS+'">Calc Method</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function renderPhSidebar(){
+  const p=payheadsData.find(function(x){return x.id===phSelectedId;});if(!p)return'';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'slabs',label:'Slab Configuration'},{id:'logs',label:'Logs'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<div class="lp-isb-tabs" id="ph-isb-tabs">'+tabs.map(function(t){
+      return '<button class="lp-isb-tab'+(phTab===t.id?' active':'')+'" onclick="navPhTab(\''+t.id+'\')">'+t.label+'</button>';
+    }).join('')+'</div>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closePhSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
+  const iCalc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="12" y1="11" x2="12.01" y2="11"/><line x1="16" y1="11" x2="16.01" y2="11"/><line x1="8" y1="16" x2="16" y2="16"/></svg>';
+  const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
+  let body='';
+  if(phTab==='basic-details'){
+    body='<div class="lp-sb-detail-grid">'
+      +fc(iTag,'Payhead Name',p.name)+fc(iCheck,'Status',sbStatus(p.status))
+      +fc(iTag,'Category',p.category)+fc(iCalc,'Calculation On',p.calcOn)
+      +fc(iCalc,'Rule',phRuleText(p))+fc(iTag,'Slabs',String(p.slabs.length))
+      +fc(iUser,'Created By',p.createdBy)+fc(iCal,'Created At',p.createdAt)
+      +'</div>';
+  }else if(phTab==='slabs'){
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Slab Configuration</span></div>'
+      +phSlabTableHTML(p.slabs,p.calcOn);
+  }else{
+    const logs=phSeedLogs(p);
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const timeline=logs.length?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
+      const sk=statusTone(l.status);
+      return '<div class="lp-log-row">'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-card">'+logHeadRow(_all,i,sk,l.status)
+        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>':'<div class="lp-logs-empty">No activity logs yet.</div>';
+    const form='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(p.status)+'"></span>'+p.status+'</div>'
+      +'<p class="lp-logs-form-sub">Move this payhead on and say why</p>'
+      +lpLogStatusField('ph-log-status-sel',p.status,['Active','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="ph-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="phCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="phSaveLog('+p.id+')">Submit</button>'
+      +'</div></div>';
+    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+
+// ── Listing ──
+function buildPayheadsPageHTML(){
+  const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+  const active=payheadsData.filter(function(p){return p.status==='Active';}).length;
+  const inactive=payheadsData.filter(function(p){return p.status==='Inactive';}).length;
+  const rows=phRows();
+  if(phSelectedId&&!rows.some(function(p){return p.id===phSelectedId;}))phSelectedId=null;
+  const pgn=listPage('payheads',phCategoryFilter+'|'+phStatusFilter,rows.map(function(p,i){
+    return '<tr class="ph-row'+(phSelectedId===p.id?' lp-row-selected':'')+'" id="ph-row-'+p.id+'" style="cursor:pointer" onclick="openPhSidebar('+p.id+')">'
+      +'<td class="lp-c-n">'+(i+1)+'</td>'
+      +'<td><span style="color:var(--orange);font-weight:500">'+p.name+'</span></td>'
+      +'<td>'+p.category+'</td>'
+      +'<td>'+p.calcOn+'</td>'
+      +'<td>'+phRuleText(p)+'</td>'
+      +'<td><span class="lp-status-badge tone-'+statusTone(p.status)+'">'+p.status+'</span></td>'
+      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openPhSidebar('+p.id+')" title="View Details">'+dotsIco+'</button></td>'
+      +'</tr>';
+  }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No payheads match this filter.</td></tr>');
+  return '<div class="lp-page">'
+    +dashboardBackHTML()
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('ph-f-cat',PH_CATEGORIES,phCategoryFilter,'All Categories')
+    +apCS('ph-f-status',['Active','Inactive'],phStatusFilter,'All Statuses')
+    +clearFiltersBtn([phCategoryFilter,phStatusFilter],'resetPhFilters()')
+    +'<button class="lp-pill-search" onclick="applyPhFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(phStatusFilter==='Active'?' stat-selected':'')+'" onclick="phToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+active+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(phStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="phToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+inactive+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px" id="ph-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table"><thead><tr><th>S. No</th><th>Payhead</th><th>Category</th><th>Calculation On</th><th>Rule</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(phSelectedId?' open':'')+'" id="ph-split-sb"><div class="lp-isb" id="ph-isb-inner">'+(phSelectedId?renderPhSidebar():'')+'</div></div>'
+    +'</div></div>'
+    +(phModalOpen?buildCreatePayheadModalHTML():'');
+}
+
+/* ── Create page ───────────────────────────────────────────────────────────
+   THE SLAB ROWS ARE STATE, NOT MARKUP. Add Slab repaints the block, so what
+   the user has already typed has to be read back into phDraftSlabs first or it
+   would be wiped by the row they just asked for. Every field writes straight
+   through on input for the same reason.
+
+   FROM VALUE IS DERIVED, NEVER TYPED. Each band starts where the previous one
+   ended, so it is rendered read-only and recomputed whenever a To Value
+   changes. That is the whole reason the table cannot develop a gap or an
+   overlap — the two failure modes a hand-typed slab table always eventually
+   has. The first band starts at 0 and the last one has no end: an empty To
+   Value means "and above", which is what closes the range. */
+function phBlankSlab(){return {from:'0',to:'',value:'',method:''};}
+function startAddPayhead(){
+  phDraftSlabs=[phBlankSlab()];phModalOpen=true;renderADTPage();
+}
+function cancelAddPayhead(){phDraftSlabs=[];phModalOpen=false;renderADTPage();}
+// Read the DOM back into state before any repaint.
+function phSyncSlabs(){
+  phDraftSlabs.forEach(function(s,i){
+    const to=document.getElementById('ph-slab-to-'+i);
+    const val=document.getElementById('ph-slab-val-'+i);
+    if(to)s.to=to.value.trim();
+    if(val)s.value=val.value.trim();
+    s.method=getCustomSelectValue('ph-slab-m-'+i)||s.method;
+  });
+  phChainFrom();
+}
+function phChainFrom(){
+  phDraftSlabs.forEach(function(s,i){
+    s.from=i===0?'0':(phDraftSlabs[i-1].to||'0');
+  });
+}
+/* Adding or removing a band repaints ONLY the slab list. renderADTPage() would
+   rebuild the modal around it, wiping the Name field and both selects above —
+   fields the user filled in before they got to the slabs. Same principle as
+   pmSetUserSubTab(): repaint the part that changed, not its ancestors. */
+function phRenderSlabs(){
+  const list=document.getElementById('ph-slab-list');
+  if(!list){renderADTPage();return;}
+  phChainFrom();
+  list.innerHTML=phSlabRowsHTML();
+}
+function phAddSlab(){phSyncSlabs();phDraftSlabs.push(phBlankSlab());phRenderSlabs();}
+function phRemoveSlab(i){
+  phSyncSlabs();
+  if(phDraftSlabs.length<=1)return;      // a payhead with no rule is not a payhead
+  phDraftSlabs.splice(i,1);phRenderSlabs();
+}
+// The one field the user types that others depend on, so it re-chains live.
+function phSlabToChanged(){
+  phSyncSlabs();
+  phDraftSlabs.forEach(function(s,i){
+    const el=document.getElementById('ph-slab-from-'+i);
+    if(el)el.value=s.from;
+  });
+}
+// Split out so phRenderSlabs() can repaint just this list without rebuilding
+// the modal that holds it.
+function phSlabRowsHTML(){
+  const iInfo='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+  return phDraftSlabs.map(function(s,i){
+    const last=i===phDraftSlabs.length-1;
+    const only=phDraftSlabs.length===1;
+    return '<div class="ph-slab-row">'
+      +'<div class="ep-form-group"><label class="ep-form-label">From Value</label>'
+        +'<input class="ep-form-input" id="ph-slab-from-'+i+'" value="'+attrSafe(s.from)+'" readonly '
+        +'title="Starts where the previous slab ends"></div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">To Value '
+        +'<span class="ph-hint" title="Leave the last slab empty to mean &quot;and above&quot;">'+iInfo+'</span></label>'
+        +'<input class="ep-form-input" id="ph-slab-to-'+i+'" type="number" min="0" value="'+attrSafe(s.to)+'" '
+        +'placeholder="'+(last?'and above':'To')+'" oninput="phSlabToChanged()"></div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Value <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="ph-slab-val-'+i+'" type="number" min="0" step="0.01" value="'+attrSafe(s.value)+'" placeholder="Value"></div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Calc Method <span class="req">*</span></label>'
+        +customSelect('ph-slab-m-'+i,s.method,PH_METHODS,'Select Method')+'</div>'
+      +'<button class="ph-slab-del" onclick="phRemoveSlab('+i+')" title="'
+        +(only?'A payhead needs at least one slab':'Remove this slab')+'"'+(only?' disabled':'')+'>'+iTrash+'</button>'
+      +'</div>';
+  }).join('');
+}
+/* Same popup every other creation form uses — .ct-modal-overlay / .ct-modal,
+   .ep-form-grid inside, Cancel and the primary action on one right-aligned
+   row. It was briefly built as its own page; a create form is a create form,
+   and having one of them behave differently was the only thing that made it
+   feel like a different app. Only the width differs, because a slab row is
+   five controls wide and 560px would stack them into unreadable columns. */
+function buildCreatePayheadModalHTML(){
+  if(!phDraftSlabs.length)phDraftSlabs=[phBlankSlab()];
+  phChainFrom();
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="cancelAddPayhead()">'
+    +'<div class="ct-modal" style="width:min(760px,95vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Payhead</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddPayhead()">'+xSvg+'</button></div>'
+
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Name <span class="req">*</span></label>'
+      +'<input type="text" class="ep-form-input" id="ph-new-name" placeholder="Payhead Name"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Category <span class="req">*</span></label>'
+      +customSelect('ph-new-cat','',PH_CATEGORIES,'Select Category')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Calculation On <span class="req">*</span></label>'
+      +customSelect('ph-new-calc','',PH_CALC_ON,'Select Calculation Type')+'</div>'
+    +'</div>'
+
+    +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
+    +'<div class="ph-slab-head">'
+      +'<span class="ep-form-title" style="margin:0">Slab Configuration</span>'
+      +'<button class="ph-add-slab" onclick="phAddSlab()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Slab</button>'
+    +'</div>'
+    +'<div class="ph-slab-body" id="ph-slab-list">'+phSlabRowsHTML()+'</div>'
+    +'</div>'
+
+    +'<div style="display:flex;justify-content:flex-end;gap:10px">'
+    +'<button class="ep-cancel-btn" onclick="cancelAddPayhead()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="submitAddPayhead()">Create Payhead</button>'
+    +'</div>'
+    +'</div></div>';
+}
+function submitAddPayhead(){
+  phSyncSlabs();
+  const nameEl=document.getElementById('ph-new-name');
+  const name=nameEl?nameEl.value.trim():'';
+  const cat=getCustomSelectValue('ph-new-cat'),calc=getCustomSelectValue('ph-new-calc');
+  if(!name){showToast('Please enter a Payhead Name','error');nameEl&&nameEl.focus();return;}
+  if(!cat){showToast('Please select a Category','error');return;}
+  if(!calc){showToast('Please select a Calculation On','error');return;}
+  /* Validated per slab rather than once at the end, so the message can name
+     WHICH band is wrong — "slab 3" is actionable, "check your slabs" is not. */
+  for(let i=0;i<phDraftSlabs.length;i++){
+    const s=phDraftSlabs[i],n=i+1;
+    if(s.value===''){showToast('Slab '+n+' has no Value','error');return;}
+    if(!s.method){showToast('Slab '+n+' has no Calc Method','error');return;}
+    if(s.to!==''&&parseFloat(s.to)<=parseFloat(s.from)){
+      showToast('Slab '+n+' ends before it starts','error','To Value must be above '+s.from+'.');return;}
+    if(s.to===''&&i<phDraftSlabs.length-1){
+      showToast('Slab '+n+' has no To Value','error','Only the last slab can be open-ended.');return;}
+    if(s.method==='Percentage'&&parseFloat(s.value)>100){
+      showToast('Slab '+n+' is over 100%','error','A percentage of '+calc+' cannot exceed 100.');return;}
+  }
+  const now=new Date();
+  const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+    +' | '+now.toLocaleTimeString('en-US',{hour12:true});
+  payheadsData.unshift({id:payheadNextId++,name:name,category:cat,calcOn:calc,status:'Active',
+    createdBy:CURRENT_USER,createdAt:stamp,slabs:phDraftSlabs.slice(),logs:[]});
+  phDraftSlabs=[];
+  page='payheads';renderADTPage();
+  showToast('Payhead created','success','"'+name+'" added as an active '+cat.toLowerCase()+'.');
+}
 function buildAddLeavePolicyHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
   return '<div class="ep-page">'
@@ -4088,6 +4464,124 @@ function buildMyTimesheetHTML(viewingOther) {
     + overlayHTML;
 }
 // ── ALL TIMESHEET PAGE ──
+/* ── All Timesheet: row detail panel ──────────────────────────────────────
+   The same split panel every other listing uses — .lp-split-wrap for the
+   layout, .lp-isb-* for the tab bar, isbTab() for the body-only swap — so this
+   page behaves like the rest of the app rather than growing its own idea of
+   what a detail view is. Two tabs: what the employee has FILED, and what they
+   have been PAID. */
+function openAtSidebar(id,tab){
+  atSelectedId=id;atTab=tab||'timesheet';
+  const sb=document.getElementById('at-split-sb');if(sb)sb.classList.add('open');
+  const wrap=document.getElementById('at-split-wrap');if(wrap)wrap.classList.add('has-sb');
+  isbTab('at',renderAtSidebar);
+  document.querySelectorAll('.at-tr').forEach(function(r){
+    r.classList.toggle('lp-row-selected',r.id==='at-row-'+id);
+  });
+}
+function closeAtSidebar(){
+  atSelectedId=null;
+  const sb=document.getElementById('at-split-sb');if(sb)sb.classList.remove('open');
+  const wrap=document.getElementById('at-split-wrap');if(wrap)wrap.classList.remove('has-sb');
+  document.querySelectorAll('.at-tr').forEach(function(r){r.classList.remove('lp-row-selected');});
+}
+function navAtTab(tab){atTab=tab;isbTab('at',renderAtSidebar);}
+// Prototype stand-in: the row knows which file it means, so the toast can name
+// it rather than saying "download started" about nothing in particular.
+function atOpenSlip(name){showToast('Opening payslip','success',name);}
+
+function renderAtSidebar(){
+  const emp=atEmp(atSelectedId);if(!emp)return'';
+  const tabs=[{id:'timesheet',label:'Timesheet'},{id:'payslips',label:'Payslips'}];
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<div class="lp-isb-tabs" id="at-isb-tabs">'+tabs.map(function(t){
+      return '<button class="lp-isb-tab'+(atTab===t.id?' active':'')+'" onclick="navAtTab(\''+t.id+'\')">'+t.label+'</button>';
+    }).join('')+'</div>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeAtSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+
+  /* One identity strip above both tabs, not one per tab. Whose record this is
+     does not change when you switch between what they filed and what they were
+     paid, so it does not get re-stated — and the month it names is the month
+     the page is filtered to, which is what makes both lists mean anything. */
+  const iUser='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const iCal='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const period=atPeriod();
+  const head='<div class="at-sb-head">'
+    +'<div class="at-sb-head-ico">'+iUser+'</div>'
+    +'<div class="at-sb-head-txt">'
+      +'<div class="at-sb-name">'+emp.name+'</div>'
+      +'<div class="at-sb-meta">'+iCal+'<span>'+period.label+'</span>'
+        +'<span class="at-sb-range">'+period.from+' &rarr; '+period.to+'</span></div>'
+    +'</div>'
+    +'<span class="at-sb-empid">'+emp.empId+'</span>'
+    +'</div>';
+
+  const thS='padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap';
+  const tdS='padding:11px 12px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f3f5';
+  const empty=function(cols,msg){
+    return '<tr><td colspan="'+cols+'" style="padding:26px 12px;text-align:center;font-size:12.5px;color:#9ca3af">'+msg+'</td></tr>';
+  };
+
+  let body='';
+  if(atTab==='timesheet'){
+    const rows=atSheets(emp.empId);
+    const eyeIco='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const list=rows.length?rows.map(function(s,i){
+      return '<tr>'
+        +'<td style="'+tdS+';color:var(--gray)">'+(i+1)+'</td>'
+        +'<td style="'+tdS+';font-weight:600">'+s.sheetId+'</td>'
+        +'<td style="'+tdS+';white-space:nowrap">'+s.start+'</td>'
+        +'<td style="'+tdS+';white-space:nowrap">'+s.end+'</td>'
+        +'<td style="'+tdS+';font-size:11.5px;color:#64748b;white-space:nowrap">'+s.created+'</td>'
+        +'<td style="'+tdS+'"><span class="lp-status-badge tone-'+statusTone(s.status)+'">'+s.status+'</span></td>'
+        +'<td style="'+tdS+';text-align:center"><button class="at-sb-icon-btn" title="View timesheet" '
+          +'onclick="atViewCalendar(\''+emp.empId+'\',\''+attrSafe(emp.name)+'\',\''+emp.initials+'\',\''+attrSafe(emp.role)+'\')">'+eyeIco+'</button></td>'
+        +'</tr>';
+    }).join(''):empty(7,'No timesheets found');
+    body='<div class="at-sb-table-wrap"><table class="at-sb-table">'
+      +'<thead><tr>'
+      +'<th style="'+thS+'">S.No</th><th style="'+thS+'">Sheet ID</th><th style="'+thS+'">Week Start</th>'
+      +'<th style="'+thS+'">Week End</th><th style="'+thS+'">Create Time</th><th style="'+thS+'">Status</th>'
+      +'<th style="'+thS+';text-align:center">Details</th>'
+      +'</tr></thead><tbody>'+list+'</tbody></table></div>';
+  }else{
+    const slips=atPayslips(emp.empId);
+    const dlIco='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    const pdfIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    const iInfo='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+    const list=slips.length?slips.map(function(p,i){
+      return '<tr>'
+        +'<td style="'+tdS+';color:var(--gray)">'+(i+1)+'</td>'
+        +'<td style="'+tdS+';font-weight:600">'+p.name+'</td>'
+        +'<td style="'+tdS+'"><span class="at-sb-file">'+pdfIco+'PDF &middot; '+p.size+'</span></td>'
+        +'<td style="'+tdS+';white-space:nowrap">'+p.month+'</td>'
+        +'<td style="'+tdS+';text-align:center"><button class="at-sb-icon-btn" title="Download '+attrSafe(p.name)+'" '
+          +'onclick="atOpenSlip(\''+attrSafe(p.name)+'\')">'+dlIco+'</button></td>'
+        +'</tr>';
+    }).join(''):empty(5,'No payslips found');
+    // Said once, above the list, because a capped list that does not admit it
+    // is indistinguishable from a complete one.
+    const note='<div class="at-sb-note">'+iInfo+'<span>Showing last '+AT_PAYSLIP_LIMIT
+      +' salary slips (most recent first).</span></div>';
+    body=note+'<div class="at-sb-table-wrap"><table class="at-sb-table">'
+      +'<thead><tr>'
+      +'<th style="'+thS+'">Sr. No</th><th style="'+thS+'">Attachment Name</th><th style="'+thS+'">Attach File</th>'
+      +'<th style="'+thS+'">Month-Year</th><th style="'+thS+';text-align:center">Action</th>'
+      +'</tr></thead><tbody>'+list+'</tbody></table></div>';
+  }
+  return tabBar+'<div class="lp-isb-body">'+head+body+'</div>';
+}
+// The month the page is filtered to, resolved to a real range. Both tabs read
+// against it, so the panel can never describe a period the list is not for.
+function atPeriod(){
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const picked=getCSValue('at-f-month')||'Aug';
+  let m=months.indexOf(picked);if(m<0)m=7;
+  const yr=2026,pad=function(n){return n<10?'0'+n:''+n;};
+  const last=new Date(yr,m+1,0).getDate();
+  return {label:picked,from:yr+'-'+pad(m+1)+'-01',to:yr+'-'+pad(m+1)+'-'+pad(last)};
+}
 function atToggleTsFilter(v){
   atTsQuickFilter=v===''?'':(atTsQuickFilter===v?'':v);
   renderADTPage();
@@ -4139,21 +4633,29 @@ function buildAllTimesheetHTML(){
     const tsBadge=emp.tsStatus==='Filled'
       ?'<span class="at-badge-filled">Filled</span>'
       :'<span class="at-badge-unfilled">Unfilled</span>';
-    return '<tr class="at-tr">'
+    // The row opens the panel; the two buttons keep their separate jobs —
+    // calendar goes to the full month view, details opens the panel in place.
+    return '<tr class="at-tr'+(atSelectedId===emp.empId?' lp-row-selected':'')+'" id="at-row-'+emp.empId+'"'
+      +' style="cursor:pointer" onclick="openAtSidebar(\''+emp.empId+'\')">'
       +'<td class="at-td"><span class="at-sno">'+emp.id+'</span></td>'
       +'<td class="at-td"><span class="at-emp-id">'+emp.empId+'</span></td>'
       +'<td class="at-td"><span class="at-emp-name">'+emp.name+'</span></td>'
       +'<td class="at-td">'+emp.country+'</td>'
       +'<td class="at-td">'+empBadge+'</td>'
       +'<td class="at-td">'+tsBadge+'</td>'
-      +'<td class="at-td"><div class="at-actions">'
+      +'<td class="at-td" onclick="event.stopPropagation()"><div class="at-actions">'
       +'<button class="at-act-btn" title="View Calendar" onclick="atViewCalendar(\''+emp.empId+'\',\''+emp.name+'\',\''+emp.initials+'\',\''+emp.role+'\')">'+calIco+'</button>'
-      +'<button class="at-act-btn" title="View Details">'+listIco+'</button>'
+      +'<button class="at-act-btn" title="View Details" onclick="openAtSidebar(\''+emp.empId+'\')">'+listIco+'</button>'
       +'</div></td>'
       +'</tr>';
   }),'<tr><td class="at-td" colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No timesheets match this filter.</td></tr>');
+  // A panel must belong to a row you can still see.
+  if(atSelectedId&&!filteredTs.some(function(e){return e.empId===atSelectedId;}))atSelectedId=null;
 
-  const table='<div class="at-card">'
+  // Wrapped in the shared split so the panel pushes the table rather than
+  // floating over it — same as every other listing with a detail view.
+  const table='<div class="lp-split-wrap at-split-wrap'+(atSelectedId?' has-sb':'')+'" id="at-split-wrap">'
+    +'<div class="lp-split-main"><div class="at-card">'
     +'<table class="at-table">'
     +'<thead><tr>'
     +'<th class="at-th">S. No</th>'
@@ -4167,6 +4669,9 @@ function buildAllTimesheetHTML(){
     +'<tbody>'+pgn.rows+'</tbody>'
     +'</table>'
     +pgn.pager
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(atSelectedId?' open':'')+'" id="at-split-sb">'
+      +'<div class="lp-isb" id="at-isb-inner">'+(atSelectedId?renderAtSidebar():'')+'</div></div>'
     +'</div>';
 
   return filterBar+table;
@@ -4895,7 +5400,7 @@ function renderCsSidebar(){
   const iPin='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
-  const fcW=(icon,label,value)=>'<div class="lp-sb-field-card" style="grid-column:span 2"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
+  const fcW=(icon,label,value)=>'<div class="lp-sb-field-card is-wide"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
   const dash='<span style="color:#9ca3af">-</span>';
 
   let body='';
@@ -5223,7 +5728,7 @@ function renderTkSidebar(){
   const iCal='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const iDoc='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
-  const fcW=(icon,label,value)=>'<div class="lp-sb-field-card" style="grid-column:span 2"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
+  const fcW=(icon,label,value)=>'<div class="lp-sb-field-card is-wide"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
   const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
   let body='';
   if(tkTab==='basic-details'){
@@ -5495,6 +6000,177 @@ function tkRows(){
   if(tkQuickStatusFilter==='__unassigned__')return rows.filter(tkIsUnassigned);
   return tkQuickStatusFilter?rows.filter(function(t){return t.status===tkQuickStatusFilter;}):rows;
 }
+
+/* ── Create Ticket ─────────────────────────────────────────────────────────
+   Raised from inside the app, so the ticket is born with source 'internal' —
+   the one channel that means "an Opendhi person put this here" rather than a
+   client reaching in. That is not a detail: it is what the Channel column and
+   the panel's Conversation gate both read.
+
+   TRIGGER MESSAGE is optional and is NOT the description. The description is
+   what the agent understands the problem to be; the trigger message is what
+   the client actually said. Keeping them apart is what lets the ticket be
+   raised from a chat, an email forwarded to the desk, or a phone call, without
+   the agent's paraphrase quietly replacing the client's words. When present it
+   is written as the first log entry, attributed to the client — because that
+   is what it is, an entry in the history, not a field on the record. */
+let tkModalOpen=false;
+let tkLinkedRecord=null;          // resolved by Search, cleared when the field changes
+const TK_PRIORITIES=['Low','Medium','High','Urgent'];
+function openCreateTicket(){tkModalOpen=true;tkLinkedRecord=null;renderADTPage();}
+function closeCreateTicket(){tkModalOpen=false;tkLinkedRecord=null;renderADTPage();}
+
+/* The Search button resolves a contract ID against real contracts instead of
+   accepting whatever was typed. A linked record that does not exist is worse
+   than none — it looks like provenance and is not. */
+function tkSearchRecord(){
+  const el=document.getElementById('tk-new-link');
+  const q=el?el.value.trim():'';
+  if(!q){tkLinkedRecord=null;tkRenderLinkResult();return;}
+  const c=contractsData.find(function(x){return String(x.contractId)===q;});
+  tkLinkedRecord=c?{id:c.contractId,label:c.empName+' · '+c.type+' · '+c.country}:null;
+  if(!c)showToast('No contract found','error','Nothing matches contract ID '+q+'.');
+  tkRenderLinkResult();
+}
+// Swapped on its own so typing in the modal never rebuilds the form under the
+// user — the same reason pmSetUserSubTab() swaps only its sub-body.
+function tkRenderLinkResult(){
+  const box=document.getElementById('tk-link-result');if(!box)return;
+  box.innerHTML=tkLinkResultHTML();
+}
+function tkLinkResultHTML(){
+  if(!tkLinkedRecord)return '';
+  const x='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="tk-link-chip"><b>'+tkLinkedRecord.id+'</b><span>'+tkLinkedRecord.label+'</span>'
+    +'<button onclick="tkClearRecord()" title="Remove link">'+x+'</button></div>';
+}
+function tkClearRecord(){
+  tkLinkedRecord=null;
+  const el=document.getElementById('tk-new-link');if(el)el.value='';
+  tkRenderLinkResult();
+}
+
+function buildCreateTicketModalHTML(){
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const clients=[...new Set(ticketsData.map(function(t){return t.clientName;}))].sort();
+  const cats=[...new Set(ticketsData.map(function(t){return t.category;}))].sort();
+  return '<div class="ct-modal-overlay" onclick="closeCreateTicket()">'
+    +'<div class="ct-modal" style="width:min(640px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Ticket</span>'
+      +'<button class="ct-modal-close" onclick="closeCreateTicket()">'+xSvg+'</button></div>'
+
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group"><label class="ep-form-label">Client <span class="req">*</span></label>'
+      +customSelect('tk-new-client','',clients,'— Select client —')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Due Date</label>'
+      // The app's own picker, not <input type="date">: the native one draws the
+      // browser's calendar, which ignores every token in this interface.
+      +apCD('tk-new-due','','Select date')+'</div>'
+
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Trigger Message '
+      +'<span class="ep-optional">(optional)</span></label>'
+      +'<textarea class="ep-form-input tk-ta" id="tk-new-trigger" placeholder="Paste or describe the client message that triggered this ticket"></textarea></div>'
+
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Title <span class="req">*</span></label>'
+      +'<input type="text" class="ep-form-input" id="tk-new-title" placeholder="Enter ticket title"></div>'
+
+    +'<div class="ep-form-group"><label class="ep-form-label">Category <span class="req">*</span></label>'
+      +customSelect('tk-new-cat','Compliance',cats,'Select category')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Assign To</label>'
+      +customSelect('tk-new-agent','',TK_AGENTS,'Search team member…')+'</div>'
+
+    // Segmented, not a select: four fixed choices where seeing the scale is the
+    // point — Urgent only means something next to Low.
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Priority</label>'
+      +'<div class="segmented" id="tk-new-prio-seg">'
+      +TK_PRIORITIES.map(function(p){
+        return '<button type="button" class="seg-btn'+(p==='Medium'?' active':'')+'" onclick="selSeg(this)">'+p+'</button>';
+      }).join('')+'</div></div>'
+
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Description</label>'
+      +'<textarea class="ep-form-input tk-ta tk-ta-lg" id="tk-new-desc" placeholder="Describe the support issue"></textarea></div>'
+
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Linked Record</label>'
+      +'<div class="tk-link-row">'
+      +'<input type="text" class="ep-form-input" id="tk-new-link" placeholder="Enter contract ID (e.g. 94135) and press Enter" '
+        +'onkeydown="if(event.key===\'Enter\'){event.preventDefault();tkSearchRecord();}">'
+      +'<button class="ep-cancel-btn" onclick="tkSearchRecord()">Search</button>'
+      +'</div>'
+      +'<div id="tk-link-result">'+tkLinkResultHTML()+'</div></div>'
+    +'</div>'
+
+    +'<div class="ep-form-card cmp-rules-card">'
+    +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Notify client when ticket is created</div>'
+      +'<div class="cmp-rule-hint">Sends email, Notification Centre update, and chat reply if a trigger chat exists</div></div>'
+      +'<label class="cs-toggle"><input type="checkbox" id="tk-new-notify" checked><span class="cs-toggle-slider"></span></label></div>'
+    +'</div>'
+
+    +'<div style="display:flex;justify-content:flex-end;gap:10px">'
+    +'<button class="ep-cancel-btn" onclick="closeCreateTicket()">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="saveNewTicket()">Create Ticket</button>'
+    +'</div>'
+    +'</div></div>';
+}
+
+function saveNewTicket(){
+  const client=getCustomSelectValue('tk-new-client');
+  const titleEl=document.getElementById('tk-new-title');
+  const title=titleEl?titleEl.value.trim():'';
+  const cat=getCustomSelectValue('tk-new-cat');
+  if(!client){showToast('Please select a Client','error');return;}
+  if(!title){showToast('Please enter a Title','error');titleEl&&titleEl.focus();return;}
+  if(!cat){showToast('Please select a Category','error');return;}
+
+  const agent=getCustomSelectValue('tk-new-agent');
+  const prioBtn=document.querySelector('#tk-new-prio-seg .seg-btn.active');
+  const priority=prioBtn?prioBtn.textContent.trim():'Medium';
+  const trigEl=document.getElementById('tk-new-trigger');
+  const descEl=document.getElementById('tk-new-desc');
+  const notifyEl=document.getElementById('tk-new-notify');
+  const trigger=trigEl?trigEl.value.trim():'';
+  const notify=notifyEl?notifyEl.checked:true;
+
+  // Carry the client's known contact details forward rather than leaving the
+  // panel with blanks the agent would have to go and find.
+  const known=ticketsData.find(function(t){return t.clientName===client;})||{};
+  const nextNum=ticketsData.reduce(function(m,t){
+    const n=parseInt(String(t.ticketId).replace(/\D/g,''),10);
+    return n>m?n:m;
+  },2000)+1;
+  const id=ticketsData.reduce(function(m,t){return t.id>m?t.id:m;},0)+1;
+  const now=new Date();
+  const created=now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const t={
+    id:id,ticketId:'TCK-'+nextNum,clientName:client,title:title,category:cat,
+    createdAt:created,status:agent?'in_progress':'open',
+    // An unassigned ticket stays 'open' and shows on the Unassigned tile; one
+    // raised with an owner is already being worked, so it starts in progress.
+    source:'internal',raisedBy:CURRENT_USER,
+    clientEmail:known.clientEmail||'',clientPhone:known.clientPhone||'',country:known.country||'',
+    assignedTo:agent||'',priority:priority,dueDate:getCDValue('tk-new-due'),
+    linkedRecord:tkLinkedRecord?tkLinkedRecord.id:'',notifyClient:notify,
+    description:descEl&&descEl.value.trim()?descEl.value.trim():title
+  };
+  ticketsData.unshift(t);
+
+  /* Seeded so the panel opens on a real history rather than "no logs yet". The
+     trigger message is the CLIENT's entry and is stamped as such — it is the
+     only line here they actually said. */
+  const s=stampNow();
+  const logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:tkStatusLabel(t.status),
+               action:'Ticket raised from the Tickets page'+(agent?' and assigned to '+agent:'')+'.'}];
+  if(trigger)logs.push({date:s.date,time:s.time,user:client,status:'Open',action:trigger});
+  tkLogsData[t.id]=logs;
+  tkWorkflowData[t.id]=[{title:'Ticket Raised',user:CURRENT_USER,date:s.date,time:s.time,
+    description:cat+' ticket raised for '+client+' ('+t.ticketId+')'
+      +(tkLinkedRecord?', linked to contract '+tkLinkedRecord.id:'')+'.'}];
+
+  tkModalOpen=false;tkLinkedRecord=null;
+  tkSelectedId=null;
+  renderADTPage();
+  showToast('Ticket created','success',t.ticketId+' · '+title
+    +(notify?' — client notified.':' — client not notified.'));
+}
 function buildTicketsPageHTML(){
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const scope=tkScope();
@@ -5564,7 +6240,8 @@ function buildTicketsPageHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(tkSelectedId?' open':'')+'" id="tk-split-sb"><div class="lp-isb" id="tk-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +(tkModalOpen?buildCreateTicketModalHTML():'');
 }
 
 // ── CHATS PAGE ──
@@ -5625,17 +6302,18 @@ function renderChatSidebar(){
       +'<button style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
       +'</div>';
   }else if(chatTab==='logs'){
+    /* The same two-column Logs tab every other module has: history on the left,
+       the move that writes the next entry on the right. It was a read-only
+       timeline of two hard-coded lines, which is why nothing here could be
+       acted on. */
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const chatStatusLabel={active:'Active',waiting_csm:'Pending',waiting_client:'Pending',inactive:'Inactive'}[c.status]||'Active';
-    const startParts=String(c.startedAt||'').split('|');
-    const startDate=(startParts[0]||'').trim(),startTime=(startParts[1]||'').trim();
-    const logs=[{user:c.assignedTo,date:startDate,time:startTime,status:chatStatusLabel,action:'Chat initiated with '+c.clientName+'.'},{user:'System',date:startDate,time:startTime,status:'Active',action:'Auto-assigned to '+c.assignedTo+'.'}];
-    const chatLogKey=(st)=>({Active:'active',Inactive:'inactive'}[st]||'default');
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    body=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-          const sk=chatLogKey(l.status);
+    const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    const logs=chatSeedLogs(c);
+    const timeline=logs.length
+      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
+          const sk=statusTone(l.status);
           return '<div class="lp-log-row">'
             +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
             +'<div class="lp-log-card">'
@@ -5645,6 +6323,25 @@ function renderChatSidebar(){
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
+    /* WHO OWES THE NEXT MESSAGE is the whole question a chat queue asks, so it
+       is stated above the form rather than left to be inferred from a status
+       word. The options are only the moves legal from where the chat is. */
+    const moves=chatMoves(c);
+    const form='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(chatStatusLabel(c.status))+'"></span>'+chatStatusLabel(c.status)+'</div>'
+      +'<p class="lp-logs-form-sub">Next action on <strong>'+chatOwner(c)+'</strong></p>'
+      +'<div class="lp-logs-form-label">Move to <span class="lp-logs-form-req">*</span></div>'
+      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="chat-log-status-sel">'
+      +'<option value="">Select the next step</option>'
+      +moves.map(function(m){return '<option value="'+m.to+'">'+m.label+' &rarr; '+chatStatusLabel(m.to)+'</option>';}).join('')
+      +'</select>'+chev+'</div>'
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="chat-log-comment-inp" placeholder="Pick a step above, then say what happened"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="chatCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="chatSaveLog('+c.id+')">Submit</button>'
+      +'</div></div>';
+    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
   }else if(chatTab==='workflow'){
     body=wfTimelineHTML(chatWorkflowData[c.id]);
   }

@@ -512,12 +512,17 @@
    is the job, so the approve/reject pair is a control, not a status buried in
    a dropdown. Only the affirmative move is filled — Reject is outlined, so the
    irreversible-feeling direction is never the one the eye lands on first. */
+/* Stacked, not a row. It now sits in the Logs tab's right-hand column, which
+   is half the panel wide — side by side the question wrapped to three lines and
+   the buttons were squeezed against the edge. margin-bottom is gone because
+   .lp-logs-side owns the gap between its children. */
 .oca-actbar{
-  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-  margin-bottom:14px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  display:flex;flex-direction:column;align-items:stretch;gap:10px;
+  padding:12px 14px;border:1px solid var(--border);border-radius:12px;
   background:var(--light)}
 .oca-actbar-q{font-size:12.5px;color:var(--gray);line-height:1.4;min-width:0}
-.oca-actbar-btns{display:flex;gap:8px;flex-shrink:0}
+.oca-actbar-btns{display:flex;gap:8px}
+.oca-actbar-btns .oca-act{flex:1}
 .oca-act{
   height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:#fff;
   color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;

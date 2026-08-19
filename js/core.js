@@ -488,7 +488,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
@@ -502,7 +502,7 @@ const SB_STATUS_TONE={
   inactive:'bad',unapproved:'bad',rejected:'bad','expiring-soon':'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
   disconnected:'bad',exception:'bad',absent:'bad',escalated:'bad',
   // wait — in flight, someone owes an action
-  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','pending-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait',
+  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','pending-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait','waiting-for-client':'wait','waiting-for-csm':'wait',
   'proposal-sent':'wait','contract-sent':'wait','waiting-for-approval':'wait','pending-onboarding':'wait',onboarding:'wait',inprog:'wait',unfilled:'wait',unpaid:'wait',
   // info — informational, nothing owed
   open:'info','awaiting-upload':'info','new':'info',scheduled:'info',created:'info',updated:'info',
@@ -547,22 +547,143 @@ function toggleCustomSelect(event,id){
   if(!open){
     const trigger=root.querySelector('.custom-select-trigger');
     const menu=root.querySelector('.custom-select-menu');
-    if(trigger&&menu){
-      const r=trigger.getBoundingClientRect();
-      const menuH=Math.min(280,menu.scrollHeight||280);
-      const spaceBelow=window.innerHeight-r.bottom-8;
-      menu.style.left=r.left+'px';
-      menu.style.width=r.width+'px';
-      if(spaceBelow>=menuH||spaceBelow>=window.innerHeight-r.top-8){
-        menu.style.top=(r.bottom+8)+'px';
-        menu.style.bottom='auto';
-      }else{
-        menu.style.bottom=(window.innerHeight-r.top+8)+'px';
-        menu.style.top='auto';
-      }
-    }
+    // Left-aligned and trigger-width, because a select's list belongs directly
+    // under its field. Everything else is the shared rule.
+    if(trigger&&menu)
+      placeAnchoredMenu(menu,trigger.getBoundingClientRect(),
+        {alignLeft:true,width:trigger.getBoundingClientRect().width});
   }
 }
+/* ── ANCHORED MENU PLACEMENT ───────────────────────────────────────────────
+   Every popup in this app is position:fixed, because they open inside
+   overflow:auto containers (table cards, the detail panel) that would clip an
+   absolutely-positioned one. Fixed means the app has to place them itself, and
+   three copies of that arithmetic had grown — on the contracts row menu, the
+   payments row menu, and the custom select — all with the SAME defect:
+
+       if (it fits below) place below; else place above;
+
+   "Else place above" is not a fallback, it is a guess. An eight-step contract
+   menu is ~300px tall, so on a row near the top of the viewport neither side
+   fits — and the code flipped it upward anyway, running the first two steps
+   off the top of the screen where they could not be read or clicked.
+
+   The rule here is: below if it fits, above if THAT fits, otherwise the
+   roomier of the two with the height capped so the menu scrolls instead of
+   leaving the viewport. Horizontally the right edges align, then the whole
+   thing is clamped inside the window, so a menu on the last column can never
+   hang off the side either.                                                 */
+var MENU_GAP=6, MENU_EDGE=10;
+/* The viewport is not the boundary — the CONTENT AREA is. A row menu that
+   climbs over the top bar covers the account switcher and reads as a stray
+   panel that belongs to nothing. The ceiling is therefore the bottom of the
+   topbar, measured rather than hard-coded so it survives the bar changing
+   height. */
+/* WHERE position:fixed ACTUALLY RESOLVES FROM.
+   Not always the viewport. Any ancestor with a transform, filter, perspective,
+   will-change or containment becomes the containing block for its fixed
+   descendants — so the top/left this function computes in viewport coordinates
+   would land the menu offset by that ancestor's own position, and the
+   ancestor's overflow would clip it as well.
+
+   That is exactly what happens in a modal: .ct-modal animates in with
+   `m-modal-in`, whose keyframes carry a transform, and the animation is
+   declared `both` so it keeps applying after it finishes. A dropdown opened
+   inside one was being placed relative to the modal while being measured
+   against the window.
+
+   Rather than depend on which properties a given browser treats as creating
+   the containing block, this walks up and asks. No transformed ancestor →
+   {0,0} and the arithmetic is unchanged. */
+function fixedOrigin(el){
+  for(var p=el&&el.parentElement;p&&p!==document.documentElement;p=p.parentElement){
+    var cs=window.getComputedStyle(p);
+    if((cs.transform&&cs.transform!=='none')||
+       (cs.perspective&&cs.perspective!=='none')||
+       (cs.filter&&cs.filter!=='none')||
+       /transform|perspective|filter/.test(cs.willChange||'')||
+       /paint|layout|strict|content/.test(cs.contain||'')){
+      var r=p.getBoundingClientRect();
+      return {x:r.left,y:r.top};
+    }
+  }
+  return {x:0,y:0};
+}
+function menuBounds(){
+  var top=MENU_EDGE;
+  var bar=document.querySelector('.topbar');
+  if(bar){
+    var r=bar.getBoundingClientRect();
+    if(r.height&&r.bottom>0)top=r.bottom+MENU_GAP;
+  }
+  return {top:top,bottom:window.innerHeight-MENU_EDGE};
+}
+function placeAnchoredMenu(menu,anchor,opts){
+  if(!menu||!anchor)return;
+  opts=opts||{};
+  // Measure at natural size — a cap left over from the last placement would
+  // otherwise be read back as the menu's real height.
+  menu.style.maxHeight='';menu.style.right='auto';menu.style.bottom='auto';
+  menu.style.top='0px';menu.style.left='0px';
+  if(opts.width)menu.style.width=opts.width+'px';
+  var mw=menu.offsetWidth,mh=menu.offsetHeight;
+  var vw=window.innerWidth,vh=window.innerHeight;
+
+  // Horizontal: aligned to the edge the caller asked for, then clamped.
+  var left=opts.alignLeft?anchor.left:anchor.right-mw;
+  left=Math.min(Math.max(MENU_EDGE,left),Math.max(MENU_EDGE,vw-mw-MENU_EDGE));
+
+  var b=menuBounds();
+  var below=b.bottom-anchor.bottom-MENU_GAP;
+  var above=anchor.top-MENU_GAP-b.top;
+  var top,cap;
+  if(mh<=below){top=anchor.bottom+MENU_GAP;cap=below;}
+  else if(mh<=above){top=anchor.top-MENU_GAP-mh;cap=above;}
+  else if(below>=above){top=anchor.bottom+MENU_GAP;cap=below;}
+  else {top=b.top;cap=above;}
+  // Whatever the branch decided, it lands inside the bounds.
+  cap=Math.max(120,Math.min(cap,b.bottom-b.top));
+  top=Math.min(Math.max(b.top,top),Math.max(b.top,b.bottom-Math.min(mh,cap)));
+
+  // Everything above is in viewport coordinates; convert once, at the end, to
+  // whatever this menu's fixed positioning is actually measured from.
+  var o=fixedOrigin(menu);
+  menu.style.left=Math.round(left-o.x)+'px';
+  menu.style.top=Math.round(top-o.y)+'px';
+  /* Cap ONLY when the space actually constrains it. Writing an inline
+     max-height unconditionally would override the stylesheet's own limit —
+     .custom-select-menu caps itself at 280px — and let a select grow to full
+     height just because the window happened to be tall. */
+  menu.style.maxHeight=(cap<mh)?Math.floor(cap)+'px':'';
+  /* A CAPPED MENU MUST OPEN ON THE PART THAT MATTERS. Left at scrollTop 0 it
+     shows the steps already completed and hides the one the row is actually
+     on — so it is scrolled to bring the current step into view, centred in
+     what room there is. */
+  if(cap<mh){
+    var cur=menu.querySelector('.current')||menu.querySelector('.cs-selected,.selected');
+    menu.scrollTop=cur?Math.max(0,cur.offsetTop-(cap-cur.offsetHeight)/2):0;
+  }else menu.scrollTop=0;
+}
+/* A fixed menu does not travel with the row it belongs to, so scrolling would
+   leave it pointing at nothing. Closing is the honest response — repositioning
+   mid-scroll makes it look glued to the viewport instead of to its row.
+
+   BUT A MENU SCROLLING ITSELF IS NOT THE PAGE MOVING UNDER IT. This listens in
+   the capture phase to catch scrolls in any container, which also catches the
+   menu's own scrollport — so a long option list closed itself the instant you
+   tried to scroll it, and the scrollbar looked broken. A scroll that started
+   inside an open popup is the user reading it, and is ignored. */
+var ANCHORED_MENUS='.ct-action-menu,.custom-select-menu,.cd-panel,.cs-dropdown';
+function closeAnchoredMenus(e){
+  var t=e&&e.target;
+  if(t&&t.closest&&t.closest(ANCHORED_MENUS))return;
+  document.querySelectorAll('.ct-action-menu.open').forEach(function(m){m.classList.remove('open');});
+  if(typeof closeCustomSelects==='function')closeCustomSelects();
+  if(typeof cdCloseAll==='function')cdCloseAll();
+}
+window.addEventListener('scroll',closeAnchoredMenus,true);
+window.addEventListener('resize',closeAnchoredMenus);
+
 function selectCustomOption(event,opt){event.stopPropagation();const root=opt.closest('.custom-select');if(!root)return;const label=opt.querySelector('.custom-select-text');const trigger=root.querySelector('.custom-select-trigger span');root.dataset.value=label?label.textContent.trim():opt.textContent.trim();if(trigger&&label){trigger.innerHTML=label.innerHTML;trigger.classList.remove('placeholder');}root.querySelectorAll('.custom-select-option').forEach(o=>o.classList.remove('selected'));opt.classList.add('selected');root.classList.remove('open');}
 function getCustomSelectValue(id){const root=document.getElementById(id);if(!root)return'';const span=root.querySelector('.custom-select-trigger span');if(span&&span.classList.contains('placeholder'))return'';return root.dataset.value||'';}
 document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))closeCustomSelects();if(!e.target.closest('.cs-wrap')){document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');});}if(!e.target.closest('.cd-wrap'))cdCloseAll();if(!e.target.closest('.ct-action-wrap'))document.querySelectorAll('.ct-action-menu.open').forEach(m=>m.classList.remove('open'));if(!e.target.closest('.se-dd-wrap')){const p=document.getElementById('se-dd-panel');if(p)p.classList.remove('open');}});
@@ -1745,9 +1866,25 @@ function apCS(id,opts,defVal,placeholder){
   const optStr=opts.map(o=>`<div class="cs-option${sel===o?' cs-selected':''}" onclick="csSelect(this,'${o}','${id}')"><span>${o}</span><svg class="cs-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`).join('');
   return `<div class="cs-wrap" id="csw-${id}"><button type="button" class="cs-trigger${isEmpty?' cs-placeholder':''}" onclick="csToggle(this)" data-csid="${id}"><span class="cs-value">${sel||placeholder}</span><svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="cs-dropdown" id="csd-${id}">${optStr}</div></div>`;
 }
+/* CLICKING AN OPEN FILTER'S OWN TRIGGER HAD TO CLOSE IT, AND DIDN'T.
+   The "close the others" sweep excluded the current dropdown by comparing its
+   id against `csid + '__drop'` — but these are rendered as `csd-<csid>`, so
+   the exclusion never matched anything. The sweep therefore closed the
+   dropdown you had just clicked, and the toggle on the next line put it
+   straight back: every click on the trigger left it open.
+
+   Nothing else revealed it, because a click on a DIFFERENT trigger or outside
+   the bar closes it through paths that never depended on this comparison.
+   Used by every listing's filter bar, so this was the same dead toggle on all
+   of them. */
 function csToggle(btn){
-  document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{if(d.id!==btn.dataset.csid+'__drop'){d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');}});
-  const drop=document.getElementById('csd-'+btn.dataset.csid);if(!drop)return;
+  const id=btn.dataset.csid, mine='csd-'+id;
+  document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{
+    if(d.id===mine)return;                       // leave the one being toggled alone
+    d.classList.remove('cs-open');
+    const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');
+  });
+  const drop=document.getElementById(mine);if(!drop)return;
   const open=drop.classList.toggle('cs-open');btn.classList.toggle('cs-open',open);
 }
 function csSelect(opt,val,csid){
@@ -1815,15 +1952,14 @@ function cdToggle(btn){
    coordinates. Aligned to the trigger's left edge and dropped below it, unless
    that would run past an edge - then it flips to the right of the trigger or
    opens upward, the way the row action menus already do. */
+/* Was a fourth hand-rolled copy of this arithmetic, with the same "else place
+   above" guess the other three had — and no idea that a transformed ancestor
+   moves what `fixed` resolves against, which matters now the picker is used
+   inside modals. It goes through the shared placer like everything else.
+   alignLeft, because a date panel belongs under the left edge of its field;
+   no width, because the calendar has its own. */
 function cdPlace(btn,panel){
-  const a=btn.getBoundingClientRect();
-  const w=panel.offsetWidth,h=panel.offsetHeight,gap=6,pad=8;
-  let left=a.left;
-  if(left+w>window.innerWidth-pad)left=Math.max(pad,a.right-w);
-  const below=window.innerHeight-a.bottom-gap;
-  const top=(below>=h||a.top<h+gap)?a.bottom+gap:a.top-h-gap;
-  panel.style.left=Math.round(left)+'px';
-  panel.style.top=Math.round(top)+'px';
+  placeAnchoredMenu(panel,btn.getBoundingClientRect(),{alignLeft:true});
 }
 function cdCloseAll(){
   document.querySelectorAll('.cd-panel.cd-open').forEach(p=>p.classList.remove('cd-open'));
@@ -1886,7 +2022,7 @@ window.addEventListener('resize',cdCloseAll);
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policies';renderADTPage();}
 function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
-function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
+function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='support-tickets'){openCreateTicket();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
 // Demo add for the Employees page: appends a plausible record to the active tab.
 const demoEmpNames=['Arjun Kapoor','Sara Ali','Vikram Rao','Neha Gupta','Tom Becker','Julia Costa'];
 function addDemoEmployee(){
@@ -2762,6 +2898,80 @@ function ocaDateValue(r){return ocaHasValidity(r)?(r.validTill||'—'):r.due;}
 function ocaPageCount(){return Math.max(1,Math.ceil(ocaRows().length/OCA_PAGE_SIZE));}
 
 // ── RATES & RULES DATA & STATE ──
+
+// ── PAYHEADS DATA & STATE ──
+/* A payhead is one line on a payslip and the rule that produces it. Two things
+   define it and the form asks for both before anything else:
+     · CATEGORY  — which side of the payslip it lands on. An Earning adds to
+       gross, a Deduction takes from it, an Employer Contribution is a cost the
+       employee never sees on their net. Getting this wrong does not make the
+       number wrong, it makes the payslip wrong.
+     · CALCULATION ON — the base the rule is applied to. "12%" means nothing
+       until it says 12% of what.
+
+   SLABS ARE THE RULE ITSELF. Even a flat payhead is one slab that happens to
+   cover every value, which is why there is no separate "simple" mode — one
+   shape handles "12% of Basic" and a five-band professional tax table, and the
+   listing can report both with the same column. A slab's `to` being empty
+   means "and above", so the last band always closes the range. */
+const PH_CATEGORIES=['Earning','Deduction','Employer Contribution','Reimbursement'];
+const PH_CALC_ON=['CTC','Basic','Gross','Net','Fixed Amount','Attendance Days'];
+const PH_METHODS=['Flat Amount','Percentage'];
+const payheadsData=[
+  {id:1,name:'Basic Salary',category:'Earning',calcOn:'CTC',status:'Active',
+   createdBy:'Shaun Test1',createdAt:'02 Mar 2026 | 11:20:00 AM',
+   slabs:[{from:'0',to:'',value:'50',method:'Percentage'}],logs:[]},
+  {id:2,name:'House Rent Allowance',category:'Earning',calcOn:'Basic',status:'Active',
+   createdBy:'Shaun Test1',createdAt:'02 Mar 2026 | 11:32:00 AM',
+   slabs:[{from:'0',to:'',value:'40',method:'Percentage'}],logs:[]},
+  {id:3,name:'Provident Fund',category:'Deduction',calcOn:'Basic',status:'Active',
+   createdBy:'Neha Sharma',createdAt:'05 Mar 2026 | 09:14:00 AM',
+   slabs:[{from:'0',to:'15000',value:'12',method:'Percentage'},
+          {from:'15000',to:'',value:'1800',method:'Flat Amount'}],logs:[]},
+  {id:4,name:'Professional Tax',category:'Deduction',calcOn:'Gross',status:'Active',
+   createdBy:'Neha Sharma',createdAt:'05 Mar 2026 | 09:40:00 AM',
+   slabs:[{from:'0',to:'15000',value:'0',method:'Flat Amount'},
+          {from:'15000',to:'20000',value:'150',method:'Flat Amount'},
+          {from:'20000',to:'',value:'200',method:'Flat Amount'}],logs:[]},
+  {id:5,name:'Holiday Allowance',category:'Earning',calcOn:'Gross',status:'Active',
+   createdBy:'Pritam Rai',createdAt:'11 Mar 2026 | 03:05:00 PM',
+   slabs:[{from:'0',to:'',value:'8',method:'Percentage'}],logs:[]},
+  {id:6,name:'Overtime',category:'Earning',calcOn:'Attendance Days',status:'Active',
+   createdBy:'Pritam Rai',createdAt:'14 Mar 2026 | 10:48:00 AM',
+   slabs:[{from:'0',to:'',value:'1.5',method:'Percentage'}],logs:[]},
+  {id:7,name:'Employer PF Contribution',category:'Employer Contribution',calcOn:'Basic',status:'Active',
+   createdBy:'Aman Singh',createdAt:'18 Mar 2026 | 12:10:00 PM',
+   slabs:[{from:'0',to:'',value:'12',method:'Percentage'}],logs:[]},
+  {id:8,name:'Internet Reimbursement',category:'Reimbursement',calcOn:'Fixed Amount',status:'Inactive',
+   createdBy:'Aman Singh',createdAt:'22 Mar 2026 | 04:26:00 PM',
+   slabs:[{from:'0',to:'',value:'1500',method:'Flat Amount'}],logs:[]}
+];
+let payheadNextId=9;
+let phModalOpen=false;   // creation is a popup, like every other create form
+let phSelectedId=null,phTab='basic-details';
+let phCategoryFilter='',phStatusFilter='';
+/* The slab rows being edited on the create page. Held here rather than read off
+   the DOM on submit, because Add Slab has to repaint the block and anything
+   already typed must survive that repaint. */
+let phDraftSlabs=[];
+
+// How a payhead's rule reads in one line — used by the listing and the panel so
+// the two can never describe the same rule differently.
+function phRuleText(p){
+  if(!p||!p.slabs||!p.slabs.length)return '—';
+  if(p.slabs.length===1){
+    const s=p.slabs[0];
+    return s.method==='Percentage'?s.value+'% of '+p.calcOn:'Flat '+s.value;
+  }
+  return p.slabs.length+' slabs on '+p.calcOn;
+}
+function phRows(){
+  return payheadsData.filter(function(p){
+    if(phCategoryFilter&&p.category!==phCategoryFilter)return false;
+    if(phStatusFilter&&p.status!==phStatusFilter)return false;
+    return true;
+  });
+}
 const ratesRulesData=[
   {id:1,country:'Netherlands',ruleName:'Minimum Wage',category:'General',applicableTo:'EOR / PEO',valueRate:'EUR 14.71',status:'Active',createdBy:'Tarak Swain',createdAt:'02 Mar 2026 | 02:53:47 PM',logs:[]},
   {id:2,country:'Netherlands',ruleName:'Income Tax Bracket 1',category:'Income Tax',applicableTo:'EOR',valueRate:'35.75%',status:'Inactive',createdBy:'Tarak Swain',createdAt:'02 Mar 2026 | 02:55:10 PM',logs:[]},
@@ -2989,6 +3199,33 @@ const chatsData=[
 ];
 let tkSelectedId=null,tkTab='basic-details';
 let chatSelectedId=null,chatTab='basic-details';
+/* ── Chat lifecycle ───────────────────────────────────────────────────────
+   A chat status answers ONE question: who owes the next message. The Logs tab
+   used to show a read-only timeline of two invented lines, so a CSM could read
+   the history and do nothing with it — the only listing in the app whose Logs
+   tab could not move the record it belonged to.
+
+   The moves are deliberately few, because a conversation only really goes four
+   ways: you reply, they reply, you close it, you reopen it. Each state lists
+   the ones legal from it, so the form can never offer "client replied" on a
+   chat that is already waiting on the CSM. */
+const CHAT_FLOW={
+  active:        {owner:function(c){return 'CSM · '+c.assignedTo;},
+                  next:[{to:'waiting_client',label:'Replied — awaiting client'},
+                        {to:'inactive',      label:'Close chat'}]},
+  waiting_csm:   {owner:function(c){return 'CSM · '+c.assignedTo;},
+                  next:[{to:'waiting_client',label:'Replied — awaiting client'},
+                        {to:'inactive',      label:'Close chat'}]},
+  waiting_client:{owner:function(c){return 'Client · '+c.clientName;},
+                  next:[{to:'waiting_csm',   label:'Client replied — needs a response'},
+                        {to:'inactive',      label:'Close chat'}]},
+  inactive:      {owner:function(){return 'Nobody — chat closed';},
+                  next:[{to:'active',        label:'Reopen chat'}]}
+};
+function chatOwner(c){const f=CHAT_FLOW[c&&c.status];return f?f.owner(c):'—';}
+function chatMoves(c){const f=CHAT_FLOW[c&&c.status];return f?f.next:[];}
+// Seeded per chat and then appended to, so a move made here survives the session.
+const chatLogsData={};
 let chatStatusFilter='all';
 let profTab='basic-details';
 // Uploaded profile documents: docName -> {file,size,date}. Seeded with the
@@ -3120,6 +3357,55 @@ const allTsData=[
   {id:2,empId:'11755',name:'Shaun J',country:'-',empStatus:'Active',tsStatus:'Unfilled',role:'Direct Employee',initials:'SJ'},
   {id:3,empId:'11754',name:'Shaun Test1',country:'-',empStatus:'Active',tsStatus:'Unfilled',role:'Entity Super Admin',initials:'ST'}
 ];
+/* ── All Timesheet: the row's detail panel ────────────────────────────────
+   Two tabs, because a row on this page raises exactly two questions about the
+   person: what have they filed, and what have they been paid. Both are
+   per-employee-per-month lists, which is why they are keyed by employee id and
+   read against the month the page is filtered to rather than carrying a date
+   of their own.
+
+   An employee with nothing filed is the NORMAL case on this page — the whole
+   point of the Unfilled count above the table — so both lists are written to
+   have a real empty state rather than being seeded with rows that would make
+   "Unfilled" look like a lie. */
+let atSelectedId=null,atTab='timesheet';
+const atSheetsData={
+  // 11803 has nothing yet — this is the row the Unfilled tile is counting.
+  '11755':[
+    {sheetId:'TS-4417',start:'2026-08-01',end:'2026-08-07',created:'01 Aug 2026 09:12 AM',status:'Approved'},
+    {sheetId:'TS-4426',start:'2026-08-08',end:'2026-08-14',created:'08 Aug 2026 09:04 AM',status:'Approved'},
+    {sheetId:'TS-4435',start:'2026-08-15',end:'2026-08-21',created:'15 Aug 2026 10:31 AM',status:'Submitted'},
+    {sheetId:'TS-4444',start:'2026-08-22',end:'2026-08-28',created:'22 Aug 2026 09:47 AM',status:'Draft'}
+  ],
+  '11754':[
+    {sheetId:'TS-4418',start:'2026-08-01',end:'2026-08-07',created:'01 Aug 2026 08:55 AM',status:'Approved'},
+    {sheetId:'TS-4427',start:'2026-08-08',end:'2026-08-14',created:'08 Aug 2026 09:20 AM',status:'Rejected'},
+    {sheetId:'TS-4436',start:'2026-08-15',end:'2026-08-21',created:'15 Aug 2026 09:02 AM',status:'Submitted'}
+  ]
+};
+// Newest first, and capped at six by atPayslips() — the panel says so in words
+// rather than quietly truncating a list the user thinks is complete.
+const atPayslipsData={
+  '11755':[
+    {name:'Payslip_Aug_2026.pdf',size:'186 KB',month:'Aug-2026'},
+    {name:'Payslip_Jul_2026.pdf',size:'184 KB',month:'Jul-2026'},
+    {name:'Payslip_Jun_2026.pdf',size:'181 KB',month:'Jun-2026'},
+    {name:'Payslip_May_2026.pdf',size:'180 KB',month:'May-2026'},
+    {name:'Payslip_Apr_2026.pdf',size:'179 KB',month:'Apr-2026'},
+    {name:'Payslip_Mar_2026.pdf',size:'177 KB',month:'Mar-2026'},
+    {name:'Payslip_Feb_2026.pdf',size:'176 KB',month:'Feb-2026'}
+  ],
+  '11754':[
+    {name:'Payslip_Aug_2026.pdf',size:'192 KB',month:'Aug-2026'},
+    {name:'Payslip_Jul_2026.pdf',size:'190 KB',month:'Jul-2026'},
+    {name:'Payslip_Jun_2026.pdf',size:'188 KB',month:'Jun-2026'}
+  ]
+};
+const AT_PAYSLIP_LIMIT=6;
+function atEmp(id){return allTsData.find(function(e){return e.empId===id;})||null;}
+function atSheets(id){return atSheetsData[id]||[];}
+function atPayslips(id){return (atPayslipsData[id]||[]).slice(0,AT_PAYSLIP_LIMIT);}
+
 let atViewedEmp=null;
 function atViewCalendar(empId,name,initials,role){
   atViewedEmp={name:name,initials:initials,role:role||'Employee'};

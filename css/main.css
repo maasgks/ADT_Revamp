@@ -1903,3 +1903,55 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .sr-table th:nth-child(6),.sr-table td:nth-child(6){width:118px}
 .sr-table th:nth-child(7),.sr-table td:nth-child(7){width:130px}
 .sr-table th:nth-child(8),.sr-table td:nth-child(8){width:64px;text-align:right}
+
+/* ══ ALL TIMESHEET — ROW DETAIL PANEL ══════════════════════════════════════
+   Two tabs, Timesheet and Payslips, in the same split panel every other
+   listing uses. Everything structural comes from .lp-split-* and .lp-isb-* in
+   leaves.css; only what this panel adds on top lives here. */
+.at-split-wrap .lp-split-main{border:none;border-radius:0;background:transparent}
+.at-split-wrap.has-sb{min-height:500px}
+
+/* ── Identity strip ── */
+/* One header above BOTH tabs. Whose record this is does not change when you
+   switch between what they filed and what they were paid, so it is not
+   re-stated inside each tab. */
+.at-sb-head{
+  display:flex;align-items:center;gap:12px;
+  padding:0 0 14px;margin-bottom:14px;border-bottom:1px solid var(--border)}
+.at-sb-head-ico{
+  width:34px;height:34px;flex-shrink:0;border-radius:9px;background:var(--ol);color:var(--gray);
+  display:flex;align-items:center;justify-content:center}
+.at-sb-head-txt{min-width:0;flex:1}
+.at-sb-name{font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.3}
+.at-sb-meta{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  font-size:11.5px;color:var(--gray);margin-top:3px}
+.at-sb-range{font-variant-numeric:tabular-nums}
+.at-sb-empid{
+  flex-shrink:0;display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px;
+  background:var(--ol);color:var(--gray);font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── The capped-list note ── */
+/* Stated in words above the list. A list that silently stops at six is
+   indistinguishable from a complete one. */
+.at-sb-note{
+  display:flex;align-items:center;gap:8px;margin-bottom:12px;
+  padding:9px 12px;border-radius:9px;
+  background:var(--st-info-bg);border:1px solid var(--st-info-bd);
+  font-size:12px;color:var(--st-info-fg);font-weight:600;line-height:1.4}
+.at-sb-note svg{flex-shrink:0}
+
+/* ── The lists ── */
+/* Boxed and scrolled on its own so a long list never stretches the panel and
+   the header strip above stays put while you read down it. */
+.at-sb-table-wrap{
+  border:1px solid var(--border);border-radius:10px;overflow:auto;background:#fff}
+.at-sb-table{width:100%;border-collapse:collapse;min-width:520px}
+.at-sb-table tbody tr:last-child td{border-bottom:none}
+.at-sb-table tbody tr:hover td{background:#fafbfc}
+.at-sb-file{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--gray);white-space:nowrap}
+.at-sb-icon-btn{
+  width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;
+  color:#64748b;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+  transition:background .15s ease,border-color .15s ease,color .15s ease}
+.at-sb-icon-btn:hover{background:var(--btn-ghost-bg);border-color:var(--btn-accent);color:var(--btn-accent)}
