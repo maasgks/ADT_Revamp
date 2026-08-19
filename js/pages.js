@@ -1935,9 +1935,17 @@ function buildComplianceItemsHTML(){
 // with the rows it filters to.
 // Status colours come from the shared statusTone() map, same as every other
 // listing, so the pills here read exactly like the pills everywhere else.
-// What the owner has to do, taken from the status rather than written per row —
-// four honest phrasings beat 48 invented ones.
-const OCA_NEXT={'Blocking':'Resolve to unblock','Needs Review':'Review and sign off','Pending':'Awaiting response','Ready':'Nothing pending'};
+// What the admin has to do, taken from the status rather than written per row —
+// six honest phrasings beat 48 invented ones. Each one names the actual next
+// move, not a restatement of the status.
+const OCA_NEXT={
+  'Pending Review': 'Read the document and approve or reject it',
+  'Awaiting Upload':'Upload it, or chase whoever owes it',
+  'Rejected':       'Chase the corrected copy and re-review',
+  'Expiring Soon':  'Start the renewal before validity lapses',
+  'Approved':       'Nothing pending',
+  'Closed':         'Nothing pending'
+};
 function ocaRef(r){return 'CMP-'+(4000+r.id);}
 
 /* ── Line-item history ────────────────────────────────────────────────────
@@ -1957,10 +1965,12 @@ function ocaRef(r){return 'CMP-'+(4000+r.id);}
 const ocaWorkflowData={};
 const OCA_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const OCA_STAGE={
-  'Blocking':    {title:'Blocked — Action Required',desc:'Item is blocking payroll readiness and cannot clear until it is resolved.'},
-  'Needs Review':{title:'Sent for Review',          desc:'Raised for compliance review and sign-off.'},
-  'Pending':     {title:'Awaiting Response',        desc:'Waiting on a response before the item can move on.'},
-  'Ready':       {title:'Cleared',                  desc:'Verified and closed off. Nothing further pending on this item.'}
+  'Pending Review': {title:'Submitted for Review',  desc:'Document uploaded and queued for the compliance admin to approve or reject.'},
+  'Awaiting Upload':{title:'Document Requested',    desc:'Required document has been requested. Nothing has been provided yet.'},
+  'Rejected':       {title:'Document Rejected',     desc:'Reviewed and refused. A corrected copy is required before this can clear.'},
+  'Expiring Soon':  {title:'Renewal Due',           desc:'Document is in force but its validity lapses within 30 days. Renewal needs to start.'},
+  'Approved':       {title:'Document Approved',     desc:'Reviewed, accepted and filed. The document is in force.'},
+  'Closed':         {title:'Document Closed',       desc:'No longer in force — lapsed, superseded or withdrawn. Nothing further pending.'}
 };
 // "22 May" / "Today" is all a row carries, so the timeline dates are worked
 // back from that one anchor rather than invented per entry.
@@ -1974,14 +1984,20 @@ function ocaBackDate(dt,days){const d=new Date(dt.getTime());d.setDate(d.getDate
 function ocaWorkflow(r){
   if(!ocaWorkflowData[r.id]){
     const due=ocaDueObj(r);
-    const cat=ocaCategories.find(function(c){return c.key===r.cat;});
-    const stage=OCA_STAGE[r.status]||OCA_STAGE.Pending;
+    const cat=ocaCat(r.cat);
+    const stage=OCA_STAGE[r.status]||OCA_STAGE['Pending Review'];
+    // A document that never arrived has no upload entry to show, so the middle
+    // step states the request instead of inventing a delivery that did not happen.
+    const middle=r.status==='Awaiting Upload'
+      ?{title:'Upload Requested',user:'System',date:ocaBackDate(due,8),time:'11:30:00 AM',
+        description:cat.source+' asked to provide "'+r.doc+'" by '+r.due+'.'}
+      :{title:'Document Uploaded',user:cat.source,date:ocaBackDate(due,8),time:'11:30:00 AM',
+        description:'"'+r.doc+'" uploaded by '+cat.source.toLowerCase()+' and routed to the compliance admin for review.'};
     ocaWorkflowData[r.id]=[   // newest first, same order every other Workflow tab uses
       {title:stage.title,user:CURRENT_USER,date:ocaBackDate(due,1),time:'04:15:00 PM',description:stage.desc},
-      {title:'Assigned to Compliance Admin',user:'System',date:ocaBackDate(due,8),time:'11:30:00 AM',
-       description:'Routed to Opendhi Compliance Admin as a '+String(r.priority).toLowerCase()+'-priority item, due '+r.due+'.'},
-      {title:'Item Raised',user:'System',date:ocaBackDate(due,9),time:'09:00:00 AM',
-       description:(cat?cat.label:r.cat)+' item raised for '+r.who+' ('+ocaRef(r)+').'}
+      middle,
+      {title:'Document Required',user:'System',date:ocaBackDate(due,9),time:'09:00:00 AM',
+       description:cat.label+' requirement raised for '+r.who+' ('+ocaRef(r)+').'}
     ];
   }
   return ocaWorkflowData[r.id];
@@ -1989,38 +2005,50 @@ function ocaWorkflow(r){
 function ocaSeedLogs(r){
   const due=ocaDueObj(r);
   return seedLogs(r,[
-    {date:ocaBackDate(due,1),time:'04:15:00 PM',user:CURRENT_USER,status:r.status,action:(OCA_STAGE[r.status]||OCA_STAGE.Pending).desc},
-    {date:ocaBackDate(due,8),time:'11:30:00 AM',user:'System',status:'Pending',action:'Item raised and assigned for compliance review.'}
+    {date:ocaBackDate(due,1),time:'04:15:00 PM',user:CURRENT_USER,status:r.status,action:(OCA_STAGE[r.status]||OCA_STAGE['Pending Review']).desc},
+    {date:ocaBackDate(due,8),time:'11:30:00 AM',user:'System',status:'Awaiting Upload',
+     action:'"'+r.doc+'" listed as a required document for '+r.who+' and assigned to compliance.'}
   ]);
 }
 
 function ocaSetFilter(key){
-  ocaFilter=ocaFilter===key?'':key;   // clicking the active tile clears it
-  ocaPage=1;
+  ocaStatusFilter=ocaStatusFilter===key?'':key;   // clicking the active tile clears it
+  ocaPage=1;ocaSelectedId=null;
   renderOcaDashboard();
 }
 function ocaGoPage(n){
   ocaPage=Math.min(Math.max(1,n),ocaPageCount());
   renderOcaDashboard();
 }
+// The sub-line answers the two questions this role opens the screen with —
+// how much is still live, and how much of it is already on fire.
 function buildOcaHeaderHTML(){
   const total=ocaItems.length;
-  const open=ocaItems.filter(function(r){return r.status!=='Ready';}).length;
+  const need=ocaItems.filter(ocaNeedsAction).length;
+  const review=ocaStatusCount('Pending Review');
+  const expiring=ocaStatusCount('Expiring Soon');
   return '<div class="oca-head">'
     +'<div class="oca-head-id">'
     +'<div class="oca-head-title">Opendhi Compliance Admin<span class="oca-role">COMPLIANCE ADMIN</span></div>'
-    +'<div class="oca-head-sub">You are looking after '+total+' compliance items — '+open+' still need action.</div>'
+    +'<div class="oca-head-sub">You are looking after '+total+' compliance documents — '+need+' still need action, '
+    +review+' are waiting on your review and '+expiring+' expire within 30 days.</div>'
     +'</div>'
     +'</div>';
 }
+// The tiles are the filter — the whole filter. One row of counts, one axis,
+// ordered the way the day runs: clear the blockers, start what is yours, finish
+// what you are holding, chase what someone else is holding, then what is done.
+// Numbers stay in the same navy as every other figure on the dashboard; the
+// status pills in the rows below are where colour does its work.
 function buildOcaTilesHTML(){
-  return '<div class="oca-tiles">'+ocaCategories.map(function(c){
-    const n=ocaCatCount(c.key);
-    const on=ocaFilter===c.key;
-    return '<button class="oca-tile'+(on?' is-on':'')+(n?'':' is-zero')+'" onclick="ocaSetFilter(\''+c.key+'\')"'
-      +' title="'+(on?'Clear this filter':ocaCatSub(c))+'">'
+  return '<div class="oca-tiles">'+ocaStatuses.map(function(s){
+    const n=ocaStatusCount(s.key);
+    const on=ocaStatusFilter===s.key;
+    return '<button class="oca-tile'+(on?' is-on':'')+(n?'':' is-zero')+'"'
+      +' onclick="ocaSetFilter(\''+attrSafe(s.key)+'\')"'
+      +' title="'+attrSafe(on?'Clear this filter':s.note)+'">'
       +'<span class="oca-tile-n">'+n+'</span>'
-      +'<span class="oca-tile-l">'+c.label+'</span>'
+      +'<span class="oca-tile-l">'+s.key+'</span>'
       +'</button>';
   }).join('')+'</div>';
 }
@@ -2029,7 +2057,38 @@ function buildOcaTilesHTML(){
 // it, the row stays highlighted while it is open, and it closes from its own
 // tab bar. A status changed in Logs writes back to the ocaItems row, so the
 // tiles, the row and the "what to do next" column all move together.
-const OCA_STATUSES=['Blocking','Needs Review','Pending','Ready'];
+/* ── What you can do FROM here ─────────────────────────────────────────────
+   The Logs form used to offer all six statuses on every document, which is six
+   answers to a question that only ever has two or three. Worse, most of them
+   were nonsense: a document nobody has uploaded yet cannot be "Approved", and
+   an approved one cannot go back to "Pending Review" without a fresh upload.
+
+   So the dropdown is now the legal moves from the status the document is in,
+   and nothing else — the same set the Approve/Reject bar offers, just with the
+   comment the bar cannot collect. The current status stays at the top of the
+   list so a note that moves nothing is still possible; picking it writes a log
+   entry and leaves the row where it is. */
+const OCA_MOVES={
+  'Pending Review': ['Approved','Rejected'],                    // the decision
+  'Awaiting Upload':['Pending Review','Closed'],                // it arrives, or it is dropped
+  'Rejected':       ['Pending Review','Closed'],                // corrected copy, or withdrawn
+  'Expiring Soon':  ['Approved','Awaiting Upload','Closed'],    // renewed, renewal started, or let go
+  'Approved':       ['Expiring Soon','Closed'],                 // nearing expiry, or out of force
+  'Closed':         ['Awaiting Upload']                         // required again
+};
+// The question the form is really asking, per status.
+const OCA_MOVE_PROMPT={
+  'Pending Review': 'Approve this document, or reject it with a reason',
+  'Awaiting Upload':'Send it for review once it arrives, or close the requirement',
+  'Rejected':       'Send it back for review when the corrected copy arrives',
+  'Expiring Soon':  'File the renewed copy, start the renewal, or let it close',
+  'Approved':       'Flag it for renewal, or close it once it is out of force',
+  'Closed':         'Re-open the requirement if this document is needed again'
+};
+function ocaMoveOptions(item){
+  return [item.status].concat(OCA_MOVES[item.status]||[]);
+}
+const OCA_STATUSES=OCA_STATUS_KEYS;
 function openOcaSidebar(id){
   ocaSelectedId=id;ocaTab='basic-details';
   const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.add('open');
@@ -2039,15 +2098,95 @@ function openOcaSidebar(id){
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='oca-row-'+id);});
 }
 function closeOcaSidebar(){
-  ocaSelectedId=null;
+  ocaSelectedId=null;ocaPendingStatus='';
   const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.remove('open');
   const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.remove('has-sb');
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
 function navOcaTab(tab){ocaTab=tab;isbTab('oca',renderOcaSidebar);}
 function ocaCancelLog(){
-  const inp=document.getElementById('oca-log-comment-inp');if(inp)inp.value='';
-  const sel=document.getElementById('oca-log-status-sel');if(sel)sel.value='';
+  ocaPendingStatus='';
+  isbTab('oca',renderOcaSidebar);   // redraw so the pre-set status clears with it
+}
+
+/* ── The decision bar ──────────────────────────────────────────────────────
+   Reviewing a document is this role's actual job, so it is a button on the
+   panel, not a status buried in a dropdown on a second tab.
+
+   The two directions are deliberately NOT symmetric. Approving is a clean
+   outcome and commits on the spot. Rejecting is not: the party who uploaded it
+   has to be told what was wrong with it, and a rejection with no reason is a
+   round trip nobody can act on. So Reject does not decide anything by itself —
+   it opens Logs with the status already set to Rejected and makes the admin
+   type the reason before it commits. Same for a renewal: it moves the document
+   back to Awaiting Upload, which is a real state change, so it is logged. */
+function ocaMove(id,to,line){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  const was=item.status;
+  ocaSeedLogs(item);ocaWorkflow(item);   // seed first, or the fixtures land on top
+  const now=stampNow();
+  item.logs.unshift({date:now.date,time:now.time,user:CURRENT_USER,status:to,action:line});
+  item.status=to;
+  wfPush(ocaWorkflowData,id,(OCA_STAGE[to]||OCA_STAGE['Pending Review']).title,line);
+  ocaPendingStatus='';
+  renderOcaDashboard();
+  showToast(to==='Approved'?'Document approved':'Document updated','success',
+    '"'+item.doc+'" moved from '+was+' to '+to+'.');
+}
+function ocaApprove(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  ocaMove(id,'Approved','Reviewed and approved by the compliance admin. "'+item.doc+'" is now in force.');
+}
+// Hands off to Logs rather than deciding — see the note above.
+function ocaReject(id){
+  ocaPendingStatus='Rejected';
+  ocaTab='logs';
+  isbTab('oca',renderOcaSidebar);
+}
+function ocaRenew(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  ocaMove(id,'Awaiting Upload','Renewal started before validity lapses on '+(item.validTill||'the expiry date')+'. A fresh copy is now required.');
+}
+// The admin owns the country pack outright, so filing one is a single move:
+// there is no third party to review it back to them.
+function ocaFile(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  ocaMove(id,'Approved','Uploaded and filed by the compliance admin. "'+item.doc+'" is now in force.');
+}
+// A chase is not a state change — it goes on the log and leaves the row where
+// it is, because nothing about the document has actually moved.
+function ocaRemind(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  const who=ocaCat(item.cat).source.toLowerCase();
+  ocaSeedLogs(item);
+  const now=stampNow();
+  item.logs.unshift({date:now.date,time:now.time,user:CURRENT_USER,status:item.status,
+    action:'Reminder sent to the '+who+' for "'+item.doc+'". Status unchanged.'});
+  isbTab('oca',renderOcaSidebar);
+  showToast('Reminder sent','success','The '+who+' was reminded about "'+item.doc+'".');
+}
+// One row of buttons, driven off the status, so the panel never offers a move
+// the document cannot make.
+function ocaActionsHTML(item){
+  const id=item.id;
+  const src=ocaCat(item.cat).source;
+  let btns='';
+  if(item.status==='Pending Review'){
+    btns='<button class="oca-act oca-act-reject" onclick="ocaReject('+id+')">Reject</button>'
+        +'<button class="oca-act oca-act-approve" onclick="ocaApprove('+id+')">Approve</button>';
+  }else if(item.status==='Awaiting Upload'){
+    btns=src==='Compliance Admin'
+      ?'<button class="oca-act oca-act-approve" onclick="ocaFile('+id+')">Upload &amp; File</button>'
+      :'<button class="oca-act" onclick="ocaRemind('+id+')">Send Reminder</button>';
+  }else if(item.status==='Rejected'){
+    btns='<button class="oca-act" onclick="ocaRemind('+id+')">Chase Corrected Copy</button>';
+  }else if(item.status==='Expiring Soon'){
+    btns='<button class="oca-act oca-act-approve" onclick="ocaRenew('+id+')">Start Renewal</button>';
+  }else{
+    return '';   // Approved and Closed are settled — nothing to offer
+  }
+  return '<div class="oca-actbar"><span class="oca-actbar-q">'+(OCA_NEXT[item.status]||'')+'</span>'
+    +'<div class="oca-actbar-btns">'+btns+'</div></div>';
 }
 function ocaSaveLog(id){
   const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
@@ -2063,17 +2202,18 @@ function ocaSaveLog(id){
      stages, not chatter. */
   if(item.status!==was){
     ocaWorkflow(item);    // seed first, so the new stage sits on top of the history
-    wfPush(ocaWorkflowData,id,(OCA_STAGE[item.status]||OCA_STAGE.Pending).title,
+    wfPush(ocaWorkflowData,id,(OCA_STAGE[item.status]||OCA_STAGE['Pending Review']).title,
       'Moved from '+was+' to '+item.status+'. '+comment);
   }
+  ocaPendingStatus='';    // the decision it was pre-set from has now been made
   renderOcaDashboard();   // status drives the tiles and the row, so redraw both
   showToast('Log added','success',item.status!==was
-    ? '"'+item.item+'" moved to '+item.status+'.'
-    : 'Comment saved to "'+item.item+'".');
+    ? '"'+item.doc+'" moved to '+item.status+'.'
+    : 'Comment saved to "'+item.doc+'".');
 }
 function renderOcaSidebar(){
   const item=ocaItems.find(function(x){return x.id===ocaSelectedId;});if(!item)return'';
-  const cat=ocaCategories.find(function(c){return c.key===item.cat;});
+  const cat=ocaCat(item.cat);
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="oca-isb-tabs">'+tabs.map(function(t){
@@ -2090,12 +2230,19 @@ function renderOcaSidebar(){
     const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
     const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
-    // The panel head carries the record and its status, nothing more.
+    const iFile='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+    const dateVal=ocaDateValue(item);
+    /* The record and nothing else. The Approve/Reject bar used to open this tab,
+       which meant a decision could be taken from a screen that shows no history
+       — and Reject then bounced you to Logs anyway to collect the reason. The
+       bar now lives on Logs, above the timeline it writes into, so every move
+       is made with the record's own history in front of you. "What to do next"
+       stays here as a statement of fact. */
     body='<div class="lp-sb-detail-grid">'
-      +fc(iTag,'Item',item.item)+fc(iCheck,'Status',sbStatus(item.status))
+      +fc(iFile,'Document',item.doc)+fc(iCheck,'Status',sbStatus(item.status))
       +fc(iUser,'Employee / Client',item.who)+fc(iHash,'Reference',ocaRef(item))
-      +fc(iTag,'Category',cat?cat.label:item.cat)+fc(iFlag,'Priority',item.priority)
-      +fc(iCal,'Due','<span class="oca-due'+(item.due==='Today'?' is-now':'')+'">'+item.due+'</span>')
+      +fc(iTag,'Document Type',cat.label)+fc(iFlag,'Uploaded By',ocaUploadedBy(item))
+      +fc(iCal,ocaDateLabel(item),'<span class="oca-due'+(dateVal==='Today'?' is-now':'')+'">'+dateVal+'</span>')
       +fc(iCheck,'What to do next',OCA_NEXT[item.status]||'—')
       +'</div>';
   }else if(ocaTab==='logs'){
@@ -2118,18 +2265,27 @@ function renderOcaSidebar(){
           +'</div></div>';
       }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
+    // Arriving here from the Reject button, the form opens on that decision and
+    // asks for the one thing the button could not supply: why.
+    const preset=ocaPendingStatus||item.status;
+    const rejecting=ocaPendingStatus==='Rejected';
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+tone(item.status)+'"></span>'+item.status+'</div>'
-      +'<p class="lp-logs-form-sub">Move this item on and say why</p>'
-      +lpLogStatusField('oca-log-status-sel',item.status,OCA_STATUSES)
-      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" id="oca-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<p class="lp-logs-form-sub">'+(rejecting
+        ?'Say what is wrong with this document — the '+ocaCat(item.cat).source.toLowerCase()+' will see this reason'
+        :(OCA_MOVE_PROMPT[item.status]||'Move this document on and say why'))+'</p>'
+      // Only the moves this document can actually make from where it is.
+      +lpLogStatusField('oca-log-status-sel',preset,ocaMoveOptions(item))
+      +'<div class="lp-logs-form-label">'+(rejecting?'Reason for rejection':'Comment')+' <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="oca-log-comment-inp" placeholder="'
+      +(rejecting?'e.g. Page 2 is illegible — re-upload a clear scan':'Enter comment')+'"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
       +'<button class="ep-cancel-btn" style="flex:1" onclick="ocaCancelLog()">Cancel</button>'
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ocaSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    // The decision bar opens the tab, above the history it is about to write into.
+    body='<div class="lp-logs-wrap">'+ocaActionsHTML(item)+timelineHTML+formHTML+'</div>';
   }else if(ocaTab==='workflow'){
     body=wfTimelineHTML(ocaWorkflow(item));   // shared renderer, so it reads like every other Workflow tab
   }
@@ -2141,29 +2297,35 @@ function buildOcaListingHTML(){
   if(ocaPage>last)ocaPage=last;
   const from=(ocaPage-1)*OCA_PAGE_SIZE;
   const page=rows.slice(from,from+OCA_PAGE_SIZE);
-  const active=ocaCategories.find(function(c){return c.key===ocaFilter;});
   // A panel must always belong to a row you can see, so a filter or a page turn
   // that drops the selected item closes it.
   if(ocaSelectedId&&!page.some(function(r){return r.id===ocaSelectedId;}))ocaSelectedId=null;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
 
-  // Same row shape as every other listing: name over its reference, the record
-  // name in orange, a status pill, and the action button at the end.
+  /* Eight columns was two too many, and the two that went were the ones already
+     said elsewhere on the same row. Document type now rides under the document
+     name and "Uploaded By" under the owner — the two-line cell this table
+     already uses for name-over-reference. Six columns of real information beat
+     eight of padded-out ones. */
   const body=page.length?page.map(function(r,i){
-    const cat=ocaCategories.find(function(c){return c.key===r.cat;});
+    const dv=ocaDateValue(r),upBy=ocaUploadedBy(r);
+    const urgent=dv==='Today'||r.status==='Expiring Soon';
     return '<tr class="oca-row'+(ocaSelectedId===r.id?' lp-row-selected':'')+'" id="oca-row-'+r.id+'" style="cursor:pointer" onclick="openOcaSidebar('+r.id+')">'
-      +'<td style="color:var(--gray);font-size:13px">'+(from+i+1)+'</td>'
-      +'<td><div style="font-weight:600;color:var(--navy)">'+r.who+'</div><div style="font-size:11px;color:#9ca3af">'+ocaRef(r)+'</div></td>'
-      +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
-      +'<td>'+(cat?cat.label:r.cat)+'</td>'
-      +'<td>'+r.priority+'</td>'
-      // due today is the one thing on this row that is time-critical
-      +'<td'+(r.due==='Today'?' style="font-size:12px;color:var(--st-bad-fg);font-weight:600"':' style="font-size:12px;color:#64748b"')+'>'+r.due+'</td>'
+      +'<td class="lp-c-n">'+(from+i+1)+'</td>'
+      +'<td><div class="lp-c-main">'+r.who+'</div>'
+        +'<div class="lp-c-sub">'+ocaRef(r)+'</div></td>'
+      +'<td><div class="lp-c-name">'+r.doc+'</div>'
+        +'<div class="lp-c-sub">'+ocaCatLabel(r.cat)+'</div></td>'
+      +'<td><span class="lp-c-plain'+(upBy==='Not uploaded'?' is-none':'')+'">'+upBy+'</span></td>'
+      // This one keeps its caption: the column holds two different meanings and
+      // only the row knows which of them it is showing.
+      +'<td><div class="lp-c-plain'+(urgent?' is-urgent':'')+'">'+dv+'</div>'
+        +'<div class="lp-c-sub">'+ocaDateLabel(r)+'</div></td>'
       +'<td><span class="lp-status-badge tone-'+statusTone(r.status)+'">'+r.status+'</span></td>'
       +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openOcaSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
       +'</tr>';
   }).join('')
-   :'<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No compliance items in this category.</td></tr>';
+   :'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">No compliance documents in this status.</td></tr>';
 
   // fixed-width window of page numbers so the control does not grow with the set
   let lo=Math.max(1,ocaPage-2),hi=Math.min(last,lo+4);
@@ -2181,17 +2343,15 @@ function buildOcaListingHTML(){
     +'<button class="lp-pg-btn lp-pg-arrow" onclick="ocaGoPage('+(ocaPage+1)+')"'+(ocaPage===last?' disabled':'')+'>'+nextArrow+'</button>'
     +'</div></div>';
 
+  /* No heading on this card. It went through three drafts — a title with a
+     sub-line, then a title with a count — and every one of them was saying
+     something the page already said. The tiles name the filter and show it
+     selected, the pager under the table gives the count, and "compliance
+     documents" is the dashboard the user is already on. The table is the card. */
   return '<div class="oca-list">'
-    +'<div class="oca-list-head">'
-    +'<div><div class="oca-list-title">All compliance items</div>'
-    +'<div class="oca-list-sub">Everything you own, in one list. Pick a category above to narrow it down.</div></div>'
-    +'<span class="oca-count">'+rows.length+' of '+ocaItems.length+'</span>'
-    +'</div>'
-    +(active?'<div class="oca-active-filter">Filtered by <b>'+active.label+'</b>'
-        +'<button class="oca-clear" onclick="ocaSetFilter(\''+active.key+'\')">Clear</button></div>':'')
     +'<div class="lp-split-wrap oca-split-wrap'+(ocaSelectedId?' has-sb':'')+'" id="oca-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table"><thead><tr>'
-    +'<th>S. No</th><th>Employee / Client</th><th>Item</th><th>Category</th><th>Priority</th><th>Due</th><th>Status</th><th>Action</th>'
+    +'<table class="lp-table lp-table-2line"><thead><tr>'
+    +'<th>S. No</th><th>Employee / Client</th><th>Document</th><th>Uploaded By</th><th>Valid Till / Due</th><th>Status</th><th>Action</th>'
     +'</tr></thead><tbody>'+body+'</tbody></table>'
     +pager
     +'</div></div>'
@@ -5039,7 +5199,16 @@ function renderLstSidebar(){
 // ── TICKETS PAGE ──
 function renderTkSidebar(){
   const t=ticketsData.find(x=>x.id===tkSelectedId);if(!t)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'conversation',label:'Conversation'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  /* The Conversation tab reads the CSM chat this ticket came out of, so it only
+     belongs to a chat-borne one. On a request raised through the portal, inbox
+     or a phone call there is no conversation to show — the tab is dropped
+     rather than left to render an empty transcript, and a panel already sitting
+     on it falls back to Basic Details. */
+  const hasChat=tkIsChat(t);
+  if(!hasChat&&tkTab==='conversation')tkTab='basic-details';
+  const tabs=[{id:'basic-details',label:'Basic Details'}]
+    .concat(hasChat?[{id:'conversation',label:'Conversation'}]:[])
+    .concat([{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}]);
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'tk-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="tk-isb-tabs">'+tabs.map(tb=>'<button class="lp-isb-tab'+(tkTab===tb.id?' active':'')+'" onclick="navTkTab(\''+tb.id+'\')">'+tb.label+'</button>').join('')+'</div>'
@@ -5058,19 +5227,16 @@ function renderTkSidebar(){
   const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
   let body='';
   if(tkTab==='basic-details'){
-    // The panel opens on the one question a support queue is actually asking:
-    // who has the ball, and what moves it. Everything else is reference.
-    const moves=tkMoves(t);
+    /* BASIC DETAILS READS, IT DOES NOT ACT. The move buttons used to sit right
+       here in a coloured card, which put the same decision in two places: the
+       card, and the Logs form that actually collects the comment every move
+       requires. The card was the worse of the two — it fired a modal over the
+       panel you were already reading, and a move made from it still had to be
+       explained afterwards. So the buttons live on Logs now, next to the
+       history they are about to be written into. What stays here is the fact,
+       not the control: who owes the next action, as an ordinary field. */
     const res=tkResolution(t);
-    const owed='<div class="tk-owner-card tk-owner-'+t.status+'">'
-      +'<div class="tk-owner-label">Next action on</div>'
-      +'<div class="tk-owner-who">'+tkOwner(t)+'</div>'
-      +(moves.length
-        ? '<div class="tk-owner-moves">'+moves.map(mv=>'<button class="tk-owner-btn tk-owner-btn-'+mv.tone+'" onclick="qaTicket('+t.id+',\''+mv.to+'\')">'+mv.label+'</button>').join('')+'</div>'
-        : '')
-      +'</div>';
-    body=owed
-      +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Client Information</span></div>'
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Client Information</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
       +fc(iUser,'Client Name',t.clientName)+fc(iMail,'Email',t.clientEmail)
       +fc(iPhone,'Phone',t.clientPhone)+fc(iGlobe,'Country',t.country)
@@ -5079,7 +5245,12 @@ function renderTkSidebar(){
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
       +fc(iTag,'Ticket ID',t.ticketId)+fc(iTag,'Category',t.category)
       +fc(iCal,'Created At',t.createdAt)+fc(iUser,'Assigned To',t.assignedTo)
+      // Where it came in, and who put it there — the same panel serves both
+      // queues, so it has to say which one this record belongs to.
+      +fc(iTag,'Raised Via',tkSourceLabel(t))+fc(iUser,'Raised By',t.raisedBy)
       +fc(iTag,'Status',sbStatus(t.status,tkStatusLabel(t.status)))
+      // Stated, not offered — the control that changes it is on Logs.
+      +fc(iUser,'Next Action On',tkOwner(t))
       +(t.status==='blocked'?fc(iGlobe,'Blocked On',t.waitingOn):'')
       +'</div>'
       // Read out of the Logs, not out of a field on the ticket - see the note
@@ -5277,67 +5448,118 @@ function tkReassign(id){
   showToast('Ticket reassigned','success',t.ticketId+' · '+from+' → '+who);
 }
 
+/* ══ SUPPORT › TICKETS ══════════════════════════════════════════════════════
+   ONE queue, whatever channel the ticket came in on — CSM chat, the client
+   portal, a phone call to the desk, or raised internally by the Opendhi team.
+   These were briefly two pages; an agent works one queue, and having to check
+   two of them to know what is open was the whole problem with that.
+
+   Channel survives as a column and a filter, which is all it ever needed to
+   be. The one place it genuinely changes behaviour is the detail panel, where
+   a chat-borne ticket gets the Conversation tab and the others do not —
+   gated in renderTkSidebar() off tkIsChat(). */
 function tkToggleStatFilter(v){
   tkQuickStatusFilter=tkQuickStatusFilter===v?'':v;
   tkSelectedId=null;
   renderADTPage();
 }
+// Unassigned cuts across the statuses rather than being one of them, so it
+// replaces the status filter instead of fighting with it.
+function tkToggleUnassigned(){
+  tkQuickStatusFilter=tkQuickStatusFilter==='__unassigned__'?'':'__unassigned__';
+  tkSelectedId=null;
+  renderADTPage();
+}
 function applyTkFilters(){
   const status=getCSValue('tk-f-status');
+  const channel=getCSValue('tk-f-channel');
   tkQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  tkChannelFilter=channel&&channel!=='All Channels'?channel:'';
   tkSelectedId=null;
   renderADTPage();
 }
 function resetTkFilters(){
-  tkQuickStatusFilter='';
+  tkQuickStatusFilter='';tkChannelFilter='';
   tkSelectedId=null;
   renderADTPage();
 }
+function tkIsUnassigned(t){return !t.assignedTo;}
+// Channel narrows first so the count tiles can be scored against it: filtering
+// to Phone Call and still seeing the whole queue's Open count would be a lie.
+function tkScope(){
+  if(!tkChannelFilter)return ticketsData;
+  return ticketsData.filter(function(t){return tkSourceLabel(t)===tkChannelFilter;});
+}
+function tkRows(){
+  const rows=tkScope();
+  if(tkQuickStatusFilter==='__unassigned__')return rows.filter(tkIsUnassigned);
+  return tkQuickStatusFilter?rows.filter(function(t){return t.status===tkQuickStatusFilter;}):rows;
+}
 function buildTicketsPageHTML(){
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const countries=[...new Set(ticketsData.map(t=>t.country))];
-  const categories=[...new Set(ticketsData.map(t=>t.category))];
-  const openCount=ticketsData.filter(t=>t.status==='open').length;
-  const inProgressCount=ticketsData.filter(t=>t.status==='in_progress').length;
-  const blockedCount=ticketsData.filter(t=>t.status==='blocked').length;
-  const resolvedCount=ticketsData.filter(t=>t.status==='resolved').length;
-  const filteredTickets=tkQuickStatusFilter?ticketsData.filter(t=>t.status===tkQuickStatusFilter):ticketsData;
-  const pgn=listPage('support-tickets',tkQuickStatusFilter,filteredTickets.map((t,i)=>(
-    '<tr class="tk-row'+(tkSelectedId===t.id?' lp-row-selected':'')+'" id="tk-row-'+t.id+'" style="cursor:pointer" onclick="openTkSidebar('+t.id+')">'
-    +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
-    +'<td style="font-weight:600;color:var(--navy);white-space:nowrap">'+t.ticketId+'</td>'
-    +'<td style="font-weight:600;color:var(--navy)">'+t.clientName+'</td>'
-    +'<td style="color:#64748b;font-size:13px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+t.title+'</td>'
-    +'<td>'+t.category+'</td>'
-    +'<td style="font-size:12px;color:#64748b;white-space:nowrap">'+t.createdAt+'</td>'
-    +'<td>'+tkStatusBadge(t.status)+'</td>'
-    // Who the queue is actually waiting on. A status alone does not say that -
-    // "Blocked" and "Resolved" both mean "not us", but by different people.
-    +'<td style="font-size:12px;color:#64748b;white-space:nowrap" title="'+tkOwner(t)+'">'+tkOwnerShort(t)+'</td>'
-    +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openTkSidebar('+t.id+')" title="View Details">'+dotsIco+'</button></td>'
-    +'</tr>'
-  )),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>');
+  const scope=tkScope();
+  const channels=Object.keys(TK_SOURCES).map(function(k){return TK_SOURCES[k].label;});
+  const cnt=function(s){return scope.filter(function(t){return t.status===s;}).length;};
+  const unassignedCount=scope.filter(tkIsUnassigned).length;
+  const rows=tkRows();
+  // A panel must belong to a row you can still see, so a filter that drops the
+  // open ticket closes it rather than leaving a panel with no row behind it.
+  if(tkSelectedId&&!rows.some(function(t){return t.id===tkSelectedId;}))tkSelectedId=null;
+  const sig=tkQuickStatusFilter+'|'+tkChannelFilter;
+  /* Eight columns, each value paired with its qualifier in the shared .lp-c-*
+     two-line cell rather than the qualifier taking a column of its own: the
+     reference carries the channel, the client carries who raised it, the title
+     carries the category. */
+  const pgn=listPage('support-tickets',sig,rows.map(function(t,i){
+    const unassigned=tkIsUnassigned(t);
+    // "via" only earns its line when somebody other than the client raised it —
+    // repeating the name back under itself was pure noise on most rows.
+    const raiser=(t.raisedBy&&t.raisedBy!==t.clientName)?t.raisedBy:'';
+    return '<tr class="tk-row'+(tkSelectedId===t.id?' lp-row-selected':'')+'" id="tk-row-'+t.id+'" style="cursor:pointer" onclick="openTkSidebar('+t.id+')">'
+      +'<td class="lp-c-n">'+(i+1)+'</td>'
+      +'<td class="lp-c-tight"><div class="lp-c-main">'+t.ticketId+'</div>'
+        +'<div class="lp-c-sub"><span class="sr-channel'+(tkIsChat(t)?' is-chat':'')+'">'+tkSourceShort(t)+'</span></div></td>'
+      +'<td class="lp-c-tight"><div class="lp-c-main">'+t.clientName+'</div>'
+        +(raiser?'<div class="lp-c-sub">via '+raiser+'</div>':'')+'</td>'
+      +'<td><span class="lp-c-clip" title="'+attrSafe(t.title)+'">'+t.title+'</span>'
+        +'<div class="lp-c-sub">'+t.category+'</div></td>'
+      +'<td class="lp-c-n">'+t.createdAt+'</td>'
+      +'<td>'+tkStatusBadge(t.status)+'</td>'
+      // Unassigned is the state this queue is actually managed by, so it is
+      // called out rather than left as an empty cell.
+      +'<td class="lp-c-tight"><div class="lp-c-plain'+(unassigned?' is-urgent':'')+'" title="'+attrSafe(tkOwner(t))+'">'
+        +(unassigned?'Unassigned':tkOwnerShort(t))+'</div></td>'
+      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openTkSidebar('+t.id+')" title="View Details">'+dotsIco+'</button></td>'
+      +'</tr>';
+  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>');
   const sbInner=tkSelectedId?renderTkSidebar():'';
+  const stat=function(key,count,label,colour){
+    return '<div class="listing-stat'+(tkQuickStatusFilter===key?' stat-selected':'')+'"'
+      +' onclick="'+(key==='__unassigned__'?'tkToggleUnassigned()':'tkToggleStatFilter(\''+key+'\')')+'">'
+      +'<div class="listing-stat-count" style="color:'+colour+'">'+count+'</div>'
+      +'<div class="listing-stat-label">'+label+'</div></div>';
+  };
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +apCS('tk-f-country',countries,'','All Countries')
-    +apCS('tk-f-category',categories,'','All Categories')
-    +apCS('tk-f-status',['open','in_progress','blocked','resolved','closed'],tkQuickStatusFilter,'All Statuses')
-    +clearFiltersBtn([tkQuickStatusFilter],'resetTkFilters()')
+    +apCS('tk-f-channel',channels,tkChannelFilter,'All Channels')
+    +apCS('tk-f-status',['open','in_progress','blocked','resolved','closed'],
+        tkQuickStatusFilter==='__unassigned__'?'':tkQuickStatusFilter,'All Statuses')
+    +clearFiltersBtn([tkQuickStatusFilter,tkChannelFilter],'resetTkFilters()')
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='open'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'open\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+openCount+'</div><div class="listing-stat-label">Open</div></div>'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='in_progress'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'in_progress\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+inProgressCount+'</div><div class="listing-stat-label">In Progress</div></div>'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='blocked'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'blocked\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+blockedCount+'</div><div class="listing-stat-label">Blocked</div></div>'
-    +'<div class="listing-stat'+(tkQuickStatusFilter==='resolved'?' stat-selected':'')+'" onclick="tkToggleStatFilter(\'resolved\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+resolvedCount+'</div><div class="listing-stat-label">Awaiting Client</div></div>'
+    +stat('__unassigned__',unassignedCount,'Unassigned','var(--st-bad-fg)')
+    +stat('open',cnt('open'),'Open','var(--st-info-fg)')
+    +stat('in_progress',cnt('in_progress'),'In Progress','var(--st-wait-fg)')
+    +stat('blocked',cnt('blocked'),'Blocked','var(--st-bad-fg)')
+    +stat('resolved',cnt('resolved'),'Awaiting Client','var(--st-ok-fg)')
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client Name</th><th>Title</th><th>Category</th><th>Created At</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table lp-table-2line sr-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client</th><th>Title</th><th>Created At</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'

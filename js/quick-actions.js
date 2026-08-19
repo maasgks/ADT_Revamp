@@ -11,8 +11,11 @@
    WHAT SURVIVES, AND WHY.  The confirm dialog and the commit path, because
    the support-ticket panel still moves a ticket through TK_FLOW and those
    moves must keep behaving identically wherever they are triggered from -
-   the panel buttons (tk-owner-btn in pages.js) and the Logs form both come
-   through qaTicket / qaTicketApply below.
+   every move comes through qaTicketApply below. qaTicket is the confirm-first
+   entry point; nothing calls it since the panel's move buttons were taken off
+   Basic Details, but it stays because it is the guarded path - it re-checks
+   the move against TK_FLOW before applying, which is what any future caller
+   outside the Logs form will need.
 
    THE CONTRACT A MOVE KEEPS.  Ask for a comment, mutate the ticket, write
    the same line into both histories, then qaCommit(): repaint WITHOUT the
@@ -243,5 +246,5 @@ window.qaTicketApply=function(id,to,vals){
   return true;
 };
 function lbl(s){return (typeof tkStatusLabel==='function')?tkStatusLabel(s):s;}
-
+
 })();

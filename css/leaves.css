@@ -389,34 +389,6 @@ tr.lp-row-selected>td:first-child,
 .lp-logs-save-btn{width:100%;height:40px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-control);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s;letter-spacing:.01em}
 /* hover handled by the button system (colour only) - no lift, no shadow */
 .lp-logs-save-btn:active{transform:none}
-/* ── Ticket "who owes the next action" card ───────────────────────────────
-   Sits at the top of the ticket panel because it answers the only question a
-   support queue asks. The left rail takes the colour of the state, so the
-   panel reads the same way the row's badge does. The buttons here are the
-   SAME moves the row offers - both go through the confirm dialog, so there
-   is no path to a status change that skips the comment. */
-.tk-owner-card{
-  background:#f8fafc;border:1px solid var(--border);border-left:3px solid var(--st-idle-bd);
-  border-radius:10px;padding:12px 14px;margin-bottom:16px}
-.tk-owner-open{border-left-color:var(--st-info-bd);background:var(--st-info-bg)}
-.tk-owner-in_progress{border-left-color:var(--st-wait-bd);background:var(--st-wait-bg)}
-.tk-owner-blocked{border-left-color:var(--st-bad-bd);background:var(--st-bad-bg)}
-.tk-owner-resolved{border-left-color:var(--st-ok-bd);background:var(--st-ok-bg)}
-.tk-owner-label{font-size:10.5px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px}
-.tk-owner-who{font-size:14px;font-weight:700;color:var(--navy);margin-top:3px}
-.tk-owner-moves{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
-.tk-owner-btn{
-  height:30px;padding:0 13px;border-radius:var(--r-control);
-  background:#fff;border:1.5px solid var(--border);color:var(--navy);
-  font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;
-  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
-/* These four used to hover into the colour of the RESULT - green for Approve,
-   red for Reject.  Buttons carry no semantic colour (see buttons.css): the
-   label already says what the move is, and a green button next to a green
-   status badge made the two read as the same thing.  All four hover as the
-   OUTLINE variant now, which is what they already are at rest. */
-.tk-owner-btn-ok:hover,.tk-owner-btn-bad:hover,.tk-owner-btn-wait:hover,.tk-owner-btn-info:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
-
 .lp-logs-empty{font-size:13px;color:#9ca3af;text-align:center;padding:32px 16px;background:#f9fafb;border-radius:10px;border:1px dashed #e5e7eb}
 /* LP WORKFLOW TIMELINE */
 .lp-wf-wrap{display:flex;flex-direction:column}

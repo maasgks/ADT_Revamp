@@ -904,45 +904,469 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'){closeSearch();}
   if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();openSearch();}
 });
-// --- ATTENDANCE CLOCK ---
-var _clockedIn=false,_clockTimer=null,_clockSecs=0;
-function toggleClock(){_clockedIn?_doClockOut():_doClockIn();}
-function _doClockIn(){
-  _clockedIn=true;
-  var now=new Date();
-  var timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
-  document.getElementById('att-clockin-time').textContent=timeStr;
-  document.getElementById('att-status-row').style.display='block';
-  _clockSecs=0;
-  _clockTimer=setInterval(function(){
-    _clockSecs++;
-    var h=Math.floor(_clockSecs/3600),m=Math.floor((_clockSecs%3600)/60),s=_clockSecs%60;
-    document.getElementById('att-logged-time').textContent='Logged Time - '+String(h).padStart(2,'0')+'h:'+String(m).padStart(2,'0')+'m:'+String(s).padStart(2,'0')+'s';
-  },1000);
-  var btn=document.getElementById('att-clock-btn');
-  btn.textContent='Clock Out';btn.classList.add('out');
-  if(navigator.geolocation){
-    navigator.geolocation.getCurrentPosition(function(p){
-      var lat=p.coords.latitude.toFixed(4),lng=p.coords.longitude.toFixed(4);
-      document.getElementById('att-location').textContent=lat+', '+lng;
-      document.getElementById('att-in-badge').style.display='inline-flex';
-    },function(){
-      document.getElementById('att-location').textContent='Hyderabad';
-      document.getElementById('att-in-badge').style.display='inline-flex';
-    });
-  } else {
-    document.getElementById('att-location').textContent='Hyderabad';
-    document.getElementById('att-in-badge').style.display='inline-flex';
-  }
+/* ══ ATTENDANCE CLOCK ═══════════════════════════════════════════════════════
+   Clocking in is the only thing on the employee dashboard the user DOES, so it
+   is the only thing that gets a real piece of motion. The card runs a small
+   state machine and the CSS in main.css owns every duration and easing — this
+   file starts and ends the phases and nothing else. Nothing here reads a
+   computed style or animates a property by hand.
+
+     idle ──clock in──▶ [ stage ] ──▶ in ──clock out──▶ [ stage ] ──▶ done
+       ▲                                                              │
+       └──────────────── clock in again (same day) ◀──────────────────┘
+
+   THE CARD NEVER RESIZES AND NEVER DOUBLE-FIRES. `_attBusy` gates the button
+   for the length of the sequence: a second click mid-animation would otherwise
+   start a punch from a state the card has not finished arriving at, and the
+   two runs would fight over the same hand angles.
+
+   TOTAL FOR THE DAY IS ACCUMULATED, NOT READ OFF THE LAST SESSION. Somebody
+   who clocks out for lunch and back in has two sessions and one total, so the
+   figure the card reports after a clock-out is every session so far today —
+   which is also why it is stamped with the date and reset when that rolls. */
+var _attState='idle';          // idle | in | done
+var _attBusy=false;            // a sequence is running; the button is inert
+var _attTimer=null;            // the live 1s tick while clocked in
+var _attInAt=null;             // Date of the current clock-in
+var _attOutAt=null;            // Date of the last clock-out
+var _attDaySecs=0;             // seconds banked from completed sessions today
+var _attDayKey=_attToday();
+
+function _attToday(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function _attEl(id){return document.getElementById(id);}
+function _attCard(){return _attEl('att-card');}
+// Every duration in the choreography, in one place, so the JS phases and the
+// CSS keyframes can be read against each other.
+// Mirrors the --att-t-* block in main.css. Slower than the first pass by ~40%:
+// the hands now have room to decelerate instead of stopping dead.
+var ATT_T={dial:950,hands:1900,roll:820,seal:1980,hold:2500,settle:340,close:560};
+function _attReduced(){
+  return window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
 }
-function _doClockOut(){
-  _clockedIn=false;
-  clearInterval(_clockTimer);_clockTimer=null;
-  document.getElementById('att-status-row').style.display='none';
-  document.getElementById('att-clockin-time').textContent='--:-- --';
-  document.getElementById('att-location').textContent='--';
-  document.getElementById('att-in-badge').style.display='none';
-  document.getElementById('att-logged-time').textContent='Logged Time - 00h:00m';
-  var btn=document.getElementById('att-clock-btn');
-  btn.textContent='Clock In';btn.classList.remove('out');
+function _attFmtTime(d){
+  return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+}
+// "07h 24m" while it matters, "07h 24m 13s" while it is still running — the
+// seconds are only interesting on a clock the user is watching tick.
+function _attFmtDur(secs,withSecs){
+  var h=Math.floor(secs/3600),m=Math.floor((secs%3600)/60),s=secs%60;
+  var p=function(n){return String(n).padStart(2,'0');};
+  return p(h)+'h '+p(m)+'m'+(withSecs?' '+p(s)+'s':'');
+}
+function _attSay(msg){var l=_attEl('att-live');if(l)l.textContent=msg;}
+
+/* The hands are given "spins + final angle" as one number so the wind-down and
+   the landing are a single animation. Winding FORWARD for a clock-in and
+   BACKWARD for a clock-out is the whole read of the gesture: time being put on
+   the record, then taken off it. */
+function _attSetHands(from,to,spins){
+  var card=_attCard();if(!card)return;
+  var ang=function(d){
+    var mins=d.getHours()%12*60+d.getMinutes();
+    return {h:mins/720*360,m:d.getMinutes()/60*360};
+  };
+  var a=from?ang(from):{h:0,m:0},b=ang(to);
+  card.style.setProperty('--h-from',a.h+'deg');
+  card.style.setProperty('--m-from',a.m+'deg');
+  card.style.setProperty('--h-deg',(b.h+360*spins)+'deg');
+  card.style.setProperty('--m-deg',(b.m+360*spins*3)+'deg');
+}
+
+/* The digital readout rolls up to the punch time rather than appearing at it.
+   It counts in MINUTES-SINCE-MIDNIGHT, so the roll passes through real clock
+   readings the whole way up instead of scrambling digits — the difference
+   between a counter arriving somewhere and a slot machine stopping. */
+function _attRollTime(target,done){
+  var el=_attEl('att-stage-time');if(!el){if(done)done();return;}
+  var end=target.getHours()*60+target.getMinutes();
+  if(_attReduced()){el.textContent=_attFmtTime(target);if(done)done();return;}
+  var start=Math.max(0,end-95),t0=null;
+  var frame=function(ts){
+    if(t0===null)t0=ts;
+    var p=Math.min(1,(ts-t0)/ATT_T.roll);
+    var eased=1-Math.pow(1-p,4);                 // ease-out quart — softer landing,
+                                                 // paired with --att-ease in CSS
+    var mins=Math.round(start+(end-start)*eased);
+    var d=new Date(target);d.setHours(Math.floor(mins/60),mins%60,0,0);
+    el.textContent=_attFmtTime(d);
+    if(p<1)requestAnimationFrame(frame);
+    else{el.textContent=_attFmtTime(target);if(done)done();}
+  };
+  requestAnimationFrame(frame);
+}
+
+// One place that decides what the resting card says, for all three states —
+// so a state can never be half-applied by whichever handler ran last.
+function _attPaint(){
+  var card=_attCard();if(!card)return;
+  card.classList.remove('is-idle','is-in','is-done');
+  card.classList.add(_attState==='in'?'is-in':_attState==='done'?'is-done':'is-idle');
+  _attEl('att-clockin-time').textContent=_attInAt?_attFmtTime(_attInAt):'--:-- --';
+  // The span summary carries both times once the shift has closed.
+  var inTxt=_attInAt?_attFmtTime(_attInAt):'--:-- --';
+  _attEl('att-span-in').textContent=inTxt;
+  _attEl('att-span-out').textContent=_attOutAt?_attFmtTime(_attOutAt):'--:-- --';
+  var btn=_attEl('att-clock-btn');
+  btn.textContent=_attState==='in'?'Clock Out':'Clock In';
+  btn.disabled=_attBusy;
+  _attTickLogged();
+}
+/* The day's total, as a readout rather than a sentence. It used to be one 11px
+   grey line that read like a footnote — but while the clock is running it is
+   the live figure on the card and the only thing on it that is changing, so it
+   is set as a figure: a quiet label over big tabular digits, with the h/m/s
+   letters dropped back so the numbers read as numbers.
+
+   Units are marked up separately for that reason alone. Building the string
+   here rather than in CSS keeps the tick to one innerHTML write a second. */
+function _attSeg(n,unit){
+  return '<span class="att-seg">'+String(n).padStart(2,'0')+'<i>'+unit+'</i></span>';
+}
+function _attTickLogged(){
+  var el=_attEl('att-logged-time');if(!el)return;
+  var live=_attState==='in'&&_attInAt
+    ? Math.floor((Date.now()-_attInAt.getTime())/1000) : 0;
+  var total=_attDaySecs+live;
+  var h=Math.floor(total/3600),m=Math.floor((total%3600)/60),s=total%60;
+  // Seconds only while there is a clock running to watch — on a settled total
+  // they are noise, and they would invite the eye to a number that never moves.
+  var running=_attState==='in';
+  var val=_attSeg(h,'h')+_attSeg(m,'m')+(running?_attSeg(s,'s'):'');
+  var label=_attState==='done'?'Total logged today'
+           :_attState==='in'?'Logged today'
+           :'Not clocked in yet';
+  el.innerHTML='<span class="att-logged-label"><span class="att-live-dot"></span>'+label+'</span>'
+    +'<span class="att-logged-val">'+val+'</span>';
+}
+
+/* ── Location, and why the punch waits on it ───────────────────────────────
+   Attendance recorded without a location is attendance nobody can audit, so
+   location is a PRECONDITION of clocking in, not a decoration on it. That has
+   three consequences the code has to honour:
+
+     · The stage stays up while the browser asks. The user is looking at a
+       permission dialog; the card behind it must not have quietly finished.
+     · A refusal ABORTS. No clock-in is recorded, the card returns to idle, and
+       it says why — a punch the user did not agree to the terms of is worse
+       than no punch.
+     · Only the DECISION gates it. The reverse-geocode that turns coordinates
+       into a place name is a nicety and lands afterwards; nothing waits on the
+       network for it.
+
+   TWO THINGS DECIDE WHETHER CHROME EVER SHOWS ITS PROMPT, and the first pass
+   got both wrong:
+     1. ASK DIRECTLY. Gating on permissions.query()==='granted' means the
+        prompt can never appear — the state is 'prompt' until something
+        prompts. getCurrentPosition IS the prompt.
+     2. ASK INSIDE THE CLICK, synchronously, so the browser attributes the
+        request to the gesture.
+
+   And one thing decides whether it can work at all: geolocation needs a secure
+   context. Served over https or from localhost it prompts; opened as a file://
+   page off disk, Chrome blocks the API outright — so clock-in is unavailable
+   and the card says so rather than failing silently. */
+var ATT_OFFICE='Hyderabad';
+/* NOTHING TIMES OUT WHILE THE PROMPT IS OPEN. Two clocks were cutting the wait
+   short and both are wrong for the same reason: the browser's `timeout` option
+   starts the moment the request is made and keeps running the whole time the
+   permission dialog is on screen, so a user reading the dialog for ten seconds
+   was being told their location request had failed. The dialog is not a
+   failure — it is the thing we are waiting for.
+
+   So the two waits are separated. Until the user answers, there is NO limit at
+   all: getCurrentPosition is called with no `timeout`, which the spec defines
+   as Infinity, and the stage sits on "Waiting for location" for as long as it
+   takes. Only once permission is actually GRANTED does a cap start, and it
+   caps the thing it should — acquiring a fix from the hardware, which really
+   can fail. permissions.onchange is what tells the two apart.
+
+   And there is a Cancel on the waiting state, so a user who changes their mind
+   never needs a timer to rescue them. */
+var ATT_FIX_CAP=25000;      // applies ONLY after permission is granted
+var _attLoc={state:'idle',reason:'',waiters:[]};
+var _attGate=null;              // the punch currently held at the location gate
+
+function _attSetLocation(text,pending){
+  var el=_attEl('att-location');if(el){
+    el.textContent=text;
+    el.classList.toggle('is-pending',!!pending);
+  }
+  // The stage caption is the same fact, so it is written from the same place
+  // rather than polled — the two cannot drift apart.
+  var card=_attCard(),sub=_attEl('att-stage-sub');
+  if(sub&&card&&card.classList.contains('is-busy')&&!card.classList.contains('is-waiting'))
+    sub.textContent=text;
+}
+function _attLocDone(ok,reason){
+  if(_attLoc.state!=='pending')return;       // first outcome wins
+  _attLoc.state=ok?'ok':'fail';_attLoc.reason=reason||'';
+  var w=_attLoc.waiters;_attLoc.waiters=[];
+  w.forEach(function(fn){fn(ok,reason||'');});
+}
+// Hand back the decision — now if it is already in, later if it is not.
+function _attLocAwait(cb){
+  if(_attLoc.state==='pending')_attLoc.waiters.push(cb);
+  else cb(_attLoc.state==='ok',_attLoc.reason);
+}
+
+function _attRequestLocation(){
+  _attLoc={state:'pending',reason:'',waiters:[]};
+  if(!navigator.geolocation){
+    _attSetLocation('Unavailable');
+    _attLocDone(false,'This browser cannot report a location.');return;
+  }
+  if(window.isSecureContext===false){
+    _attSetLocation('Unavailable');
+    _attLocDone(false,'Location needs the app served over https or localhost, not opened as a file.');
+    return;
+  }
+  _attSetLocation('Locating…',true);
+  // No `timeout` key — the spec's default is Infinity, so this sits on the
+  // permission prompt indefinitely. The cap is armed by _attWatchPermission
+  // once the user has actually said yes.
+  navigator.geolocation.getCurrentPosition(function(p){
+    var lat=p.coords.latitude,lng=p.coords.longitude;
+    _attSetLocation(lat.toFixed(4)+', '+lng.toFixed(4));
+    _attLocDone(true);
+    _attNameLocation(lat,lng);               // refinement only — nothing waits on it
+  },function(err){
+    _attSetLocation('Unavailable');
+    _attLocDone(false,err&&err.code===1
+      ? 'Location access was denied. Allow it to clock in.'
+      : 'Your location could not be determined. Check that location is on for this device.');
+  },{enableHighAccuracy:true,maximumAge:60000});
+  _attWatchPermission();
+}
+
+/* Tells the "user has not answered yet" wait apart from the "device is trying
+   to get a fix" wait — the only reason a cap can be applied to the second
+   without also punishing the first. Where permissions is unavailable there is
+   simply no cap, and the Cancel button on the waiting state is the way out. */
+function _attWatchPermission(){
+  if(!navigator.permissions||!navigator.permissions.query)return;
+  var token=_attLoc;                          // the request this watcher belongs to
+  navigator.permissions.query({name:'geolocation'}).then(function(st){
+    var armed=false;
+    var arm=function(){
+      if(armed||st.state!=='granted')return;
+      armed=true;
+      setTimeout(function(){
+        if(_attLoc!==token)return;            // a newer request has replaced this one
+        _attLocDone(false,'Your location could not be determined. Check that location is on for this device.');
+      },ATT_FIX_CAP);
+    };
+    arm();                                    // already granted: cap from now
+    st.onchange=function(){
+      if(_attLoc!==token)return;
+      if(st.state==='denied')_attLocDone(false,'Location access was denied. Allow it to clock in.');
+      else arm();
+    };
+  }).catch(function(){});
+}
+
+/* Coordinates are correct and unreadable, so they are traded for a place name
+   when one can be had. Capped at 4s and silently abandoned on any failure —
+   the field already holds a true value before this is called. */
+function _attNameLocation(lat,lng){
+  if(typeof fetch!=='function'||typeof AbortController!=='function')return;
+  var ctl=new AbortController();
+  var bail=setTimeout(function(){ctl.abort();},4000);
+  fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='
+        +lat+'&longitude='+lng+'&localityLanguage=en',{signal:ctl.signal})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(d){
+      clearTimeout(bail);
+      var place=d&&(d.city||d.locality||d.principalSubdivision);
+      if(place)_attSetLocation(place);
+    })
+    .catch(function(){clearTimeout(bail);});
+}
+
+/* Run the stage once. `opts` is the whole difference between a clock-in and a
+   clock-out — same choreography, different direction, colour and copy — plus
+   `gated`, which is what makes a clock-in wait on the location decision and a
+   clock-out not. `commit` runs only if the gate passes. */
+function _attRunStage(opts,commit){
+  var card=_attCard();if(!card){commit();return;}
+  _attBusy=true;
+  var btn=_attEl('att-clock-btn');if(btn)btn.disabled=true;
+  var fast=_attReduced();
+
+  card.classList.remove('is-sealed','is-waiting','is-denied','is-resolving');
+  var copy=_attEl('att-stage-copy');if(copy)copy.classList.remove('is-recopy');
+  card.classList.toggle('is-out',!!opts.out);
+  _attEl('att-stage-label').textContent=opts.label;
+  _attEl('att-stage-sub').textContent=opts.sub;
+  _attEl('att-stage-time').textContent=_attFmtTime(opts.at);
+  _attSetHands(opts.from,opts.at,opts.out?-1:2);
+
+  // Force a reflow so a second punch restarts the keyframes instead of
+  // inheriting the finished state of the first.
+  void card.offsetWidth;
+  card.classList.add('is-busy');
+  setTimeout(function(){_attRollTime(opts.at);}, fast?0:ATT_T.dial-140);
+
+  var release=function(){
+    card.classList.remove('is-busy');
+    card.classList.add('is-settling');
+    setTimeout(function(){
+      card.classList.remove('is-settling','is-sealed','is-out','is-waiting','is-denied','is-resolving');
+      var c=_attEl('att-stage-copy');if(c)c.classList.remove('is-recopy');
+      _attBusy=false;
+      var b=_attEl('att-clock-btn');if(b)b.disabled=false;
+    }, fast?0:ATT_T.settle);
+  };
+  /* Granted. COMING OUT OF THE WAIT NEEDS ITS OWN BEAT — the ring is a short
+     arc spinning at some arbitrary angle, and cutting straight to the seal
+     snapped from "searching" to "done" with nothing in between. So the arc
+     CLOSES first: it keeps spinning while its dash grows out to the full
+     circumference, and once it is a complete ring the rotation is invisible,
+     which is what lets the spin stop without a jump. Only then does the seal
+     draw. Arriving from a punch that never waited, there is no arc to close
+     and it seals directly. */
+  var pass=function(){
+    var wasWaiting=card.classList.contains('is-waiting');
+    card.classList.remove('is-waiting');
+    _attHideRecovery();
+    _attEl('att-stage-label').textContent=opts.label;
+    _attEl('att-stage-time').textContent=_attFmtTime(opts.at);
+    _attEl('att-stage-sub').textContent=_attEl('att-location').textContent;
+    if(wasWaiting)_attReplayCopy();   // the copy changed; let it arrive, not swap
+    var seal=function(){
+      card.classList.remove('is-resolving');
+      card.classList.add('is-sealed');
+      setTimeout(function(){commit();release();}, fast?300:ATT_T.hold-ATT_T.seal);
+    };
+    if(wasWaiting&&!fast){
+      card.classList.add('is-resolving');
+      setTimeout(seal,ATT_T.close);
+    }else seal();
+  };
+  /* Refused: the punch does not happen, and the stage STAYS UP. An error that
+     dismisses itself leaves the user looking at an unchanged card with no idea
+     why nothing happened — so it holds, says what went wrong, and offers the
+     way out of it. Nothing is recorded either way. */
+  var fail=function(reason){
+    card.classList.remove('is-waiting');
+    card.classList.add('is-denied');
+    _attEl('att-stage-label').textContent='Location required';
+    _attEl('att-stage-time').textContent='Clock-in cancelled';
+    _attEl('att-stage-sub').textContent=reason;
+    _attSay(reason);
+    _attShowRecovery();
+  };
+
+  // Kept on the module so the Allow button can re-enter the wait after a retry
+  // without re-running the whole animation behind it.
+  _attGate={card:card,pass:pass,fail:fail,release:release};
+  setTimeout(function(){
+    if(!opts.gated){pass();return;}
+    _attAwaitGate();
+  }, fast?0:ATT_T.seal);
+}
+
+// Hold on the browser's prompt, then act on whatever it answers.
+function _attAwaitGate(){
+  var g=_attGate;if(!g)return;
+  if(_attLoc.state==='pending'){
+    g.card.classList.remove('is-denied');
+    g.card.classList.add('is-waiting');
+    _attEl('att-stage-label').textContent='Waiting for location';
+    _attEl('att-stage-time').textContent=_attFmtTime(new Date());
+    _attEl('att-stage-sub').textContent='Allow location access in your browser to finish clocking in';
+    // Cancel only — the prompt is already open, so an Allow button here would
+    // just be a second thing claiming to do what the dialog is doing. This is
+    // also what makes the unlimited wait safe: there is always a way out of it
+    // that does not depend on a timer running out.
+    _attShowRecovery(true);
+  }
+  _attLocAwait(function(ok,reason){ ok?g.pass():g.fail(reason); });
+}
+
+/* THE RECOVERY BUTTON HAS TO TELL THE TRUTH ABOUT WHAT IT CAN DO. Once a site
+   is hard-blocked in Chrome, calling getCurrentPosition again does NOT re-open
+   the prompt — it fails instantly with the same error, and a button that
+   silently does nothing is worse than no button. So permissions.query decides
+   which of two things this is:
+     'prompt'  the user dismissed the dialog; asking again really does ask.
+     'denied'  only the padlock menu can undo it, so say that instead. */
+function _attShowRecovery(cancelOnly){
+  var box=_attEl('att-stage-actions'),btn=_attEl('att-retry-btn');
+  if(!box)return;
+  box.hidden=false;
+  if(btn){btn.hidden=!!cancelOnly;btn.textContent='Allow Location Access';}
+  if(cancelOnly)return;                       // still waiting: nothing to retry yet
+  if(!navigator.permissions||!navigator.permissions.query)return;
+  navigator.permissions.query({name:'geolocation'}).then(function(st){
+    if(st.state!=='denied')return;
+    _attEl('att-stage-sub').textContent=
+      'Location is blocked for this site. Open the padlock in the address bar, set Location to Allow, then retry.';
+    if(btn)btn.textContent='I have allowed it — Retry';
+  }).catch(function(){});
+}
+// Replays the stage copy's entrance so a change of message ARRIVES rather than
+// swapping under the reader mid-sentence.
+function _attReplayCopy(){
+  var box=_attEl('att-stage-copy');if(!box)return;
+  box.classList.remove('is-recopy');
+  void box.offsetWidth;                       // restart the keyframes
+  box.classList.add('is-recopy');
+}
+function _attHideRecovery(){
+  var box=_attEl('att-stage-actions');if(box)box.hidden=true;
+}
+// Ask again from a fresh user gesture, which is the only kind the browser will
+// open a prompt for.
+function attRetryLocation(){
+  _attHideRecovery();
+  _attRequestLocation();
+  _attAwaitGate();
+}
+// Give up on this punch. Nothing was recorded, so there is nothing to undo.
+function attCancelClockIn(){
+  _attHideRecovery();
+  _attSay('Clock-in cancelled.');
+  if(_attGate)_attGate.release();
+}
+
+
+function toggleClock(){
+  if(_attBusy)return;                       // one punch at a time
+  if(_attDayKey!==_attToday()){             // the day rolled over under us
+    _attDayKey=_attToday();_attDaySecs=0;_attInAt=_attOutAt=null;_attState='idle';
+  }
+  _attState==='in'?_attClockOut():_attClockIn();
+}
+
+function _attClockIn(){
+  var now=new Date();
+  // Asked FIRST and synchronously, so the browser attributes the prompt to
+  // this click. The stage then waits on the answer — see _attRunStage.
+  _attRequestLocation();
+  _attRunStage({at:now,from:null,out:false,gated:true,
+                label:'Clocked in',sub:'Locating…'},function(){
+    _attInAt=now;_attOutAt=null;_attState='in';
+    _attPaint();
+    clearInterval(_attTimer);
+    _attTimer=setInterval(_attTickLogged,1000);
+    _attSay('Clocked in at '+_attFmtTime(now)+' from '+_attEl('att-location').textContent+'.');
+  });
+}
+
+// Clocking out is NOT gated: the location was captured on the way in, and
+// holding somebody's shift open because a permission dialog went unanswered
+// would be a worse failure than a missing coordinate on the way out.
+function _attClockOut(){
+  var now=new Date();
+  var session=Math.max(0,Math.floor((now.getTime()-_attInAt.getTime())/1000));
+  var inAt=_attInAt;
+  clearInterval(_attTimer);_attTimer=null;
+  _attRunStage({at:now,from:inAt,out:true,gated:false,label:'Clocked out',
+                sub:'Session '+_attFmtDur(session,false)},function(){
+    _attDaySecs+=session;                   // banked, so a second session adds to it
+    _attOutAt=now;_attState='done';
+    _attPaint();
+    _attSay('Clocked out at '+_attFmtTime(now)+'. Total logged today '
+      +_attFmtDur(_attDaySecs,false)+'.');
+  });
 }

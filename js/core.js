@@ -98,7 +98,7 @@ const sidebarItems=[
   ]},
 
   {section:'Support'},
-  {id:'chats',label:'Messages',color:'indigo',icon:sbIco.chatLines},
+  {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},
   {id:'support-tickets',label:'Tickets',color:'indigo',icon:sbIco.ticket}
 ];
 
@@ -488,7 +488,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Messages',context:'Messages',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
@@ -499,13 +499,13 @@ const SB_STATUS_TONE={
   active:'ok',approved:'ok',completed:'ok',complete:'ok',resolved:'ok',paid:'ok',signed:'ok',connected:'ok',verified:'ok',success:'ok',present:'ok',ready:'ok',
   'quotation-approved':'ok','proposal-approved':'ok','contract-approved':'ok',
   // bad — stopped, refused or broken
-  inactive:'bad',unapproved:'bad',rejected:'bad',blocked:'bad',blocking:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
+  inactive:'bad',unapproved:'bad',rejected:'bad','expiring-soon':'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
   disconnected:'bad',exception:'bad',absent:'bad',escalated:'bad',
   // wait — in flight, someone owes an action
-  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait',
+  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','pending-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait',
   'proposal-sent':'wait','contract-sent':'wait','waiting-for-approval':'wait','pending-onboarding':'wait',onboarding:'wait',inprog:'wait',unfilled:'wait',unpaid:'wait',
   // info — informational, nothing owed
-  open:'info','new':'info',scheduled:'info',created:'info',updated:'info',
+  open:'info','awaiting-upload':'info','new':'info',scheduled:'info',created:'info',updated:'info',
   // idle — neutral / archived
   closed:'idle',archived:'idle',
   // pipeline end states
@@ -1624,6 +1624,10 @@ let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,
 let lpFilterField='',lpFilterStatus='';
 let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='',pmDateFilter='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
+/* One Tickets module, two filters: the status quick-filter above and the
+   channel it came in on. Channel is what used to split this into two pages;
+   it is a filter now, not a separate module. */
+let tkChannelFilter='';
 const lpLogsData={
   1:[
     {date:'22 Apr 2026',time:'05:44:07 PM',user:'Admin',status:'Active',action:'Policy reactivated after review'},
@@ -2627,90 +2631,134 @@ let complianceModalOpen=false;
 let complianceSelectedId=null,complianceTab='basic-details';
 
 // ── OPENDHI COMPLIANCE ADMIN DASHBOARD ─────────────────────────────────────
-// One list behind the whole dashboard: the six stat cards are counts over it,
-// clicking a card filters it, and the table under the cards pages through it.
-// Card numbers are derived rather than written down, so a card can never
-// disagree with the rows it filters to.
+// WHAT THIS ROLE ACTUALLY DOES, because the dashboard is shaped around it:
+//   1. Documents the client uploads during contract creation land in this
+//      admin's queue. They read each one and APPROVE or REJECT it.
+//   2. Documents the employee provides at onboarding go through the same review.
+//   3. The country statutory pack is theirs to own outright — they upload it,
+//      and they keep it alive as it approaches expiry.
+// So every row on this dashboard is a DOCUMENT, and the only question the
+// dashboard has to answer is "which documents need me, and what for".
+//
+// One list behind the whole screen: the tiles are counts over it, clicking a
+// tile filters it, and the table under them pages through it. Every number is
+// derived, so a tile can never disagree with the rows it filters to.
 const OCA_PAGE_SIZE=10;
+
+// The document lifecycle. Six states, each defined by WHOSE move it is next, so
+// a document can only ever sit in one of them:
+//   Awaiting Upload → nothing has been provided yet
+//   Pending Review  → it is in, and the compliance admin must approve or reject
+//   Rejected        → refused; a corrected copy is owed
+//   Approved        → accepted and in force
+//   Expiring Soon   → in force, but validity lapses inside 30 days
+//   Closed          → out of force: lapsed, superseded or no longer applicable
+// Ordered here the way the day runs — the review queue first, because that is
+// the work this role is actually measured on, and the settled states last.
+const ocaStatuses=[
+  {key:'Pending Review', note:'Uploaded and waiting on your approve / reject decision'},
+  {key:'Awaiting Upload',note:'Required, but nothing has been provided yet'},
+  {key:'Rejected',       note:'You refused it — a corrected copy is owed'},
+  {key:'Expiring Soon',  note:'In force, but validity lapses within 30 days'},
+  {key:'Approved',       note:'Checked, accepted and currently in force'},
+  {key:'Closed',         note:'Out of force — lapsed, superseded or withdrawn'}
+];
+const OCA_STATUS_KEYS=ocaStatuses.map(function(s){return s.key;});
+// The three states that put the document on someone's desk. Everything else is
+// settled, and the header only counts the unsettled ones as "need action".
+const OCA_ACTIONABLE=['Pending Review','Awaiting Upload','Rejected','Expiring Soon'];
+function ocaNeedsAction(r){return OCA_ACTIONABLE.indexOf(r.status)>-1;}
+// A document is settled once it is in force or out of force.
+function ocaHasValidity(r){return r.status==='Approved'||r.status==='Expiring Soon'||r.status==='Closed';}
+
+// The three streams the role handles, and they differ by WHO OWES THE UPLOAD —
+// which is exactly what decides whether the admin chases someone or does it
+// themselves. Stream is a column and a panel field, not a filter: it never
+// changes what the admin does next, only who they say it to.
 const ocaCategories=[
-  {key:'contract',label:'Contract Compliance',      sub:function(n){return n+' blocking payroll readiness';}, subOf:function(r){return r.status==='Blocking';}},
-  {key:'hub',     label:'Compliance Hub Items',     sub:function(n){return n+' require review';},             subOf:function(r){return r.status==='Needs Review';}},
-  {key:'support', label:'Assigned Support Items',   sub:function(n){return n+' high priority';},              subOf:function(r){return r.priority==='High';}},
-  {key:'payment', label:'Payment Compliance',       sub:function(n){return n+' pending issues';},             subOf:function(r){return r.status!=='Ready';}},
-  {key:'document',label:'Document Verification Pending',sub:function(n){return n+' documents awaiting review';},subOf:function(r){return r.status!=='Ready';}},
-  {key:'expiring',label:'Expiring Items',           sub:function(n){return n+' expiring in next 30 days';},   subOf:function(r){return true;}}
+  {key:'contract',label:'Contract Documents',source:'Client'},
+  {key:'employee',label:'Employee Documents',source:'Employee'},
+  {key:'country', label:'Country Compliance',source:'Compliance Admin'}
 ];
 const ocaItems=[
-  // Contract Compliance
-  {id:1, item:'Missing signature on EOR contract',   who:'Ramesh Patel',  cat:'contract',due:'Today',   status:'Blocking',    priority:'High'},
-  {id:2, item:'Work permit pending verification',    who:'Priya Sharma',  cat:'contract',due:'Today',   status:'Blocking',    priority:'High'},
-  {id:3, item:'Clause update required — notice period',who:'Arjun Desai', cat:'contract',due:'22 May',  status:'Needs Review',priority:'Medium'},
-  {id:4, item:'Contract verified and filed',         who:'Aishi Verma',   cat:'contract',due:'18 May',  status:'Ready',       priority:'Low'},
-  {id:5, item:'Counter-signature outstanding',       who:'Thijs Verbeek', cat:'contract',due:'23 May',  status:'Blocking',    priority:'High'},
-  {id:6, item:'Probation clause mismatch',           who:'Nora Kim',      cat:'contract',due:'24 May',  status:'Needs Review',priority:'Medium'},
-  {id:7, item:'Addendum pending client approval',    who:'Luis Martin',   cat:'contract',due:'26 May',  status:'Pending',     priority:'Medium'},
-  {id:8, item:'Contract end date not confirmed',     who:'Maya Vos',      cat:'contract',due:'27 May',  status:'Pending',     priority:'Low'},
-  {id:9, item:'Signed copy not uploaded',            who:'Owen Clark',    cat:'contract',due:'21 May',  status:'Blocking',    priority:'High'},
-  {id:10,item:'Employment model change approved',    who:'Emma Schmidt',  cat:'contract',due:'17 May',  status:'Ready',       priority:'Low'},
-  {id:11,item:'Non-compete wording under review',    who:'Lucas Dubois',  cat:'contract',due:'28 May',  status:'Needs Review',priority:'Medium'},
-  {id:12,item:'Contract renewal not initiated',      who:'Sofia Romano',  cat:'contract',due:'30 May',  status:'Pending',     priority:'Medium'},
+  // ── Contract Documents — the client uploads these during contract creation ──
+  {id:1, doc:'Signed EOR contract',            who:'Nimbus Retail BV',  cat:'contract',due:'Today',  validTill:'',            status:'Pending Review'},
+  {id:2, doc:'Client KYC pack',                who:'Vertex Labs GmbH',  cat:'contract',due:'Today',  validTill:'',            status:'Pending Review'},
+  {id:3, doc:'Service agreement addendum',     who:'Aurora Health SL',  cat:'contract',due:'22 May', validTill:'',            status:'Pending Review'},
+  {id:4, doc:'Purchase order copy',            who:'Orion Systems Ltd', cat:'contract',due:'26 May', validTill:'',            status:'Awaiting Upload'},
+  {id:5, doc:'Signed PEO contract',            who:'Kanan Textiles',    cat:'contract',due:'23 May', validTill:'',            status:'Rejected'},
+  {id:6, doc:'Company registration certificate',who:'Nimbus Retail BV', cat:'contract',due:'12 Feb', validTill:'31 Mar 2027', status:'Approved'},
+  {id:7, doc:'VAT registration proof',         who:'Vertex Labs GmbH',  cat:'contract',due:'03 Mar', validTill:'30 Jun 2027', status:'Approved'},
+  {id:8, doc:'Counter-signed contract',        who:'Helix Motors NV',   cat:'contract',due:'27 May', validTill:'',            status:'Awaiting Upload'},
+  {id:9, doc:'Master service agreement',       who:'Orion Systems Ltd', cat:'contract',due:'10 Mar', validTill:'12 Sep 2026', status:'Expiring Soon'},
+  {id:10,doc:'Bank mandate form',              who:'Aurora Health SL',  cat:'contract',due:'25 May', validTill:'',            status:'Rejected'},
+  {id:11,doc:'Authorised signatory letter',    who:'Kanan Textiles',    cat:'contract',due:'24 May', validTill:'',            status:'Pending Review'},
+  {id:12,doc:'Client insurance certificate',   who:'Helix Motors NV',   cat:'contract',due:'05 Mar', validTill:'05 Sep 2026', status:'Expiring Soon'},
+  {id:13,doc:'Contract termination notice',    who:'Zephyr Foods Oy',   cat:'contract',due:'18 Apr', validTill:'30 Apr 2026', status:'Closed'},
+  {id:14,doc:'Data processing agreement',      who:'Nimbus Retail BV',  cat:'contract',due:'20 Jan', validTill:'31 Dec 2027', status:'Approved'},
+  {id:15,doc:'Rate card annexure',             who:'Vertex Labs GmbH',  cat:'contract',due:'29 May', validTill:'',            status:'Awaiting Upload'},
+  {id:16,doc:'Group company guarantee',        who:'Zephyr Foods Oy',   cat:'contract',due:'08 Feb', validTill:'31 Jan 2028', status:'Approved'},
 
-  // Compliance Hub Items
-  {id:13,item:'Employee KYC review',                 who:'John Doe',      cat:'hub',     due:'Today',   status:'Pending',     priority:'High'},
-  {id:14,item:'Local tax registration',              who:'Anika Shah',    cat:'hub',     due:'24 May',  status:'Blocking',    priority:'High'},
-  {id:15,item:'Policy acknowledgement outstanding',  who:'Rahul Mehta',   cat:'hub',     due:'26 May',  status:'Pending',     priority:'Medium'},
-  {id:16,item:'Statutory filing check',              who:'Neha Sharma',   cat:'hub',     due:'31 May',  status:'Ready',       priority:'Low'},
-  {id:17,item:'Provident fund registration',         who:'Aman Singh',    cat:'hub',     due:'25 May',  status:'Needs Review',priority:'High'},
-  {id:18,item:'ESIC enrolment for new joiners',      who:'Pritam Rai',    cat:'hub',     due:'27 May',  status:'Needs Review',priority:'Medium'},
-  {id:19,item:'Right to work check — 3 hires',       who:'Pallavi Parate',cat:'hub',     due:'23 May',  status:'Blocking',    priority:'High'},
-  {id:20,item:'Wage tax declaration — May',          who:'Neha Sharma',   cat:'hub',     due:'29 May',  status:'Pending',     priority:'Medium'},
-  {id:21,item:'Social insurance registration',       who:'Pritam Rai',    cat:'hub',     due:'28 May',  status:'Needs Review',priority:'Medium'},
-  {id:22,item:'Works council agreement filing',      who:'Rahul Mehta',   cat:'hub',     due:'20 May',  status:'Blocking',    priority:'High'},
-  {id:23,item:'Gratuity scheme confirmation',        who:'Aman Singh',    cat:'hub',     due:'02 Jun',  status:'Ready',       priority:'Low'},
-  {id:24,item:'Dimona declaration — 6 hires',        who:'Pritam Rai',    cat:'hub',     due:'25 May',  status:'Needs Review',priority:'Medium'},
-  {id:25,item:'Meal voucher setup',                  who:'Neha Sharma',   cat:'hub',     due:'03 Jun',  status:'Pending',     priority:'Low'},
-  {id:26,item:'Health insurance enrolment',          who:'Pritam Rai',    cat:'hub',     due:'04 Jun',  status:'Needs Review',priority:'Medium'},
+  // ── Employee Documents — the employee provides these at onboarding ──
+  {id:17,doc:'Passport copy',                  who:'Ramesh Patel',      cat:'employee',due:'Today',  validTill:'',            status:'Pending Review'},
+  {id:18,doc:'Work permit',                    who:'Priya Sharma',      cat:'employee',due:'Today',  validTill:'',            status:'Pending Review'},
+  {id:19,doc:'Address proof',                  who:'Arjun Desai',       cat:'employee',due:'22 May', validTill:'',            status:'Rejected'},
+  {id:20,doc:'Degree certificate',             who:'Nora Kim',          cat:'employee',due:'24 May', validTill:'',            status:'Awaiting Upload'},
+  {id:21,doc:'Bank mandate',                   who:'Luis Martin',       cat:'employee',due:'25 May', validTill:'',            status:'Rejected'},
+  {id:22,doc:'Tax residency form',             who:'Emma Schmidt',      cat:'employee',due:'26 May', validTill:'',            status:'Awaiting Upload'},
+  {id:23,doc:'Background check report',        who:'Lucas Dubois',      cat:'employee',due:'28 May', validTill:'',            status:'Pending Review'},
+  {id:24,doc:'Identity document',              who:'Sofia Romano',      cat:'employee',due:'14 Feb', validTill:'14 Aug 2029', status:'Approved'},
+  {id:25,doc:'Residence card',                 who:'Thijs Verbeek',     cat:'employee',due:'10 Mar', validTill:'10 Sep 2026', status:'Expiring Soon'},
+  {id:26,doc:'Right to work evidence',         who:'Pallavi Parate',    cat:'employee',due:'23 May', validTill:'',            status:'Pending Review'},
+  {id:27,doc:'Signed offer letter',            who:'Owen Clark',        cat:'employee',due:'05 Jan', validTill:'No expiry',   status:'Approved'},
+  {id:28,doc:'Photo ID',                       who:'Maya Vos',          cat:'employee',due:'22 Jan', validTill:'22 Nov 2028', status:'Approved'},
+  {id:29,doc:'Provident fund nomination',      who:'Anika Shah',        cat:'employee',due:'25 May', validTill:'',            status:'Awaiting Upload'},
+  {id:30,doc:'Medical fitness certificate',    who:'Mark Lee',          cat:'employee',due:'02 Mar', validTill:'02 Sep 2026', status:'Expiring Soon'},
+  {id:31,doc:'Relieving letter — previous employer',who:'John Doe',     cat:'employee',due:'27 May', validTill:'',            status:'Pending Review'},
+  {id:32,doc:'Visa page copy',                 who:'Thijs Verbeek',     cat:'employee',due:'15 Mar', validTill:'31 Mar 2026', status:'Closed'},
+  {id:33,doc:'Social security registration',   who:'Neha Sharma',       cat:'employee',due:'11 Feb', validTill:'No expiry',   status:'Approved'},
+  {id:34,doc:'Emergency contact declaration',  who:'Aishi Verma',       cat:'employee',due:'17 Jan', validTill:'No expiry',   status:'Approved'},
 
-  // Assigned Support Items
-  {id:27,item:'Payroll blocked by missing Tax ID',   who:'John Doe',      cat:'support', due:'Today',   status:'Blocking',    priority:'High'},
-  {id:28,item:'Work permit document pending',        who:'Thijs Verbeek', cat:'support', due:'22 May',  status:'Pending',     priority:'High'},
-  {id:29,item:'Compliance exception escalated',      who:'Alice Smith',   cat:'support', due:'21 May',  status:'Needs Review',priority:'High'},
-  {id:30,item:'Tax form not received',               who:'Mark Lee',      cat:'support', due:'26 May',  status:'Pending',     priority:'Medium'},
-  {id:31,item:'Salary document query',               who:'Maya Vos',      cat:'support', due:'28 May',  status:'Pending',     priority:'Low'},
-  {id:32,item:'Onboarding checklist dispute',        who:'Owen Clark',    cat:'support', due:'30 May',  status:'Ready',       priority:'Low'},
-
-  // Payment Compliance
-  {id:33,item:'Invoice missing tax breakdown',       who:'Nimbus Retail BV',   cat:'payment',due:'23 May',status:'Needs Review',priority:'High'},
-  {id:34,item:'Payment held — bank details unverified',who:'Vertex Labs GmbH', cat:'payment',due:'Today', status:'Blocking',   priority:'High'},
-  {id:35,item:'Currency mismatch on payout',         who:'Aurora Health SL',   cat:'payment',due:'25 May',status:'Pending',    priority:'Medium'},
-  {id:36,item:'Withholding certificate outstanding', who:'Kanan Textiles',     cat:'payment',due:'27 May',status:'Pending',    priority:'Medium'},
-  {id:37,item:'Duplicate payment flagged',           who:'Orion Systems Ltd',  cat:'payment',due:'29 May',status:'Needs Review',priority:'Low'},
-
-  // Document Verification Pending
-  {id:38,item:'Passport copy awaiting verification', who:'Anika Shah',    cat:'document',due:'Today',   status:'Pending',     priority:'High'},
-  {id:39,item:'Address proof illegible',             who:'Rahul Mehta',   cat:'document',due:'22 May',  status:'Needs Review',priority:'Medium'},
-  {id:40,item:'Degree certificate not uploaded',     who:'Nora Kim',      cat:'document',due:'24 May',  status:'Pending',     priority:'Medium'},
-  {id:41,item:'Bank mandate signature missing',      who:'Luis Martin',   cat:'document',due:'25 May',  status:'Blocking',    priority:'High'},
-  {id:42,item:'Tax residency form pending',          who:'Emma Schmidt',  cat:'document',due:'26 May',  status:'Pending',     priority:'Low'},
-  {id:43,item:'Background check report awaited',     who:'Lucas Dubois',  cat:'document',due:'28 May',  status:'Pending',     priority:'Medium'},
-  {id:44,item:'Identity document verified',          who:'Sofia Romano',  cat:'document',due:'19 May',  status:'Ready',       priority:'Low'},
-
-  // Expiring Items
-  {id:45,item:'Work permit expires in 12 days',      who:'Luis Martin',   cat:'expiring',due:'01 Jun',  status:'Needs Review',priority:'High'},
-  {id:46,item:'Residence card expires in 21 days',   who:'Sofia Romano',  cat:'expiring',due:'10 Jun',  status:'Pending',     priority:'High'},
-  {id:47,item:'Contract expires in 26 days',         who:'Owen Clark',    cat:'expiring',due:'15 Jun',  status:'Pending',     priority:'Medium'},
-  {id:48,item:'Insurance policy renewal due',        who:'Nimbus Retail BV',cat:'expiring',due:'18 Jun',status:'Pending',     priority:'Medium'}
+  // ── Country Compliance — the admin owns these outright, upload and renewal ──
+  {id:35,doc:'Wage tax declaration pack',      who:'Netherlands',       cat:'country', due:'29 May', validTill:'',            status:'Awaiting Upload'},
+  {id:36,doc:'Works council agreement',        who:'Netherlands',       cat:'country', due:'08 Mar', validTill:'08 Sep 2026', status:'Expiring Soon'},
+  {id:37,doc:'Provident fund registration',    who:'India',             cat:'country', due:'14 Jan', validTill:'No expiry',   status:'Approved'},
+  {id:38,doc:'ESIC registration certificate',  who:'India',             cat:'country', due:'15 Mar', validTill:'15 Sep 2026', status:'Expiring Soon'},
+  {id:39,doc:'Shops & Establishments licence', who:'India',             cat:'country', due:'01 Mar', validTill:'01 Sep 2026', status:'Expiring Soon'},
+  {id:40,doc:'Dimona declaration template',    who:'Belgium',           cat:'country', due:'19 Jan', validTill:'No expiry',   status:'Approved'},
+  {id:41,doc:'Meal voucher scheme approval',   who:'Belgium',           cat:'country', due:'03 Jun', validTill:'',            status:'Awaiting Upload'},
+  {id:42,doc:'Social insurance registration',  who:'Germany',           cat:'country', due:'27 Jan', validTill:'No expiry',   status:'Approved'},
+  {id:43,doc:'Trade licence — Gewerbeanmeldung',who:'Germany',          cat:'country', due:'16 Mar', validTill:'16 Sep 2026', status:'Expiring Soon'},
+  {id:44,doc:'Employer liability insurance',   who:'Spain',             cat:'country', due:'27 May', validTill:'',            status:'Rejected'},
+  {id:45,doc:'Collective agreement filing',    who:'Spain',             cat:'country', due:'26 May', validTill:'',            status:'Pending Review'},
+  {id:46,doc:'Right to work check policy',     who:'United Kingdom',    cat:'country', due:'09 Feb', validTill:'No expiry',   status:'Approved'},
+  {id:47,doc:'PAYE registration certificate',  who:'United Kingdom',    cat:'country', due:'21 Jan', validTill:'No expiry',   status:'Approved'},
+  {id:48,doc:'Data protection registration',   who:'United Kingdom',    cat:'country', due:'12 Apr', validTill:'30 Apr 2026', status:'Closed'}
 ];
-// Clicking a card sets the filter; clicking the active one clears it.
+// One filter and one only: the status tile. Clicking the active tile clears it.
 // ocaSelectedId is the row whose detail panel is open — the same split-panel
 // pattern the listing pages use, so the dashboard behaves like the rest of the app.
-let ocaFilter='',ocaPage=1,ocaSelectedId=null,ocaTab='basic-details';
-function ocaRows(){return ocaFilter?ocaItems.filter(function(r){return r.cat===ocaFilter;}):ocaItems;}
-function ocaCatCount(key){return ocaItems.filter(function(r){return r.cat===key;}).length;}
-function ocaCatSub(c){
-  const rows=ocaItems.filter(function(r){return r.cat===c.key;});
-  return c.sub(rows.filter(c.subOf).length);
+let ocaStatusFilter='',ocaPage=1,ocaSelectedId=null,ocaTab='basic-details';
+/* The decision taken from the panel's Approve/Reject bar, carried into the Logs
+   tab so the form opens already set to the move the admin asked for. Cleared the
+   moment the log is saved or the panel closes — it describes one click, not a
+   state the document is in. */
+let ocaPendingStatus='';
+function ocaRows(){
+  return ocaStatusFilter?ocaItems.filter(function(r){return r.status===ocaStatusFilter;}):ocaItems;
 }
+function ocaStatusCount(key){return ocaItems.filter(function(r){return r.status===key;}).length;}
+function ocaCat(key){
+  return ocaCategories.find(function(x){return x.key===key;})||{label:key,source:'—'};
+}
+function ocaCatLabel(key){return ocaCat(key).label;}
+// Who owed the upload. Until it arrives there is nobody to credit, so the cell
+// says so rather than naming a party that has not delivered anything.
+function ocaUploadedBy(r){return r.status==='Awaiting Upload'?'Not uploaded':ocaCat(r.cat).source;}
+// One date column, two meanings, and the status says which: a document in force
+// shows how long it stays in force, one still in the queue shows when it is due.
+function ocaDateLabel(r){return ocaHasValidity(r)?'Valid Till':'Action Due';}
+function ocaDateValue(r){return ocaHasValidity(r)?(r.validTill||'—'):r.due;}
 function ocaPageCount(){return Math.max(1,Math.ceil(ocaRows().length/OCA_PAGE_SIZE));}
 
 // ── RATES & RULES DATA & STATE ──
@@ -2764,14 +2812,47 @@ const tkWorkflowData={
      {title:'Assigned to Agent',user:'Support Desk',date:'Jun 22, 2026',time:'05:00:00 PM',description:'Compliance ticket assigned to Rahul Mehta.'},
      {title:'Ticket Raised',user:'Alice Smith',date:'Jun 22, 2026',time:'02:40:00 PM',description:'Missing compliance certificate reported by Alice Smith.'}]
 };
+/* ── WHERE THE TICKET CAME FROM ────────────────────────────────────────────
+   A ticket that grew out of a CSM chat and one somebody raised cold are the
+   same record — same lifecycle, same panel, same moves. They were briefly two
+   pages; they are one module again, because a support agent works a single
+   queue and does not want to check two of them to know what is open.
+
+   `source` is therefore a COLUMN AND A FILTER, not a page boundary. The one
+   place it genuinely changes the UI is the detail panel: a chat-borne ticket
+   has a conversation to read and gets the Conversation tab, and a portal,
+   phone or internally-raised one does not, so it does not. That gate lives in
+   renderTkSidebar() off tkIsChat() — see the note there. */
+const TK_SOURCES={
+  chat:    {label:'CSM Chat',           short:'Chat'},
+  portal:  {label:'Client Portal',      short:'Portal'},
+  phone:   {label:'Phone Call',         short:'Phone'},
+  internal:{label:'Raised Internally',  short:'Internal'}
+};
+function tkSourceLabel(t){const s=TK_SOURCES[t&&t.source];return s?s.label:'—';}
+function tkSourceShort(t){const s=TK_SOURCES[t&&t.source];return s?s.short:'—';}
+function tkIsChat(t){return t.source==='chat';}
 const ticketsData=[
-  {id:1,ticketId:'TCK-1021',clientName:'John Doe',title:'Issue with compliance doc',category:'Compliance',createdAt:'Jun 12, 2026',status:'open',clientEmail:'john.doe@example.com',clientPhone:'+1 555-0101',country:'United States',assignedTo:'Pallavi Parate',description:'Client reported missing compliance documentation for Q2 audit. Follow-up required with legal team.'},
-  {id:2,ticketId:'TCK-1025',clientName:'Thijs Verbeek',title:'Salary document missing',category:'Document',createdAt:'Jun 14, 2026',status:'blocked',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Rahul Mehta',waitingOn:'Finance team',description:'Monthly salary document not uploaded for May 2026. Awaiting finance team confirmation.'},
-  {id:3,ticketId:'TCK-1019',clientName:'Alice Smith',title:'Contract renewal request',category:'Contract',createdAt:'Jun 10, 2026',status:'open',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Aman Singh',description:'Client has requested renewal of EOR contract expiring July 2026.'},
-  {id:4,ticketId:'TCK-1100',clientName:'Mark Lee',title:'Tax form not received',category:'Compliance',createdAt:'Jun 18, 2026',status:'in_progress',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Pallavi Parate',description:'Client has not received the annual tax form for the 2025-26 fiscal year. Currently being processed.'},
-  {id:5,ticketId:'TCK-1201',clientName:'Thijs Verbeek',title:'Contract draft review',category:'Contract',createdAt:'Jun 20, 2026',status:'open',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Neha Sharma',description:'New EOR contract draft sent for client review. Awaiting feedback.'},
-  {id:6,ticketId:'TCK-1298',clientName:'Alice Smith',title:'Missing compliance certificate',category:'Compliance',createdAt:'Jun 22, 2026',status:'blocked',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Rahul Mehta',waitingOn:'Local authority',description:'Certificate of compliance for UK operations not obtained. Blocked pending local authority approval.'},
-  {id:7,ticketId:'TCK-1921',clientName:'Mark Lee',title:'Invoice document request',category:'Document',createdAt:'Jun 25, 2026',status:'closed',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Aman Singh',description:'Client requested invoice copies for Q1 2026. All documents sent and acknowledged.'}
+  // ── Raised from a CSM chat — these carry a Conversation tab on the panel ──
+  {id:1,ticketId:'TCK-1021',clientName:'John Doe',title:'Issue with compliance doc',category:'Compliance',createdAt:'Jun 12, 2026',status:'open',source:'chat',raisedBy:'John Doe',clientEmail:'john.doe@example.com',clientPhone:'+1 555-0101',country:'United States',assignedTo:'Pallavi Parate',description:'Client reported missing compliance documentation for Q2 audit. Follow-up required with legal team.'},
+  {id:3,ticketId:'TCK-1019',clientName:'Alice Smith',title:'Contract renewal request',category:'Contract',createdAt:'Jun 10, 2026',status:'open',source:'chat',raisedBy:'Alice Smith',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Aman Singh',description:'Client has requested renewal of EOR contract expiring July 2026.'},
+  {id:4,ticketId:'TCK-1100',clientName:'Mark Lee',title:'Tax form not received',category:'Compliance',createdAt:'Jun 18, 2026',status:'in_progress',source:'chat',raisedBy:'Mark Lee',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Pallavi Parate',description:'Client has not received the annual tax form for the 2025-26 fiscal year. Currently being processed.'},
+  {id:6,ticketId:'TCK-1298',clientName:'Alice Smith',title:'Missing compliance certificate',category:'Compliance',createdAt:'Jun 22, 2026',status:'blocked',source:'chat',raisedBy:'Alice Smith',clientEmail:'alice.smith@example.com',clientPhone:'+44 20 0000 0000',country:'United Kingdom',assignedTo:'Rahul Mehta',waitingOn:'Local authority',description:'Certificate of compliance for UK operations not obtained. Blocked pending local authority approval.'},
+
+  // ── Raised outside chat — portal, phone, or internally by the Opendhi team ──
+  {id:2,ticketId:'TCK-1025',clientName:'Thijs Verbeek',title:'Salary document missing',category:'Document',createdAt:'Jun 14, 2026',status:'blocked',source:'portal',raisedBy:'Thijs Verbeek',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Rahul Mehta',waitingOn:'Finance team',description:'Monthly salary document not uploaded for May 2026. Awaiting finance team confirmation.'},
+  {id:5,ticketId:'TCK-1201',clientName:'Thijs Verbeek',title:'Contract draft review',category:'Contract',createdAt:'Jun 20, 2026',status:'open',source:'portal',raisedBy:'Thijs Verbeek',clientEmail:'thijs.verbeek@example.com',clientPhone:'+31 20 000 0000',country:'Netherlands',assignedTo:'Neha Sharma',description:'New EOR contract draft sent for client review. Awaiting feedback.'},
+  {id:7,ticketId:'TCK-1921',clientName:'Mark Lee',title:'Invoice document request',category:'Document',createdAt:'Jun 25, 2026',status:'closed',source:'phone',raisedBy:'Mark Lee',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000000',country:'Germany',assignedTo:'Aman Singh',description:'Client requested invoice copies for Q1 2026. All documents sent and acknowledged.'},
+  {id:8,ticketId:'TCK-2004',clientName:'Nimbus Retail BV',title:'Payslip not visible in portal',category:'Payroll',createdAt:'Jun 26, 2026',status:'open',source:'portal',raisedBy:'Anika Shah',clientEmail:'anika.shah@nimbusretail.nl',clientPhone:'+31 20 111 2233',country:'Netherlands',assignedTo:'',description:'Employee cannot see the June payslip in the self-service portal. Raised through the portal help form.'},
+  {id:9,ticketId:'TCK-2011',clientName:'Vertex Labs GmbH',title:'Add a second billing contact',category:'Billing',createdAt:'Jun 26, 2026',status:'open',source:'portal',raisedBy:'Hannah Keller',clientEmail:'hannah.keller@vertexlabs.de',clientPhone:'+49 30 555 0110',country:'Germany',assignedTo:'',description:'Client wants a second finance contact added to receive monthly invoices. Raised from the client portal by the finance contact.'},
+  {id:10,ticketId:'TCK-2017',clientName:'Priya Sharma',title:'Bank account change request',category:'Payroll',createdAt:'Jun 24, 2026',status:'in_progress',source:'portal',raisedBy:'Priya Sharma',clientEmail:'priya.sharma@example.com',clientPhone:'+91 80 4000 1122',country:'India',assignedTo:'Neha Sharma',description:'Employee requested a change of salary account ahead of the July payroll cut-off.'},
+  {id:11,ticketId:'TCK-2023',clientName:'Aurora Health SL',title:'Duplicate invoice received',category:'Billing',createdAt:'Jun 23, 2026',status:'blocked',source:'phone',raisedBy:'Carlos Ruiz',clientEmail:'carlos.ruiz@aurorahealth.es',clientPhone:'+34 91 000 0000',country:'Spain',assignedTo:'Aman Singh',waitingOn:'Finance team',description:'Two invoices issued for the same May billing period. Called in by the client. Held until finance confirms which one to cancel.'},
+  {id:12,ticketId:'TCK-2029',clientName:'Owen Clark',title:'Leave balance looks wrong',category:'Leave',createdAt:'Jun 21, 2026',status:'in_progress',source:'portal',raisedBy:'Owen Clark',clientEmail:'owen.clark@example.com',clientPhone:'+44 161 000 0000',country:'United Kingdom',assignedTo:'Pallavi Parate',description:'Annual leave balance shows 12 days against an expected 18. Checking the accrual run for this employee.'},
+  {id:13,ticketId:'TCK-2034',clientName:'Kanan Textiles',title:'Onboarding portal access for new HR',category:'Access',createdAt:'Jun 20, 2026',status:'resolved',source:'phone',raisedBy:'Meera Iyer',clientEmail:'meera.iyer@kanantextiles.in',clientPhone:'+91 44 2800 1100',country:'India',assignedTo:'Rahul Mehta',description:'Called the desk to request portal access for a newly joined HR manager. Access created and credentials sent.'},
+  {id:14,ticketId:'TCK-2041',clientName:'Helix Motors NV',title:'Country pack for Belgium expansion',category:'Compliance',createdAt:'Jun 19, 2026',status:'open',source:'internal',raisedBy:'Neha Sharma',clientEmail:'ops@helixmotors.be',clientPhone:'+32 2 000 0000',country:'Belgium',assignedTo:'',description:'Raised by the ops team ahead of the client hiring in Belgium. Country compliance pack needs to be prepared.'},
+  {id:15,ticketId:'TCK-2048',clientName:'Sofia Romano',title:'Cannot upload passport scan',category:'Document',createdAt:'Jun 18, 2026',status:'in_progress',source:'portal',raisedBy:'Sofia Romano',clientEmail:'sofia.romano@example.com',clientPhone:'+39 06 000 0000',country:'Italy',assignedTo:'Pallavi Parate',description:'Upload fails on the onboarding document step. Reproduced on the support side and passed to engineering.'},
+  {id:16,ticketId:'TCK-2055',clientName:'Orion Systems Ltd',title:'Quarterly headcount report request',category:'Reporting',createdAt:'Jun 16, 2026',status:'resolved',source:'portal',raisedBy:'Grace Whelan',clientEmail:'grace.whelan@orionsystems.co.uk',clientPhone:'+44 20 7000 0000',country:'United Kingdom',assignedTo:'Aman Singh',description:'Client asked for a headcount and cost report for Q2. Report generated and shared for confirmation.'},
+  {id:17,ticketId:'TCK-2062',clientName:'Zephyr Foods Oy',title:'Offboarding checklist not triggered',category:'Offboarding',createdAt:'Jun 15, 2026',status:'closed',source:'internal',raisedBy:'Rahul Mehta',clientEmail:'hr@zephyrfoods.fi',clientPhone:'+358 9 000 0000',country:'Finland',assignedTo:'Rahul Mehta',description:'Exit date was set but the offboarding workflow did not start. Re-triggered manually and confirmed complete.'}
 ];
 // ── Ticket lifecycle ──────────────────────────────────────────────────────
 // A ticket is not resolved because somebody clicked a tick. Each state names

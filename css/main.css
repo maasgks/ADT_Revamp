@@ -324,11 +324,336 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .wb-btn.secondary{background:0;color:var(--navy);border:none}
 .attendance-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;min-width:260px}
 .att-title{font-size:var(--ds-title);font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+/* Tighter inside the attendance card than the generic .att-row, which the card
+   no longer shares with anything: three rows plus a two-line readout is a lot
+   for one KPI-row card, and it was standing 28px taller than its neighbours. */
+.att .att-title{margin-bottom:9px}
+.att .att-row{margin-bottom:3px}
 .att-title a{font-size:var(--ds-caption);color:var(--orange);text-decoration:none;font-weight:600}
-.att-row{display:flex;align-items:center;gap:8px;font-size:var(--ds-body);color:var(--gray);margin-bottom:6px}
-.att-val{margin-left:auto;font-weight:600;color:var(--navy);font-size:var(--ds-body)}
+.att-row{display:flex;align-items:center;gap:8px;font-size:var(--ds-body);color:var(--gray);margin-bottom:6px;min-width:0}
+.att-val{margin-left:auto;font-weight:600;color:var(--navy);font-size:var(--ds-body);min-width:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-meta{font-size:var(--ds-caption);color:var(--gray)}
 .clock-btn{margin-top:12px;padding:8px 20px;background:var(--green);color:#fff;border:none;border-radius:var(--r-control);font-size:var(--ds-body);font-weight:600;font-family:inherit;cursor:pointer;float:right}
+
+/* Visible to screen readers only. Used by the attendance card's live region:
+   the animation is aria-hidden, so the outcome has to be announced in text. */
+.sr-only{
+  position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+  clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* ══ ATTENDANCE CLOCK ══════════════════════════════════════════════════════
+   Punching in is the one thing on this dashboard the employee DOES rather than
+   reads, so it is the one thing that gets a real piece of motion. The rules it
+   follows are the same ones in motion.css — arrive on --e-out, respond inside
+   --t-fast, and collapse entirely under prefers-reduced-motion:
+
+   · THE CARD NEVER RESIZES.  The stage is absolutely positioned over the
+     resting view and the card holds a min-height that fits the taller of the
+     two. A punch that reflowed the KPI grid around it would undo any amount of
+     polish on the animation itself.
+   · ONE PROPERTY PAIR ONLY.  Every keyframe animates transform and opacity and
+     nothing else, so the whole sequence stays on the compositor. The hand
+     angles arrive as custom properties set by JS, which is what lets the
+     keyframes stay static and declarative.
+   · THE SEQUENCE IS IN CSS, THE ORCHESTRATION IN JS.  Durations and easings
+     live here as tokens; renderer.js only starts and ends the phases. Nothing
+     is animated twice from two places.                                      */
+/* The sequence's own timing, kept together so the phases can be read against
+   each other and against ATT_T in renderer.js. Slower than the app's --t-*
+   tokens on purpose: those size a control responding to a click, this is a
+   short piece of narrative, and it wants room to decelerate.
+
+   --att-ease is a gentler out-curve than the global --e-out. --e-out front-
+   loads almost all its travel, which is right for a panel arriving and wrong
+   for a hand winding down — it made the spin look like it stopped dead. */
+.att{
+  --att-t-dial:950ms; --att-t-hands:1750ms; --att-t-sweep:1350ms; --att-t-copy:560ms;
+  --att-ease:cubic-bezier(.16,.86,.26,1);
+  --att-spring:cubic-bezier(.2,1.12,.4,1);
+  /* Sized for the TALLEST resting state — clocked out, three rows plus the
+     readout — and no taller, so the card sits level with the KPI cards beside
+     it and the grid never shifts when a punch lands. */
+  position:relative;display:flex;flex-direction:column;min-height:172px;padding:16px 18px;overflow:hidden;isolation:isolate}
+/* NOT position:relative — the stage anchors to the CARD, not to this box. A
+   punch is a takeover: it covers the title row too, which is what gives the
+   waiting and refused states enough height to sit in without a scrollbar. */
+.att-main{flex:1;min-height:0}
+.att-rest{display:flex;flex-direction:column;height:100%}
+.att-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:auto;padding-top:10px}
+/* ── The day's total ── */
+/* A readout, not a footnote. Label small and quiet on top, the figure large
+   and tabular underneath — because while the clock runs this is the only
+   number on the card that moves, and it was previously set at the same 11px as
+   a caption.
+
+   tabular-nums on the FIGURE is what stops the row twitching once a second:
+   proportional digits are different widths, so 11 → 12 would shove the h/m/s
+   letters sideways on every tick. */
+.att-logged{display:flex;flex-direction:column;gap:2px;min-width:0}
+.att-logged-label{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gray)}
+.att-logged-val{
+  display:inline-flex;align-items:baseline;gap:7px;
+  font-size:19px;font-weight:700;color:var(--navy);line-height:1;letter-spacing:-.4px;
+  font-variant-numeric:tabular-nums}
+/* The unit letters are punctuation on the number, not part of it. */
+.att-seg i{font-style:normal;font-size:11px;font-weight:600;color:var(--gray);margin-left:1px}
+/* Idle has nothing to report, so the figure recedes instead of presenting a
+   row of zeroes as though it were a measurement. */
+.att.is-idle .att-logged-val{color:#cbd5e1}
+.att.is-idle .att-seg i{color:#cbd5e1}
+
+/* ── The Clock In button ── */
+/* This is the primary action of the employee dashboard — the one control on
+   the page the user came to press — and it was rendering as an outline button,
+   the same weight as a Cancel. It takes the filled treatment the button system
+   already reserves for the affirmative action (--btn-ink, per buttons.css),
+   the large size, and a slow attention ring.
+
+   The ring is NOT a hover effect — buttons.css rules those out, and rightly.
+   It is a resting state on the single unstarted action of the page, and it
+   stops the moment the pointer or focus arrives, because at that point the
+   button has the user's attention and no longer needs to ask for it. */
+.att .clock-btn{
+  --btn-h:40px; --btn-px:22px; --btn-fs:13.5px;
+  margin-top:0;float:none;flex-shrink:0;
+  background:var(--btn-ink);color:#fff;border-color:var(--btn-ink)}
+.att .clock-btn:hover{background:var(--btn-solid-hover);border-color:var(--btn-solid-hover);color:#fff}
+.att.is-idle .clock-btn,.att.is-done .clock-btn{animation:att-cta 2.8s var(--e-in-out) infinite}
+.att .clock-btn:hover,.att .clock-btn:focus-visible{animation:none}
+@keyframes att-cta{
+  0%,100%{box-shadow:0 0 0 0 rgba(15,23,42,.26)}
+  55%{box-shadow:0 0 0 7px rgba(15,23,42,0)}
+}
+
+/* ── Which rows belong to which state ── */
+/* While the browser is asking, the field says so rather than showing a stale
+   office name that is about to be replaced. */
+#att-location.is-pending{color:var(--gray);font-weight:500}
+/* The two views swap: a live row while the shift is open, the span summary
+   once it has closed. Never both. */
+.att-span{display:none}
+.att.is-done .att-span{display:flex}
+.att.is-done .att-row-live{display:none}
+/* Narrow card: the icon + label + value row has no give, so the value was being
+   pushed past the card's edge and clipped by its overflow:hidden — which is how
+   "Location" ended up printed with nothing after it. The label yields first, the
+   value truncates last, and the icon never shrinks. */
+.att-row>svg{flex-shrink:0}
+.att.is-done .att-span{flex-wrap:wrap;row-gap:4px}
+
+/* ── The finished shift ──────────────────────────────────────────────────── */
+/* WHAT THIS SCREEN SAYS FIRST IS THE TOTAL. Everything after a shift closes
+   answers one question — how long did I work today — and the two clock times
+   are the evidence for it, not rivals to it. The first pass set both at nearly
+   the same weight (16px vs 19px) so neither led and the eye had to choose.
+   The hierarchy is now explicit: total 24px, times 15px, labels 9.5px.
+
+   Start and end are still ONE fact and are set as one, either side of an
+   arrow — the arrow is what makes it a span rather than a list — but the
+   whole block sits BELOW the headline it supports. */
+.att-span{align-items:flex-end;gap:10px;margin-bottom:6px}
+.att-span-cell{min-width:0}
+.att-span-label{
+  font-size:9.5px;font-weight:700;letter-spacing:.55px;text-transform:uppercase;
+  color:var(--gray);white-space:nowrap}
+.att-span-time{
+  font-size:15px;font-weight:600;color:var(--navy);letter-spacing:-.2px;line-height:1.3;
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Was #cbd5e1 — the same tint the interface uses for "disabled", on the one
+   mark that carries the meaning of the block. Mid-grey: visible, still quiet. */
+.att-span-arrow{width:14px;height:14px;flex-shrink:0;color:#94a3b8;margin-bottom:3px}
+/* The headline. Only on this state — while the clock is running the figure is
+   a live counter sharing the footer with the button, which is a different job. */
+.att.is-done .att-logged-val{font-size:24px;letter-spacing:-.6px}
+/* The label stays quiet grey. Making it navy too put two heavy elements in a
+   two-line block and the figure stopped leading — the size difference is the
+   hierarchy, colour does not need to repeat it. */
+.att.is-done .att-seg i{font-size:12px}
+/* The dot is a state marker, so it has three of them: gone when there is
+   nothing to mark, beating green while the clock runs, solid navy once the day
+   is recorded. Collapsed to zero width at idle rather than left invisible —
+   an empty 7px gap in front of the label is its own kind of untidy. */
+.att-live-dot{
+  width:0;height:7px;border-radius:50%;background:var(--st-ok-fg);
+  opacity:0;transform:scale(.4);
+  transition:width var(--t-fast) var(--e-out),opacity var(--t-fast) var(--e-out),transform var(--t-fast) var(--e-out)}
+.att.is-in .att-live-dot,.att.is-done .att-live-dot{width:7px;opacity:1;transform:none}
+.att.is-in .att-live-dot{animation:att-beat 2s var(--e-in-out) infinite}
+.att.is-done .att-live-dot{background:var(--navy)}
+@keyframes att-beat{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.4);opacity:.4}}
+/* Clocking out is a negative-space action, so the button drops to the outline
+   treatment rather than turning red — see the note in buttons.css. */
+.att.is-in .clock-btn{background:var(--card);color:var(--btn-ink);border:1.5px solid var(--btn-stroke)}
+.att.is-in .clock-btn:hover{color:var(--btn-accent);border-color:var(--btn-accent)}
+
+/* ── The stage ── */
+/* Hidden AND inert between punches: visibility keeps it out of the a11y tree
+   and off the hit-testing pass, opacity does the fade. */
+.att-stage{
+  position:absolute;inset:0;z-index:2;
+  display:flex;align-items:center;justify-content:center;gap:18px;
+  padding:16px 18px;overflow:hidden;
+  background:var(--card);
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity 340ms var(--att-ease),visibility 0s linear 340ms}
+/* pointer-events must come BACK on while the stage is up — the refusal state
+   has real buttons in it, and a stage that cannot be clicked is a dead end. */
+.att.is-busy .att-stage{opacity:1;visibility:visible;pointer-events:auto;transition-delay:0s,0s}
+/* The resting view recedes under the stage rather than vanishing — it is the
+   same card, not a different screen. */
+.att-rest{transition:opacity 340ms var(--att-ease),transform 340ms var(--att-ease)}
+.att.is-busy .att-rest{opacity:0;transform:scale(.97);pointer-events:none}
+
+/* will-change is scoped to .is-busy so the layers are promoted for the ~2.8s
+   the sequence runs and released the moment it ends — a permanent hint on an
+   idle dashboard card costs memory for nothing. */
+.att.is-busy .att-dial,.att.is-busy .att-hand,.att.is-busy .att-rest{will-change:transform,opacity}
+.att-dial{width:72px;height:72px;flex-shrink:0;overflow:visible;transform-origin:50% 50%}
+.att.is-busy .att-dial{animation:att-dial-in var(--att-t-dial) var(--att-spring) both}
+/* -420deg, not -360: a full turn plus a sixth reads as a wind-up rather than a
+   spin that happens to end where it started. */
+@keyframes att-dial-in{
+  0%{transform:rotate(-420deg) scale(.25);opacity:0}
+  60%{opacity:1}
+  100%{transform:rotate(0deg) scale(1);opacity:1}
+}
+.att-dial-track{fill:none;stroke:var(--ol);stroke-width:4}
+.att-dial-face{fill:var(--light);stroke:none}
+.att-dial-ticks line{stroke:#cbd5e1;stroke-width:1.6;stroke-linecap:round}
+.att-pin{fill:var(--navy)}
+
+/* The sweep ring draws once around the dial as the hands settle. 258 is the
+   circumference at r=41, rounded up so no sliver is left showing. */
+.att-dial-sweep{
+  fill:none;stroke:var(--st-ok-fg);stroke-width:4;stroke-linecap:round;
+  transform:rotate(-90deg);transform-origin:50% 50%;
+  stroke-dasharray:258;stroke-dashoffset:258}
+.att.is-busy .att-dial-sweep{animation:att-sweep var(--att-t-sweep) var(--att-ease) 300ms both}
+.att.is-out .att-dial-sweep{stroke:var(--navy)}
+@keyframes att-sweep{to{stroke-dashoffset:0}}
+
+/* Hands. JS writes --h-deg / --m-deg as "spins + final angle", so the wind-down
+   and the landing are the same animation and cannot disagree about where the
+   hand stops. */
+.att-hand{stroke:var(--navy);stroke-width:3.2;stroke-linecap:round;transform-origin:50% 50%}
+.att-hand-m{stroke-width:2.4;stroke:var(--gray)}
+.att.is-busy .att-hand-h{animation:att-hand-h var(--att-t-hands) var(--att-ease) 150ms both}
+.att.is-busy .att-hand-m{animation:att-hand-m var(--att-t-hands) var(--att-ease) 150ms both}
+@keyframes att-hand-h{from{transform:rotate(var(--h-from,0deg))}to{transform:rotate(var(--h-deg,0deg))}}
+@keyframes att-hand-m{from{transform:rotate(var(--m-from,0deg))}to{transform:rotate(var(--m-deg,0deg))}}
+
+/* The seal strokes on at the end — the punch has been recorded. */
+.att-seal{
+  fill:none;stroke:var(--st-ok-fg);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:44;stroke-dashoffset:44;opacity:0}
+.att.is-sealed .att-seal{animation:att-seal 520ms var(--att-ease) both}
+.att.is-sealed.is-out .att-seal{stroke:var(--navy)}
+@keyframes att-seal{0%{stroke-dashoffset:44;opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+/* Everything the dial was drawn from steps aside for the seal — hands, ticks
+   AND the centre pin. The pin was left behind on the first pass and sat as a
+   stray dot in the middle of the tick. */
+.att.is-sealed .att-hand,.att.is-sealed .att-dial-ticks,.att.is-sealed .att-pin{opacity:0;transition:opacity 300ms var(--att-ease)}
+
+/* ── Waiting on the browser's permission prompt ── */
+/* The punch is held, so the card has to look held. The sweep ring becomes an
+   indeterminate arc — the same stroke already on the dial, just cut short and
+   spun, so nothing new is introduced to say "still working". The hands stay
+   parked on the captured time, because that time IS captured; only the
+   location is outstanding. */
+.att.is-waiting .att-dial-sweep{
+  animation:att-wait-spin 1.15s linear infinite;
+  stroke-dasharray:62 196;stroke-dashoffset:0}
+@keyframes att-wait-spin{from{transform:rotate(-90deg)}to{transform:rotate(270deg)}}
+.att.is-waiting .att-stage-time{font-size:20px;color:var(--gray)}
+
+/* ── Granted: the arc closing into a ring ── */
+/* The spin CONTINUES through this while the dash grows out to the full
+   circumference. Once the ring is closed its rotation is imperceptible, so the
+   spin can stop on the next state without a visible jump — which is the whole
+   trick. Stopping it first and then filling would snap from a random angle. */
+.att.is-resolving .att-dial-sweep{
+  animation:att-wait-spin 1.15s linear infinite,
+            att-ring-close 560ms var(--att-ease) forwards}
+@keyframes att-ring-close{from{stroke-dasharray:62 196}to{stroke-dasharray:258 0}}
+/* Hands and pin start receding during the close rather than at the seal, so
+   the two overlap instead of queueing. */
+.att.is-resolving .att-hand,.att.is-resolving .att-pin{
+  opacity:0;transition:opacity 400ms var(--att-ease) 160ms}
+.att.is-resolving .att-stage-time{color:var(--navy)}
+
+/* ── Refused ── */
+/* Nothing was recorded, so the card says so plainly and stays put until the
+   user chooses what to do about it. Red is correct here — this is a genuine
+   failure state, not a button asking for attention. */
+.att.is-denied .att-dial-sweep{
+  stroke:var(--st-bad-fg);stroke-dasharray:258;stroke-dashoffset:0;animation:none;
+  transform:rotate(-90deg)}
+.att.is-denied .att-hand,.att.is-denied .att-dial-ticks,.att.is-denied .att-pin{opacity:0}
+.att-cross{
+  fill:none;stroke:var(--st-bad-fg);stroke-width:5;stroke-linecap:round;
+  stroke-dasharray:29;stroke-dashoffset:29;opacity:0}
+.att.is-denied .att-cross{opacity:1;animation:att-cross 380ms var(--att-ease) both}
+@keyframes att-cross{to{stroke-dashoffset:0}}
+.att.is-denied .att-stage-time{font-size:14px;color:var(--st-bad-fg)}
+/* This state carries the most copy of any — a wrapped explanation plus two
+   buttons — and the card is deliberately short, so it gets a smaller dial and
+   tighter text rather than being allowed to push the card taller. */
+.att.is-denied .att-stage-sub{color:var(--navy);font-size:11.5px;line-height:1.4}
+.att.is-denied .att-dial{width:56px;height:56px}
+.att.is-denied .att-stage-actions{margin-top:9px}
+
+.att-stage-copy{min-width:0;max-width:290px}
+.att-stage-actions{display:flex;gap:8px;margin-top:11px}
+/* display:flex above outranks the UA's [hidden]{display:none}, so it has to be
+   restated — otherwise the recovery buttons show on every state. */
+.att-stage-actions[hidden]{display:none}
+.att-stage-btn{
+  height:30px;padding:0 13px;border-radius:var(--r-control);
+  background:var(--card);border:1.5px solid var(--btn-stroke);color:var(--btn-ink);
+  font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background var(--t-micro) ease,border-color var(--t-micro) ease,color var(--t-micro) ease}
+.att-stage-btn:hover{color:var(--btn-accent);border-color:var(--btn-accent)}
+.att-stage-btn.is-primary{background:var(--btn-ink);border-color:var(--btn-ink);color:#fff}
+.att-stage-btn.is-primary:hover{background:var(--btn-solid-hover);border-color:var(--btn-solid-hover);color:#fff}
+/* The Allow button is dropped on the waiting state — the browser's own dialog
+   is already open and a second control claiming to do the same thing is noise.
+   Cancel stays, which is what makes an unlimited wait safe. */
+.att-stage-btn[hidden]{display:none}
+.att-stage-label{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--gray)}
+.att-stage-time{
+  font-size:27px;font-weight:700;color:var(--navy);letter-spacing:-.6px;line-height:1.15;margin-top:2px;
+  font-variant-numeric:tabular-nums}
+.att-stage-sub{font-size:12px;color:var(--gray);margin-top:2px}
+.att.is-busy .att-stage-copy>*{animation:att-copy-in var(--att-t-copy) var(--att-ease) both}
+.att.is-busy .att-stage-label{animation-delay:380ms}
+.att.is-busy .att-stage-time{animation-delay:480ms}
+.att.is-busy .att-stage-sub{animation-delay:580ms}
+@keyframes att-copy-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+/* A REPLAY, not the first run. Same keyframe, but the long opening stagger is
+   wrong on a message that is replacing another one — the delays are cut to a
+   quick cascade so it reads as the copy updating, not as the card starting
+   over. Higher specificity than the rules above, which is what lets it win. */
+.att.is-busy .att-stage-copy.is-recopy>*{animation:att-copy-in 400ms var(--att-ease) both}
+.att.is-busy .att-stage-copy.is-recopy .att-stage-label{animation-delay:0ms}
+.att.is-busy .att-stage-copy.is-recopy .att-stage-time{animation-delay:70ms}
+.att.is-busy .att-stage-copy.is-recopy .att-stage-sub{animation-delay:140ms}
+
+/* On the way back the resting view arrives as new information, because it is. */
+.att.is-settling .att-rest{animation:att-rest-in 340ms var(--att-ease) both}
+@keyframes att-rest-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+/* Reduced motion: the sequence still HAPPENS — the stage still shows the time
+   being recorded — it just holds still and gets out of the way quickly. The
+   global rule in motion.css already collapses every duration above; this only
+   removes the transforms that would otherwise land mid-flight. */
+@media (prefers-reduced-motion:reduce){
+  .att-dial,.att-hand,.att-stage-copy>*,.att-rest{animation:none!important;transform:none!important}
+  .att-dial-sweep{stroke-dashoffset:0}
+  .att-seal{opacity:0}
+  .att .clock-btn{animation:none!important}
+}
 .quick-links{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
 .ql{padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;transition:.15s;color:var(--gray)}
 .ql:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
@@ -679,6 +1004,32 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-table td{padding:13px 16px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f3f5;vertical-align:middle}
 .lp-table tr:last-child td{border-bottom:none}
 .lp-table tbody tr:hover td{background:#fafbfc}
+
+/* ── TWO-LINE TABLE CELLS ──────────────────────────────────────────────────
+   One value with its qualifier underneath: a name over its reference, a
+   document over its type, a figure over what the figure means. Listings kept
+   re-inventing this inline, which is how a column ends up 90px wide with a
+   three-word name wrapped across three lines — the styles were per-cell so
+   nothing was setting a width or stopping the wrap.
+
+   The rule that matters is `white-space:nowrap` on the primary line. A table
+   column sizes itself to its content, so one wrapping cell lets the browser
+   collapse the column to its longest WORD instead of its longest VALUE. The
+   sub-line is allowed to wrap because it is secondary; if it must not, the
+   cell gets .lp-c-tight. */
+.lp-c-n{color:var(--gray);font-size:13px;white-space:nowrap}
+.lp-c-main{font-weight:600;color:var(--navy);line-height:1.35;white-space:nowrap}
+.lp-c-name{color:var(--orange);font-weight:500;line-height:1.35}
+.lp-c-plain{color:var(--navy);font-size:13px;line-height:1.35;white-space:nowrap}
+.lp-c-plain.is-none{color:#9ca3af}
+.lp-c-plain.is-urgent{color:var(--st-bad-fg);font-weight:600}
+.lp-c-sub{font-size:11px;color:#9ca3af;margin-top:2px;line-height:1.3}
+.lp-c-tight .lp-c-sub{white-space:nowrap}
+/* A long free-text cell truncates rather than pushing every other column thin.
+   The full value is on the row's title attribute and in the detail panel. */
+.lp-c-clip{
+  display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--orange);font-weight:500}
 .lp-yes{color:var(--st-ok-fg);font-weight:600}
 .lp-no{color:#dc2626;font-weight:600}
 .lp-dash{color:#9ca3af}
@@ -1511,3 +1862,44 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .mod-tab:hover:not(.active){color:var(--btn-accent);background:var(--btn-tint-bg)}
 .mod-tab.active{background:var(--card);color:var(--navy);box-shadow:0 1px 3px rgba(15,23,42,.12)}
 @media(max-width:640px){.mod-tabs{width:100%}.mod-tab{flex:1;justify-content:center;padding:7px 10px;font-size:12.5px}.mod-tab span{overflow:hidden;text-overflow:ellipsis}}
+
+/* ── Support Requests: channel pill ────────────────────────────────────────
+   Where the request came in — portal, email, phone, internal. A quiet chip
+   rather than a coloured badge: the channel is context for the row, not its
+   state, and the status pill two columns over is the thing that should carry
+   colour. */
+/* ── Ticket channel chip ───────────────────────────────────────────────────
+   Where the ticket came in. A quiet chip, not a coloured badge: the channel is
+   context for the row, not its state, and the status pill further along is the
+   thing that should carry colour. Chat is the one channel that changes what
+   the panel offers — it is the only ticket with a conversation to read — so it
+   is tinted just enough to be picked out of a mixed queue. */
+.sr-channel{
+  display:inline-block;padding:2px 8px;border-radius:5px;
+  background:var(--ol);color:var(--gray);
+  font-size:10.5px;font-weight:600;letter-spacing:.2px;white-space:nowrap}
+.sr-channel.is-chat{background:var(--st-info-bg);color:var(--st-info-fg)}
+
+/* ── Tables built from two-line cells ─────────────────────────────────────
+   Taller rows than a flat table's, so the columns are pinned top-aligned: a
+   one-line cell sitting next to a two-line one floats to the middle of the row
+   otherwise, and the reading line across the row breaks. Used by any listing
+   whose rows carry .lp-c-main over .lp-c-sub. */
+.lp-table-2line td{vertical-align:top;padding-top:12px;padding-bottom:12px}
+.lp-table-2line th{vertical-align:bottom}
+/* Single-line controls stay on the row's first line rather than at the top of
+   a two-line cell's box. */
+.lp-table-2line td:has(>.lp-status-badge),
+.lp-table-2line td:has(>.lp-action-btn){vertical-align:middle}
+
+/* ── Support Requests: column widths ───────────────────────────────────────
+   The free-text Title gets the slack; everything else is a fixed shape and is
+   stopped from being negotiated wider by its own header. */
+.sr-table th:nth-child(1),.sr-table td:nth-child(1){width:48px}
+.sr-table th:nth-child(2),.sr-table td:nth-child(2){width:126px}
+.sr-table th:nth-child(3),.sr-table td:nth-child(3){width:170px}
+.sr-table th:nth-child(4),.sr-table td:nth-child(4){width:auto}
+.sr-table th:nth-child(5),.sr-table td:nth-child(5){width:112px}
+.sr-table th:nth-child(6),.sr-table td:nth-child(6){width:118px}
+.sr-table th:nth-child(7),.sr-table td:nth-child(7){width:130px}
+.sr-table th:nth-child(8),.sr-table td:nth-child(8){width:64px;text-align:right}

@@ -488,7 +488,11 @@
   background:var(--ol);color:var(--gray);font-size:10px;font-weight:700;letter-spacing:.6px}
 .oca-head-sub{font-size:13px;color:var(--gray);margin-top:5px}
 
-/* ── Count tiles / filter ── */
+/* ── Status tiles — the only filter on this dashboard ── */
+/* One tile per lifecycle state, in the order the day runs. The count is the
+   headline; the state name sits under it as the label. Numbers stay navy like
+   every other figure in the app — the status pills in the rows carry the
+   colour, and repeating it up here would make five tiles compete at once. */
 .oca-tiles{
   display:flex;gap:10px;padding:10px;background:#fff;border:1px solid var(--border);
   border-radius:14px;overflow-x:auto;scrollbar-width:thin}
@@ -500,26 +504,37 @@
 .oca-tile.is-on{border-color:var(--navy);box-shadow:inset 0 -3px 0 var(--navy)}
 .oca-tile-n{font-size:21px;font-weight:700;color:var(--navy);line-height:1.1}
 .oca-tile-l{font-size:11.5px;color:var(--gray);line-height:1.35}
-/* an empty category is not a thing to act on, so it recedes */
+/* an empty state is not a thing to act on, so it recedes */
 .oca-tile.is-zero .oca-tile-n,.oca-tile.is-zero .oca-tile-l{color:#cbd5e1}
 
+/* ── The decision bar ── */
+/* Sits at the top of the detail panel, above the fields. Reviewing a document
+   is the job, so the approve/reject pair is a control, not a status buried in
+   a dropdown. Only the affirmative move is filled — Reject is outlined, so the
+   irreversible-feeling direction is never the one the eye lands on first. */
+.oca-actbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  margin-bottom:14px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;
+  background:var(--light)}
+.oca-actbar-q{font-size:12.5px;color:var(--gray);line-height:1.4;min-width:0}
+.oca-actbar-btns{display:flex;gap:8px;flex-shrink:0}
+.oca-act{
+  height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--border);background:#fff;
+  color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .15s,background .15s,color .15s;white-space:nowrap}
+.oca-act:hover{border-color:#cbd5e1;background:var(--ol)}
+.oca-act-approve{background:var(--navy);border-color:var(--navy);color:#fff}
+.oca-act-approve:hover{background:#1e293b;border-color:#1e293b;color:#fff}
+.oca-act-reject{color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
+.oca-act-reject:hover{background:var(--st-bad-bg);border-color:var(--st-bad-fg);color:var(--st-bad-fg)}
+
 /* ── Listing ── */
-/* No bottom padding: the pagination row closes the card, as it does on the
-   listing pages. */
-.oca-list{background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px 20px 0}
-.oca-list-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
-.oca-list-title{font-size:15px;font-weight:700;color:var(--navy)}
-.oca-list-sub{font-size:12.5px;color:var(--gray);margin-top:3px}
-.oca-count{
-  flex-shrink:0;display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;
-  background:var(--ol);color:var(--gray);font-size:11.5px;font-weight:600}
-.oca-active-filter{
-  display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 12px;border-radius:8px;
-  background:var(--light);border:1px solid var(--border);font-size:12px;color:var(--gray)}
-.oca-active-filter b{color:var(--navy)}
-.oca-clear{
-  margin-left:auto;border:none;background:none;cursor:pointer;font-family:inherit;
-  font-size:12px;font-weight:600;color:var(--navy);text-decoration:underline}
+/* No heading and no bottom padding: the table header opens the card and the
+   pagination row closes it. overflow:hidden lets the rounded corners clip both,
+   so the table reads as the card rather than as something sitting inside one. */
+.oca-list{background:#fff;border:1px solid var(--border);border-radius:14px;padding:0 20px;overflow:hidden}
+/* Row cells use the shared .lp-c-* two-line cell from main.css — this table is
+   where that pattern was worked out, and the support listings now use it too. */
 
 /* The list itself is a plain .lp-table in the same split wrap every listing
    page uses — table, pagination and detail panel all behave identically. Only
@@ -527,7 +542,7 @@
 .oca-split-wrap.has-sb{min-height:500px}   /* a short page must still hold the panel */
 /* The table spans the full card so its row tint and the pager's divider reach
    the edges; the first column and the pager are re-padded to the card's own
-   20px, keeping them in line with the card heading above. */
+   20px so the columns are not flush against the card border. */
 .oca-split-wrap{margin:0 -20px}
 .oca-list .lp-split-main{border:none;border-radius:0}   /* the card is the border */
 .oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:20px}
@@ -538,9 +553,19 @@
 .oca-due.is-now{font-weight:700;color:var(--st-bad-fg)}
 
 @media (max-width:720px){
-  .oca-list{padding:16px 14px 0}
+  .oca-list{padding:0 14px}
   .oca-split-wrap{margin:0 -14px}
   .oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:14px}
   .oca-list .lp-table th:last-child,.oca-list .lp-table td:last-child{padding-right:14px}
   .oca-list .lp-pagination{padding:12px 14px}
 }
+
+/* ── Ops Admin: contract pipeline cards ────────────────────────────────────
+   Same hover as the Compliance Admin tiles — a neutral border lift and a soft
+   shadow. The stage cards used to flash orange on hover, which read as a
+   warning state on a card whose whole job is to report a neutral count. */
+.ops-pipe-card{
+  background:#fff;border:1px solid var(--border);border-top:3px solid var(--border);
+  border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;
+  transition:border-color .15s,box-shadow .15s}
+.ops-pipe-card:hover{border-color:#cbd5e1;box-shadow:0 2px 8px rgba(15,23,42,.06)}
