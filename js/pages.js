@@ -1,3 +1,150 @@
+/* ══ ATTACHMENTS TAB ═══════════════════════════════════════════════════════
+   ONE attachments tab, used by every detail panel that has one. There were
+   nine, hand-rolled with slightly different inline styles, and not one of them
+   did anything: "Add Attachment" and "Download All" were unwired buttons over
+   a bare table whose only row said "No attachments." A control that promises
+   an action and performs none is worse than no control.
+
+   The design is deliberately plain, because an attachments tab has exactly two
+   states and neither needs decoration:
+     EMPTY   a drop zone that says what it takes and how to give it. The whole
+             panel is the target, not a 90px button in the corner — the empty
+             state IS the affordance, so there is nothing else competing for
+             the click.
+     FILLED  the same list every other table in the app uses, with the drop
+             zone demoted to a slim bar above it so adding a second file is
+             still one click and still accepts a drag.
+
+   Drag-and-drop and the file picker land in the same place, because they are
+   the same intent. Nothing here uploads — there is no server — so a file is
+   recorded by name, size and type, which is what the list displays anyway. */
+const ATTACH_SCOPES={
+  de:      {find:function(id){return directEmpData.find(function(x){return x.id===id;});}},
+  ge:      {find:function(id){return globalEmpData.find(function(x){return x.id===id;});}},
+  pm:      {find:function(id){return paymentsData.find(function(x){return x.id===id;});}},
+  cmp:     {find:function(id){return complianceItemsData.find(function(x){return x.id===id;});}},
+  ctp:     {find:function(id){return contractTemplatesData.find(function(x){return x.id===id;});}},
+  tk:      {find:function(id){return ticketsData.find(function(x){return x.id===id;});}},
+  chat:    {find:function(id){return chatsData.find(function(x){return x.id===id;});}},
+  // Company Settings has one entity, not a list, so its files hang off a
+  // module-level record rather than a row.
+  cs:      {find:function(){return csAttachHost;}}
+};
+var csAttachHost={id:'entity',attachments:[]};
+
+function attachRec(scope,id){
+  const s=ATTACH_SCOPES[scope];if(!s)return null;
+  const rec=s.find(id);if(!rec)return null;
+  if(!rec.attachments)rec.attachments=[];      // older fixtures predate the field
+  return rec;
+}
+function attachFmtSize(bytes){
+  if(!bytes&&bytes!==0)return '—';
+  if(bytes<1024)return bytes+' B';
+  if(bytes<1048576)return Math.round(bytes/1024)+' KB';
+  return (bytes/1048576).toFixed(1)+' MB';
+}
+function attachKind(name){
+  const e=String(name).split('.').pop().toLowerCase();
+  if(/^(pdf)$/.test(e))return 'PDF';
+  if(/^(png|jpg|jpeg|gif|webp|svg)$/.test(e))return 'Image';
+  if(/^(doc|docx)$/.test(e))return 'Document';
+  if(/^(xls|xlsx|csv)$/.test(e))return 'Spreadsheet';
+  return e?e.toUpperCase():'File';
+}
+// The picker and a drop both end here, so one path validates and records.
+function attachCommit(scope,id,fileList){
+  const rec=attachRec(scope,id);if(!rec||!fileList||!fileList.length)return;
+  const s=stampNow();
+  const added=[];
+  Array.prototype.forEach.call(fileList,function(f){
+    if(f.size>10*1024*1024){                   // said out loud, not silently dropped
+      showToast('File too large','error','"'+f.name+'" is over the 10 MB limit.');return;
+    }
+    rec.attachments.unshift({name:f.name,size:attachFmtSize(f.size),type:attachKind(f.name),
+      by:CURRENT_USER,source:'Manual upload',date:s.date});
+    added.push(f.name);
+  });
+  if(!added.length)return;
+  renderADTPage();
+  showToast(added.length===1?'Attachment added':'Attachments added','success',
+    added.length===1?added[0]:added.length+' files added.');
+}
+// A hidden input per scope+record, created on demand. Reusing one input across
+// records would carry the previous selection into the next panel.
+function attachPick(scope,id){
+  const inp=document.createElement('input');
+  inp.type='file';inp.multiple=true;
+  inp.addEventListener('change',function(){attachCommit(scope,id,inp.files);});
+  inp.click();
+}
+function attachRemove(scope,id,i){
+  const rec=attachRec(scope,id);if(!rec)return;
+  const gone=rec.attachments[i];if(!gone)return;
+  rec.attachments.splice(i,1);
+  renderADTPage();
+  showToast('Attachment removed','success','"'+gone.name+'" was removed.');
+}
+function attachDownloadAll(scope,id){
+  const rec=attachRec(scope,id);if(!rec||!rec.attachments.length)return;
+  showToast('Preparing download','success',rec.attachments.length+' files will be zipped.');
+}
+function attachOpen(name){showToast('Opening attachment','success',name);}
+// Drag feedback lives on a class rather than inline styles so the zone can be
+// restyled in one place.
+function attachDrag(e,on){e.preventDefault();e.currentTarget.classList.toggle('is-over',on);}
+function attachDrop(e,scope,id){
+  e.preventDefault();e.currentTarget.classList.remove('is-over');
+  attachCommit(scope,id,e.dataTransfer&&e.dataTransfer.files);
+}
+
+function attachTabHTML(scope,id){
+  const rec=attachRec(scope,id);
+  const files=rec?rec.attachments:[];
+  const dz='ondragover="attachDrag(event,true)" ondragleave="attachDrag(event,false)" '
+    +'ondrop="attachDrop(event,\''+scope+'\','+JSON.stringify(id)+')" '
+    +'onclick="attachPick(\''+scope+'\','+JSON.stringify(id)+')"';
+  const iUp='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+  const iDl='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+  const iX='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+
+  if(!files.length){
+    // The empty state IS the control. No separate button to compete with it.
+    return '<div class="att-zone att-zone-lg" '+dz+'>'
+      +'<div class="att-zone-ico">'+iUp+'</div>'
+      +'<div class="att-zone-title">Drop files here, or click to browse</div>'
+      +'<div class="att-zone-hint">PDF, images, documents and spreadsheets · up to 10 MB each</div>'
+      +'</div>';
+  }
+  const thS='padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap';
+  const tdS='padding:10px 12px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f3f5;vertical-align:middle';
+  const rows=files.map(function(f,i){
+    return '<tr>'
+      +'<td style="'+tdS+';color:var(--gray)">'+(i+1)+'</td>'
+      +'<td style="'+tdS+'"><div class="lp-c-main">'+f.name+'</div>'
+        +'<div class="lp-c-sub">'+(f.size||'—')+'</div></td>'
+      +'<td style="'+tdS+'">'+(f.by||'—')+'</td>'
+      +'<td style="'+tdS+'"><span class="att-kind">'+(f.type||attachKind(f.name))+'</span></td>'
+      +'<td style="'+tdS+';white-space:nowrap;color:#64748b;font-size:11.5px">'+(f.source||'—')+'</td>'
+      +'<td style="'+tdS+';text-align:right;white-space:nowrap">'
+        +'<button class="att-row-btn" title="Download" onclick="attachOpen(\''+attrSafe(f.name)+'\')">'+iDl+'</button>'
+        +'<button class="att-row-btn is-danger" title="Remove" onclick="attachRemove(\''+scope+'\','+JSON.stringify(id)+','+i+')">'+iX+'</button>'
+      +'</td></tr>';
+  }).join('');
+  return '<div class="att-bar">'
+      +'<span class="att-count">'+files.length+' file'+(files.length===1?'':'s')+'</span>'
+      +'<div class="att-bar-actions">'
+      +'<button class="att-link" onclick="attachDownloadAll(\''+scope+'\','+JSON.stringify(id)+')">'+iDl+'Download All</button>'
+      +'</div></div>'
+    +'<div class="att-zone att-zone-sm" '+dz+'>'
+      +'<span class="att-zone-ico-sm">'+iUp+'</span>'
+      +'<span>Drop files here, or click to browse</span></div>'
+    +'<div class="att-table-wrap"><table class="att-table"><thead><tr>'
+      +'<th style="'+thS+'">Sr. No</th><th style="'+thS+'">File Name</th><th style="'+thS+'">Uploaded By</th>'
+      +'<th style="'+thS+'">Type</th><th style="'+thS+'">Source</th><th style="'+thS+';text-align:right">Action</th>'
+      +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
 ﻿function openDeSidebar(id){
   deSelectedId=id;deTab='basic-details';deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
@@ -84,21 +231,7 @@ function renderDeSidebar(){
         +'</tr>').join('')
       +'</tbody></table>';
   }else if(deTab==='attachments'){
-    const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Attachment</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th>'
-      +'<th style="'+thS+'">File Name</th>'
-      +'<th style="'+thS+'">Uploaded By</th>'
-      +'<th style="'+thS+'">Type</th>'
-      +'<th style="'+thS+'">Source</th>'
-      +'<th style="'+thS+'">Action</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="padding:28px 10px;text-align:center;font-size:13px;color:#9ca3af;font-weight:500">No attachments available</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('de',deSelectedId);
   }else if(deTab==='salary-details'){
     const thS='padding:7px 9px;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;text-align:left';
     body='<div style="margin-bottom:16px">'
@@ -328,16 +461,7 @@ function renderGeSidebar(){
         +'</tr>').join('')
       +'</tbody></table>';
   }else if(geTab==='attachments'){
-    const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Attachment</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">File Name</th><th style="'+thS+'">Uploaded By</th><th style="'+thS+'">Type</th><th style="'+thS+'">Source</th><th style="'+thS+'">Action</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="padding:28px 10px;text-align:center;font-size:13px;color:#9ca3af;font-weight:500">No attachments available</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('ge',geSelectedId);
   }else if(geTab==='salary-details'){
     const thS='padding:7px 9px;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;text-align:left';
     body='<div style="margin-bottom:16px">'
@@ -1217,19 +1341,7 @@ function renderPmSidebar(){
       +fc(iCheck,'Status',sbStatus(emp.status))+fc(iCal,'Created On','<span style="color:var(--orange)">'+emp.createdOn+'</span>')
       +'</div>';
   }else if(pmTab==='attachments'){
-    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
-    const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th><th style="'+thS+'">TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('pm',pmSelectedId);
   }else if(pmTab==='timesheets'){
     const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
     const statCard=(label,val,color)=>'<div class="pm-ts-stat"><div class="pm-ts-stat-val" style="color:'+color+'">'+val+'</div><div class="pm-ts-stat-lbl">'+label+'</div></div>';
@@ -1881,19 +1993,7 @@ function renderComplianceSidebar(){
       +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
       +'</div>';
   }else if(complianceTab==='attachments'){
-    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
-    const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th><th style="'+thS+'">DOCUMENT TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments found.</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('cmp',complianceSelectedId);
   }else if(complianceTab==='logs'){
     const logs=seedLogs(item,complianceLogsData[item.id]);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -2738,19 +2838,7 @@ function renderCtpSidebar(){
       +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
       +'</div>';
   }else if(ctpTab==='attachments'){
-    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
-    const dlIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    body='<div style="display:flex;justify-content:flex-end;gap:18px;padding:4px 0 12px">'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+dlIco+' Download All</button>'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Add Attachment</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th><th style="'+thS+'">TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No attachments.</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('ctp',ctpSelectedId);
   }else if(ctpTab==='logs'){
     const logs=seedLogs(item,ctpLogsData[item.id]);
     const personSvg=iUser;
@@ -5418,15 +5506,7 @@ function renderCsSidebar(){
       +'</div>';
   }
   else if(csTab==='attachments'){
-    const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Attachment</button></div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR NO</th><th style="'+thS+'">FILE NAME</th><th style="'+thS+'">UPLOADED BY</th>'
-      +'<th style="'+thS+'">TYPE</th><th style="'+thS+'">SOURCE</th><th style="'+thS+'">ACTION</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="6" style="padding:28px;text-align:center;color:#9ca3af;font-size:13px">No Attachments Found.</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('cs','entity');
   }
   else if(csTab==='banking-details'){
     const dlIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -5787,13 +5867,7 @@ function renderTkSidebar(){
       +'<div style="display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--border)"><input style="flex:1;height:34px;border:1.5px solid var(--border);border-radius:var(--r-input);padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy)" placeholder="Type a reply…"><button style="height:34px;padding:0 16px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Send</button></div>'
       +'</div></div>';
   }else if(tkTab==='attachments'){
-    const dIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-    const atts=[{no:1,name:'compliance_brief_Q2.pdf',type:'PDF',by:'Pallavi Parate',src:'Manual'},{no:2,name:'contract_template_2026.docx',type:'DOCX',by:'Aman Singh',src:'System'},{no:3,name:'id_proof_client.png',type:'PNG',by:t.clientName,src:'Client'},{no:4,name:'audit_report_jun26.xlsx',type:'XLSX',by:'Rahul Mehta',src:'Manual'}];
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Attachment</button></div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr><th style="'+thS+'">SR</th><th style="'+thS+'">File Name</th><th style="'+thS+'">Uploaded By</th><th style="'+thS+'">Type</th><th style="'+thS+'">Source</th><th style="'+thS+'">Action</th></tr></thead>'
-      +'<tbody>'+atts.map(a=>'<tr style="border-bottom:1px solid var(--border)"><td style="padding:8px 10px;font-size:12px;color:#6b7280">'+a.no+'</td><td style="padding:8px 10px;font-size:12px;font-weight:500;color:var(--navy)">'+a.name+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.by+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.type+'</td><td style="padding:8px 10px;font-size:12px;color:#374151">'+a.src+'</td><td style="padding:8px 10px"><button style="background:none;border:none;cursor:pointer;color:var(--orange);font-size:11px;font-weight:600;font-family:inherit;display:flex;align-items:center;gap:3px">'+dIco+' Download</button></td></tr>').join('')
-      +'</tbody></table>';
+    body=attachTabHTML('tk',tkSelectedId);
   }else if(tkTab==='assignment'){
     // The agent list comes from TK_AGENTS so this tab and the confirm dialog's
     // "Assign to" field can never offer different people.
@@ -6285,11 +6359,7 @@ function renderChatSidebar(){
         +'</div>';
     }
   }else if(chatTab==='attachments'){
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Attachment</button></div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr><th style="'+thS+'">SR</th><th style="'+thS+'">File Name</th><th style="'+thS+'">Uploaded By</th><th style="'+thS+'">Type</th><th style="'+thS+'">Action</th></tr></thead>'
-      +'<tbody><tr><td colspan="5" style="padding:28px;text-align:center;color:#9ca3af;font-size:13px">No attachments found.</td></tr></tbody>'
-      +'</table>';
+    body=attachTabHTML('chat',chatSelectedId);
   }else if(chatTab==='assignment'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Current Assignment</span></div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'

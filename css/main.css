@@ -717,7 +717,11 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 /* CUSTOM DROPDOWNS */
 .custom-select{position:relative;width:100%;font-family:inherit;z-index:5}
 .custom-select.open{z-index:80}
-.custom-select-trigger{width:100%;min-height:40px;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;background:#fff;color:var(--navy);font-size:13px;line-height:1.25;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:border-color .18s,box-shadow .18s;text-align:left}
+/* --r-control, not a hard-coded 10px: a select is something you PICK from, and
+   the shape doctrine at the top of this file reserves the rounded --r-input for
+   fields you type into. It was the only control in the system on its own
+   private radius. */
+.custom-select-trigger{width:100%;min-height:40px;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--r-control);background:#fff;color:var(--navy);font-size:13px;line-height:1.25;font-family:inherit;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;transition:border-color .18s,box-shadow .18s;text-align:left}
 .custom-select-trigger:hover{border-color:#c7ccd6}
 .custom-select.open .custom-select-trigger,.custom-select-trigger:focus{border-color:#c7ccd6;box-shadow:0 0 0 3px rgba(15,23,42,.04);outline:0}
 .custom-select-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -732,12 +736,12 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .custom-select-check{opacity:0;color:#7d8189;font-size:18px;font-weight:800;line-height:1;flex-shrink:0}
 .custom-select-option.selected .custom-select-check{opacity:1}
 .filter-row .custom-select{width:150px;flex:0 0 150px}
-.filter-row .custom-select-trigger{height:34px;font-size:11px;color:var(--gray);border-radius:8px;padding:0 10px}
+.filter-row .custom-select-trigger{height:34px;font-size:11px;color:var(--gray);border-radius:var(--r-control);padding:0 10px}
 .filter-row .custom-select-menu{min-width:170px}
 .filter-row .custom-select-option{height:42px;font-size:12px;padding-left:18px}
 .pay-group{overflow:visible}
 .pay-group .custom-select{flex:0 0 116px;width:116px;z-index:15}
-.pay-group .custom-select-trigger{min-height:40px;height:auto;border:0;border-right:1px solid var(--border);border-radius:8px 0 0 8px;background:#fafbfc;font-weight:600;padding:11px 12px;box-shadow:none}
+.pay-group .custom-select-trigger{min-height:40px;height:auto;border:0;border-right:1px solid var(--border);border-radius:var(--r-control) 0 0 var(--r-control);background:#fafbfc;font-weight:600;padding:11px 12px;box-shadow:none}
 .pay-group .custom-select-menu{min-width:156px}
 .pay-group .custom-select-option{height:44px;padding-left:18px}
 .plus-dd,.agent-dd{border-radius:9px;border:1px solid #e1e4ea;box-shadow:0 8px 22px rgba(15,23,42,.1);padding:0;overflow:hidden;background:#fff}
