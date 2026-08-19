@@ -3615,10 +3615,46 @@ function navPhTab(tab){phTab=tab;isbTab('ph',renderPhSidebar);}
 function phCancelLog(){isbTab('ph',renderPhSidebar);}
 function phSaveLog(id){
   const p=payheadsData.find(function(x){return x.id===id;});if(!p)return;
+  const was=p.status;
+  const inp=document.getElementById('ph-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
   phSeedLogs(p);
   if(!lpCommitLog(p,'ph-log-status-sel','ph-log-comment-inp',p.logs))return;
+  /* A move made in Logs is appended to Workflow too, so the two tabs cannot
+     end on different stories. A comment that does not move the status is a log
+     entry only — the workflow records stages, not chatter. */
+  if(p.status!==was){
+    phWorkflow(p);   // seed first, so the new stage sits on top of the history
+    wfPush(phWorkflowData,id,p.status==='Active'?'Payhead Activated':'Payhead Deactivated',
+      'Moved from '+was+' to '+p.status+'. '+comment);
+  }
   renderADTPage();
   showToast('Log added','success','"'+p.name+'" is now '+p.status+'.');
+}
+/* Derived from the payhead, not written out per record — same reason the
+   compliance dashboard derives its history: a hand-typed fixture disagrees
+   with the record the first time a status moves in Logs, and a workflow that
+   ends on a different state than the panel is showing is worse than none.
+   Seeded once, then appended to by phSaveLog, so a move made this session
+   stays on the timeline. */
+const phWorkflowData={};
+function phWorkflow(p){
+  if(!phWorkflowData[p.id]){
+    const parts=String(p.createdAt).split('|');
+    const d=(parts[0]||'').trim(),t=(parts[1]||'').trim()||'09:00:00 AM';
+    const n=p.slabs.length;
+    phWorkflowData[p.id]=[   // newest first, like every other Workflow tab
+      {title:p.status==='Active'?'Payhead Active':'Payhead Deactivated',user:p.createdBy,date:d,time:t,
+       description:p.status==='Active'
+         ? '"'+p.name+'" is live and will be applied on the next payroll run.'
+         : '"'+p.name+'" is inactive and is skipped by payroll.'},
+      {title:'Slabs Configured',user:p.createdBy,date:d,time:t,
+       description:n+' slab'+(n===1?'':'s')+' defined on '+p.calcOn+' — '+phRuleText(p)+'.'},
+      {title:'Payhead Created',user:p.createdBy,date:d,time:t,
+       description:p.category+' payhead created by '+p.createdBy+'.'}
+    ];
+  }
+  return phWorkflowData[p.id];
 }
 function phSeedLogs(p){
   return seedLogs(p,[{date:p.createdAt.split(' | ')[0],time:p.createdAt.split(' | ')[1]||'09:00:00 AM',
@@ -3645,7 +3681,7 @@ function phSlabTableHTML(slabs,calcOn){
 }
 function renderPhSidebar(){
   const p=payheadsData.find(function(x){return x.id===phSelectedId;});if(!p)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'slabs',label:'Slab Configuration'},{id:'logs',label:'Logs'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'slabs',label:'Slab Configuration'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="ph-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(phTab===t.id?' active':'')+'" onclick="navPhTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -3669,7 +3705,7 @@ function renderPhSidebar(){
   }else if(phTab==='slabs'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Slab Configuration</span></div>'
       +phSlabTableHTML(p.slabs,p.calcOn);
-  }else{
+  }else if(phTab==='logs'){
     const logs=phSeedLogs(p);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
@@ -3694,6 +3730,9 @@ function renderPhSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="phSaveLog('+p.id+')">Submit</button>'
       +'</div></div>';
     body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  }else{
+    // Shared renderer, so it reads like every other Workflow tab.
+    body=wfTimelineHTML(phWorkflow(p));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
