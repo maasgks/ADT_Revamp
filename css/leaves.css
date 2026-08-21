@@ -571,6 +571,27 @@ tr.lp-row-selected>td:first-child,
    used to, so the list gets its own. */
 .ph-slab-body{padding:18px 20px}
 
+/* ══ POPUP FORM PARTS (shared) ═════════════════════════════════════════════
+   The sub-heading and the footer row of a .ct-modal creation form. They began
+   life inside the Holidays module and were named for it; Add Leave Policy needs
+   exactly the same two, so they carry the shell's own prefix instead of being
+   copied under a second name. */
+.ct-modal-sub{margin:-8px 0 18px;font-size:12.5px;line-height:1.5;color:var(--gray)}
+/* A creation form tall enough to scroll must not put its primary action below
+   the fold. The footer sticks to the bottom of the popup so Create/Add stays
+   reachable while the fields scroll under it; on a short form there is nothing
+   to scroll and sticky behaves exactly like static, so it costs those nothing. */
+.ct-modal-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  position:sticky;bottom:-28px;z-index:2;
+  margin:0 -28px -28px;padding:16px 28px;
+  background:#fff;border-top:1px solid var(--border);border-radius:0 0 16px 16px}
+.ct-modal-btns{display:flex;gap:10px;flex-shrink:0;margin-left:auto}
+/* The leave-policy form is sectioned, so its sections lose the outer card's
+   padding and rely on their own. */
+.ct-modal .policy-form-section:first-child{padding-top:20px}
+.ct-modal .policy-form-section:last-child{border-bottom:0}
+
 /* ══ HOLIDAYS ══════════════════════════════════════════════════════════════
    Two small marks on the listing, a date block on the panel, and a repeating
    row for the create popup. Everything else the module needs — the table, the
@@ -646,7 +667,6 @@ tr.lp-row-selected>td:first-child,
 .hd-edit-note b{color:var(--navy);font-weight:600}
 
 /* ── Create popup ────────────────────────────────────────────────────────── */
-.hd-modal-sub{margin:-8px 0 18px;font-size:12.5px;line-height:1.5;color:var(--gray)}
 /* The entity, STATED rather than offered. It is styled as a fact — tinted
    panel, no border that reads as a control, no chevron — because anything that
    looks like a field invites a click that has nowhere to go. The lock chip says
@@ -762,9 +782,7 @@ tr.lp-row-selected>td:first-child,
 
 /* The batch, restated as it is typed, next to the button that will file it —
    so the count on the button is one the user has watched climb. */
-.hd-modal-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .hd-summary{font-size:12.5px;color:var(--gray);min-width:0}
-.hd-modal-btns{display:flex;gap:10px;flex-shrink:0;margin-left:auto}
 
 /* Stacked: the header strip cannot span columns that no longer line up, so it
    is dropped and the placeholders do the labelling — they already read as

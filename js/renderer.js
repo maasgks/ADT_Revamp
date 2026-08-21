@@ -53,10 +53,8 @@ function renderPageContent(target){
   if(page==='contracts'){el.innerHTML=buildContractsListingHTML();return;}
   if(page==='all-leaves'){el.innerHTML=buildAllLeavesHTML();return;}
   if(page==='leave-policy-edit'){el.innerHTML=buildEditLeavePolicyHTML();return;}
-  if(page==='leave-policy-add'){el.innerHTML=buildAddLeavePolicyHTML();return;}
   if(page==='payheads'){el.innerHTML=buildPayheadsPageHTML();return;}
   if(page==='holidays'){el.innerHTML=buildHolidaysPageHTML();return;}
-  if(page==='leave-add'){el.innerHTML=buildAddLeaveHTML();return;}
   if(page==='team-add'){el.innerHTML=buildAddTeamHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
@@ -218,11 +216,11 @@ function renderADTPage(){
   // Show/hide + button in topbar based on current page
   const addBtn=document.getElementById('tb-page-add-btn');
   if(addBtn){
-    const noAddPages=['dashboard','cost-calculator','leave-policy-add','leave-policy-edit','team-add','leave-add','contract-type-select','contract-eor','contract-peo','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
+    const noAddPages=['dashboard','cost-calculator','leave-policy-edit','team-add','contract-type-select','contract-eor','contract-peo','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>{selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policy-add';renderADTPage();}};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
@@ -762,8 +760,8 @@ var PALETTE_EXTRA=[
   /* Create actions - each one is a click that otherwise needs a page first. */
   {label:'Create a contract',group:'Create',keys:'new contract eor peo hire',run:function(){navigatePage('contracts');addListingItem('contracts');}},
   {label:'Add an employee',group:'Create',keys:'new employee people hire staff',run:function(){navigatePage('employees');addListingItem('employees');}},
-  {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){page='leave-add';renderADTPage();}},
-  {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policy-add';renderADTPage();}},
+  {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){navigatePage('all-leaves');startAddLeave();}},
+  {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){navigatePage('leave-policies');startAddLeavePolicy();}},
   {label:'Add holidays',group:'Create',keys:'new holiday holidays calendar public festival entity day off',run:function(){navigatePage('holidays');startAddHoliday();}},
   {label:'Create a team',group:'Create',keys:'new team group department',run:function(){page='team-add';renderADTPage();}},
   {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},

@@ -999,6 +999,7 @@ function renderAlSidebar(){
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
 var alDurationType='multiple';
+var alAddModalOpen=false;   // creation is a popup, like every other create form
 function setAlDurationType(type){
   alDurationType=type;
   const form=document.getElementById('al-add-form');
@@ -1071,11 +1072,23 @@ function submitAddLeave(isDraft){
     appliedDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString(),
     createdBy:'Admin',status:isDraft?'Pending':'Pending',subStatus:'Unpaid'
   });
-  alDurationType='multiple';
-  page='all-leaves';renderADTPage();
+  alDurationType='multiple';alAddModalOpen=false;
+  renderADTPage();
   showToast(isDraft?'Leave saved as draft':'Leave request created','success',(empVal||'Employee')+' &middot; '+(typeVal&&typeVal!=='Select'?typeVal:'Casual Leave'));
 }
-function buildAddLeaveHTML(){
+/* CREATION IS A POPUP, like every other create form in the app. This was the
+   second-to-last page that navigated away to file one record, which meant the
+   queue you were adding to vanished the moment you started adding to it.
+
+   NOTHING ABOUT THE FORM ITSELF CHANGED. The same field ids, the same duration
+   radios and the same submit read them, so setAlDurationType's live show/hide
+   of the To Date and the Session picker works exactly as it did — only the
+   shell around them is different. */
+function startAddLeave(){
+  alDurationType='multiple';alAddModalOpen=true;renderADTPage();
+}
+function cancelAddLeave(){alAddModalOpen=false;renderADTPage();}
+function buildAddLeaveModalHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
   const radioItem=function(type,label,checked){
     return '<label class="al-dur-radio'+(checked?' selected':'')+'" data-type="'+type+'" onclick="setAlDurationType(\''+type+'\')" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:0;font-size:13px;color:var(--navy);font-weight:500">'
@@ -1083,12 +1096,13 @@ function buildAddLeaveHTML(){
       +(checked?'<span style="width:6px;height:6px;border-radius:50%;background:#fff;display:block"></span>':'')
       +'</span>'+label+'</label>';
   };
-  return '<div class="ep-page" id="al-add-form">'
-    +'<div><button class="ep-back" onclick="page=\'all-leaves\';renderADTPage()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to All Leaves</button></div>'
-    +'<div class="ep-header">'
-    +'<div class="ep-title-wrap"><span class="ep-title">Create New Leave</span><span style="font-size:12px;color:var(--gray);margin-left:4px">Add leave details</span></div>'
-    +'</div>'
-    +'<div class="ep-form-card" style="padding:0;overflow:visible">'
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="cancelAddLeave()">'
+    +'<div class="ct-modal" style="width:min(860px,96vw)" onclick="event.stopPropagation()" id="al-add-form">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
+    +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p>'
+    +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
 
     // Row 1: Employee + Leave Type
     +'<div class="policy-form-section">'
@@ -1142,12 +1156,14 @@ function buildAddLeaveHTML(){
     +'</div>'
     +'</div>'
 
-    // Footer actions
-    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-top:1px solid var(--border);background:#fafbfc;border-radius:0 0 12px 12px">'
-    +'<button class="ep-cancel-btn" style="border-radius:99px" onclick="submitAddLeave(true)">Draft</button>'
-    +'<button class="ep-save-btn" style="border-radius:99px;padding:8px 28px" onclick="submitAddLeave(false)">Create</button>'
     +'</div>'
-
+    +'<div class="ct-modal-foot">'
+      +'<button class="ep-cancel-btn" onclick="submitAddLeave(true)">Save as Draft</button>'
+      +'<div class="ct-modal-btns">'
+        +'<button class="ep-cancel-btn" onclick="cancelAddLeave()">Cancel</button>'
+        +'<button class="ep-save-btn" onclick="submitAddLeave(false)">Create Request</button>'
+      +'</div>'
+    +'</div>'
     +'</div></div>';
 }
 function buildAllLeavesHTML(){
@@ -1189,7 +1205,8 @@ function buildAllLeavesHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(alSelectedId?' open':'')+'" id="al-split-sb"><div class="lp-isb" id="al-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +(alAddModalOpen?buildAddLeaveModalHTML():'');
 }
 function togglePmAction(id,e){
   if(e)e.stopPropagation();
@@ -3518,7 +3535,7 @@ function buildApplicableEmpSection(){
   const filtered=getFilteredAvailEmps();
   const sel=[...selectedEmps].map(id=>empPool.find(e=>e.id===id)).filter(Boolean);
   const availHTML=filtered.length?filtered.map(e=>`<button type="button" class="employee-option" onclick="addApEmp('${e.id}')"><div><div class="employee-name">${e.name}</div><div class="employee-key">${e.key}</div></div><span class="employee-add">+</span></button>`).join(''):'<div class="empty-selection">No employees match the filter.</div>';
-  const selHTML=sel.length?sel.map(e=>`<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">${e.name[0]}</div><span class="lp-sb-emp-name">${e.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${e.key}</span><button type="button" class="lp-sb-emp-remove" onclick="removeApEmp('${e.id}')">&times;</button></div>`).join(''):'<div class="empty-selection">No employees added yet.</div>';
+  const selHTML=sel.length?sel.map(e=>`<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">${e.name[0]}</div><span class="lp-sb-emp-name">${e.name} &mdash; ${e.key}</span><button type="button" class="lp-sb-emp-remove" onclick="removeApEmp('${e.id}')">&times;</button></div>`).join(''):'<div class="empty-selection">No employees added yet.</div>';
   return `<div class="policy-form-section">
     <div class="policy-section-title">Applicable Employees</div>
     <div class="ap-filter-section">
@@ -3565,7 +3582,7 @@ function renderApEmpLists(){
   const selEl=document.querySelector('.employee-selected .ep-emp-tags');
   const countEl=document.getElementById('ap-sel-count');
   if(avail)avail.innerHTML=filtered.length?filtered.map(e=>`<button type="button" class="employee-option" onclick="addApEmp('${e.id}')"><div><div class="employee-name">${e.name}</div><div class="employee-key">${e.key}</div></div><span class="employee-add">+</span></button>`).join(''):'<div class="empty-selection">No employees match.</div>';
-  if(selEl)selEl.innerHTML=sel.length?sel.map(e=>`<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">${e.name[0]}</div><span class="lp-sb-emp-name">${e.name} ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ${e.key}</span><button type="button" class="lp-sb-emp-remove" onclick="removeApEmp('${e.id}')">&times;</button></div>`).join(''):'<div class="empty-selection">No employees added yet.</div>';
+  if(selEl)selEl.innerHTML=sel.length?sel.map(e=>`<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">${e.name[0]}</div><span class="lp-sb-emp-name">${e.name} &mdash; ${e.key}</span><button type="button" class="lp-sb-emp-remove" onclick="removeApEmp('${e.id}')">&times;</button></div>`).join(''):'<div class="empty-selection">No employees added yet.</div>';
   if(countEl)countEl.textContent=sel.length+' Selected';
 }
 function addApEmp(id){selectedEmps.add(id);renderApEmpLists();}
@@ -4444,7 +4461,7 @@ function buildAddHolidaysModalHTML(){
     +'<div class="ct-modal" style="width:min(940px,96vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
       +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
-    +'<p class="hd-modal-sub">One row per holiday, each with its own name. Add as many as the calendar needs — they are published to the entity together.</p>'
+    +'<p class="ct-modal-sub">One row per holiday, each with its own name. Add as many as the calendar needs — they are published to the entity together.</p>'
 
     /* Entity is stated, not offered — see startAddHoliday. */
     +'<div class="hd-entity-row">'
@@ -4482,9 +4499,9 @@ function buildAddHolidaysModalHTML(){
     +'</div>'
     +'</div>'
 
-    +'<div class="hd-modal-foot">'
+    +'<div class="ct-modal-foot">'
     +'<div class="hd-summary" id="hd-summary">'+hdSummaryText()+'</div>'
-    +'<div class="hd-modal-btns">'
+    +'<div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddHoliday()">Cancel</button>'
       +'<button class="ep-save-btn" id="hd-submit-btn" onclick="submitAddHolidays()">'+hdSubmitLabel()+'</button>'
     +'</div>'
@@ -4538,17 +4555,30 @@ function submitAddHolidays(){
          :('Published to the '+entity+' calendar for '+(branch===HD_ALL_BRANCHES?'all branches':branch)+'.'));
 }
 
-function buildAddLeavePolicyHTML(){
+/* CREATION IS A POPUP, like every other create form in the app — Payheads,
+   Holidays, Compliance, Rates & Rules and Contract Templates all file their
+   record from a .ct-modal without leaving the listing behind them. This was
+   the last one that navigated away to a page of its own, which meant the list
+   you were adding to vanished the moment you started adding to it, and Cancel
+   was a navigation rather than a dismissal.
+
+   NOTHING ABOUT THE FORM ITSELF CHANGED. The same three sections, the same
+   field ids and the same submit read it, so the employee picker and its live
+   repaint (renderApEmpLists) work exactly as they did — only the shell around
+   them is different. */
+function startAddLeavePolicy(){
+  selectedEmps=new Set();apFilterType='';apFilterValue='';
+  lpAddModalOpen=true;renderADTPage();
+}
+function buildAddLeavePolicyModalHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
-  return '<div class="ep-page">'
-    +'<div><button class="ep-back" onclick="cancelAddPolicy()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to Leave Policies</button></div>'
-    +'<div class="ep-header">'
-    +'<div class="ep-title-wrap"><span class="ep-title">Add Leave Policy</span><span style="font-size:12px;color:var(--gray);margin-left:4px">Fill in the details to create a new leave policy</span></div>'
-    +'<div class="ep-actions"><button class="ep-cancel-btn" onclick="cancelAddPolicy()">Cancel</button>'
-    +'<button class="ep-save-btn" onclick="submitAddLeavePolicy()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Create Policy</button>'
-    +'</div></div>'
-    +'<div class="ep-form-card" style="padding:0;overflow:visible">'
-    +'<div class="ep-form-title" style="padding:18px 22px;margin:0;background:#fafbfc;border-bottom:1px solid var(--border)">Leave Policy Details</div>'
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="cancelAddPolicy()">'
+    +'<div class="ct-modal" style="width:min(1000px,96vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Leave Policy</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddPolicy()">'+xSvg+'</button></div>'
+    +'<p class="ct-modal-sub">Set the entitlement and its rules, then choose who it applies to.</p>'
+    +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
     +'<div class="policy-form-section">'
     +'<div class="policy-section-title">Basic Information</div>'
     +'<div class="policy-form-grid">'
@@ -4574,6 +4604,11 @@ function buildAddLeavePolicyHTML(){
     +apCS('ap-prorate',['Yes','No'],'No','Select')+'</div>'
     +'</div></div>'
     +buildApplicableEmpSection()
+    +'</div>'
+    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="cancelAddPolicy()">Cancel</button>'
+      +'<button class="ep-save-btn" onclick="submitAddLeavePolicy()">Create Policy</button>'
+    +'</div></div>'
     +'</div></div>';
 }
 function submitAddLeavePolicy(){
@@ -4606,8 +4641,8 @@ function submitAddLeavePolicy(){
     probation:probVal==='Yes',prorate:proVal==='Yes',status:statusVal,
     assignBy:filterTypeVal,assignValue:filterValStr,employees:employees
   });
-  selectedEmps=new Set();apFilterType='';apFilterValue='';
-  page='leave-policies';renderADTPage();
+  selectedEmps=new Set();apFilterType='';apFilterValue='';lpAddModalOpen=false;
+  renderADTPage();
   showToast('Leave policy created','success','"'+typeVal+'" is now '+statusVal.toLowerCase()+'.');
 }
 function submitEditLeavePolicy(){
@@ -4653,7 +4688,8 @@ function buildLeavePoliciesHTML(){
     +'<div class="lp-isb" id="lp-isb-inner">'+sbInner+'</div>'
     +'</div>'
     +'</div>'
-  +'</div>';
+  +'</div>'
+  +(lpAddModalOpen?buildAddLeavePolicyModalHTML():'');
 }
 function buildEditLeavePolicyHTML(){
   const p=leavePoliciesData.find(function(x){return x.id===leaveEditId;})||leavePoliciesData[0];
