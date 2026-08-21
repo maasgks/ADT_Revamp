@@ -55,6 +55,7 @@ function renderPageContent(target){
   if(page==='leave-policy-edit'){el.innerHTML=buildEditLeavePolicyHTML();return;}
   if(page==='leave-policy-add'){el.innerHTML=buildAddLeavePolicyHTML();return;}
   if(page==='payheads'){el.innerHTML=buildPayheadsPageHTML();return;}
+  if(page==='holidays'){el.innerHTML=buildHolidaysPageHTML();return;}
   if(page==='leave-add'){el.innerHTML=buildAddLeaveHTML();return;}
   if(page==='team-add'){el.innerHTML=buildAddTeamHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
@@ -763,6 +764,7 @@ var PALETTE_EXTRA=[
   {label:'Add an employee',group:'Create',keys:'new employee people hire staff',run:function(){navigatePage('employees');addListingItem('employees');}},
   {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){page='leave-add';renderADTPage();}},
   {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policy-add';renderADTPage();}},
+  {label:'Add holidays',group:'Create',keys:'new holiday holidays calendar public festival entity day off',run:function(){navigatePage('holidays');startAddHoliday();}},
   {label:'Create a team',group:'Create',keys:'new team group department',run:function(){page='team-add';renderADTPage();}},
   {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},
   {label:'Add a rate or rule',group:'Create',keys:'new rate rule tax statutory',run:function(){navigatePage('rates-rules');ratesRuleModalOpen=true;renderADTPage();}},

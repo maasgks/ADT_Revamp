@@ -465,11 +465,10 @@
         <div class="emp-support-card" style="margin-top:14px">
           <div>
             <div class="emp-support-title">Need Help?</div>
-            <div class="emp-support-desc">Reach out to HR or raise a support ticket. We're here to help with payroll, leaves, documents and more.</div>
+            <div class="emp-support-desc">Raise a support ticket and we&rsquo;ll take it from there &mdash; payroll, leaves, documents and more.</div>
           </div>
           <div style="display:flex;gap:10px;flex-shrink:0">
-            <button class="emp-support-btn">Contact HR</button>
-            <button class="emp-support-btn ghost">Raise Ticket</button>
+            <button class="emp-support-btn" onclick="raiseTicketFromHelp()">Raise Ticket</button>
           </div>
         </div>
 
@@ -755,40 +754,40 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="alOpenFromDashboard(7)">
                   <td class="hr-emp-name">Utkarsh Shukla</td>
                   <td>Casual Leave</td>
                   <td>15 - 16 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject" onclick="alDecideFromDashboard(7,'Unapproved')">Reject</button><button class="hr-action-btn approve" onclick="alDecideFromDashboard(7,'Approved')">Approve</button></div></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="alOpenFromDashboard(8)">
                   <td class="hr-emp-name">Ashneet Kaur</td>
                   <td>Sick Leave</td>
                   <td>18 May</td>
                   <td class="manager-days">1</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject" onclick="alDecideFromDashboard(8,'Unapproved')">Reject</button><button class="hr-action-btn approve" onclick="alDecideFromDashboard(8,'Approved')">Approve</button></div></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="alOpenFromDashboard(9)">
                   <td class="hr-emp-name">Sneha Kulkarni</td>
                   <td>Earned Leave</td>
                   <td>22 - 23 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject" onclick="alDecideFromDashboard(9,'Unapproved')">Reject</button><button class="hr-action-btn approve" onclick="alDecideFromDashboard(9,'Approved')">Approve</button></div></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="alOpenFromDashboard(10)">
                   <td class="hr-emp-name">Diksha Kumari</td>
                   <td>Casual Leave</td>
                   <td>26 May</td>
                   <td class="manager-days">1</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject" onclick="alDecideFromDashboard(10,'Unapproved')">Reject</button><button class="hr-action-btn approve" onclick="alDecideFromDashboard(10,'Approved')">Approve</button></div></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="alOpenFromDashboard(11)">
                   <td class="hr-emp-name">Pardeep Verga</td>
                   <td>Sick Leave</td>
                   <td>28 - 29 May</td>
                   <td class="manager-days">2</td>
-                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject">Reject</button><button class="hr-action-btn approve">Approve</button></div></td>
+                  <td onclick="event.stopPropagation()"><div class="manager-action-cell"><button class="hr-action-btn reject" onclick="alDecideFromDashboard(11,'Unapproved')">Reject</button><button class="hr-action-btn approve" onclick="alDecideFromDashboard(11,'Approved')">Approve</button></div></td>
                 </tr>
               </tbody>
             </table>

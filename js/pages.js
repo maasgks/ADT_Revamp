@@ -424,7 +424,6 @@ function renderGeSidebar(){
   const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   const iPhone='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.2.73.43 1.44.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.9-.87a2 2 0 0 1 2.11-.45c1.37.27 2.08.5 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>';
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
-  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(geTab==='basic-details'&&geEditMode){
@@ -619,7 +618,6 @@ function renderTmSidebar(){
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
   const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   const statusVal=sbStatus(team.status);
   let body='';
@@ -742,8 +740,52 @@ function buildTeamsListingHTML(){
     +'<div class="lp-split-sb'+(tmSelectedId?' open':'')+'" id="tm-split-sb"><div class="lp-isb" id="tm-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
 }
-function openAlSidebar(id){
-  alSelectedId=id;alTab='basic-details';
+/* The decision carried in from the dashboard's Approve / Reject, held only
+   until the form it pre-fills is submitted or dismissed. It describes one
+   click, not a state the leave is in. */
+let alPendingStatus='';
+function alCancelLog(){alPendingStatus='';isbTab('al',renderAlSidebar);}
+function alSaveLog(id){
+  const l=allLeavesData.find(function(x){return x.id===id;});if(!l)return;
+  const sel=document.getElementById('al-log-status-sel');
+  const inp=document.getElementById('al-log-comment-inp');
+  const to=sel?sel.value:'',comment=inp?inp.value.trim():'';
+  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  if(!to){flash(sel);return;}
+  if(!comment){flash(inp);return;}
+  const was=l.status;
+  const s=stampNow();
+  if(!alLogsData[id])alLogsData[id]=[];
+  alLogsData[id].unshift({date:s.date,time:s.time,user:CURRENT_USER,status:to,action:comment});
+  l.status=to;
+  // A decision is a stage, so it goes on the Workflow too — a comment that
+  // moves nothing is a log entry only.
+  if(to!==was)wfPush(alWorkflowData,id,'Leave '+to,'Moved from '+was+' to '+to+'. '+comment);
+  alPendingStatus='';
+  renderADTPage();
+  showToast('Leave '+to.toLowerCase(),'success',l.name+' · '+l.leaveType+' '+l.leaveFrom+'.');
+}
+/* From the Reporting Manager dashboard. Navigates to the listing, opens THIS
+   row's panel on Logs, and pre-selects the decision — the manager still has to
+   say why, which the dashboard buttons had no room to ask for.
+
+   The state is set BEFORE navigating: openAlSidebar touches DOM that only
+   exists once the leaves page has rendered, so it is queued for after the
+   paint rather than called from the dashboard. */
+// Clicking the ROW (not a button) just opens the record — no decision implied.
+function alOpenFromDashboard(id){alDecideFromDashboard(id,'');}
+function alDecideFromDashboard(id,status){
+  // A decision lands on Logs ready to be explained; a plain row-click opens
+  // the record where you would expect it, on Basic Details.
+  const tab=status?'logs':'basic-details';
+  alPendingStatus=status||'';
+  alSelectedId=id;alTab=tab;
+  navigatePage('all-leaves',true);
+  setTimeout(function(){openAlSidebar(id,tab,status);},0);
+}
+function openAlSidebar(id,tab,pendingStatus){
+  alSelectedId=id;alTab=tab||'basic-details';
+  alPendingStatus=pendingStatus||'';
   const sb=document.getElementById('al-split-sb');if(sb)sb.classList.add('open');
   isbTab('al',renderAlSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.al-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='al-row-'+id));
@@ -776,7 +818,6 @@ function renderPrSidebar(){
   const iBank='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
   const iHash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
   const iCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
-  const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value||'-')+'</div></div></div>';
   let body='';
   if(prTab==='basic-details'){
@@ -928,16 +969,28 @@ function renderAlSidebar(){
        form now: .lp-logs-form-select inside .lp-logs-form-sel-wrap, with the
        chevron the wrapper positions. */
     const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+    /* Arriving from the dashboard's Approve / Reject the decision is already
+       made, so the form opens on it and asks only for the reason. The buttons
+       there cannot collect one, which is why they hand off here rather than
+       committing on the spot — a leave decision with no note is one nobody can
+       explain to the employee later. */
+    const preset=alPendingStatus||l.status;
     const statusOpsOpts=['Approved','Unapproved','Pending']
-      .map(s=>'<option'+(l.status===s?' selected':'')+'>'+s+'</option>').join('');
+      .map(s=>'<option'+(preset===s?' selected':'')+'>'+s+'</option>').join('');
+    const decided=alPendingStatus&&alPendingStatus!==l.status;
     const actionPanel='<div class="lp-logs-form">'
-      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+String(l.status||'').toLowerCase()+'"></span>Update Status</div>'
-      +'<p class="lp-logs-form-sub">Change the leave status and add a note.</p>'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+String(preset||'').toLowerCase()+'"></span>'+(decided?preset:'Update Status')+'</div>'
+      +'<p class="lp-logs-form-sub">'+(decided
+        ? 'Say why &mdash; '+l.name+' will see this on their request.'
+        : 'Change the leave status and add a note.')+'</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select">'+statusOpsOpts+'</select>'+chevSvg+'</div>'
-      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" placeholder="Add a note..."></textarea>'
-      +'<button class="lp-logs-save-btn">Update</button>'
+      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="al-log-status-sel">'+statusOpsOpts+'</select>'+chevSvg+'</div>'
+      +'<div class="lp-logs-form-label">'+(decided?'Reason':'Comment')+' <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="al-log-comment-inp" placeholder="'+(decided?'e.g. Approved — cover arranged with the team':'Add a note...')+'"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="alCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="alSaveLog('+l.id+')">Update</button>'
+      +'</div>'
       +'</div>';
     body='<div class="lp-logs-wrap">'+timelineHTML+actionPanel+'</div>';
   }else if(alTab==='workflow'){
@@ -3930,6 +3983,561 @@ function submitAddPayhead(){
   page='payheads';renderADTPage();
   showToast('Payhead created','success','"'+name+'" added as an active '+cat.toLowerCase()+'.');
 }
+
+/* ══ HOLIDAYS ══════════════════════════════════════════════════════════════
+   Listing, detail panel and creation popup, built out of the same parts every
+   other module uses — apCS filters + listing-stats above the table, .lp-table
+   in a .lp-split-wrap with the .lp-isb-* panel behind the row action, and a
+   .ct-modal popup for creation. Nothing here is a new idea about how a module
+   works; only the holiday-specific parts are new.
+
+   THE ONE THING THAT IS DIFFERENT IS THE CREATE FORM, and it is different
+   because the work is different. Every other create form in the app files ONE
+   record: one payhead, one team, one rate. A holiday calendar is not filed one
+   record at a time — it is published, a dozen dates in one sitting, once a
+   year. A popup that takes one holiday and closes would be opened twelve times
+   for the same piece of work. So the popup takes a LIST: one row per holiday,
+   each with its own name, added and removed in place, saved as a batch. */
+
+const HD_TYPE_TONE={'Public Holiday':'ok','Optional Holiday':'info','Company Holiday':'idle'};
+/* The column is called Type inside a table whose subject is already holidays,
+   so the pill says "Public", not "Public Holiday" — the second word is the
+   table's own heading repeated on every row. The panel spells it out in full,
+   where there is room and nothing to repeat. */
+function hdTypeBadge(t){
+  return '<span class="lp-status-badge tone-'+(HD_TYPE_TONE[t]||'idle')+'" style="min-width:0">'
+    +String(t||'—').replace(/ Holiday$/,'')+'</span>';
+}
+/* "26 Jan 2026" answers WHEN; it does not answer HOW SOON, which is the thing
+   anyone opening a holiday calendar in August actually wants to know. */
+function hdDaysAway(iso){
+  const d=cdParse(iso),t=cdParse(hdTodayISO());
+  if(!d||!t)return '';
+  const n=Math.round((d-t)/86400000);
+  if(n===0)return 'Today';
+  if(n===1)return 'Tomorrow';
+  if(n===-1)return 'Yesterday';
+  if(n>0)return n<31?('In '+n+' days'):('In '+Math.round(n/30)+' month'+(Math.round(n/30)===1?'':'s'));
+  const a=Math.abs(n);
+  return a<31?(a+' days ago'):(Math.round(a/30)+' month'+(Math.round(a/30)===1?'':'s')+' ago');
+}
+
+// ── Filters ──
+function hdToggleStatFilter(v){
+  hdStatusFilter=hdStatusFilter===v?'':v;
+  hdSelectedId=null;renderADTPage();
+}
+/* Upcoming is not a status, so it cannot ride on hdStatusFilter — a calendar
+   can be filtered to "Active AND still to come", and folding the two into one
+   variable would make those mutually exclusive. */
+function hdToggleUpcoming(){
+  hdUpcomingOnly=!hdUpcomingOnly;
+  hdSelectedId=null;renderADTPage();
+}
+function applyHdFilters(){
+  const y=getCSValue('hd-f-year'),t=getCSValue('hd-f-type'),b=getCSValue('hd-f-branch');
+  hdYearFilter=y&&y!=='All Years'?y:'';
+  hdTypeFilter=t&&t!=='All Types'?t:'';
+  hdBranchFilter=b&&b!=='Every Branch'?b:'';
+  hdSelectedId=null;renderADTPage();
+}
+function resetHdFilters(){
+  hdYearFilter='';hdTypeFilter='';hdBranchFilter='';hdStatusFilter='';hdUpcomingOnly=false;
+  hdSelectedId=null;renderADTPage();
+}
+
+// ── Detail panel ──
+function openHdSidebar(id,tab){
+  hdSelectedId=id;hdTab=tab||'basic-details';hdEditMode=false;
+  const sb=document.getElementById('hd-split-sb');if(sb)sb.classList.add('open');
+  const wrap=document.getElementById('hd-split-wrap');if(wrap)wrap.classList.add('has-sb');
+  isbTab('hd',renderHdSidebar);
+  document.querySelectorAll('.hd-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='hd-row-'+id);});
+}
+function closeHdSidebar(){
+  hdSelectedId=null;hdEditMode=false;
+  const sb=document.getElementById('hd-split-sb');if(sb)sb.classList.remove('open');
+  const wrap=document.getElementById('hd-split-wrap');if(wrap)wrap.classList.remove('has-sb');
+  document.querySelectorAll('.hd-row').forEach(function(r){r.classList.remove('lp-row-selected');});
+}
+function navHdTab(tab){hdTab=tab;hdEditMode=false;isbTab('hd',renderHdSidebar);}
+/* The tab strip is unchanged between the two modes, so isbTab swaps only the
+   body — the tabs keep their identity and the panel does not flash. */
+function hdSetEdit(on){hdEditMode=!!on;isbTab('hd',renderHdSidebar);}
+/* WHAT EDIT DOES NOT TOUCH: the entity, and the status.
+
+     The entity, because a holiday moved to another entity's calendar is not
+     an edit, it is a different holiday — and the create popup already refuses
+     to ask the question for the same reason.
+
+     The status, because moving it is what the Logs tab is for, and moving it
+     there is what attaches a comment to the move. Offering it here as well
+     would be a second way to deactivate a holiday that leaves no trace of why,
+     and the two would disagree the first time anyone used this one. */
+function saveHdEdit(){
+  const h=holidaysData.find(function(x){return x.id===hdSelectedId;});if(!h)return;
+  const nameEl=document.getElementById('hdsb-name');
+  const name=nameEl?nameEl.value.trim():'';
+  const date=getCDValue('hdsb-date');
+  const type=getCustomSelectValue('hdsb-type');
+  const branch=getCustomSelectValue('hdsb-branch')||h.branch||HD_ALL_BRANCHES;
+  const recEl=document.getElementById('hdsb-rec');
+  const rec=recEl?recEl.checked:h.recurring;
+  if(!name){showToast('Holiday name is required','error');if(nameEl)nameEl.focus();return;}
+  if(!date){showToast('Date is required','error','Pick the day this holiday falls on.');return;}
+  if(!type){showToast('Type is required','error','Pick Public, Optional or Company.');return;}
+  /* Same clash rule the create popup enforces, minus this record itself —
+     without the id check, saving a holiday without moving it would report a
+     clash against itself. */
+  const clash=holidaysData.find(function(x){
+    return x.id!==h.id&&x.entity===h.entity&&x.status==='Active'&&x.date===date&&hdBranchMatch(x,branch);
+  });
+  if(clash){showToast(hdDateLabel(date)+' is already a holiday','error',
+    '"'+clash.name+'" is on the '+h.entity+' calendar for that date.');return;}
+  /* Collected BEFORE the record is written, so the workflow entry can say what
+     actually moved rather than just "edited". */
+  const changes=[];
+  if(h.name!==name)changes.push('renamed from "'+h.name+'"');
+  if(h.date!==date)changes.push('moved from '+hdDateLabel(h.date)+' to '+hdDateLabel(date));
+  if(h.type!==type)changes.push('type changed from '+h.type+' to '+type);
+  if((h.branch||HD_ALL_BRANCHES)!==branch)changes.push('moved to '+branch);
+  if(h.recurring!==rec)changes.push(rec?'now repeats every year':'no longer repeats yearly');
+  if(!changes.length){hdSetEdit(false);showToast('No changes','info','Nothing was different.');return;}
+  h.name=name;h.date=date;h.type=type;h.branch=branch;h.recurring=rec;
+  hdWorkflow(h);   // seed first, so the edit sits on top of the history
+  wfPush(hdWorkflowData,h.id,'Holiday Edited',changes.join('; ')+'.');
+  hdEditMode=false;
+  renderADTPage();   // the date may have moved the row, so the list is rebuilt
+  showToast('Holiday updated','success','"'+h.name+'" is on '+hdDateLabel(h.date)+'.');
+}
+function hdCancelLog(){isbTab('hd',renderHdSidebar);}
+function hdSeedLogs(h){
+  const parts=String(h.createdAt).split(' | ');
+  return seedLogs(h,[{date:parts[0],time:parts[1]||'09:00:00 AM',user:h.createdBy,status:h.status,
+    action:'"'+h.name+'" added to the '+h.entity+' calendar for '+hdDateLabel(h.date)+'.'}]);
+}
+/* Derived from the record rather than written out per holiday, for the reason
+   every other module derives its timeline: a hand-typed fixture disagrees with
+   the record the first time a status moves in Logs, and a Workflow tab that
+   ends on a different state than the panel is showing is worse than none.
+   Seeded once, then appended to by hdSaveLog, so a move made this session
+   stays on the timeline. */
+const hdWorkflowData={};
+function hdWorkflow(h){
+  if(!hdWorkflowData[h.id]){
+    const parts=String(h.createdAt).split('|');
+    const d=(parts[0]||'').trim(),t=(parts[1]||'').trim()||'09:00:00 AM';
+    hdWorkflowData[h.id]=[   // newest first, like every other Workflow tab
+      {title:h.status==='Active'?'Holiday Published':'Holiday Withdrawn',user:h.createdBy,date:d,time:t,
+       description:h.status==='Active'
+         ? '"'+h.name+'" is live on the '+h.entity+' calendar — attendance and payroll treat '+hdDateLabel(h.date)+' as a non-working day.'
+         : '"'+h.name+'" is withdrawn — '+hdDateLabel(h.date)+' is treated as an ordinary working day again.'},
+      {title:'Calendar Entry Configured',user:h.createdBy,date:d,time:t,
+       description:h.type+' set for '+hdDateLabel(h.date)+' ('+hdDayName(h.date)+')'
+         +(h.recurring?', repeating every year.':', for this year only.')},
+      {title:'Holiday Added',user:h.createdBy,date:d,time:t,
+       description:'"'+h.name+'" added to the '+h.entity+' holiday calendar by '+h.createdBy+'.'}
+    ];
+  }
+  return hdWorkflowData[h.id];
+}
+function hdSaveLog(id){
+  const h=holidaysData.find(function(x){return x.id===id;});if(!h)return;
+  const was=h.status;
+  const inp=document.getElementById('hd-log-comment-inp');
+  const comment=inp?inp.value.trim():'';
+  hdSeedLogs(h);
+  if(!lpCommitLog(h,'hd-log-status-sel','hd-log-comment-inp',h.logs))return;
+  /* A move made in Logs is appended to Workflow too, so the two tabs cannot
+     end on different stories. A comment that does not move the status is a log
+     entry only — the workflow records stages, not chatter. */
+  if(h.status!==was){
+    hdWorkflow(h);   // seed first, so the new stage sits on top of the history
+    wfPush(hdWorkflowData,id,h.status==='Active'?'Holiday Published':'Holiday Withdrawn',
+      'Moved from '+was+' to '+h.status+'. '+comment);
+  }
+  renderADTPage();
+  showToast('Log added','success','"'+h.name+'" is now '+h.status+'.');
+}
+function renderHdSidebar(){
+  const h=holidaysData.find(function(x){return x.id===hdSelectedId;});if(!h)return'';
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
+  const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
+  const tabBar='<div class="lp-isb-tabbar">'
+    +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'hd-isb-tabs\')" title="Scroll left">'+chevL+'</button>'
+    +'<div class="lp-isb-tabs" id="hd-isb-tabs">'+tabs.map(function(t){
+      return '<button class="lp-isb-tab'+(hdTab===t.id?' active':'')+'" onclick="navHdTab(\''+t.id+'\')">'+t.label+'</button>';
+    }).join('')+'</div>'
+    +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'hd-isb-tabs\')" title="Scroll right">'+chevR+'</button>'
+    +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeHdSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'</div>';
+  const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const iRepeat='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
+  const iPin='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+  const iBuild='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
+  const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+  const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
+  const iPen='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  let body='';
+  if(hdTab==='basic-details'&&hdEditMode){
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Edit Holiday</span></div>'
+      +'<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
+      +'<div class="lp-sb-field" style="grid-column:1/-1"><label>Holiday Name <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="hdsb-name" value="'+attrSafe(h.name)+'" placeholder="e.g. Republic Day"></div>'
+      +'<div class="lp-sb-field"><label>Date <span class="req">*</span></label>'
+        +apCD('hdsb-date',h.date,'Select date')+'</div>'
+      +'<div class="lp-sb-field"><label>Type <span class="req">*</span></label>'
+        +customSelect('hdsb-type',h.type,HD_TYPES,'Select Type')+'</div>'
+      +'<div class="lp-sb-field"><label>Branch</label>'
+        +customSelect('hdsb-branch',h.branch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)+'</div>'
+      +'<div class="lp-sb-field"><label>Repeats</label>'
+        +'<label class="hd-check" style="justify-content:flex-start" title="Recurs on the same date every year">'
+        +'<input type="checkbox" id="hdsb-rec"'+(h.recurring?' checked':'')+'><span>Repeats every year</span></label></div>'
+      +'</div>'
+      +'<p class="hd-edit-note">Entity and status are not changed here — a status move belongs in <b>Logs</b>, where it carries a comment.</p>'
+      +'<div class="lp-sb-form-actions">'
+      +'<button class="ep-cancel-btn" onclick="hdSetEdit(false)">Cancel</button>'
+      +'<button class="ep-save-btn" onclick="saveHdEdit()">Save Changes</button>'
+      +'</div></div></div>';
+  }else if(hdTab==='basic-details'){
+    /* The header states the date the way a calendar does — the day, the date,
+       and how far off it is — because that is the whole record. The grid below
+       is the metadata; this is the fact. */
+    const upcoming=hdIsUpcoming(h)&&h.status==='Active';
+    const off=h.status!=='Active';
+    const d=cdParse(h.date);
+    /* The chip is tinted by TYPE, the same colour its badge carries, so the
+       date block and the badge across the header read as one record rather
+       than two unrelated marks. */
+    body='<div class="hd-sb-hero'+(upcoming?' is-next':'')+(off?' is-off':'')+'">'
+      +'<div class="hd-sb-datechip tone-'+(HD_TYPE_TONE[h.type]||'idle')+'"><span class="hd-sb-dc-day">'+(d?d.getDate():'—')+'</span>'
+        +'<span class="hd-sb-dc-mon">'+(d?CD_MON_SHORT[d.getMonth()]+' '+hdYearOf(h.date):'')+'</span></div>'
+      +'<div class="hd-sb-hero-text"><div class="hd-sb-hero-name">'+h.name+'</div>'
+      +'<div class="hd-sb-hero-meta">'+hdDayName(h.date)
+        +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')
+        +'<span class="hd-sb-dot">•</span>'+hdDaysAway(h.date)+'</div></div>'
+      +'<div class="hd-sb-hero-right">'
+        +'<div class="hd-sb-badges">'+hdTypeBadge(h.type)
+          +'<span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></div>'
+        +'<button class="lp-sb-view-edit-btn" onclick="hdSetEdit(true)">'+iPen+' Edit</button>'
+      +'</div>'
+      +'</div>'
+      /* "Inactive" names a state without saying what it costs. A withdrawn
+         holiday means people work that day, which is the part anyone reading
+         this panel actually needs, so it is said rather than inferred. */
+      +(off?'<div class="hd-sb-note">Withdrawn — '+hdDateLabel(h.date)+' is treated as an ordinary working day.</div>':'')
+      +'<div class="lp-sb-detail-grid">'
+      +fc(iBuild,'Entity',h.entity)
+      +fc(iPin,'Branch',h.branch||HD_ALL_BRANCHES)
+      +fc(iRepeat,'Repeats',h.recurring?'Every year':'One-off')
+      +fc(iUser,'Created By',h.createdBy)
+      +fc(iCal,'Created At',h.createdAt)
+      +'</div>';
+  }else if(hdTab==='logs'){
+    const logs=hdSeedLogs(h);
+    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+    const timeline=logs.length?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
+      const sk=statusTone(l.status);
+      return '<div class="lp-log-row">'
+        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+        +'<div class="lp-log-card">'+logHeadRow(_all,i,sk,l.status)
+        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
+        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+        +'</div></div>';
+    }).join('')+'</div>':'<div class="lp-logs-empty">No activity logs yet.</div>';
+    const form='<div class="lp-logs-form">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(h.status)+'"></span>'+h.status+'</div>'
+      +'<p class="lp-logs-form-sub">Move this holiday on and say why</p>'
+      +lpLogStatusField('hd-log-status-sel',h.status,['Active','Inactive'])
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="hd-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<div style="display:flex;gap:10px;margin-top:12px">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="hdCancelLog()">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="hdSaveLog('+h.id+')">Submit</button>'
+      +'</div></div>';
+    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  }else{
+    // Shared renderer, so it reads like every other Workflow tab.
+    body=wfTimelineHTML(hdWorkflow(h));
+  }
+  return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+
+// ── Listing ──
+function buildHolidaysPageHTML(){
+  const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
+  const all=hdEntityRows();
+  const active=all.filter(function(h){return h.status==='Active';}).length;
+  const inactive=all.filter(function(h){return h.status==='Inactive';}).length;
+  const upcoming=all.filter(function(h){return h.status==='Active'&&hdIsUpcoming(h);}).length;
+  const nextId=hdNextUpId();
+  const rows=hdRows();
+  if(hdSelectedId&&!rows.some(function(h){return h.id===hdSelectedId;}))hdSelectedId=null;
+  const pgn=listPage('holidays',[hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdUpcomingOnly?'up':'',hdCurrentEntityName()].join('|'),
+    rows.map(function(h,i){
+      return '<tr class="hd-row'+(hdSelectedId===h.id?' lp-row-selected':'')+'" id="hd-row-'+h.id+'" style="cursor:pointer" onclick="openHdSidebar('+h.id+')">'
+        +'<td class="lp-c-n">'+(i+1)+'</td>'
+        +'<td><span style="color:var(--orange);font-weight:500">'+h.name+'</span>'
+          +(h.id===nextId?'<span class="hd-next-chip" title="The next holiday coming up">Next</span>':'')+'</td>'
+        +'<td style="white-space:nowrap">'+hdDateLabel(h.date)+'</td>'
+        +'<td style="color:var(--gray);white-space:nowrap">'+(hdDayName(h.date)||'—')
+          +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')+'</td>'
+        +'<td>'+hdTypeBadge(h.type)+'</td>'
+        +'<td'+(h.branch&&h.branch!==HD_ALL_BRANCHES
+            ?' style="font-weight:600;color:var(--navy)"'
+            :' style="color:var(--gray)"')+'>'+(h.branch||HD_ALL_BRANCHES)+'</td>'
+        +'<td style="color:'+(h.recurring?'var(--navy)':'var(--gray)')+'">'+(h.recurring?'Yearly':'One-off')+'</td>'
+        +'<td><span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></td>'
+        +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openHdSidebar('+h.id+')" title="View Details">'+dotsIco+'</button></td>'
+        +'</tr>';
+    }),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No holidays match this filter.</td></tr>');
+  return '<div class="lp-page">'
+    +dashboardBackHTML()
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +apCS('hd-f-year',hdYearOptions(),hdYearFilter,'All Years')
+    +apCS('hd-f-type',HD_TYPES,hdTypeFilter,'All Types')
+    +apCS('hd-f-branch',hdBranchOptions(),hdBranchFilter,'Every Branch')
+    +clearFiltersBtn([hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdUpcomingOnly?'Upcoming':''],'resetHdFilters()')
+    +'<button class="lp-pill-search" onclick="applyHdFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(hdUpcomingOnly?' stat-selected':'')+'" onclick="hdToggleUpcoming()" title="Holidays still to come"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+upcoming+'</div><div class="listing-stat-label">Upcoming</div></div>'
+    +'<div class="listing-stat'+(hdStatusFilter==='Active'?' stat-selected':'')+'" onclick="hdToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+active+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(hdStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="hdToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+inactive+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px" id="hd-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Branch</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
+    +'</div></div>'
+    +'<div class="lp-split-sb'+(hdSelectedId?' open':'')+'" id="hd-split-sb"><div class="lp-isb" id="hd-isb-inner">'+(hdSelectedId?renderHdSidebar():'')+'</div></div>'
+    +'</div></div>'
+    +(hdModalOpen?buildAddHolidaysModalHTML():'');
+}
+
+/* ── Create popup: a LIST of holidays, not one ─────────────────────────────
+   THE ROWS ARE STATE, NOT MARKUP. Add Holiday repaints the block, so anything
+   already typed has to be read back into hdDraftRows first (hdSyncRows) or the
+   row the user just asked for would wipe the ones above it. Same principle as
+   the payhead slab list — and the same reason the repaint is scoped to
+   #hd-row-list rather than going through renderADTPage(): rebuilding the modal
+   would clear everything above the rows.
+
+   DAY IS DERIVED, NEVER TYPED. Picking a date fills the Day field in and, if
+   the date lands on a Saturday or Sunday, says so under the row — a holiday on
+   a weekend costs the entity no working day, and that is worth knowing BEFORE
+   it is published, not after somebody asks why the leave balance did not move. */
+function hdBlankRow(){return {name:'',date:'',type:'',recurring:true};}
+/* THE ENTITY IS NOT A QUESTION. Which calendar a holiday goes on is already
+   decided by the entity being worked in — the one named in the topbar switcher
+   — so the popup states it rather than asking. Offering it as a field would be
+   offering a second, quieter way to change entity that disagrees with the
+   switcher the moment the two are set differently, and a holiday filed against
+   the wrong entity is invisible until somebody works a day the calendar said
+   was off. Switching entity is one action, in one place, and it is not here. */
+function startAddHoliday(){
+  hdDraftRows=[hdBlankRow()];
+  hdDraftEntity=hdCurrentEntityName();
+  /* Pre-set to whatever the list is filtered to: if you are looking at the
+     Bengaluru calendar, that is the calendar you are adding to. */
+  hdDraftBranch=hdBranchFilter||HD_ALL_BRANCHES;
+  hdModalOpen=true;renderADTPage();
+}
+function cancelAddHoliday(){hdDraftRows=[];hdDraftEntity='';hdModalOpen=false;renderADTPage();}
+// Read the DOM back into state before any repaint.
+function hdSyncRows(){
+  hdDraftRows.forEach(function(r,i){
+    const n=document.getElementById('hd-row-name-'+i);if(n)r.name=n.value.trim();
+    const d=document.getElementById('hd-row-date-'+i);if(d)r.date=d.value;
+    const c=document.getElementById('hd-row-rec-'+i);if(c)r.recurring=c.checked;
+    r.type=getCustomSelectValue('hd-row-type-'+i)||r.type;
+  });
+  hdDraftBranch=getCustomSelectValue('hd-new-branch')||hdDraftBranch;
+}
+function hdRenderRows(){
+  const list=document.getElementById('hd-row-list');
+  if(!list){renderADTPage();return;}
+  list.innerHTML=hdRowsHTML();
+  hdPaintSummary();
+}
+function hdAddRow(){hdSyncRows();hdDraftRows.push(hdBlankRow());hdRenderRows();}
+function hdRemoveRow(i){
+  hdSyncRows();
+  if(hdDraftRows.length<=1)return;   // an empty batch is not a batch
+  hdDraftRows.splice(i,1);hdRenderRows();
+}
+/* apCD's onpick hook is handed the value, not the field, so there is no way to
+   know WHICH row moved — and no need to. The whole list is cheap to repaint,
+   and repainting it is what lets the weekend note under a row appear the
+   moment its date makes it true. Nothing is focused at this point: the click
+   that got here was on a calendar cell. */
+function hdDatePicked(){hdSyncRows();hdRenderRows();}
+function hdRowsHTML(){
+  const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+  return hdDraftRows.map(function(r,i){
+    const only=hdDraftRows.length===1;
+    const day=hdDayName(r.date);
+    /* A date already used by an earlier row in this same batch. Flagged here,
+       inline and while it is still being typed, rather than only at submit —
+       a duplicate you can see is a duplicate you fix. */
+    const dupe=r.date&&hdDraftRows.some(function(o,j){return j<i&&o.date===r.date;});
+    let note='';
+    if(dupe)note='<div class="hd-row-note is-bad">Row '+(i+1)+' repeats a date already used above.</div>';
+    else if(hdIsWeekend(r.date))note='<div class="hd-row-note">Falls on a '+day+' — no working day is lost.</div>';
+    return '<div class="hd-row-form'+(dupe?' is-bad':'')+'">'
+      +'<div class="hd-row-index">'+(i+1)+'</div>'
+      +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-name-'+i+'" value="'+attrSafe(r.name)+'" placeholder="e.g. Republic Day" aria-label="Holiday name, row '+(i+1)+'" oninput="hdUpdateSummary()"></div>'
+      +'<div class="hd-cell">'+apCD('hd-row-date-'+i,r.date,'Select date','hdDatePicked')+'</div>'
+      +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-day-'+i+'" value="'+attrSafe(day)+'" readonly placeholder="From date" aria-label="Day, row '+(i+1)+'" title="Taken from the date — not typed"></div>'
+      /* The shared customSelect has no change hook, so the cell listens instead:
+         the click bubbles up after selectCustomOption has written the value, and
+         the deferred call reads it back so the footer count and the button label
+         move on a Type pick the same way they move on a name keystroke. */
+      +'<div class="hd-cell" onclick="setTimeout(hdUpdateSummary,0)">'+customSelect('hd-row-type-'+i,r.type,HD_TYPES,'Select Type')+'</div>'
+      +'<div class="hd-cell"><label class="hd-check" title="Recurs on the same date every year"><input type="checkbox" id="hd-row-rec-'+i+'"'+(r.recurring?' checked':'')+' onchange="hdUpdateSummary()"><span>Yearly</span></label></div>'
+      +'<button class="hd-row-del" onclick="hdRemoveRow('+i+')" title="'
+        +(only?'A batch needs at least one holiday':'Remove this holiday')+'"'+(only?' disabled':'')+'>'+iTrash+'</button>'
+      +note
+      +'</div>';
+  }).join('');
+}
+// A row counts as ready only once it can actually become a holiday.
+function hdReadyRows(){return hdDraftRows.filter(function(r){return r.name&&r.date&&r.type;});}
+function hdSummaryText(){
+  const ready=hdReadyRows();
+  if(!ready.length)return 'Give each row a name, a date and a type.';
+  const by={};
+  ready.forEach(function(r){by[r.type]=(by[r.type]||0)+1;});
+  const parts=Object.keys(by).map(function(k){return by[k]+' '+k.replace(/ Holiday$/,'');});
+  return ready.length+' holiday'+(ready.length===1?'':'s')+' ready — '+parts.join(', ');
+}
+function hdSubmitLabel(){
+  const n=hdReadyRows().length;
+  return n>1?('Add '+n+' Holidays'):'Add Holiday';
+}
+/* The footer restates the batch as it is typed, so "Add 6 Holidays" is a count
+   the user has already watched climb rather than a number to trust on faith. */
+function hdPaintSummary(){
+  const sum=document.getElementById('hd-summary');if(sum)sum.textContent=hdSummaryText();
+  const chip=document.getElementById('hd-count-chip');
+  if(chip)chip.textContent=hdDraftRows.length+' row'+(hdDraftRows.length===1?'':'s');
+  const btn=document.getElementById('hd-submit-btn');if(btn)btn.textContent=hdSubmitLabel();
+}
+function hdUpdateSummary(){hdSyncRows();hdPaintSummary();}
+/* Same popup every other creation form uses — .ct-modal-overlay / .ct-modal,
+   Cancel and the primary action on one right-aligned row. Only the width
+   differs, because a holiday row is five controls wide and 560px would stack
+   them into unreadable columns. */
+function buildAddHolidaysModalHTML(){
+  if(!hdDraftRows.length)hdDraftRows=[hdBlankRow()];
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const plusSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  const bldSvg='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
+  const lockSvg='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="cancelAddHoliday()">'
+    +'<div class="ct-modal" style="width:min(940px,96vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
+    +'<p class="hd-modal-sub">One row per holiday, each with its own name. Add as many as the calendar needs — they are published to the entity together.</p>'
+
+    /* Entity is stated, not offered — see startAddHoliday. */
+    +'<div class="hd-entity-row">'
+      +'<div class="hd-entity-ico">'+bldSvg+'</div>'
+      +'<div class="hd-entity-text">'
+        +'<div class="hd-entity-label">Entity</div>'
+        +'<div class="hd-entity-name">'+(hdDraftEntity||'—')+'</div>'
+      +'</div>'
+      /* Entity is stated because it is decided elsewhere; BRANCH is asked,
+         because it is the one thing about this batch only the person filing it
+         knows. Once per batch rather than per row: a batch is one branch's
+         calendar — the Bengaluru list and the all-branch list are two
+         sittings, not two rows of one. */
+      +'<div class="hd-branch-field">'
+        +'<label class="hd-entity-label">Branch</label>'
+        +customSelect('hd-new-branch',hdDraftBranch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)
+      +'</div>'
+      +'<span class="hd-entity-lock" title="Holidays are added to the entity you are working in — switch entity from the top bar">'+lockSvg+' Current entity</span>'
+    +'</div>'
+
+    +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
+    +'<div class="hd-rows-head">'
+      +'<span class="ep-form-title" style="margin:0">Holidays</span>'
+      +'<div class="hd-rows-head-right">'
+        +'<span class="hd-count-chip" id="hd-count-chip">'+hdDraftRows.length+' row'+(hdDraftRows.length===1?'':'s')+'</span>'
+        +'<button class="hd-add-row" onclick="hdAddRow()">'+plusSvg+'Add Holiday</button>'
+      +'</div>'
+    +'</div>'
+    +'<div class="hd-rows-body">'
+      +'<div class="hd-row-head" aria-hidden="true">'
+        +'<span></span><span>Holiday Name <b class="req">*</b></span><span>Date <b class="req">*</b></span>'
+        +'<span>Day</span><span>Type <b class="req">*</b></span><span>Repeats</span><span></span>'
+      +'</div>'
+      +'<div id="hd-row-list">'+hdRowsHTML()+'</div>'
+    +'</div>'
+    +'</div>'
+
+    +'<div class="hd-modal-foot">'
+    +'<div class="hd-summary" id="hd-summary">'+hdSummaryText()+'</div>'
+    +'<div class="hd-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="cancelAddHoliday()">Cancel</button>'
+      +'<button class="ep-save-btn" id="hd-submit-btn" onclick="submitAddHolidays()">'+hdSubmitLabel()+'</button>'
+    +'</div>'
+    +'</div>'
+    +'</div></div>';
+}
+function submitAddHolidays(){
+  hdSyncRows();
+  const entity=hdDraftEntity||hdCurrentEntityName();
+  const branch=hdDraftBranch||HD_ALL_BRANCHES;
+  if(!entity){showToast('No entity selected','error','Pick an entity from the top bar first.');return;}
+  /* Validated per row rather than once at the end, so the message can name
+     WHICH holiday is wrong — "Diwali has no date" is actionable, "check your
+     rows" is not. */
+  const seen={};
+  for(let i=0;i<hdDraftRows.length;i++){
+    const r=hdDraftRows[i],n=i+1;
+    if(!r.name){showToast('Row '+n+' has no Holiday Name','error');return;}
+    if(!r.date){showToast('"'+r.name+'" has no date','error','Every holiday needs a date.');return;}
+    if(!r.type){showToast('"'+r.name+'" has no type','error','Pick Public, Optional or Company.');return;}
+    if(seen[r.date]){showToast('Two holidays on '+hdDateLabel(r.date),'error','"'+seen[r.date]+'" already uses that date in this batch.');return;}
+    seen[r.date]=r.name;
+    /* Clashes are checked against the SAME audience only. A Hyderabad-only
+       holiday sharing a date with a Bengaluru-only one is a real arrangement,
+       not a conflict — but two all-branch holidays on one date is. */
+    const clash=holidaysData.find(function(h){
+      return h.entity===entity&&h.status==='Active'&&h.date===r.date&&hdBranchMatch(h,branch);
+    });
+    if(clash){showToast(hdDateLabel(r.date)+' is already a holiday','error',
+      '"'+clash.name+'" ('+(clash.branch||HD_ALL_BRANCHES)+') is on the '+entity+' calendar for that date.');return;}
+  }
+  const now=new Date();
+  const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
+    +' | '+now.toLocaleTimeString('en-US',{hour12:true});
+  const added=hdDraftRows.slice();
+  added.forEach(function(r){
+    holidaysData.push({id:holidayNextId++,name:r.name,date:r.date,type:r.type,branch:branch,entity:entity,
+      recurring:!!r.recurring,status:'Active',createdBy:CURRENT_USER,createdAt:stamp,logs:[]});
+  });
+  hdDraftRows=[];hdModalOpen=false;
+  /* Land on what was just added. A batch filed for a year the list is not
+     showing would otherwise save into a screen that does not contain it. */
+  const y=hdYearOf(added[0].date);
+  if(hdYearFilter&&hdYearFilter!==y)hdYearFilter=y;
+  if(hdBranchFilter&&!hdBranchMatch({branch:branch},hdBranchFilter))hdBranchFilter=branch;
+  hdUpcomingOnly=false;
+  page='holidays';renderADTPage();
+  const n=added.length;
+  showToast(n+' holiday'+(n===1?'':'s')+' added','success',
+    n===1?('"'+added[0].name+'" is on the '+entity+' calendar for '+hdDateLabel(added[0].date)+'.')
+         :('Published to the '+entity+' calendar for '+(branch===HD_ALL_BRANCHES?'all branches':branch)+'.'));
+}
+
 function buildAddLeavePolicyHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
   return '<div class="ep-page">'
@@ -6130,6 +6738,19 @@ function tkRows(){
 let tkModalOpen=false;
 let tkLinkedRecord=null;          // resolved by Search, cleared when the field changes
 const TK_PRIORITIES=['Low','Medium','High','Urgent'];
+/* ── The employee dashboard's "Need Help?" banner ─────────────────────────
+   The button was markup only. It now opens the ticket form on the Tickets
+   page, which is the one place this app actually takes support requests.
+
+   THE FLAG IS SET BEFORE THE NAVIGATION, not after. openCreateTicket()
+   repaints whatever page is current, and from the dashboard that is the
+   dashboard — which does not render the ticket modal, so the form would never
+   appear. Setting it first means the Tickets page draws with the form already
+   open, in a single repaint. */
+function raiseTicketFromHelp(){
+  tkModalOpen=true;tkLinkedRecord=null;tkSelectedId=null;
+  navigatePage('support-tickets',true);
+}
 function openCreateTicket(){tkModalOpen=true;tkLinkedRecord=null;renderADTPage();}
 function closeCreateTicket(){tkModalOpen=false;tkLinkedRecord=null;renderADTPage();}
 

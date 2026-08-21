@@ -48,6 +48,7 @@ const sbIco={
   sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>',
+  calStar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 12.6l1.15 2.35 2.6.38-1.88 1.83.44 2.59L12 18.53l-2.31 1.22.44-2.59-1.88-1.83 2.6-.38z"/></svg>',
   dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
   receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1V2l-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>',
   card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2"/><path d="M12 15h4"/></svg>',
@@ -79,7 +80,8 @@ const sidebarItems=[
   {dropdown:'Time & Attendance',color:'teal',icon:sbIco.clock,children:[
     {id:'timesheet',label:'Timesheets',color:'teal',icon:sbIco.clock},
     {id:'all-leaves',label:'Leave Requests',color:'teal',icon:sbIco.calendar},
-    {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText}
+    {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText},
+    {id:'holidays',label:'Holidays',color:'teal',icon:sbIco.calStar}
   ]},
   {dropdown:'Payroll',color:'green',icon:sbIco.dollar,children:[
     {id:'payroll',label:'Pay Runs',color:'green',icon:sbIco.dollar},
@@ -488,7 +490,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='leave-policy-add')return{title:'Add Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
@@ -2022,7 +2024,7 @@ window.addEventListener('resize',cdCloseAll);
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';page='leave-policies';renderADTPage();}
 function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
-function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='support-tickets'){openCreateTicket();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
+function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){page='leave-add';renderADTPage();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
 // Demo add for the Employees page: appends a plausible record to the active tab.
 const demoEmpNames=['Arjun Kapoor','Sara Ali','Vikram Rao','Neha Gupta','Tom Becker','Julia Costa'];
 function addDemoEmployee(){
@@ -2686,7 +2688,16 @@ const allLeavesData=[
   {id:3,empId:'CLOCLO11757',name:'Anika Shah',leaveId:'2021',leaveType:'Casual Leave',leaveFrom:'20-04-2026',leaveTo:'22-04-2026',leaveHours:'Full Day',description:'Personal work',email:'anika.shah@maaserp.com',appliedDate:'19 Apr, 2026 09:00:00',createdBy:'Self',status:'Approved',subStatus:'Paid'},
   {id:4,empId:'CLOCLO11758',name:'Rahul Mehta',leaveId:'2025',leaveType:'Earned Leave',leaveFrom:'25-04-2026',leaveTo:'27-04-2026',leaveHours:'Full Day',description:'Family function',email:'rahul.mehta@maaserp.com',appliedDate:'22 Apr, 2026 14:30:00',createdBy:'Self',status:'Unapproved',subStatus:'Unpaid'},
   {id:5,empId:'CLOCLO11759',name:'Nora Kim',leaveId:'2031',leaveType:'Sick Leave',leaveFrom:'28-04-2026',leaveTo:'28-04-2026',leaveHours:'Half Day',description:'Doctor appointment',email:'nora.kim@maaserp.com',appliedDate:'27 Apr, 2026 08:45:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'},
-  {id:6,empId:'CLOCLO11760',name:'Luis Martin',leaveId:'2033',leaveType:'Casual Leave',leaveFrom:'02-05-2026',leaveTo:'04-05-2026',leaveHours:'Full Day',description:'Vacation trip',email:'luis.martin@maaserp.com',appliedDate:'30 Apr, 2026 11:20:00',createdBy:'Self',status:'Approved',subStatus:'Paid'}
+  {id:6,empId:'CLOCLO11760',name:'Luis Martin',leaveId:'2033',leaveType:'Casual Leave',leaveFrom:'02-05-2026',leaveTo:'04-05-2026',leaveHours:'Full Day',description:'Vacation trip',email:'luis.martin@maaserp.com',appliedDate:'30 Apr, 2026 11:20:00',createdBy:'Self',status:'Approved',subStatus:'Paid'},
+  /* The five the Reporting Manager dashboard lists under "Team Leave Requests".
+     They are real records, not card decoration: Approve / Reject there opens
+     THIS row's Logs, so a name on the dashboard that had no record behind it
+     would send the manager to a panel that could not exist. */
+  {id:7,empId:'CLOCLO11761',name:'Utkarsh Shukla',leaveId:'2028',leaveType:'Casual Leave',leaveFrom:'15-05-2026',leaveTo:'16-05-2026',leaveHours:'Full Day',description:'Family function out of town.',email:'utkarsh.shukla@testemp.com',appliedDate:'09 May, 2026 09:20:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'},
+  {id:8,empId:'CLOCLO11762',name:'Ashneet Kaur',leaveId:'2031',leaveType:'Sick Leave',leaveFrom:'18-05-2026',leaveTo:'18-05-2026',leaveHours:'Full Day',description:'Down with fever, will share the certificate.',email:'ashneet.kaur@testemp.com',appliedDate:'17 May, 2026 08:05:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'},
+  {id:9,empId:'CLOCLO11763',name:'Sneha Kulkarni',leaveId:'2034',leaveType:'Earned Leave',leaveFrom:'22-05-2026',leaveTo:'23-05-2026',leaveHours:'Full Day',description:'Planned break, handover shared with the team.',email:'sneha.kulkarni@testemp.com',appliedDate:'12 May, 2026 16:40:00',createdBy:'Self',status:'Pending',subStatus:'Paid'},
+  {id:10,empId:'CLOCLO11764',name:'Diksha Kumari',leaveId:'2037',leaveType:'Casual Leave',leaveFrom:'26-05-2026',leaveTo:'26-05-2026',leaveHours:'Full Day',description:'Personal work.',email:'diksha.kumari@testemp.com',appliedDate:'20 May, 2026 11:12:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'},
+  {id:11,empId:'CLOCLO11765',name:'Pardeep Verga',leaveId:'2040',leaveType:'Sick Leave',leaveFrom:'28-05-2026',leaveTo:'29-05-2026',leaveHours:'Full Day',description:'Recovering after a minor procedure.',email:'pardeep.verga@testemp.com',appliedDate:'26 May, 2026 07:55:00',createdBy:'Self',status:'Pending',subStatus:'Unpaid'}
 ];
 // Leave approval workflow - keyed by allLeavesData id. Ends on each row's real status.
 const alWorkflowData={
@@ -2971,6 +2982,145 @@ function phRows(){
     if(phStatusFilter&&p.status!==phStatusFilter)return false;
     return true;
   });
+}
+
+/* == HOLIDAYS ==============================================================
+   The entity's holiday calendar. A holiday is a date the entity does not work
+   on, so the record is deliberately thin — a name, a date, what kind of day it
+   is, and which entity it belongs to.
+
+   WHAT IS DERIVED, NEVER STORED: the weekday, the year, and whether the day is
+   still to come. All three are facts about the date, and a stored copy of a
+   fact about another field is a field that will eventually disagree with it.
+   Deriving the weekday is also what lets the create form fill it in live as the
+   date is picked — same value, same place, so the two cannot disagree.
+
+   DATES ARE ISO (yyyy-mm-dd) IN STORE, formatted on the way out. That is what
+   makes sorting and the year filter one-liners, and it is the format apCD's
+   hidden input already hands back, so the create form and the store speak the
+   same language with no conversion between them.
+
+   HOLIDAYS ARRIVE IN BATCHES, NOT ONE AT A TIME. Nobody adds Republic Day on
+   its own — a calendar is published once a year, a dozen rows in one sitting.
+   So the create popup is a repeating row list, each row a holiday with its own
+   name, and Add is one action over the whole batch (see hdDraftRows).
+
+   EVERY VIEW IS SCOPED TO THE ENTITY IN THE TOPBAR SWITCHER, which is why
+   there is no entity column and no entity filter: you are looking at one
+   entity's calendar, and switching entity switches the calendar. The create
+   popup states the same entity rather than asking for it. */
+const HD_TYPES=['Public Holiday','Optional Holiday','Company Holiday'];
+/* NOT EVERY HOLIDAY APPLIES TO EVERY OFFICE. A regional festival is observed
+   where it is regional — Ugadi closes Hyderabad and nothing else — so a holiday
+   carries the branch it belongs to. "All Branches" is the ordinary case and the
+   default, which keeps the common holiday a one-decision record. */
+const HD_ALL_BRANCHES='All Branches';
+const HD_DAY_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+function hdDayName(iso){const d=cdParse(iso);return d?HD_DAY_NAMES[d.getDay()]:'';}
+function hdYearOf(iso){return String(iso||'').slice(0,4);}
+function hdDateLabel(iso){return cdLabel(iso)||'—';}
+// Today at day resolution, so a holiday happening TODAY still counts as
+// upcoming rather than flipping to past at one second after midnight.
+function hdTodayISO(){return cdISO(new Date());}
+function hdIsUpcoming(h){return !!h.date&&h.date>=hdTodayISO();}
+/* A holiday on a Saturday or Sunday costs the entity no working day. HR asks
+   this of every published calendar, so the calendar answers it in place. */
+function hdIsWeekend(iso){const d=hdDayName(iso);return d==='Saturday'||d==='Sunday';}
+/* The next holiday actually coming up on this entity's calendar — not the
+   filtered list, because "Next" is a fact about the year and should not move to
+   a different row because someone filtered by type. */
+function hdNextUpId(){
+  const t=hdTodayISO();
+  const up=hdEntityRows()
+    .filter(function(h){return h.status==='Active'&&h.date>=t;})
+    .sort(function(a,b){return a.date<b.date?-1:1;});
+  return up.length?up[0].id:null;
+}
+const holidaysData=[
+  {id:1,name:'New Year’s Day',date:'2026-01-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:2,name:'Makar Sankranti',date:'2026-01-14',type:'Optional Holiday',branch:'Hyderabad',entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:3,name:'Republic Day',date:'2026-01-26',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:4,name:'Holi',date:'2026-03-04',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:5,name:'Ugadi',date:'2026-03-19',type:'Optional Holiday',branch:'Hyderabad',entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:6,name:'Ram Navami',date:'2026-03-26',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:7,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:8,name:'Independence Day',date:'2026-08-15',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:9,name:'Ganesh Chaturthi',date:'2026-09-14',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:10,name:'Gandhi Jayanti',date:'2026-10-02',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:11,name:'Dussehra',date:'2026-10-20',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:12,name:'Diwali',date:'2026-11-08',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:13,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:14,name:'Foundation Day',date:'2026-12-31',type:'Company Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:false,status:'Active',createdBy:'Shaun Test1',createdAt:'02 Feb 2026 | 09:18:00 AM',logs:[]},
+  {id:15,name:'Quarantine Day',date:'2025-04-20',type:'Company Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:false,status:'Inactive',createdBy:'Shaun Test1',createdAt:'12 Apr 2025 | 05:44:00 PM',logs:[]},
+  {id:16,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:17,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Closedhi',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]}
+];
+let holidayNextId=18;
+let hdSelectedId=null,hdTab='basic-details';
+let hdEditMode=false;              // Basic Details, in edit rather than read mode
+let hdYearFilter='',hdTypeFilter='',hdBranchFilter='',hdStatusFilter='';
+let hdUpcomingOnly=false;
+let hdModalOpen=false;              // creation is a popup, like every other create form
+/* The holiday rows being typed in the popup. Held here rather than read off the
+   DOM at submit for the same reason phDraftSlabs is: Add Holiday repaints the
+   list, and anything already typed has to survive that repaint. */
+let hdDraftRows=[];
+let hdDraftEntity='';
+let hdDraftBranch=HD_ALL_BRANCHES;   // asked once per batch, not per row
+
+// The entity being worked in — the one named in the topbar switcher.
+function hdCurrentEntityName(){
+  if(typeof entitiesData==='undefined'||!entitiesData.length)return '';
+  const e=entitiesData.find(function(x){return x.id===seSelectedEntity;})||entitiesData[0];
+  return e.name||'';
+}
+// This entity's whole calendar, before any filter. The year list and the stat
+// tiles read from here so they cannot disagree about what the calendar holds.
+function hdEntityRows(){
+  const ent=hdCurrentEntityName();
+  return holidaysData.filter(function(h){return h.entity===ent;});
+}
+// The years the calendar actually contains, newest first — a hard-coded year
+// list goes stale the moment someone adds a 2027 holiday.
+function hdYearOptions(){
+  const seen={},out=[];
+  hdEntityRows().forEach(function(h){const y=hdYearOf(h.date);if(y&&!seen[y]){seen[y]=1;out.push(y);}});
+  const cur=hdYearOf(hdTodayISO());
+  if(!seen[cur])out.push(cur);
+  return out.sort().reverse();
+}
+/* Read off the employees rather than hard-coded, so opening an office adds it
+   to the list by putting somebody in it — the same reason the year filter is
+   derived from the dates rather than typed out. */
+function hdBranchOptions(){
+  const seen={},out=[HD_ALL_BRANCHES];
+  seen[HD_ALL_BRANCHES]=1;
+  if(typeof empPoolExt!=='undefined')
+    Object.keys(empPoolExt).forEach(function(k){
+      const b=empPoolExt[k].branch;
+      if(b&&!seen[b]){seen[b]=1;out.push(b);}
+    });
+  holidaysData.forEach(function(h){if(h.branch&&!seen[h.branch]){seen[h.branch]=1;out.push(h.branch);}});
+  return out;
+}
+/* Filtering to one branch shows the holidays that branch actually observes,
+   which INCLUDES the all-branch ones — a Bengaluru calendar is its own days
+   plus the company-wide days, not just the days unique to it. */
+function hdBranchMatch(h,f){
+  return !f||h.branch===f||h.branch===HD_ALL_BRANCHES||f===HD_ALL_BRANCHES;
+}
+// Chronological, because a holiday calendar that is not in date order is not a
+// calendar. Newest-first is right for records people file; it is wrong here.
+function hdRows(){
+  return hdEntityRows().filter(function(h){
+    if(hdYearFilter&&hdYearOf(h.date)!==hdYearFilter)return false;
+    if(hdTypeFilter&&h.type!==hdTypeFilter)return false;
+    if(hdBranchFilter&&!hdBranchMatch(h,hdBranchFilter))return false;
+    if(hdStatusFilter&&h.status!==hdStatusFilter)return false;
+    if(hdUpcomingOnly&&!hdIsUpcoming(h))return false;
+    return true;
+  }).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});
 }
 const ratesRulesData=[
   {id:1,country:'Netherlands',ruleName:'Minimum Wage',category:'General',applicableTo:'EOR / PEO',valueRate:'EUR 14.71',status:'Active',createdBy:'Tarak Swain',createdAt:'02 Mar 2026 | 02:53:47 PM',logs:[]},
