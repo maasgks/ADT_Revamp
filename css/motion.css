@@ -187,6 +187,12 @@ button,.btn,[role="button"]{transition:background var(--t-micro) ease,border-col
 }
 .lp-action-btn:hover,.row-action:hover,.tb-icon:hover,.np-iconbtn:hover{transform:translateY(-1px)}
 .lp-action-btn:active,.row-action:active,.tb-icon:active,.np-iconbtn:active{transform:translateY(0) scale(.92)}
+/* Attachments tab: the row buttons are icon-only at 28px, so they take the
+   lift; "Download All" is a labelled control and takes the standard squash.
+   Both set transition by class in main.css and repeat transform there. */
+.att-row-btn:hover{transform:translateY(-1px)}
+.att-row-btn:active{transform:translateY(0) scale(.92)}
+.att-link:active{transform:scale(.97)}
 .ts-refresh-btn:hover svg{transform:rotate(90deg);transition:transform var(--t-base) var(--e-out)}
 .ts-refresh-btn svg{transition:transform var(--t-base) var(--e-out)}
 

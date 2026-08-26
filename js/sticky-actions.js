@@ -27,7 +27,7 @@
 /* Every horizontally scrolling surface that holds a listing table. .lp-split-main
    does not normally overflow (its card child is width:100%) but is listed so a
    page that ever puts a table straight into it behaves the same. */
-var SCROLLERS='.lp-table-card,.listing-card,.at-card,.lp-split-main';
+var SCROLLERS='.lp-table-card,.listing-card,.at-card,.lp-split-main,.att-table-wrap';
 
 function sync(el){
   /* > 1 rather than > 0: sub-pixel layout widths round against us and would

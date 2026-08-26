@@ -338,6 +338,21 @@
 .finance-tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .csm-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
 .csm-status-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;min-height:84px}
+/* Each card opens the Tickets listing already filtered to what it counted,
+   so it has to look like something you can press. Same restraint as
+   .listing-stat, which is the control these cards are a remote for: the
+   surface lifts on hover, nothing moves on the page. */
+.csm-status-card{cursor:pointer;user-select:none;
+  transition:background var(--t-micro) ease,border-color var(--t-fast) ease,box-shadow var(--t-fast) var(--e-out),transform var(--t-fast) var(--e-out)}
+.csm-status-card:hover{background:#f8fafc;border-color:#d8dce2;box-shadow:0 2px 10px -4px rgba(15,23,42,.16)}
+.csm-status-card:active{transform:translateY(1px);box-shadow:none}
+/* Keyboard users get the same affordance - the card carries role=button and
+   tabindex, so it lands in the tab order and must show where it is. */
+.csm-status-card:focus-visible{outline:2px solid var(--row-sel-rail,#0f172a);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  .csm-status-card{transition:background var(--t-micro) ease}
+  .csm-status-card:active{transform:none}
+}
 /* Neutral, like the action-card chips on these dashboards
    (.hr-action-icon): same #f1f3f5 fill, same navy glyph. These four used to
    wear their status colour - red, green, amber, grey - which made a row of
