@@ -48,7 +48,9 @@
 /* -- the pinned cell ---------------------------------------------------- */
 .lp-table th:last-child,      .lp-table td:last-child,
 .listing-table th:last-child, .listing-table td:last-child,
-.at-table th:last-child,      .at-table td:last-child{
+.at-table th:last-child,      .at-table td:last-child,
+/* the attachments tab's file list - same six-column-in-a-narrow-panel problem */
+.att-table th:last-child,     .att-table td:last-child{
   position:sticky;right:0;z-index:3;
   background:var(--cell-bg,var(--card));
   /* the row rule, plus the edge shadow - which is transparent until there is
@@ -74,7 +76,7 @@
 /* The "no records match this filter" row is one colspan cell that already
    spans every column. There is no action in it to keep on screen, and pinning
    a cell as wide as the table only risks it drifting inside its own row. */
-.lp-table td[colspan],.listing-table td[colspan],.at-table td[colspan]{
+.lp-table td[colspan],.listing-table td[colspan],.at-table td[colspan],.att-table td[colspan]{
   position:static;background:none;box-shadow:none;
 }
 

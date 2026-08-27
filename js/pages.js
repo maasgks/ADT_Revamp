@@ -59,7 +59,7 @@ function attachCommit(scope,id,fileList){
   const added=[];
   Array.prototype.forEach.call(fileList,function(f){
     if(f.size>10*1024*1024){                   // said out loud, not silently dropped
-      showToast('File too large','error','"'+f.name+'" is over the 10 MB limit.');return;
+      showToast('File too large','error','"'+sbEsc(f.name)+'" is over the 10 MB limit.');return;
     }
     rec.attachments.unshift({name:f.name,size:attachFmtSize(f.size),type:attachKind(f.name),
       by:CURRENT_USER,source:'Manual upload',date:s.date});
@@ -68,7 +68,7 @@ function attachCommit(scope,id,fileList){
   if(!added.length)return;
   renderADTPage();
   showToast(added.length===1?'Attachment added':'Attachments added','success',
-    added.length===1?added[0]:added.length+' files added.');
+    added.length===1?sbEsc(added[0]):added.length+' files added.');
 }
 // A hidden input per scope+record, created on demand. Reusing one input across
 // records would carry the previous selection into the next panel.
@@ -83,16 +83,22 @@ function attachRemove(scope,id,i){
   const gone=rec.attachments[i];if(!gone)return;
   rec.attachments.splice(i,1);
   renderADTPage();
-  showToast('Attachment removed','success','"'+gone.name+'" was removed.');
+  showToast('Attachment removed','success','"'+sbEsc(gone.name)+'" was removed.');
 }
 function attachDownloadAll(scope,id){
   const rec=attachRec(scope,id);if(!rec||!rec.attachments.length)return;
   showToast('Preparing download','success',rec.attachments.length+' files will be zipped.');
 }
-function attachOpen(name){showToast('Opening attachment','success',name);}
+function attachOpen(name){showToast('Opening attachment','success',sbEsc(name));}
 // Drag feedback lives on a class rather than inline styles so the zone can be
 // restyled in one place.
 function attachDrag(e,on){e.preventDefault();e.currentTarget.classList.toggle('is-over',on);}
+// The zone is the ONLY way to add a file, so it has to answer the keyboard as
+// well as the mouse - it is exposed as a button, so it behaves like one.
+function attachKey(e,scope,id){
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  e.preventDefault();attachPick(scope,id);
+}
 function attachDrop(e,scope,id){
   e.preventDefault();e.currentTarget.classList.remove('is-over');
   attachCommit(scope,id,e.dataTransfer&&e.dataTransfer.files);
@@ -103,7 +109,9 @@ function attachTabHTML(scope,id){
   const files=rec?rec.attachments:[];
   const dz='ondragover="attachDrag(event,true)" ondragleave="attachDrag(event,false)" '
     +'ondrop="attachDrop(event,\''+scope+'\','+JSON.stringify(id)+')" '
-    +'onclick="attachPick(\''+scope+'\','+JSON.stringify(id)+')"';
+    +'onclick="attachPick(\''+scope+'\','+JSON.stringify(id)+')" '
+    +'onkeydown="attachKey(event,\''+scope+'\','+JSON.stringify(id)+')" '
+    +'role="button" tabindex="0"';
   const iUp='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   const iDl='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   const iX='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
@@ -121,13 +129,13 @@ function attachTabHTML(scope,id){
   const rows=files.map(function(f,i){
     return '<tr>'
       +'<td style="'+tdS+';color:var(--gray)">'+(i+1)+'</td>'
-      +'<td style="'+tdS+'"><div class="lp-c-main">'+f.name+'</div>'
+      +'<td style="'+tdS+'"><div class="lp-c-main">'+sbEsc(f.name)+'</div>'
         +'<div class="lp-c-sub">'+(f.size||'—')+'</div></td>'
-      +'<td style="'+tdS+'">'+(f.by||'—')+'</td>'
-      +'<td style="'+tdS+'"><span class="att-kind">'+(f.type||attachKind(f.name))+'</span></td>'
-      +'<td style="'+tdS+';white-space:nowrap;color:#64748b;font-size:11.5px">'+(f.source||'—')+'</td>'
+      +'<td style="'+tdS+'">'+sbEsc(f.by||'—')+'</td>'
+      +'<td style="'+tdS+'"><span class="att-kind">'+sbEsc(f.type||attachKind(f.name))+'</span></td>'
+      +'<td style="'+tdS+';white-space:nowrap;color:#64748b;font-size:11.5px">'+sbEsc(f.source||'—')+'</td>'
       +'<td style="'+tdS+';text-align:right;white-space:nowrap">'
-        +'<button class="att-row-btn" title="Download" onclick="attachOpen(\''+attrSafe(f.name)+'\')">'+iDl+'</button>'
+        +'<button class="att-row-btn" title="Download" onclick="attachOpen('+attrSafe(JSON.stringify(f.name))+')">'+iDl+'</button>'
         +'<button class="att-row-btn is-danger" title="Remove" onclick="attachRemove(\''+scope+'\','+JSON.stringify(id)+','+i+')">'+iX+'</button>'
       +'</td></tr>';
   }).join('');
@@ -419,12 +427,12 @@ function renderGeSidebar(){
   const iI='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h4"/></svg>';
   const iPin='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>';
   const iGlobe='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
-  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
   const iBag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
   const iPhone='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2.18h3a2 2 0 0 1 2 1.72c.2.73.43 1.44.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l.9-.87a2 2 0 0 1 2.11-.45c1.37.27 2.08.5 2.81.7A2 2 0 0 1 21.73 16.92z"/></svg>';
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
+  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(geTab==='basic-details'&&geEditMode){
@@ -6120,14 +6128,14 @@ function buildProfTabContent(){
           <span class="prof-att-meta">${d.file}${d.size?' &middot; '+d.size:''}</span>
           <span class="prof-att-date">Uploaded ${d.date}</span>
         </span>
-        <button class="prof-att-dl" title="Download" onclick="profDownloadAttachment('${esc(d.name)}')">${iDl}</button>
-        <button class="prof-att-dl danger" title="Remove" onclick="profRemoveAttachment('${esc(d.name)}')">${iTrash}</button>
+        <button class="prof-att-dl" title="Download" onclick="profDownloadAttachment('${sbEsc(d.name)}')">${iDl}</button>
+        <button class="prof-att-dl danger" title="Remove" onclick="profRemoveAttachment('${sbEsc(d.name)}')">${iTrash}</button>
       </div>`).join('');
     const pendingItems=pendingDocs.map(d=>`
-      <div class="prof-att-item" ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${esc(d)}')">
+      <div class="prof-att-item" ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${sbEsc(d)}')">
         <span class="prof-att-icon">${iPaperclip}</span>
         <span class="prof-att-name">${d}</span>
-        <button class="prof-att-upload" title="Upload ${d}" onclick="profPickFile('${esc(d)}')">${iUpload}</button>
+        <button class="prof-att-upload" title="Upload ${d}" onclick="profPickFile('${sbEsc(d)}')">${iUpload}</button>
       </div>`).join('');
     const uploadedCard=uploadedDocs.length?`<div class="ep-form-card" style="margin-bottom:16px">
       <div class="prof-section-hdr"><span class="policy-section-title">Uploaded</span><span class="prof-att-count ok">${tick} ${uploadedDocs.length} of ${total} uploaded</span></div>
@@ -6830,12 +6838,19 @@ function tkToggleStatFilter(v){
   tkSelectedId=null;
   renderADTPage();
 }
-// Unassigned cuts across the statuses rather than being one of them, so it
-// replaces the status filter instead of fighting with it.
-function tkToggleUnassigned(){
-  tkQuickStatusFilter=tkQuickStatusFilter==='__unassigned__'?'':'__unassigned__';
+// Kept as its own name because the Unassigned tile and anything else that
+// asks for that view by name should not have to know the sentinel.
+function tkToggleUnassigned(){tkToggleStatFilter('__unassigned__');}
+/* Entry point for the CSM dashboard cards. Unlike the tiles this SETS the
+   filter rather than toggling it - arriving from a dashboard card that reads
+   "Blocked 3" and landing on an unfiltered queue because the filter happened
+   to already be Blocked would be a bug, not a toggle. The channel filter is
+   cleared for the same reason: the card counted the whole queue. */
+function tkGoStatus(key){
+  tkQuickStatusFilter=key||'';
+  tkChannelFilter='';
   tkSelectedId=null;
-  renderADTPage();
+  navigatePage('support-tickets',true);
 }
 function applyTkFilters(){
   const status=getCSValue('tk-f-status');
@@ -6851,6 +6866,13 @@ function resetTkFilters(){
   renderADTPage();
 }
 function tkIsUnassigned(t){return !t.assignedTo;}
+/* "Unresolved" is every ticket still costing someone work - open, being
+   worked, or stuck. Like __unassigned__ it cuts ACROSS the statuses instead
+   of being one of them, which is why both are spelled with the __sentinel__
+   the dropdown knows to ignore. */
+const TK_UNRESOLVED=['open','in_progress','blocked'];
+function tkIsUnresolved(t){return TK_UNRESOLVED.indexOf(t.status)>=0;}
+function tkIsPseudoStatus(v){return typeof v==='string'&&v.slice(0,2)==='__';}
 // Channel narrows first so the count tiles can be scored against it: filtering
 // to Phone Call and still seeing the whole queue's Open count would be a lie.
 function tkScope(){
@@ -6860,6 +6882,7 @@ function tkScope(){
 function tkRows(){
   const rows=tkScope();
   if(tkQuickStatusFilter==='__unassigned__')return rows.filter(tkIsUnassigned);
+  if(tkQuickStatusFilter==='__unresolved__')return rows.filter(tkIsUnresolved);
   return tkQuickStatusFilter?rows.filter(function(t){return t.status===tkQuickStatusFilter;}):rows;
 }
 
@@ -7086,7 +7109,7 @@ function buildTicketsPageHTML(){
   const sbInner=tkSelectedId?renderTkSidebar():'';
   const stat=function(key,count,label,colour){
     return '<div class="listing-stat'+(tkQuickStatusFilter===key?' stat-selected':'')+'"'
-      +' onclick="'+(key==='__unassigned__'?'tkToggleUnassigned()':'tkToggleStatFilter(\''+key+'\')')+'">'
+      +' onclick="tkToggleStatFilter(\''+key+'\')">'
       +'<div class="listing-stat-count" style="color:'+colour+'">'+count+'</div>'
       +'<div class="listing-stat-label">'+label+'</div></div>';
   };
@@ -7098,7 +7121,7 @@ function buildTicketsPageHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('tk-f-channel',channels,tkChannelFilter,'All Channels')
     +apCS('tk-f-status',['open','in_progress','blocked','resolved','closed'],
-        tkQuickStatusFilter==='__unassigned__'?'':tkQuickStatusFilter,'All Statuses')
+        tkIsPseudoStatus(tkQuickStatusFilter)?'':tkQuickStatusFilter,'All Statuses')
     +clearFiltersBtn([tkQuickStatusFilter,tkChannelFilter],'resetTkFilters()')
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
@@ -7108,6 +7131,7 @@ function buildTicketsPageHTML(){
     +stat('in_progress',cnt('in_progress'),'In Progress','var(--st-wait-fg)')
     +stat('blocked',cnt('blocked'),'Blocked','var(--st-bad-fg)')
     +stat('resolved',cnt('resolved'),'Awaiting Client','var(--st-ok-fg)')
+    +stat('__unresolved__',tkScope().filter(tkIsUnresolved).length,'Unresolved','var(--st-wait-fg)')
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table lp-table-2line sr-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client</th><th>Title</th><th>Created At</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
@@ -7117,6 +7141,52 @@ function buildTicketsPageHTML(){
     +'<div class="lp-split-sb'+(tkSelectedId?' open':'')+'" id="tk-split-sb"><div class="lp-isb" id="tk-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>'
     +(tkModalOpen?buildCreateTicketModalHTML():'');
+}
+
+/* ── CSM DASHBOARD KEY METRICS ────────────────────────────────────────────
+   These four cards ask the Tickets listing's own question from the dashboard,
+   so they are counted from ticketsData rather than carrying numbers of their
+   own, and each one opens the exact filter it counted. A card that reads 4
+   and lands on a list of 3 teaches people not to trust the cards.
+
+   Built from data like the compliance dashboard's tiles - see the note in
+   switchDashboard() for why that means re-rendering when the tab is shown. */
+const CSM_METRICS=[
+  {key:'blocked',       kind:'blocked',    label:'Blocked'},
+  {key:'in_progress',   kind:'active',     label:'Active'},
+  {key:'open',          kind:'pending',    label:'Pending'},
+  {key:'__unresolved__',kind:'unresolved', label:'Unresolved'}
+];
+const CSM_METRIC_ICON={
+  blocked:'<circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17.01"/>',
+  active:'<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  pending:'<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/>',
+  unresolved:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a3 3 0 0 1 5 2.2c0 2-2.5 2.3-2.5 4.1"/><line x1="12" y1="18" x2="12" y2="18.01"/>'
+};
+function csmMetricCount(key){
+  if(typeof ticketsData==='undefined')return 0;
+  return key==='__unresolved__'
+    ? ticketsData.filter(tkIsUnresolved).length
+    : ticketsData.filter(function(t){return t.status===key;}).length;
+}
+function buildCsmMetricsHTML(){
+  return CSM_METRICS.map(function(m){
+    var n=csmMetricCount(m.key);
+    return '<div class="csm-status-card" role="button" tabindex="0"'
+      +' onclick="tkGoStatus(\''+m.key+'\')"'
+      // Enter/Space because a div given a button's job has to do a button's job
+      +' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();tkGoStatus(\''+m.key+'\');}"'
+      +' title="View '+m.label.toLowerCase()+' tickets">'
+      +'<div class="csm-status-icon '+m.kind+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor">'+CSM_METRIC_ICON[m.kind]+'</svg></div>'
+      +'<div class="csm-status-value">'+n+'</div>'
+      +'<div class="csm-status-label">'+m.label+'</div>'
+      +'</div>';
+  }).join('');
+}
+function renderCsmDashCards(){
+  const el=document.getElementById('csm-status-grid');
+  if(!el)return;
+  el.innerHTML=buildCsmMetricsHTML();
 }
 
 // ── CHATS PAGE ──
