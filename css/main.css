@@ -1283,6 +1283,20 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-rp-cancel:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .ts-rp-apply:hover{background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
 /* Days outside the filtered range keep their date and lose everything else */
+/* ── The row you just created ──────────────────────────────────────────────
+   Filing a record used to leave you looking at the page you were already on,
+   with the new row somewhere else entirely. The listing now lands on it — and
+   says which one it is, briefly. A tint that fades rather than a badge that
+   stays: "new" is true for a moment, not a property of the record, and a badge
+   would still be there tomorrow. */
+@keyframes lp-row-new-in{
+  0%{background:var(--st-ok-bg);box-shadow:inset 3px 0 0 var(--st-ok-fg)}
+  70%{background:var(--st-ok-bg);box-shadow:inset 3px 0 0 var(--st-ok-fg)}
+  100%{background:transparent;box-shadow:inset 3px 0 0 transparent}
+}
+tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
+@media (prefers-reduced-motion:reduce){tr.lp-row-new>td{animation:none;background:var(--st-ok-bg)}}
+
 .ts-day-cell.out-of-range{background:repeating-linear-gradient(135deg,#fbfcfd,#fbfcfd 6px,#f5f7f9 6px,#f5f7f9 12px)}
 .ts-day-cell.out-of-range .ts-day-num{color:#cbd5e1}
 .ts-mp-overlay{position:fixed;inset:0;z-index:400}

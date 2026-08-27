@@ -1079,6 +1079,7 @@ function submitAddLeave(isDraft){
     return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d;
   };
   const hrMap={'half':'Half Day','one':'Full Day','multiple':'Full Day'};
+  lpLanded('all-leaves',newId);
   allLeavesData.unshift({
     id:newId,empId:'CLOCLO'+Math.floor(10000+Math.random()*90000),name:empVal||'Unknown',
     leaveId:String(leaveIdNum),leaveType:typeVal||'Casual Leave',
@@ -1961,6 +1962,7 @@ function saveComplianceItem(){
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
   complianceItemsData.unshift({id:complianceNextId++,country,item:name,model,status:'Active',category,mandatory,payrollBlocking,evidenceRequired,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
+  lpLanded('compliance',complianceItemsData[0].id);
   complianceModalOpen=false;
   renderADTPage();
   showToast('Compliance item created','success','"'+name+'" added for '+country+' ('+model+').');
@@ -3274,6 +3276,7 @@ function saveRule(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  lpLanded('rates-rules',ratesRuleNextId);
   ratesRulesData.unshift({id:ratesRuleNextId++,country,ruleName:name,category,applicableTo,valueRate,status,createdBy:'Shaun Test1',createdAt,logs:[],
     ruleType,employmentType,currency,valueType,conditionOperator,conditionValue,minLimit,maxLimit,effectiveFrom,effectiveTo});
   ratesRuleModalOpen=false;
@@ -3509,6 +3512,7 @@ function saveTemplate(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  lpLanded('contract-templates',ctpNextId);
   contractTemplatesData.unshift({id:ctpNextId,templateName:name,employmentType,templateId:String(ctpNextId),status,country,category,createdBy:'Shaun Test1',createdAt,
     attachments:fileName?[{name:fileName}]:[],logs:[]});
   ctpNextId++;
@@ -4121,6 +4125,7 @@ function submitAddTeam(){
   const member=getCSValue('team-member');
   const teamName=name.value.trim();
   const newId=teamsData.length?Math.max.apply(null,teamsData.map(function(t){return t.id;}))+1:1;
+  lpLanded('teams',newId);
   teamsData.unshift({id:newId,teamId:String(2880+newId),name:teamName,dept:dept,country:'India',members:member&&member!=='Select'?1:0,email:email.value.trim(),createdBy:'Pallavi Parate',joinDate:'From: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),status:'Active',membersList:member&&member!=='Select'?[{name:member,role:'Member',desig:'--'}]:[]});
   const rows=supportPageMeta.teams.rows;
   rows.unshift([0,teamName,dept,'India',member&&member!=='Select'?'1':'0','Active']);
@@ -4474,6 +4479,7 @@ function submitAddPayhead(){
   const now=new Date();
   const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
     +' | '+now.toLocaleTimeString('en-US',{hour12:true});
+  lpLanded('payheads',payheadNextId);
   payheadsData.unshift({id:payheadNextId++,name:name,category:cat,calcOn:calc,status:'Active',
     createdBy:CURRENT_USER,createdAt:stamp,slabs:phDraftSlabs.slice(),logs:[]});
   phDraftSlabs=[];
@@ -4560,7 +4566,17 @@ function closeHdSidebar(){
 function navHdTab(tab){hdTab=tab;hdEditMode=false;isbTab('hd',renderHdSidebar);}
 /* The tab strip is unchanged between the two modes, so isbTab swaps only the
    body — the tabs keep their identity and the panel does not flash. */
-function hdSetEdit(on){hdEditMode=!!on;isbTab('hd',renderHdSidebar);}
+function hdSetEdit(on){
+  hdPickClose();
+  hdEditMode=!!on;
+  // The picker edits a working copy of this record's audience, seeded when the
+  // form opens and read back by saveHdEdit. Cancel simply never reads it.
+  if(hdEditMode){
+    const h=holidaysData.find(function(x){return x.id===hdSelectedId;});
+    hdPickState.sb=h?hdBranches(h):[];
+  }
+  isbTab('hd',renderHdSidebar);
+}
 /* WHAT EDIT DOES NOT TOUCH: the entity, and the status.
 
      The entity, because a holiday moved to another entity's calendar is not
@@ -4577,7 +4593,7 @@ function saveHdEdit(){
   const name=nameEl?nameEl.value.trim():'';
   const date=getCDValue('hdsb-date');
   const type=getCustomSelectValue('hdsb-type');
-  const branch=getCustomSelectValue('hdsb-branch')||h.branch||HD_ALL_BRANCHES;
+  const branches=hdPickGet('sb').slice();
   const recEl=document.getElementById('hdsb-rec');
   const rec=recEl?recEl.checked:h.recurring;
   if(!name){showToast('Holiday name is required','error');if(nameEl)nameEl.focus();return;}
@@ -4587,7 +4603,8 @@ function saveHdEdit(){
      without the id check, saving a holiday without moving it would report a
      clash against itself. */
   const clash=holidaysData.find(function(x){
-    return x.id!==h.id&&x.entity===h.entity&&x.status==='Active'&&x.date===date&&hdBranchMatch(x,branch);
+    return x.id!==h.id&&x.entity===h.entity&&x.status==='Active'&&x.date===date
+      &&hdAudienceOverlap(hdBranches(x),branches);
   });
   if(clash){showToast(hdDateLabel(date)+' is already a holiday','error',
     '"'+clash.name+'" is on the '+h.entity+' calendar for that date.');return;}
@@ -4597,10 +4614,13 @@ function saveHdEdit(){
   if(h.name!==name)changes.push('renamed from "'+h.name+'"');
   if(h.date!==date)changes.push('moved from '+hdDateLabel(h.date)+' to '+hdDateLabel(date));
   if(h.type!==type)changes.push('type changed from '+h.type+' to '+type);
-  if((h.branch||HD_ALL_BRANCHES)!==branch)changes.push('moved to '+branch);
+  const wasBr=hdBranches(h);
+  if(wasBr.join('|')!==branches.join('|'))
+    changes.push('now applies to '+hdBranchText({branches:branches})+' (was '+hdBranchText({branches:wasBr})+')');
   if(h.recurring!==rec)changes.push(rec?'now repeats every year':'no longer repeats yearly');
   if(!changes.length){hdSetEdit(false);showToast('No changes','info','Nothing was different.');return;}
-  h.name=name;h.date=date;h.type=type;h.branch=branch;h.recurring=rec;
+  h.name=name;h.date=date;h.type=type;h.branches=branches;h.recurring=rec;
+  delete h.branch;   // the old single-branch field is gone for good on this record
   hdWorkflow(h);   // seed first, so the edit sits on top of the history
   wfPush(hdWorkflowData,h.id,'Holiday Edited',changes.join('; ')+'.');
   hdEditMode=false;
@@ -4686,8 +4706,8 @@ function renderHdSidebar(){
         +apCD('hdsb-date',h.date,'Select date')+'</div>'
       +'<div class="lp-sb-field"><label>Type <span class="req">*</span></label>'
         +customSelect('hdsb-type',h.type,HD_TYPES,'Select Type')+'</div>'
-      +'<div class="lp-sb-field"><label>Branch</label>'
-        +customSelect('hdsb-branch',h.branch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)+'</div>'
+      +'<div class="lp-sb-field"><label>Applies to</label>'
+        +hdBranchPickerHTML('sb')+'</div>'
       +'<div class="lp-sb-field"><label>Repeats</label>'
         +'<label class="hd-check" style="justify-content:flex-start" title="Recurs on the same date every year">'
         +'<input type="checkbox" id="hdsb-rec"'+(h.recurring?' checked':'')+'><span>Repeats every year</span></label></div>'
@@ -4726,7 +4746,7 @@ function renderHdSidebar(){
       +(off?'<div class="hd-sb-note">Withdrawn — '+hdDateLabel(h.date)+' is treated as an ordinary working day.</div>':'')
       +'<div class="lp-sb-detail-grid">'
       +fc(iBuild,'Entity',h.entity)
-      +fc(iPin,'Branch',h.branch||HD_ALL_BRANCHES)
+      +fc(iPin,'Applies to',hdBranchChipsHTML(h,4))
       +fc(iRepeat,'Repeats',h.recurring?'Every year':'One-off')
       +fc(iUser,'Created By',h.createdBy)
       +fc(iCal,'Created At',h.createdAt)
@@ -4783,9 +4803,9 @@ function buildHolidaysPageHTML(){
         +'<td style="color:var(--gray);white-space:nowrap">'+(hdDayName(h.date)||'—')
           +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')+'</td>'
         +'<td>'+hdTypeBadge(h.type)+'</td>'
-        +'<td'+(h.branch&&h.branch!==HD_ALL_BRANCHES
-            ?' style="font-weight:600;color:var(--navy)"'
-            :' style="color:var(--gray)"')+'>'+(h.branch||HD_ALL_BRANCHES)+'</td>'
+        // Entity-wide recedes, named branches carry weight — the cell answers
+        // "is this one mine?" before it answers "which offices".
+        +'<td>'+hdBranchChipsHTML(h)+'</td>'
         +'<td style="color:'+(h.recurring?'var(--navy)':'var(--gray)')+'">'+(h.recurring?'Yearly':'One-off')+'</td>'
         +'<td><span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></td>'
         +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openHdSidebar('+h.id+')" title="View Details">'+dotsIco+'</button></td>'
@@ -4809,7 +4829,7 @@ function buildHolidaysPageHTML(){
     +'<div class="listing-stat'+(hdStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="hdToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+inactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="hd-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Branch</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Applies To</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -4830,7 +4850,77 @@ function buildHolidaysPageHTML(){
    the date lands on a Saturday or Sunday, says so under the row — a holiday on
    a weekend costs the entity no working day, and that is worth knowing BEFORE
    it is published, not after somebody asks why the leave balance did not move. */
-function hdBlankRow(){return {name:'',date:'',type:'',recurring:true};}
+/* ── Showing who a holiday is for ─────────────────────────────────────────
+   Two shapes, one idea. CHIPS state an audience that is already decided — the
+   listing cell and the detail panel. The PICKER is the same statement made
+   editable: a trigger that reads like the chips do, and a popover of branches
+   with ticks.
+
+   Entity-wide is deliberately not drawn as "every branch ticked". It is one
+   quiet chip, because it is the default and the common case, and a row of five
+   ticked boxes would make the ordinary holiday look like the complicated one. */
+/* ONE LINE, WHATEVER THE COUNT. Two chips side by side wrapped in a table cell
+   this narrow, and a wrapped cell makes its whole row taller than every other
+   row on the page — one holiday observed in two offices should not restripe the
+   table. So the cell names the first office and counts the rest; the full list
+   is on the cell itself, and the panel (which has the width) shows them all.
+
+   The count chip is not "+1" hanging off the end — it reads "+1 more" nowhere,
+   it just carries the number, and the title says what the number is. */
+function hdBranchChipsHTML(h,max){
+  const list=hdBranches(h);
+  if(!list.length)return '<span class="hd-br-chip is-all">'+HD_ALL_BRANCHES+'</span>';
+  const cap=Math.max(1,max||1),shown=list.slice(0,cap);
+  const title=list.length===1?list[0]:('Applies to '+list.join(', '));
+  return '<span class="hd-br-chips" title="'+attrSafe(title)+'">'
+    +shown.map(function(b){return '<span class="hd-br-chip">'+b+'</span>';}).join('')
+    +(list.length>cap?'<span class="hd-br-chip is-more">+'+(list.length-cap)+'</span>':'')
+    +'</span>';
+}
+const HD_BP_ICO={
+  pin:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  chev:'<svg class="hd-bp-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>',
+  tick:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+};
+function hdBranchPickerHTML(key){
+  const list=hdPickGet(key);
+  return '<div class="hd-bp">'
+    +'<button type="button" class="hd-bp-btn'+(list.length?'':' is-all')+'" id="hd-bp-btn-'+key+'"'
+      +' aria-expanded="false" aria-haspopup="true"'
+      +' title="'+attrSafe(list.length?('Applies to '+list.join(', ')):'Applies to every branch of this entity')+'"'
+      +' onclick="hdPickToggle(\''+key+'\',event)">'
+      +HD_BP_ICO.pin+'<span class="hd-bp-lbl">'+hdBranchLabel(list)+'</span>'+HD_BP_ICO.chev
+    +'</button></div>';
+}
+function hdPickPopHTML(key){
+  const list=hdPickGet(key);
+  const opt=function(b,label,on){
+    return '<button type="button" class="hd-bp-opt'+(on?' is-on':'')+'" data-branch="'+attrSafe(b)+'"'
+      +' onclick="'+(b===''?'hdPickAll(\''+key+'\',event)':'hdPickBranch(\''+key+'\',\''+attrSafe(b)+'\',event)')+'">'
+      +'<span class="hd-bp-box">'+HD_BP_ICO.tick+'</span><span>'+label+'</span></button>';
+  };
+  const branches=hdBranchChoices();
+  return '<div class="hd-bp-pop" id="hd-bp-pop-'+key+'" onclick="event.stopPropagation()">'
+    +'<div class="hd-bp-head">Applies to</div>'
+    +opt('',HD_ALL_BRANCHES,!list.length)
+    +'<div class="hd-bp-sep"></div>'
+    +(branches.length
+      ?branches.map(function(b){return opt(b,b,list.indexOf(b)>-1);}).join('')
+      :'<div class="hd-bp-empty">No branches on this entity yet.</div>')
+    +'<div class="hd-bp-note">'+(list.length
+      ?'Only '+list.join(', ')+' will see this holiday.'
+      :'Every branch of this entity will see this holiday.')+'</div>'
+    +(key.charAt(0)==='r'&&hdDraftRows.length>1
+      ?'<button type="button" class="hd-bp-apply" onclick="hdPickApplyAll(\''+key+'\',event)">Apply to all rows</button>'
+      :'')
+    +'</div>';
+}
+// A new row starts where the last one left off: a batch is usually for one
+// audience, and re-picking it on every row would be the fastest way to end up
+// with a row nobody meant to publish entity-wide.
+function hdBlankRow(prev){
+  return {name:'',date:'',type:'',recurring:true,branches:prev&&prev.branches?prev.branches.slice():[]};
+}
 /* THE ENTITY IS NOT A QUESTION. Which calendar a holiday goes on is already
    decided by the entity being worked in — the one named in the topbar switcher
    — so the popup states it rather than asking. Offering it as a field would be
@@ -4840,13 +4930,18 @@ function hdBlankRow(){return {name:'',date:'',type:'',recurring:true};}
    was off. Switching entity is one action, in one place, and it is not here. */
 function startAddHoliday(){
   hdDraftRows=[hdBlankRow()];
-  hdDraftEntity=hdCurrentEntityName();
   /* Pre-set to whatever the list is filtered to: if you are looking at the
-     Bengaluru calendar, that is the calendar you are adding to. */
-  hdDraftBranch=hdBranchFilter||HD_ALL_BRANCHES;
+     Mumbai calendar, that is the calendar you are adding to. Otherwise the row
+     starts entity-wide, which is what most holidays are. */
+  if(hdBranchFilter&&hdBranchFilter!==HD_ALL_BRANCHES)hdDraftRows[0].branches=[hdBranchFilter];
+  hdDraftEntity=hdCurrentEntityName();
+  hdPickOpen='';hdPickState={};
   hdModalOpen=true;renderADTPage();
 }
-function cancelAddHoliday(){hdDraftRows=[];hdDraftEntity='';hdModalOpen=false;renderADTPage();}
+function cancelAddHoliday(){
+  hdPickClose();
+  hdDraftRows=[];hdDraftEntity='';hdModalOpen=false;renderADTPage();
+}
 // Read the DOM back into state before any repaint.
 function hdSyncRows(){
   hdDraftRows.forEach(function(r,i){
@@ -4854,8 +4949,9 @@ function hdSyncRows(){
     const d=document.getElementById('hd-row-date-'+i);if(d)r.date=d.value;
     const c=document.getElementById('hd-row-rec-'+i);if(c)r.recurring=c.checked;
     r.type=getCustomSelectValue('hd-row-type-'+i)||r.type;
+    // branches are written straight onto the row by the picker, so there is
+    // nothing to read back for them.
   });
-  hdDraftBranch=getCustomSelectValue('hd-new-branch')||hdDraftBranch;
 }
 function hdRenderRows(){
   const list=document.getElementById('hd-row-list');
@@ -4863,9 +4959,13 @@ function hdRenderRows(){
   list.innerHTML=hdRowsHTML();
   hdPaintSummary();
 }
-function hdAddRow(){hdSyncRows();hdDraftRows.push(hdBlankRow());hdRenderRows();}
+function hdAddRow(){
+  hdPickClose();hdSyncRows();
+  hdDraftRows.push(hdBlankRow(hdDraftRows[hdDraftRows.length-1]));
+  hdRenderRows();
+}
 function hdRemoveRow(i){
-  hdSyncRows();
+  hdPickClose();hdSyncRows();
   if(hdDraftRows.length<=1)return;   // an empty batch is not a batch
   hdDraftRows.splice(i,1);hdRenderRows();
 }
@@ -4874,7 +4974,7 @@ function hdRemoveRow(i){
    and repainting it is what lets the weekend note under a row appear the
    moment its date makes it true. Nothing is focused at this point: the click
    that got here was on a calendar cell. */
-function hdDatePicked(){hdSyncRows();hdRenderRows();}
+function hdDatePicked(){hdPickClose();hdSyncRows();hdRenderRows();}
 function hdRowsHTML(){
   const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
   return hdDraftRows.map(function(r,i){
@@ -4887,16 +4987,21 @@ function hdRowsHTML(){
     let note='';
     if(dupe)note='<div class="hd-row-note is-bad">Row '+(i+1)+' repeats a date already used above.</div>';
     else if(hdIsWeekend(r.date))note='<div class="hd-row-note">Falls on a '+day+' — no working day is lost.</div>';
+    /* DAY LOST ITS COLUMN, NOT ITS PLACE. It was a whole grid column holding
+       one derived word in a disabled-looking box — and the column the row
+       actually needed was who the holiday is for. The weekday now sits under
+       the date it comes from, which is where it was always true. */
     return '<div class="hd-row-form'+(dupe?' is-bad':'')+'">'
       +'<div class="hd-row-index">'+(i+1)+'</div>'
       +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-name-'+i+'" value="'+attrSafe(r.name)+'" placeholder="e.g. Republic Day" aria-label="Holiday name, row '+(i+1)+'" oninput="hdUpdateSummary()"></div>'
-      +'<div class="hd-cell">'+apCD('hd-row-date-'+i,r.date,'Select date','hdDatePicked')+'</div>'
-      +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-day-'+i+'" value="'+attrSafe(day)+'" readonly placeholder="From date" aria-label="Day, row '+(i+1)+'" title="Taken from the date — not typed"></div>'
+      +'<div class="hd-cell">'+apCD('hd-row-date-'+i,r.date,'Select date','hdDatePicked')
+        +'<div class="hd-cell-sub">'+(day||'Weekday appears here')+'</div></div>'
       /* The shared customSelect has no change hook, so the cell listens instead:
          the click bubbles up after selectCustomOption has written the value, and
          the deferred call reads it back so the footer count and the button label
          move on a Type pick the same way they move on a name keystroke. */
       +'<div class="hd-cell" onclick="setTimeout(hdUpdateSummary,0)">'+customSelect('hd-row-type-'+i,r.type,HD_TYPES,'Select Type')+'</div>'
+      +'<div class="hd-cell">'+hdBranchPickerHTML('r'+i)+'</div>'
       +'<div class="hd-cell"><label class="hd-check" title="Recurs on the same date every year"><input type="checkbox" id="hd-row-rec-'+i+'"'+(r.recurring?' checked':'')+' onchange="hdUpdateSummary()"><span>Yearly</span></label></div>'
       +'<button class="hd-row-del" onclick="hdRemoveRow('+i+')" title="'
         +(only?'A batch needs at least one holiday':'Remove this holiday')+'"'+(only?' disabled':'')+'>'+iTrash+'</button>'
@@ -4941,7 +5046,7 @@ function buildAddHolidaysModalHTML(){
     +'<div class="ct-modal" style="width:min(940px,96vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
       +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
-    +'<p class="ct-modal-sub">One row per holiday, each with its own name. Add as many as the calendar needs — they are published to the entity together.</p>'
+    +'<p class="ct-modal-sub">One row per holiday — its own name, its own date, and its own branches. A holiday can apply to the whole entity or to any set of its offices.</p>'
 
     /* Entity is stated, not offered — see startAddHoliday. */
     +'<div class="hd-entity-row">'
@@ -4949,15 +5054,6 @@ function buildAddHolidaysModalHTML(){
       +'<div class="hd-entity-text">'
         +'<div class="hd-entity-label">Entity</div>'
         +'<div class="hd-entity-name">'+(hdDraftEntity||'—')+'</div>'
-      +'</div>'
-      /* Entity is stated because it is decided elsewhere; BRANCH is asked,
-         because it is the one thing about this batch only the person filing it
-         knows. Once per batch rather than per row: a batch is one branch's
-         calendar — the Bengaluru list and the all-branch list are two
-         sittings, not two rows of one. */
-      +'<div class="hd-branch-field">'
-        +'<label class="hd-entity-label">Branch</label>'
-        +customSelect('hd-new-branch',hdDraftBranch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)
       +'</div>'
       +'<span class="hd-entity-lock" title="Holidays are added to the entity you are working in — switch entity from the top bar">'+lockSvg+' Current entity</span>'
     +'</div>'
@@ -4973,7 +5069,7 @@ function buildAddHolidaysModalHTML(){
     +'<div class="hd-rows-body">'
       +'<div class="hd-row-head" aria-hidden="true">'
         +'<span></span><span>Holiday Name <b class="req">*</b></span><span>Date <b class="req">*</b></span>'
-        +'<span>Day</span><span>Type <b class="req">*</b></span><span>Repeats</span><span></span>'
+        +'<span>Type <b class="req">*</b></span><span>Applies to</span><span>Repeats</span><span></span>'
       +'</div>'
       +'<div id="hd-row-list">'+hdRowsHTML()+'</div>'
     +'</div>'
@@ -4989,9 +5085,8 @@ function buildAddHolidaysModalHTML(){
     +'</div></div>';
 }
 function submitAddHolidays(){
-  hdSyncRows();
+  hdPickClose();hdSyncRows();
   const entity=hdDraftEntity||hdCurrentEntityName();
-  const branch=hdDraftBranch||HD_ALL_BRANCHES;
   if(!entity){showToast('No entity selected','error','Pick an entity from the top bar first.');return;}
   /* Validated per row rather than once at the end, so the message can name
      WHICH holiday is wrong — "Diwali has no date" is actionable, "check your
@@ -5002,23 +5097,30 @@ function submitAddHolidays(){
     if(!r.name){showToast('Row '+n+' has no Holiday Name','error');return;}
     if(!r.date){showToast('"'+r.name+'" has no date','error','Every holiday needs a date.');return;}
     if(!r.type){showToast('"'+r.name+'" has no type','error','Pick Public, Optional or Company.');return;}
-    if(seen[r.date]){showToast('Two holidays on '+hdDateLabel(r.date),'error','"'+seen[r.date]+'" already uses that date in this batch.');return;}
-    seen[r.date]=r.name;
-    /* Clashes are checked against the SAME audience only. A Hyderabad-only
-       holiday sharing a date with a Bengaluru-only one is a real arrangement,
-       not a conflict — but two all-branch holidays on one date is. */
+    /* A repeated date is only a problem where the two rows reach the same
+       office. Two rows on one date for two different branches is exactly what
+       the audience list is for. */
+    const rb=r.branches||[];
+    const twin=seen[r.date]&&hdAudienceOverlap(rb,seen[r.date].branches);
+    if(twin){showToast('Two holidays on '+hdDateLabel(r.date),'error',
+      '"'+seen[r.date].name+'" already uses that date for '+hdBranchLabel(rb)+' in this batch.');return;}
+    if(!seen[r.date])seen[r.date]={name:r.name,branches:rb};
+    /* Same rule against what is already published. A Hyderabad-only holiday
+       sharing a date with a Mumbai-only one is a real arrangement, not a
+       conflict — two entity-wide ones on a date is. */
     const clash=holidaysData.find(function(h){
-      return h.entity===entity&&h.status==='Active'&&h.date===r.date&&hdBranchMatch(h,branch);
+      return h.entity===entity&&h.status==='Active'&&h.date===r.date&&hdAudienceOverlap(hdBranches(h),rb);
     });
     if(clash){showToast(hdDateLabel(r.date)+' is already a holiday','error',
-      '"'+clash.name+'" ('+(clash.branch||HD_ALL_BRANCHES)+') is on the '+entity+' calendar for that date.');return;}
+      '"'+clash.name+'" ('+hdBranchText(clash)+') is on the '+entity+' calendar for that date.');return;}
   }
   const now=new Date();
   const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
     +' | '+now.toLocaleTimeString('en-US',{hour12:true});
   const added=hdDraftRows.slice();
   added.forEach(function(r){
-    holidaysData.push({id:holidayNextId++,name:r.name,date:r.date,type:r.type,branch:branch,entity:entity,
+    holidaysData.push({id:holidayNextId++,name:r.name,date:r.date,type:r.type,
+      branches:(r.branches||[]).slice(),entity:entity,
       recurring:!!r.recurring,status:'Active',createdBy:CURRENT_USER,createdAt:stamp,logs:[]});
   });
   hdDraftRows=[];hdModalOpen=false;
@@ -5026,13 +5128,29 @@ function submitAddHolidays(){
      showing would otherwise save into a screen that does not contain it. */
   const y=hdYearOf(added[0].date);
   if(hdYearFilter&&hdYearFilter!==y)hdYearFilter=y;
-  if(hdBranchFilter&&!hdBranchMatch({branch:branch},hdBranchFilter))hdBranchFilter=branch;
+  // A filter that hides what was just filed is a filter that has to go.
+  if(hdBranchFilter&&!added.some(function(r){return hdBranchMatch({branches:r.branches},hdBranchFilter);}))hdBranchFilter='';
+  if(hdTypeFilter&&!added.some(function(r){return r.type===hdTypeFilter;}))hdTypeFilter='';
+  hdStatusFilter='';
   hdUpcomingOnly=false;
-  page='holidays';renderADTPage();
+  hdDraftEntity='';hdPickState={};
+  /* THIS LIST IS BY DATE, NOT BY WHEN IT WAS FILED. A calendar out of date
+     order is not a calendar, so a new holiday cannot simply be put on top the
+     way every other listing does it. The page goes to wherever the row landed
+     instead, and the row is marked so the eye finds it there. */
+  const newIds=holidaysData.slice(-added.length).map(function(h){return h.id;});
+  lpLanded('holidays',newIds);
+  page='holidays';
+  const at=hdRows().findIndex(function(h){return h.id===newIds[0];});
+  if(at>-1)lpLandedAt('holidays',at);
+  renderADTPage();
   const n=added.length;
+  const wide=added.filter(function(r){return !(r.branches&&r.branches.length);}).length;
   showToast(n+' holiday'+(n===1?'':'s')+' added','success',
-    n===1?('"'+added[0].name+'" is on the '+entity+' calendar for '+hdDateLabel(added[0].date)+'.')
-         :('Published to the '+entity+' calendar for '+(branch===HD_ALL_BRANCHES?'all branches':branch)+'.'));
+    n===1?('"'+added[0].name+'" is on the '+entity+' calendar for '+hdDateLabel(added[0].date)
+           +' — '+hdBranchLabel(added[0].branches)+'.')
+         :('Published to the '+entity+' calendar'
+           +(wide===n?' for every branch.':wide?', '+(n-wide)+' of them branch-specific.':' for selected branches.')));
 }
 
 /* CREATION IS A POPUP, like every other create form in the app — Payheads,
@@ -5114,6 +5232,7 @@ function submitAddLeavePolicy(){
   const filterValWrap=document.getElementById('csw-ap-filter-value');
   const filterValStr=filterValWrap?filterValWrap.querySelector('.cs-value').textContent.trim():'';
   const employees=[...selectedEmps].map(id=>{const e=empPool.find(x=>x.id===id);return e?e.name:'';}).filter(Boolean);
+  lpLanded('leave-policies',newId);
   leavePoliciesData.unshift({
     id:newId,type:typeVal,yearly:parseInt(yearly.value)||0,
     monthly:monthly&&monthly.value?parseInt(monthly.value):null,
@@ -7644,6 +7763,7 @@ function saveNewTicket(){
     description:descEl&&descEl.value.trim()?descEl.value.trim():title
   };
   ticketsData.unshift(t);
+  lpLanded('support-tickets',t.id);
 
   /* Seeded so the panel opens on a real history rather than "no logs yet". The
      trigger message is the CLIENT's entry and is stamped as such — it is the
