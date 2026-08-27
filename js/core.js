@@ -755,6 +755,9 @@ function showAgentModule(pg){
   moduleEl.style.display='block';
   moduleEl.innerHTML=pg==='dashboard'?dashboardContentHTML:buildListingHTML(pg);
   if(pg==='dashboard'&&window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
+  // The dashboard snapshot is the idle attendance card; the shift it is hiding
+  // may still be open. Same restore the ADT view does.
+  if(pg==='dashboard'&&typeof _attRestore==='function')_attRestore();
   setAgentWorkspaceButton(true);
 }
 function hideAgentWorkspaceButton(){const btn=document.getElementById('agent-workspace-btn');if(btn)btn.style.display='none';}
@@ -2914,11 +2917,6 @@ const ocaItems=[
 // ocaSelectedId is the row whose detail panel is open — the same split-panel
 // pattern the listing pages use, so the dashboard behaves like the rest of the app.
 let ocaStatusFilter='',ocaPage=1,ocaSelectedId=null,ocaTab='basic-details';
-/* The decision taken from the panel's Approve/Reject bar, carried into the Logs
-   tab so the form opens already set to the move the admin asked for. Cleared the
-   moment the log is saved or the panel closes — it describes one click, not a
-   state the document is in. */
-let ocaPendingStatus='';
 function ocaRows(){
   return ocaStatusFilter?ocaItems.filter(function(r){return r.status===ocaStatusFilter;}):ocaItems;
 }
@@ -2930,6 +2928,37 @@ function ocaCatLabel(key){return ocaCat(key).label;}
 // Who owed the upload. Until it arrives there is nobody to credit, so the cell
 // says so rather than naming a party that has not delivered anything.
 function ocaUploadedBy(r){return r.status==='Awaiting Upload'?'Not uploaded':ocaCat(r.cat).source;}
+/* ── The file behind the row ───────────────────────────────────────────────
+   Every row on this dashboard IS a document, but the dashboard only ever
+   described one — name, owner, due date — and never let anyone open it. That
+   made the single decision this role exists to take, approve or reject, a
+   decision taken blind.
+
+   There is no file store behind this prototype, so the file is DERIVED from
+   the row the same way its history is: name, type, page count, size and who
+   sent it all come out of the record's own id, document name and category.
+   Derived means stable — the same row shows the same file every time it is
+   opened — and a row nobody has uploaded to has no file at all rather than a
+   placeholder pretending to be one. */
+function ocaHasFile(r){return !!r&&r.status!=='Awaiting Upload';}
+function ocaSlug(v){return String(v).trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+// Photo IDs and scans arrive as images, everything else as a PDF. Read off the
+// document's own name so the icon, the page count and the viewer all agree.
+function ocaFileKind(r){return /passport|photo|visa page|identity document|residence card/i.test(r.doc)?'JPG':'PDF';}
+function ocaFileMeta(r){
+  const kind=ocaFileKind(r);
+  return {
+    kind:kind,
+    name:ocaSlug(r.doc)+'_'+ocaRef(r)+'.'+kind.toLowerCase(),
+    pages:kind==='JPG'?1:2+(r.id%5),        // 2–6 pages, stable per row
+    size:(140+((r.id*37)%680))+' KB',       // 140–819 KB, stable per row
+    by:ocaCat(r.cat).source
+  };
+}
+function ocaFileLine(r){
+  const f=ocaFileMeta(r);
+  return f.kind+' · '+f.pages+(f.pages===1?' page':' pages')+' · '+f.size;
+}
 // One date column, two meanings, and the status says which: a document in force
 // shows how long it stays in force, one still in the queue shows when it is due.
 function ocaDateLabel(r){return ocaHasValidity(r)?'Valid Till':'Action Due';}
@@ -3481,8 +3510,216 @@ const tsAttendance={
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
   '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'}
 };
-function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';renderADTPage();}
-function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';renderADTPage();}
+function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';tsEdit=null;renderADTPage();}
+function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage();}
+
+/* ══ FILLING THE TIMESHEET IN ═══════════════════════════════════════════════
+   The month grid could be read and nothing else: every punch on it came from
+   the clock, a day the clock missed stayed "Absent" for good, and the Submit
+   button at the foot of the page was wired to nothing. A timesheet you cannot
+   correct is not a timesheet, it is a report.
+
+   Three things go on top of it, and they are one idea:
+
+     · ENTER a day by hand — clock-in, clock-out, where — for any day of the
+       month being shown that has already happened.
+     · EDIT a day that already has times, on the same form. A record that came
+       off the clock and one typed in are the same shape; only src differs,
+       and the grid has always labelled that.
+     · LOCK a week, which is what makes the first two stop. A locked week is
+       the employee saying "this week is final"; only then can it be submitted
+       for approval, and until it is submitted it can be unlocked again.
+
+   THE WEEK IS THE UNIT OF SUBMISSION, not the month. That is the whole reason
+   lock exists: approval is a claim about a settled set of days, and a set that
+   can still change underneath the approver is not settled. So submit is only
+   ever offered on a week that is locked, and locking is only offered on a week
+   that has actually started.
+
+   TODAY IS FIXED IN THIS PROTOTYPE. The grid's data is June 2026, so "today"
+   is a constant rather than a live clock - otherwise every day of the fixture
+   month would read as the future and none of it could be edited. */
+const TS_TODAY='2026-06-24';
+let tsEdit=null;            // {date} while the day panel is in edit mode
+let tsWeekState={};         // 'YYYY-MM-W<n>' -> 'locked' | 'submitted'
+let tsReadOnly=false;       // true while looking at somebody else's timesheet
+
+// Monday-based, and worked out exactly the way the grid lays its rows out, so
+// "Week 3" in the rail and week 3 here are always the same seven days.
+function tsMonOff(y,m){const dow=new Date(y,m,1).getDay();return dow===0?6:dow-1;}
+function tsWeekCount(y,m){return Math.ceil((tsMonOff(y,m)+new Date(y,m+1,0).getDate())/7);}
+function tsWeekDates(y,m,w){
+  const off=tsMonOff(y,m),dim=new Date(y,m+1,0).getDate(),out=[];
+  for(let c=0;c<7;c++){
+    const dn=(w-1)*7+c+1-off;
+    if(dn>=1&&dn<=dim)out.push(y+'-'+tsPad(m+1)+'-'+tsPad(dn));
+  }
+  return out;
+}
+function tsWeekOf(dateStr){
+  const p=dateStr.split('-'),y=+p[0],m=+p[1]-1,d=+p[2];
+  return Math.floor((tsMonOff(y,m)+d-1)/7)+1;
+}
+function tsWeekKey(y,m,w){return y+'-'+tsPad(m+1)+'-W'+w;}
+function tsWeekStatus(y,m,w){return tsWeekState[tsWeekKey(y,m,w)]||'open';}
+// A week nobody has reached yet cannot be closed off. Anything with at least
+// one day already behind it can.
+function tsWeekStartable(y,m,w){
+  return tsWeekDates(y,m,w).some(function(d){return d<=TS_TODAY;});
+}
+function tsDayLocked(dateStr){
+  const p=dateStr.split('-');
+  return tsWeekStatus(+p[0],+p[1]-1,tsWeekOf(dateStr))!=='open';
+}
+/* One rule, asked in every place that offers a control: this month, not the
+   future, not inside a locked week, and not somebody else's sheet. */
+function tsDayEditable(dateStr){
+  if(tsReadOnly)return false;
+  const p=dateStr.split('-');
+  if(+p[0]!==tsMonth.year||+p[1]-1!==tsMonth.month)return false;
+  if(dateStr>TS_TODAY)return false;
+  return !tsDayLocked(dateStr);
+}
+
+// ── Times in, times out ───────────────────────────────────────────────────
+// The records read '09:05 AM'; <input type="time"> speaks '09:05'. Two
+// conversions in one place, so no caller has to know both formats.
+function tsTo24(t){
+  if(!t||t==='--')return '';
+  const m=/^(d{1,2}):(d{2})s*(AM|PM)$/i.exec(String(t).trim());
+  if(!m)return '';
+  let h=(+m[1])%12;
+  if(/pm/i.test(m[3]))h+=12;
+  return tsPad(h)+':'+m[2];
+}
+function tsTo12(v){
+  if(!v)return '--';
+  const p=String(v).split(':'),h=+p[0];
+  return tsPad(h%12||12)+':'+p[1]+' '+(h>=12?'PM':'AM');
+}
+function tsMins(v){const p=String(v).split(':');return (+p[0])*60+(+p[1]);}
+function tsFmtDay(dateStr){
+  const mS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p=dateStr.split('-');
+  return (+p[2])+' '+mS[+p[1]-1]+' '+p[0];
+}
+function tsStartEdit(dateStr){
+  if(!tsDayEditable(dateStr))return;
+  tsEdit={date:dateStr};tsMapOpen='';renderADTPage();
+}
+function tsCancelEdit(){tsEdit=null;renderADTPage();}
+/* The running total under the two fields, updated straight into the node. The
+   rest of this page repaints through renderADTPage(), which would be wrong
+   here: a repaint on every keystroke would take the focus out of the field
+   being typed into. Nothing else on the page depends on a half-entered time,
+   so nothing else needs to know about it yet. */
+function tsEditPreview(){
+  const el=document.getElementById('ts-ed-total');if(!el)return;
+  const i=document.getElementById('ts-ed-in'),o=document.getElementById('ts-ed-out');
+  const iv=i?i.value:'',ov=o?o.value:'';
+  const mins=(iv&&ov)?tsMins(ov)-tsMins(iv):0;
+  el.textContent=mins>0?(mins/60).toFixed(2)+'h':'0.00h';
+  const err=document.getElementById('ts-ed-err');
+  if(err&&iv&&ov&&mins>0)err.classList.remove('is-on');
+}
+function tsSaveEntry(){
+  const date=tsEdit&&tsEdit.date;if(!date)return;
+  // Re-checked at the moment of saving, not only when the form was opened: the
+  // week could have been locked from the grid behind the panel.
+  if(!tsDayEditable(date)){
+    tsEdit=null;renderADTPage();
+    showToast('Week is locked','info','Unlock week '+tsWeekOf(date)+' to change this day.');
+    return;
+  }
+  const inEl=document.getElementById('ts-ed-in');
+  const outEl=document.getElementById('ts-ed-out');
+  const locEl=document.getElementById('ts-ed-loc');
+  const iv=inEl?inEl.value:'',ov=outEl?outEl.value:'';
+  const fail=function(msg){
+    const e=document.getElementById('ts-ed-err');
+    if(e){e.textContent=msg;e.classList.add('is-on');}
+    return false;
+  };
+  if(!iv||!ov)return fail('Enter both a clock-in and a clock-out time.');
+  const mins=tsMins(ov)-tsMins(iv);
+  // No overnight shifts: a record here carries one date, so a clock-out before
+  // the clock-in would silently belong to a day this row cannot represent.
+  if(mins<=0)return fail('Clock-out has to be later than clock-in.');
+  const had=tsAttendance[date]&&tsAttendance[date].status==='present';
+  tsAttendance[date]={
+    in:tsTo12(iv),out:tsTo12(ov),
+    loc:(locEl&&locEl.value)||'Hyderabad',
+    hours:(mins/60).toFixed(2)+'h',
+    src:'Manual',                       // typed in, and the grid says so
+    status:'present'
+  };
+  tsEdit=null;
+  renderADTPage();
+  showToast(had?'Entry updated':'Entry added','success',
+    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged.');
+}
+
+// ── Locking, unlocking, submitting ────────────────────────────────────────
+function tsLockWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(!tsWeekStartable(y,m,w))return;
+  tsWeekState[tsWeekKey(y,m,w)]='locked';
+  tsEdit=null;tsSelectedDay=null;
+  renderADTPage();
+  // Locking a week with gaps in it is allowed - the employee may simply not
+  // have worked those days - but they are counted out loud, because a gap
+  // nobody meant to leave is the one thing lock makes expensive to fix.
+  const gaps=tsWeekDates(y,m,w).filter(function(d){
+    if(d>TS_TODAY)return false;
+    const dow=new Date(d+'T00:00:00').getDay();
+    if(dow===0||dow===6)return false;               // weekends are not gaps
+    const a=tsAttendance[d];
+    return !a||a.status!=='present';
+  }).length;
+  showToast('Week '+w+' locked','success',gaps
+    ?gaps+' weekday'+(gaps===1?'':'s')+' with no hours. Unlock to fill '+(gaps===1?'it':'them')+' in.'
+    :'No further edits until it is unlocked. It can be submitted now.');
+}
+function tsUnlockWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(tsWeekStatus(y,m,w)!=='locked')return;         // submitted weeks do not come back
+  delete tsWeekState[tsWeekKey(y,m,w)];
+  renderADTPage();
+  showToast('Week '+w+' unlocked','info','Its days can be edited again.');
+}
+function tsSubmitWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(tsWeekStatus(y,m,w)!=='locked'){
+    showToast('Lock it first','info','Only a locked week can be submitted for approval.');
+    return;
+  }
+  tsWeekState[tsWeekKey(y,m,w)]='submitted';
+  const hrs=tsWeekDates(y,m,w).reduce(function(s,d){
+    const a=tsAttendance[d];
+    return s+(a&&a.status==='present'?parseFloat(a.hours):0);
+  },0);
+  renderADTPage();
+  showToast('Week '+w+' submitted','success',hrs.toFixed(2)+'h sent for approval.');
+}
+// The footer button, which used to do nothing at all. It submits every week
+// that is locked and not yet sent - never a week that is still open, because
+// that is exactly the claim lock exists to make.
+function tsSubmitLockedWeeks(){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month,ready=[];
+  for(let w=1;w<=tsWeekCount(y,m);w++)if(tsWeekStatus(y,m,w)==='locked')ready.push(w);
+  if(!ready.length){
+    showToast('Nothing to submit','info','Lock a week first — only a locked week can be submitted.');
+    return;
+  }
+  ready.forEach(function(w){tsWeekState[tsWeekKey(y,m,w)]='submitted';});
+  renderADTPage();
+  showToast(ready.length+' week'+(ready.length===1?'':'s')+' submitted','success',
+    'Week '+ready.join(', ')+' sent for approval.');
+}
 
 // ── TIMESHEET MONTH PICKER ──
 let tsMpOpen=false;

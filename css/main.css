@@ -1321,10 +1321,10 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-cal-legend{display:flex;align-items:center;gap:14px}
 .ts-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);font-weight:500}
 .ts-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ts-col-hdrs{display:grid;grid-template-columns:72px repeat(5,1fr) 84px 84px;background:var(--light);border-bottom:1px solid var(--border)}
+.ts-col-hdrs{display:grid;grid-template-columns:92px repeat(5,1fr) 84px 84px;background:var(--light);border-bottom:1px solid var(--border)}
 .ts-col-hdr{padding:9px 10px;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--gray);text-align:center}
 .ts-col-hdr.we{color:#d97706;background:rgba(254,243,226,.6)}
-.ts-cal-row{display:grid;grid-template-columns:72px repeat(5,1fr) 84px 84px;border-bottom:1px solid var(--border)}
+.ts-cal-row{display:grid;grid-template-columns:92px repeat(5,1fr) 84px 84px;border-bottom:1px solid var(--border)}
 .ts-cal-row:last-child{border-bottom:none}
 .ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 6px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}
@@ -1368,7 +1368,40 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-day-peek svg{width:12px;height:12px}
 .ts-day-cell:hover .ts-day-peek{opacity:1}
 .ts-day-src{font-size:9.5px;color:#a5adba;font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-top:auto}
-.ts-footer{display:flex;justify-content:flex-end;padding:4px 0 8px}
+/* ── Closing a week off ───────────────────────────────────────────────────
+   The lock control sits under the week's own total, because that is the figure
+   it is making final. Everything here is small and quiet on purpose: it is a
+   third line in a 92px rail, not a call to action. */
+.ts-wk-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:4px;
+  margin-top:2px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;
+  background:#fff;color:var(--navy);font-family:inherit;font-size:10px;font-weight:600;
+  cursor:pointer;white-space:nowrap;transition:border-color .14s,background .14s,color .14s}
+.ts-wk-btn:hover{border-color:#cbd5e1;background:var(--ol)}
+.ts-wk-btn.is-primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.ts-wk-btn.is-primary:hover{background:#1e293b;border-color:#1e293b;color:#fff}
+.ts-wk-btn svg{stroke:currentColor;fill:none}
+.ts-wk-line{display:flex;align-items:center;gap:3px;margin-top:2px}
+.ts-wk-chip{
+  display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r-status);
+  font-size:9px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.ts-wk-chip svg{stroke:currentColor;fill:none}
+.ts-wk-chip.is-locked{background:var(--st-wait-bg);color:var(--st-wait-fg)}
+.ts-wk-chip.is-sent{background:var(--st-ok-bg);color:var(--st-ok-fg)}
+.ts-wk-icon{
+  display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;
+  border:1px solid transparent;border-radius:5px;background:none;color:var(--gray);cursor:pointer}
+.ts-wk-icon:hover{border-color:var(--border);background:#fff;color:var(--navy)}
+.ts-wk-icon svg{stroke:currentColor;fill:none}
+/* A locked day is not a disabled one — it still opens, and the panel says why
+   it cannot be changed. So it is marked, not greyed: the hover glyph turns
+   into a padlock and the cell loses the tint that reads as "editable". */
+.ts-day-cell.is-locked{background:rgba(148,163,184,.06)}
+.ts-day-cell.is-locked.is-clickable:hover{background:rgba(148,163,184,.12)}
+.ts-day-cell.is-locked .ts-day-peek{color:var(--st-wait-fg)}
+
+.ts-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:4px 0 8px}
+.ts-foot-note{margin-right:auto;font-size:11.5px;color:var(--gray)}
 .ts-submit-btn{padding:10px 26px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
 /* .ts-submit-btn hover: buttons.css owns it (filled). */
 /* Timesheet sidebar */
@@ -1452,7 +1485,48 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-sb-total-label{font-size:12px;font-weight:600;color:var(--navy)}
 .ts-sb-total-val{font-size:20px;font-weight:800;color:var(--orange)}
 .ts-sb-src{font-size:11px;color:var(--gray);padding:0 2px}
+.ts-sb-head-right{display:flex;align-items:center;gap:8px}
+/* ── Entering a day by hand ───────────────────────────────────────────────
+   The form takes the place of the two read-only sections rather than sitting
+   under them, and borrows their card so the panel keeps one rhythm whichever
+   mode it is in. */
+.ts-ed{display:flex;flex-direction:column;gap:10px;background:var(--light);border-radius:10px;padding:12px 14px}
+.ts-ed-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ts-ed-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ts-ed-lbl{font-size:10px;font-weight:700;color:var(--gray);letter-spacing:.5px;text-transform:uppercase}
+.ts-ed-inp,.ts-ed-sel{
+  width:100%;box-sizing:border-box;height:34px;padding:0 10px;
+  border:1px solid var(--border);border-radius:8px;background:#fff;
+  color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:600;
+  transition:border-color .14s,box-shadow .14s}
+.ts-ed-inp:focus,.ts-ed-sel:focus{outline:0;border-color:#c7ccd6;box-shadow:0 0 0 3px rgba(15,23,42,.04)}
+.ts-ed-total{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:10px;border-top:1px dashed var(--border);
+  font-size:11.5px;font-weight:600;color:var(--gray)}
+.ts-ed-total span:last-child{font-size:16px;font-weight:800;color:var(--orange);font-variant-numeric:tabular-nums}
+.ts-ed-err{display:none;font-size:11px;color:var(--st-bad-fg);font-weight:600}
+.ts-ed-err.is-on{display:block}
+.ts-ed-note{font-size:10.5px;color:var(--gray);line-height:1.5}
+.ts-ed-note b{color:var(--navy)}
+/* Why this day cannot be edited, in the place the Edit button would have been. */
+.ts-sb-lockmsg{
+  display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:9px;
+  background:var(--st-wait-bg);color:var(--st-wait-fg);font-size:11.5px;line-height:1.5;font-weight:500}
+.ts-sb-lockmsg svg{flex-shrink:0;margin-top:2px;stroke:currentColor;fill:none;width:11px;height:11px}
 .ts-sb-actions{margin-top:auto;flex-shrink:0;padding:12px 0 0}
+.ts-sb-btns{display:flex;gap:8px}
+.ts-sb-btns .ts-sb-btn{flex:1}
+.ts-sb-btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;
+  color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .14s,background .14s,color .14s}
+.ts-sb-btn:hover{border-color:#cbd5e1;background:var(--ol)}
+.ts-sb-btn.is-wide{width:100%}
+.ts-sb-btn.is-primary{background:var(--navy);border-color:var(--navy);color:#fff}
+.ts-sb-btn.is-primary:hover{background:#1e293b;border-color:#1e293b;color:#fff}
+.ts-sb-btn svg{stroke:currentColor;fill:none}
 .ts-sb-submit{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
 /* .ts-sb-submit hover: buttons.css owns it (filled). */
 /* ── Timesheet overlay sidebar ── */
