@@ -419,6 +419,7 @@ function renderGeSidebar(){
   const iI='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h4"/></svg>';
   const iPin='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"/></svg>';
   const iGlobe='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+  const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
   const iBag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
   const iCal='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const iDoc='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
@@ -614,6 +615,7 @@ function renderTmSidebar(){
   const d='<span style="color:#9ca3af">--</span>';
   const v=(x)=>x&&x!=='--'?x:d;
   const iId='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M10 12h4"/></svg>';
+  const iCheck='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
   const iTeam='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>';
   const iMail='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
   const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -817,6 +819,7 @@ function renderPrSidebar(){
   const iCash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><circle cx="12" cy="14" r="3"/></svg>';
   const iBank='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>';
   const iHash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+  const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
   const iCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>';
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value||'-')+'</div></div></div>';
   let body='';
@@ -2588,7 +2591,7 @@ function buildOcaListingHTML(){
     +'</tr></thead><tbody>'+body+'</tbody></table>'
     +pager
     +'</div></div>'
-    +'<div class="lp-split-sb'+(ocaSelectedId?' open':'')+'" id="oca-split-sb"><div class="lp-isb" id="oca-isb-inner">'+(ocaSelectedId?renderOcaSidebar():'')+'</div></div>'
+    +'<div class="lp-split-sb'+(ocaSelectedId?' open':'')+'" id="oca-split-sb"><div class="lp-isb" id="oca-isb-inner">'+(ocaSelectedId?sbRender(renderOcaSidebar,'oca'):'')+'</div></div>'
     +'</div>'
     +'</div>';
 }
@@ -3845,7 +3848,7 @@ function buildPayheadsPageHTML(){
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
-    +'<div class="lp-split-sb'+(phSelectedId?' open':'')+'" id="ph-split-sb"><div class="lp-isb" id="ph-isb-inner">'+(phSelectedId?renderPhSidebar():'')+'</div></div>'
+    +'<div class="lp-split-sb'+(phSelectedId?' open':'')+'" id="ph-split-sb"><div class="lp-isb" id="ph-isb-inner">'+(phSelectedId?sbRender(renderPhSidebar,'ph'):'')+'</div></div>'
     +'</div></div>'
     +(phModalOpen?buildCreatePayheadModalHTML():'');
 }
@@ -4333,7 +4336,7 @@ function buildHolidaysPageHTML(){
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
-    +'<div class="lp-split-sb'+(hdSelectedId?' open':'')+'" id="hd-split-sb"><div class="lp-isb" id="hd-isb-inner">'+(hdSelectedId?renderHdSidebar():'')+'</div></div>'
+    +'<div class="lp-split-sb'+(hdSelectedId?' open':'')+'" id="hd-split-sb"><div class="lp-isb" id="hd-isb-inner">'+(hdSelectedId?sbRender(renderHdSidebar,'hd'):'')+'</div></div>'
     +'</div></div>'
     +(hdModalOpen?buildAddHolidaysModalHTML():'');
 }
@@ -4665,7 +4668,7 @@ function buildLeavePoliciesHTML(){
     +'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>'
     +'</button></td>'
     +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No leave policies match this filter.</td></tr>');
-  const sbInner=lpSidebarPolicyId?renderLPSidebar():'';
+  const sbInner=lpSidebarPolicyId?sbRender(renderLPSidebar,'leave-policy'):'';
   return '<div class="lp-page">'
     +'<div class="lp-filter-bar">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
@@ -4911,7 +4914,7 @@ function renderLPSidebar(){
 }
 function refreshLPSidebar(){
   const inner=document.getElementById('lp-isb-inner');
-  if(inner)inner.innerHTML=renderLPSidebar();
+  if(inner)inner.innerHTML=sbRender(renderLPSidebar,'leave-policy');
 }
 function navLPSidebar(tabId){
   lpSidebarTab=tabId;lpSidebarEditMode=false;lpEmpEditMode=false;
@@ -4982,6 +4985,95 @@ function lpSidebarEmpSelectorHTML(policyEmps){
 }
 
 // ── MY TIMESHEET PAGE ──
+/* ── The punch map ─────────────────────────────────────────────────────────
+   DRAWN, NOT FETCHED. The app loads no third-party scripts and is opened
+   straight off the filesystem, so a real tile layer (Leaflet, Google, Mapbox)
+   would mean a CDN, an API key and a network the rest of this app does not
+   need. What a reviewer actually wants from this panel is "was the punch where
+   it should have been" — a schematic of the streets around the point, with the
+   pin on it and the real coordinates written underneath, answers that without
+   putting the whole app behind a network call. Swapping in real tiles later is
+   a change to this one function.
+
+   THE MAP IS ALWAYS CENTRED ON THE PIN, which is why the street grid is fixed
+   rather than generated per location — a real map centres on what you asked
+   for too, and a randomly drawn one would imply geography it does not have. */
+function tsMapSVG(fix,tone){
+  const ink=tone==='out'?'#ef4444':'#16a34a';
+  const streets=(fix&&fix.place&&fix.place.streets)||['',''];
+  return '<svg class="ts-map-svg" viewBox="0 0 320 190" role="img" aria-label="Approximate location of the punch">'
+    // land, water, park
+    +'<rect width="320" height="190" fill="#eaeff3"/>'
+    +'<path d="M0 150 C60 138 96 162 150 152 C210 141 250 166 320 156 L320 190 L0 190Z" fill="#d5e6f4"/>'
+    +'<rect x="196" y="26" width="86" height="52" rx="10" fill="#dcecdd"/>'
+    +'<rect x="18" y="104" width="58" height="34" rx="8" fill="#dcecdd"/>'
+    // blocks
+    +['26,26,58,40','98,20,66,46','26,76,50,20','98,78,62,34','196,92,60,36','262,92,44,36','176,20,10,58']
+      .map(function(b){var v=b.split(',');
+        return '<rect x="'+v[0]+'" y="'+v[1]+'" width="'+v[2]+'" height="'+v[3]+'" rx="3" fill="#e0e6ec"/>';}).join('')
+    // roads: the wide pale ones read as roads without needing labels
+    +'<g stroke="#fff" fill="none" stroke-linecap="round">'
+      +'<path d="M0 68 H320" stroke-width="11"/>'
+      +'<path d="M0 88 H320" stroke-width="7"/>'
+      +'<path d="M88 0 V190" stroke-width="9"/>'
+      +'<path d="M186 0 V150" stroke-width="7"/>'
+      +'<path d="M0 20 H320" stroke-width="5"/>'
+      +'<path d="M254 0 V92" stroke-width="5"/>'
+    +'</g>'
+    +'<g fill="#9aa8b6" font-size="7" font-family="inherit" letter-spacing=".3">'
+      +'<text x="8" y="65">'+attrSafe(streets[0])+'</text>'
+      +'<text x="93" y="118" transform="rotate(-90 93 118)">'+attrSafe(streets[1])+'</text>'
+    +'</g>'
+    // accuracy halo, then the pin, centred
+    +'<circle cx="160" cy="86" r="34" fill="'+ink+'" fill-opacity=".10"/>'
+    +'<circle cx="160" cy="86" r="34" fill="none" stroke="'+ink+'" stroke-opacity=".35" stroke-width="1"/>'
+    +'<ellipse cx="160" cy="103" rx="7" ry="2.6" fill="rgba(15,23,42,.28)"/>'
+    +'<path d="M160 66a9 9 0 0 0-9 9c0 6.6 9 16 9 16s9-9.4 9-16a9 9 0 0 0-9-9z" fill="'+ink+'"/>'
+    +'<circle cx="160" cy="75" r="3.4" fill="#fff"/>'
+    // scale bar, so the halo has a size the eye can read
+    +'<g transform="translate(232,168)">'
+      +'<rect x="0" y="-4" width="52" height="2" fill="#64748b"/>'
+      +'<rect x="0" y="-7" width="2" height="8" fill="#64748b"/>'
+      +'<rect x="50" y="-7" width="2" height="8" fill="#64748b"/>'
+      +'<text x="26" y="10" fill="#64748b" font-size="7.5" font-family="inherit" text-anchor="middle">50 m</text>'
+    +'</g>'
+  +'</svg>';
+}
+/* The map plus what it cannot draw: the address in words, the coordinates a
+   dispute would actually be settled on, and how precise the fix was. */
+function tsGoogleMapsURL(fix){
+  return 'https://www.google.com/maps/search/?api=1&query='
+    +encodeURIComponent(fix.lat.toFixed(6)+','+fix.lng.toFixed(6));
+}
+function tsMapPanelHTML(placeKey,dateStr,which,timeStr){
+  const fix=tsPunchFix(placeKey,dateStr,which);
+  if(!fix)return '<div class="ts-map-wrap"><div class="ts-map-none">No location was recorded for this punch.</div></div>';
+  const coord=fix.lat.toFixed(5)+'°N, '+fix.lng.toFixed(5)+'°E';
+  const homeSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+  const officeSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
+  const copySvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const extSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="11" height="11"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  return '<div class="ts-map-wrap">'
+    +'<a class="ts-map-frame ts-map-'+which+'" href="'+attrSafe(tsGoogleMapsURL(fix))+'"'
+      +' target="_blank" rel="noopener noreferrer" title="Open this location in Google Maps">'
+      +tsMapSVG(fix,which)
+      +'<span class="ts-map-badge">'+(which==='out'?'Checked out':'Checked in')+(timeStr&&timeStr!=='--'?' · '+timeStr:'')+'</span>'
+      +'<span class="ts-map-open">'+extSvg+'Google Maps</span>'
+    +'</a>'
+    +'<div class="ts-map-meta">'
+      +'<div class="ts-map-place">'+(fix.place.kind==='home'?homeSvg:officeSvg)+'<span>'+fix.place.label+'</span></div>'
+      +'<div class="ts-map-addr">'+fix.place.address+'</div>'
+      +'<div class="ts-map-row">'
+        +'<button class="ts-map-coord" onclick="tsCopyCoord(\''+coord+'\')" title="Copy coordinates">'+copySvg+coord+'</button>'
+        +'<span class="ts-map-acc" title="How precise the GPS fix was">±'+fix.accuracy+' m</span>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+}
+function tsCopyCoord(coord){
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(coord);
+  showToast('Coordinates copied','success',coord);
+}
 function buildTsSidebarHTML(dateStr) {
   const att = tsAttendance[dateStr];
   const d = new Date(dateStr + 'T00:00:00');
@@ -4997,6 +5089,19 @@ function buildTsSidebarHTML(dateStr) {
   const pinSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
   const calSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const xSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const chevSvg = '<svg class="ts-loc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" width="12" height="12"><polyline points="6 9 12 15 18 9"/></svg>';
+  /* The location is the one field on this panel with something behind it, so
+     it is the one field that is a control. Without a place to look up it stays
+     plain text — a button that opens nothing is worse than no button. */
+  const locRow = function(which,timeStr){
+    const known = att && TS_PLACES[loc];
+    if(!known) return '<div class="ts-sb-field">'+pinSvg+'<span class="ts-sb-flabel">Location</span><span class="ts-sb-fval">'+loc+'</span></div>';
+    const open = tsMapOpen===which;
+    return '<button class="ts-sb-field ts-sb-loc'+(open?' is-open':'')+'" onclick="tsToggleMap(\''+which+'\')" aria-expanded="'+open+'" title="'+(open?'Hide the map':'Show where this punch was recorded')+'">'
+        +pinSvg+'<span class="ts-sb-flabel">Location</span><span class="ts-sb-fval">'+loc+'</span>'+chevSvg
+      +'</button>'
+      +(open?tsMapPanelHTML(loc,dateStr,which,timeStr):'');
+  };
   return '<div class="ts-sb-head">'
     + '<span class="ts-sb-title">Work Details</span>'
     + '<button class="ts-sb-close" onclick="tsCloseDay()">'+xSvg+'</button>'
@@ -5005,11 +5110,11 @@ function buildTsSidebarHTML(dateStr) {
     + '<div class="ts-sb-date-box">'+calSvg+'<div><div class="ts-sb-date-val">'+label+'</div><div class="ts-sb-date-day">'+dayNames[d.getDay()]+'</div></div></div>'
     + '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot in"></div>Check In</div>'
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+ci+'</span></div>'
-    + '<div class="ts-sb-field">'+pinSvg+'<span class="ts-sb-flabel">Location</span><span class="ts-sb-fval">'+loc+'</span></div>'
+    + locRow('in',ci)
     + '</div>'
     + '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot out"></div>Check Out</div>'
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+co+'</span></div>'
-    + '<div class="ts-sb-field">'+pinSvg+'<span class="ts-sb-flabel">Location</span><span class="ts-sb-fval">'+loc+'</span></div>'
+    + locRow('out',co)
     + '</div>'
     + '<div class="ts-sb-total"><span class="ts-sb-total-label">Total Hours</span><span class="ts-sb-total-val">'+(hrs==='--'?'0.00h':hrs)+'</span></div>'
     + (src ? '<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '')
@@ -5442,7 +5547,7 @@ function buildAllTimesheetHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(atSelectedId?' open':'')+'" id="at-split-sb">'
-      +'<div class="lp-isb" id="at-isb-inner">'+(atSelectedId?renderAtSidebar():'')+'</div></div>'
+      +'<div class="lp-isb" id="at-isb-inner">'+(atSelectedId?sbRender(renderAtSidebar,'at'):'')+'</div></div>'
     +'</div>';
 
   return filterBar+table;

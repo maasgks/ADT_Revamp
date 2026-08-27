@@ -1291,6 +1291,33 @@ function navigatePage(pg,fromDashboard){
    panel that does not follow the shared tabbar/body shape. This can degrade
    to exactly the previous behaviour; it can never render the wrong panel.
    ═══════════════════════════════════════════════════════════════════════ */
+/* == A DETAIL PANEL THAT THROWS MUST SAY SO ================================
+
+   THE FAILURE THIS EXISTS FOR. Every detail panel is a render function that
+   reads a record and returns markup. Opening one does two things in order: it
+   puts the 'open' class on the panel, then it renders the body into it. So a
+   render function that THROWS leaves the first half done and the second half
+   never run — a large empty white sheet, no message on screen, and an
+   exception in a console nobody has open. Three panels shipped that way for
+   months (Pay Runs, Teams, Global Employee) because each used one icon it had
+   never declared: a mistake that survives `node --check` and only fires when
+   that exact panel is opened.
+
+   The markup is now produced through here instead. A throw becomes a readable
+   panel and a console error, so the next one is found the first time it is
+   seen rather than reported as "the sidebar keeps going blank". */
+function sbRender(render,label){
+  try{return render()||'';}
+  catch(err){
+    if(typeof console!=='undefined'&&console.error)
+      console.error('Detail panel failed to render'+(label?' ['+label+']':'')+':',err);
+    return '<div class="lp-isb-body"><div class="sb-render-error">'
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12.01" y2="16.5"/></svg>'
+      +'<b>This panel could not be opened.</b>'
+      +'<span>'+String((err&&err.message)||err).replace(/</g,'&lt;')+'</span>'
+      +'</div></div>';
+  }
+}
 function isbTab(prefix,render){
   var inner=document.getElementById(prefix+'-isb-inner');
   if(!inner)return;
@@ -1298,7 +1325,7 @@ function isbTab(prefix,render){
   var oldTabs=inner.querySelector('.lp-isb-tabs');
 
   var tpl=document.createElement('div');
-  tpl.innerHTML=render();
+  tpl.innerHTML=sbRender(render,prefix);
   var newBody=tpl.querySelector('.lp-isb-body');
   var newTabs=tpl.querySelector('.lp-isb-tabs');
 
@@ -1647,8 +1674,8 @@ function buildListingHTML(pg){
     `<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`);
   const sbOpen=isPr?!!prSelectedId:(lstSelectedPg===pg&&lstSelectedId!=null);
   const sidebar=isPr
-    ? `<div class="lp-split-sb${sbOpen?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${sbOpen?renderPrSidebar():''}</div></div>`
-    : `<div class="lp-split-sb${sbOpen?' open':''}" id="lst-split-sb"><div class="lp-isb" id="lst-isb-inner">${sbOpen?renderLstSidebar():''}</div></div>`;
+    ? `<div class="lp-split-sb${sbOpen?' open':''}" id="pr-split-sb"><div class="lp-isb" id="pr-isb-inner">${sbOpen?sbRender(renderPrSidebar,'payroll'):''}</div></div>`
+    : `<div class="lp-split-sb${sbOpen?' open':''}" id="lst-split-sb"><div class="lp-isb" id="lst-isb-inner">${sbOpen?sbRender(renderLstSidebar,pg):''}</div></div>`;
   return `<div class="listing-page">`
     +dashboardBackHTML()
     +`<div class="listing-top">`
@@ -3395,6 +3422,43 @@ const entitiesData=[
 ];
 
 // ── TIMESHEET STATE & DATA ──
+/* WHAT A PLACE NAME MEANS. The attendance records store a place name on each
+   day — "Hyderabad", "Remote" — which is enough to read but not enough to put
+   a pin on. This is the lookup from that name to an address and a coordinate.
+   It sits beside the attendance data rather than inside it because the office
+   does not move: fifty punches at Hyderabad share one address, and copying it
+   onto all fifty is fifty chances for them to disagree. */
+const TS_PLACES={
+  Hyderabad:{label:'Hyderabad Office',kind:'office',
+    address:'Dhi Hyperlocal, HITEC City, Madhapur, Hyderabad 500081',
+    streets:['HITEC CITY RD','CYBER TOWERS'],
+    lat:17.4435,lng:78.3772},
+  Remote:{label:'Remote — Work From Home',kind:'home',
+    address:'Registered home address, Banjara Hills, Hyderabad 500034',
+    streets:['ROAD NO. 12','BANJARA HILLS'],
+    lat:17.4126,lng:78.4071}
+};
+/* A GPS FIX IS NEVER THE SAME POINT TWICE, so check-in and check-out sit a few
+   metres apart and each carries its own accuracy. Both are DERIVED from the
+   date and which punch it is rather than stored or randomised: a pin that
+   wandered every time the panel repainted would be worse than no pin at all,
+   and Math.random() would do exactly that. */
+function tsPunchFix(placeKey,dateStr,which){
+  const p=TS_PLACES[placeKey];
+  if(!p)return null;
+  let h=2166136261,s=dateStr+'|'+which;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}
+  const dx=((h%2000)/1000)-1, dy=(((h>>>11)%2000)/1000)-1;   // -1 .. 1
+  return {
+    lat:p.lat+dy*0.0006,                 // roughly ±65 m
+    lng:p.lng+dx*0.0006,
+    accuracy:6+(h>>>22)%25,              // 6 .. 30 m
+    place:p
+  };
+}
+// Only one map at a time — the panel is too narrow to hold two.
+let tsMapOpen='';
+function tsToggleMap(which){tsMapOpen=tsMapOpen===which?'':which;renderADTPage();}
 let tsSelectedDay=null;
 let tsMonth={year:2026,month:5}; // 0-indexed (5=June)
 let tsEmp={name:'Shaun Test1',initials:'ST',role:'Entity Super Admin'};
@@ -3417,8 +3481,8 @@ const tsAttendance={
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
   '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'}
 };
-function tsOpenDay(d){tsSelectedDay=d;renderADTPage();}
-function tsCloseDay(){tsSelectedDay=null;renderADTPage();}
+function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';renderADTPage();}
+function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';renderADTPage();}
 
 // ── TIMESHEET MONTH PICKER ──
 let tsMpOpen=false;

@@ -1395,6 +1395,59 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-sb-field svg{width:14px;height:14px;stroke:var(--gray);fill:none;flex-shrink:0}
 .ts-sb-flabel{font-size:11px;color:var(--gray);width:58px;font-weight:500}
 .ts-sb-fval{font-size:12px;font-weight:600;color:var(--navy)}
+/* ── Punch location map ───────────────────────────────────────────────────
+   The Location row is the only field on this panel with anything behind it, so
+   it is the only one that looks pressable. It inherits .ts-sb-field's layout
+   and only adds what a button needs on top. */
+.ts-sb-loc{
+  width:100%;box-sizing:border-box;margin:0 -6px 6px;padding:4px 6px;width:calc(100% + 12px);
+  border:0;background:none;font-family:inherit;text-align:left;cursor:pointer;border-radius:7px;
+  transition:background .14s ease}
+.ts-sb-loc:hover{background:rgba(15,23,42,.05)}
+.ts-sb-loc .ts-sb-fval{text-decoration:underline;text-decoration-color:#cbd5e1;text-underline-offset:2px}
+.ts-sb-loc:hover .ts-sb-fval{text-decoration-color:var(--btn-accent)}
+.ts-loc-chev{margin-left:auto;stroke:#94a3b8;transition:transform .18s ease}
+.ts-sb-loc.is-open .ts-loc-chev{transform:rotate(180deg)}
+.ts-sb-loc.is-open{background:rgba(15,23,42,.05)}
+
+.ts-map-wrap{margin:2px 0 6px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.ts-map-frame{position:relative;display:block;line-height:0;cursor:pointer;text-decoration:none}
+/* The map is a link, so it has to look pressable before it is hovered — the
+   corner pill is the resting affordance, the veil is the confirmation. */
+.ts-map-frame::after{
+  content:'';position:absolute;inset:0;background:rgba(15,23,42,0);transition:background .16s ease}
+.ts-map-frame:hover::after{background:rgba(15,23,42,.10)}
+.ts-map-frame:focus-visible{outline:2px solid var(--btn-accent);outline-offset:-2px}
+.ts-map-open{
+  position:absolute;left:8px;bottom:8px;z-index:1;
+  display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:var(--r-status);
+  background:rgba(255,255,255,.92);border:1px solid var(--border);
+  font-size:10.5px;font-weight:700;color:var(--gray);line-height:1.5;white-space:nowrap;
+  transition:color .16s ease,border-color .16s ease,background .16s ease}
+.ts-map-open svg{stroke:currentColor;flex-shrink:0}
+.ts-map-frame:hover .ts-map-open{background:#fff;color:var(--btn-accent);border-color:var(--btn-accent)}
+.ts-map-svg{display:block;width:100%;height:auto}
+/* Which punch this map belongs to, over the map rather than beside it. */
+.ts-map-badge{
+  position:absolute;top:8px;left:8px;padding:3px 9px;border-radius:var(--r-status);
+  background:rgba(255,255,255,.92);border:1px solid var(--border);
+  font-size:10.5px;font-weight:700;color:var(--navy);line-height:1.5;white-space:nowrap}
+.ts-map-meta{padding:10px 12px;border-top:1px solid var(--border);background:#fcfdfe}
+.ts-map-place{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--navy)}
+.ts-map-place svg{stroke:var(--gray);flex-shrink:0}
+.ts-map-addr{margin-top:3px;font-size:11px;line-height:1.45;color:var(--gray)}
+.ts-map-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+/* The coordinates are the thing a disputed punch is actually settled on, so
+   they are copyable rather than just readable. */
+.ts-map-coord{
+  display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:6px;
+  border:1px solid var(--border);background:#fff;cursor:pointer;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10.5px;color:var(--navy);
+  transition:border-color .14s ease,color .14s ease}
+.ts-map-coord:hover{border-color:var(--btn-accent);color:var(--btn-accent)}
+.ts-map-coord svg{stroke:currentColor;flex-shrink:0}
+.ts-map-acc{font-size:10.5px;font-weight:600;color:var(--gray);white-space:nowrap}
+.ts-map-none{padding:16px;text-align:center;font-size:11.5px;color:var(--gray)}
 .ts-sb-total{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--light);border-radius:10px}
 .ts-sb-total-label{font-size:12px;font-weight:600;color:var(--navy)}
 .ts-sb-total-val{font-size:20px;font-weight:800;color:var(--orange)}
