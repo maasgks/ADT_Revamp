@@ -70,6 +70,8 @@ function renderPageContent(target){
   if(page==='chats'){el.innerHTML=buildChatsPageHTML();return;}
   if(page==='dashboard'){
     el.innerHTML=dashboardContentHTML;
+    // Numbers come from the data, not from the snapshot's typed-in markup.
+    if(typeof syncDashCardCounts==='function')syncDashCardCounts(el);
     // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
     return;

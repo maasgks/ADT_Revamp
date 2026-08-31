@@ -634,9 +634,9 @@ function renderTmSidebar(){
   if(tmTab==='basic-details'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+team.name+'</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
-      +fc(iId,'Team ID',v(team.teamId))+fc(iTeam,'Team Name',v(team.name))
-      +fc(iMail,'Team Email',v(team.email))+fc(iUser,'Created By',v(team.createdBy))
-      +fc(iCal,'Joining Date',v(team.joinDate))+fc(iCheck,'Status',statusVal)
+      +fc(iId,'Team ID',v(team.teamId))+fc(iCheck,'Status',statusVal)
+      +fc(iTeam,'Team Name',v(team.name))+fc(iMail,'Team Email',v(team.email))
+      +fc(iUser,'Created By',v(team.createdBy))+fc(iCal,'Joining Date',v(team.joinDate))
       +'</div>';
   }else if(tmTab==='team-members'){
     const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
@@ -839,27 +839,27 @@ function renderPrSidebar(){
     // card. Hung off the section title instead, it read as a heading colour
     // rather than a value the record carries.
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Cycle Details</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
-      +fc(iHash,'Payroll ID',r.payrollId)+fc(iCal,'Cycle',r.cycle)
+      +'<div class="lp-sb-detail-grid" style="margin-bottom:20px">'
+      +fc(iHash,'Payroll ID',r.payrollId)+fc(iCheck,'Status',sbStatus(r.status))
+      +fc(iCal,'Cycle',r.cycle)
       +fc(iCal,'Pay Period',r.period)+fc(iCal,'Frequency',r.frequency)
       +fc(iGlobe,'Country',r.country)+fc(iBank,'Entity',r.entity)
       +fc(iCash,'Currency',r.currency)+fc(iUsers,'Employees',String(r.employees))
-      +fc(iCheck,'Status',sbStatus(r.status))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Schedule &amp; Ownership</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iClock,'Input Cut-off',r.cutOff)+fc(iCal,'Pay Date',r.payDate)
       +fc(iBank,'Payment Method',r.payMethod)+fc(iUser,'Payroll Owner',r.owner)
       +'</div>';
   }else if(prTab==='pay-summary'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Pay Summary</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
+      +'<div class="lp-sb-detail-grid" style="margin-bottom:20px">'
       +fc(iCash,'Gross Pay',r.grossPay)+fc(iCash,'Total Deductions',r.deductions)
       +fc(iCash,'Employer Contributions',r.employerCost)+fc(iCash,'Net Payable',r.netPayable)
       +fc(iCash,'Total Employer Cost',r.totalCost)+fc(iUsers,'Employees Paid',String(r.employees))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Approval</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iCheck,'Approved By',r.approver)+fc(iCal,'Approved On',r.approvedOn)
       +'</div>';
   }else if(prTab==='logs'){
@@ -947,12 +947,12 @@ function renderAlSidebar(){
     const subVal=sbStatus(l.subStatus);
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+l.name+'</span></div>'
       +'<div class="lp-sb-detail-grid">'
-      +fc(iId,'Employee ID',l.empId)+fc(iUser,'Name',l.name)
+      +fc(iId,'Employee ID',l.empId)+fc(iCheck,'Status',stVal)
+      +fc(iUser,'Name',l.name)+fc(iCheck,'Sub Status',subVal)
       +fc(iTag,'Leave ID',l.leaveId)+fc(iTag,'Leave Type',l.leaveType)
       +fc(iCal,'Leave From','<span style="color:var(--orange)">'+l.leaveFrom+'</span>')+fc(iCal,'Leave To','<span style="color:var(--orange)">'+l.leaveTo+'</span>')
       +fc(iDoc,'Description',l.description)+fc(iMail,'Email Address','<span style="color:var(--orange)">'+l.email+'</span>')
       +fc(iClock,'Applied on Date',l.appliedDate)+fc(iUser,'Created by',l.createdBy)
-      +fc(iCheck,'Status',stVal)+fc(iCheck,'Sub Status',subVal)
       +'</div>';
   }else if(alTab==='logs'){
     const logs=alLogsData[l.id]||[];
@@ -1417,9 +1417,9 @@ function renderPmSidebar(){
   }else if(pmTab==='employee'){
     const emp=p.emp;
     body='<div class="lp-sb-detail-grid">'
-      +fc(iId,'Employee ID',emp.empId)+fc(iUser,'Name',emp.name)
-      +fc(iMail,'Email','<span style="color:var(--orange)">'+emp.email+'</span>')+fc(iPhone,'Mobile',emp.mobile)
-      +fc(iCheck,'Status',sbStatus(emp.status))+fc(iCal,'Created On','<span style="color:var(--orange)">'+emp.createdOn+'</span>')
+      +fc(iId,'Employee ID',emp.empId)+fc(iCheck,'Status',sbStatus(emp.status))
+      +fc(iUser,'Name',emp.name)+fc(iMail,'Email','<span style="color:var(--orange)">'+emp.email+'</span>')
+      +fc(iPhone,'Mobile',emp.mobile)+fc(iCal,'Created On','<span style="color:var(--orange)">'+emp.createdOn+'</span>')
       +'</div>';
   }else if(pmTab==='attachments'){
     body=attachTabHTML('pm',pmSelectedId);
@@ -2914,8 +2914,8 @@ function renderCtpSidebar(){
     const statusVal=sbStatus(item.status);
     body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
-      +fc(iUser,'Template Name',item.templateName)+fc(iBag,'Employment Type',item.employmentType)
-      +fc(iId,'Template ID',item.templateId)+fc(iCheck,'Status',statusVal)
+      +fc(iUser,'Template Name',item.templateName)+fc(iCheck,'Status',statusVal)
+      +fc(iBag,'Employment Type',item.employmentType)+fc(iId,'Template ID',item.templateId)
       +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
       +'</div>';
   }else if(ctpTab==='attachments'){
@@ -6291,7 +6291,7 @@ function renderCsSidebar(){
 
   if(csTab==='basic-details'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Entity Details</span>'+editBtn+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iEnt,'Entity ID','293')+fc(iCity,'Entity Name','Closedhi')
       +fcW(iMap,'Address','Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India')
       +fc(iCity,'City','Hyderabad')
@@ -6307,7 +6307,7 @@ function renderCsSidebar(){
   else if(csTab==='banking-details'){
     const dlIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Banking Details</span>'+editBtn+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iGlobe,'Country / Location','India')+fc(iPerson,'Pay Name','Closedhi')
       +fc(iBank,'Pay Bank','ICIC')+fc(iHash,'Account Number','223445565666')
       +fc(iKey,'IFSC Code','ICFHDE123')+fc(iFlash,'Swift Code','ICFHDE123')
@@ -6407,7 +6407,7 @@ function renderCsSidebar(){
   }
   else if(csTab==='attendance'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Attendance Settings</span>'+editBtn+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iClock,'Attendance Mode','Auto')+fc(iClock,'Daily Work Hours','8 Hours')
       +fc(iClock,'Shift Type','Fixed')+fc(iDoc,'Overtime Allowed','No')
       +fc(iClock,'Late Policy','30 Minutes')+fc(iPin,'Geolocation','Enable')
@@ -6668,7 +6668,7 @@ function renderTkSidebar(){
     // The agent list comes from TK_AGENTS so this tab and the confirm dialog's
     // "Assign to" field can never offer different people.
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Current Assignment</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
+      +'<div class="lp-sb-detail-grid" style="margin-bottom:20px">'
       +fc(iUser,'Assigned To',t.assignedTo)+fc(iCal,'Since',t.createdAt)
       +fc(iUser,'Next Action On',tkOwner(t))
       +'</div>'
@@ -6959,7 +6959,7 @@ function buildCreateTicketModalHTML(){
 
     +'<div class="ep-form-grid">'
     +'<div class="ep-form-group"><label class="ep-form-label">Client <span class="req">*</span></label>'
-      +customSelect('tk-new-client','',clients,'— Select client —')+'</div>'
+      +customSelect('tk-new-client','',clients,'Select Client')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Due Date</label>'
       // The app's own picker, not <input type="date">: the native one draws the
       // browser's calendar, which ignores every token in this interface.
@@ -6973,9 +6973,9 @@ function buildCreateTicketModalHTML(){
       +'<input type="text" class="ep-form-input" id="tk-new-title" placeholder="Enter ticket title"></div>'
 
     +'<div class="ep-form-group"><label class="ep-form-label">Category <span class="req">*</span></label>'
-      +customSelect('tk-new-cat','Compliance',cats,'Select category')+'</div>'
+      +customSelect('tk-new-cat','Compliance',cats,'Select Category')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Assign To</label>'
-      +customSelect('tk-new-agent','',TK_AGENTS,'Search team member…')+'</div>'
+      +customSelect('tk-new-agent','',TK_AGENTS,'Select Team Member')+'</div>'
 
     // Segmented, not a select: four fixed choices where seeing the scale is the
     // point — Urgent only means something next to Low.
@@ -7216,7 +7216,7 @@ function renderChatSidebar(){
       +fc(iGlobe,'Country',c.country)+fc(iTag,'Status',sbStatus(c.status,chatStatusLabel(c.status)))
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Chat Information</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+      +'<div class="lp-sb-detail-grid">'
       +fc(iTag,'Chat ID',c.chatId)+fc(iUser,'Assigned To',c.assignedTo)
       +fc(iCal,'Started At',c.startedAt)+fc(iClock,'Last Activity',c.lastActivity)
       +'</div>';
@@ -7233,7 +7233,7 @@ function renderChatSidebar(){
     body=attachTabHTML('chat',chatSelectedId);
   }else if(chatTab==='assignment'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Current Assignment</span></div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'
+      +'<div class="lp-sb-detail-grid" style="margin-bottom:20px">'
       +fc(iUser,'Assigned To',c.assignedTo)+fc(iCal,'Since',c.startedAt)
       +'</div>'
       +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Reassign Chat</span></div>'
