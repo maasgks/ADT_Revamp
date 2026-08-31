@@ -755,6 +755,9 @@ function showAgentModule(pg){
   moduleEl.style.display='block';
   moduleEl.innerHTML=pg==='dashboard'?dashboardContentHTML:buildListingHTML(pg);
   if(pg==='dashboard'&&window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
+  // The dashboard snapshot is the idle attendance card; the shift it is hiding
+  // may still be open. Same restore the ADT view does.
+  if(pg==='dashboard'&&typeof _attRestore==='function')_attRestore();
   setAgentWorkspaceButton(true);
 }
 function hideAgentWorkspaceButton(){const btn=document.getElementById('agent-workspace-btn');if(btn)btn.style.display='none';}
@@ -1665,6 +1668,57 @@ const PG_PREV='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" strok
 const PG_NEXT='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
 
 function goListPage(key,n){listPageNo[key]=n;renderADTPage();}
+/* ── LANDING ON WHAT WAS JUST ADDED ────────────────────────────────────────
+   Every listing files a new record at the TOP of its data - unshift, not push -
+   so the thing just created is the first row of the first page. That was only
+   half the promise: listPage() deliberately keeps whatever page you were on
+   (see the note there), so filing a record from page 4 left you on page 4,
+   looking at rows from a fortnight ago, with the new one three pages behind
+   you. It read as "nothing happened".
+
+   So an add says where it landed. lpLanded() puts the listing back on page one
+   and marks the new ids; the rows carry .lp-row-new for one repaint, which is
+   enough to catch the eye without becoming a state the row is in. */
+let lpNewRows={};
+function lpLanded(key,ids){
+  listPageNo[key]=1;
+  lpNewRows[key]={};
+  (Array.isArray(ids)?ids:[ids]).forEach(function(id){lpNewRows[key][id]=1;});
+}
+/* A listing whose order is NOT newest-first - the holiday calendar is by date,
+   because a calendar out of date order is not a calendar - cannot put the new
+   row on top. It goes to the page the row is actually on instead. */
+function lpLandedAt(key,index){
+  listPageNo[key]=Math.max(1,Math.floor(index/LIST_PAGE_SIZE)+1);
+}
+/* Which listing draws its rows under which id prefix. Kept here, as one table,
+   rather than teaching sixteen row builders to ask whether they are new: the
+   highlight is a thing that happens TO a row, not a property of it, and every
+   one of those builders already emits the id this needs. */
+const LP_ROW_PREFIX={
+  'compliance':'cmp','rates-rules':'rr','contract-templates':'ctp','payheads':'ph',
+  'teams':'tm','support-tickets':'tk','all-leaves':'al','leave-policies':'lp',
+  'holidays':'hd','direct-employees':'de','global-employees':'ge'
+};
+/* Run at the end of every repaint. The mark is spent on the first paint that
+   finds the row, so the flash happens once - on the repaint the add itself
+   triggered - and a filter change five minutes later is not still lighting it
+   up. Rows that are marked but not on screen (a filter hides them, or the page
+   moved) keep their mark until they are. */
+function lpFlashNew(){
+  Object.keys(lpNewRows).forEach(function(key){
+    const pre=LP_ROW_PREFIX[key];if(!pre)return;
+    Object.keys(lpNewRows[key]).forEach(function(id){
+      const row=document.getElementById(pre+'-row-'+id);
+      if(!row)return;
+      delete lpNewRows[key][id];
+      row.classList.add('lp-row-new');
+      // Taken off once the animation has played, so the class cannot survive
+      // into a later patch of the same row and re-fire.
+      setTimeout(function(){row.classList.remove('lp-row-new');},2000);
+    });
+  });
+}
 
 /* key       stable name for this listing, used to remember its page
    sig       its current filter state, joined into a string - see below
@@ -2061,6 +2115,15 @@ function cdToggle(btn){
    no width, because the calendar has its own. */
 function cdPlace(btn,panel){
   placeAnchoredMenu(panel,btn.getBoundingClientRect(),{alignLeft:true});
+  /* A capped calendar scrolls its weeks, and starting them at the first of the
+     month would hide the day the field is already set to. placeAnchoredMenu
+     does this for menus by scrolling the menu itself; here the scroller is the
+     grid, so it is done from the control that knows which cell matters. */
+  const grid=panel.querySelector('.cd-grid');
+  if(!grid)return;
+  if(grid.scrollHeight<=grid.clientHeight+1){grid.scrollTop=0;return;}
+  const cell=grid.querySelector('.cd-sel')||grid.querySelector('.cd-today');
+  grid.scrollTop=cell?Math.max(0,cell.offsetTop-(grid.clientHeight-cell.offsetHeight)/2):0;
 }
 function cdCloseAll(){
   document.querySelectorAll('.cd-panel.cd-open').forEach(p=>p.classList.remove('cd-open'));
@@ -2115,8 +2178,14 @@ function cdClear(id){cdSet(id,'');cdCloseAll();}
 /* A fixed panel does not travel with its trigger, so any scroll underneath it
    would leave the calendar stranded. Capture phase, because scroll does not
    bubble - one listener covers every scroll container there will ever be. */
-document.addEventListener('scroll',function(){
-  if(document.querySelector('.cd-panel.cd-open'))cdCloseAll();
+document.addEventListener('scroll',function(e){
+  var open=document.querySelector('.cd-panel.cd-open');
+  if(!open)return;
+  /* ...but the panel's OWN weeks scroll when it has been capped short, and a
+     calendar that shut itself the moment it scrolled to the selected day would
+     never be open long enough to click. Only scrolling underneath it counts. */
+  if(e.target&&e.target.nodeType===1&&open.contains(e.target))return;
+  cdCloseAll();
 },true);
 window.addEventListener('resize',cdCloseAll);
 
@@ -2130,9 +2199,11 @@ function addDemoEmployee(){
   const nm=demoEmpNames[(directEmpData.length+globalEmpData.length)%demoEmpNames.length];
   if(empSubTab==='global'){
     const id=globalEmpData.length?Math.max.apply(null,globalEmpData.map(e=>e.id))+1:1;
+    lpLanded('global-employees',id);
     globalEmpData.unshift({id:id,name:nm,empId:'GEP00'+id,dept:'Engineering',country:'Netherlands',jobTitle:'Consultant',workerType:'EOR',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
   }else{
     const id=directEmpData.length?Math.max.apply(null,directEmpData.map(e=>e.id))+1:1;
+    lpLanded('direct-employees',id);
     directEmpData.unshift({id:id,name:nm,empId:'EMP00'+id,dept:'Engineering',branch:'Hyderabad',jobTitle:'Software Engineer',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
   }
   renderADTPage();
@@ -3025,11 +3096,6 @@ const ocaItems=[
 // ocaSelectedId is the row whose detail panel is open — the same split-panel
 // pattern the listing pages use, so the dashboard behaves like the rest of the app.
 let ocaStatusFilter='',ocaPage=1,ocaSelectedId=null,ocaTab='basic-details';
-/* The decision taken from the panel's Approve/Reject bar, carried into the Logs
-   tab so the form opens already set to the move the admin asked for. Cleared the
-   moment the log is saved or the panel closes — it describes one click, not a
-   state the document is in. */
-let ocaPendingStatus='';
 function ocaRows(){
   return ocaStatusFilter?ocaItems.filter(function(r){return r.status===ocaStatusFilter;}):ocaItems;
 }
@@ -3041,6 +3107,37 @@ function ocaCatLabel(key){return ocaCat(key).label;}
 // Who owed the upload. Until it arrives there is nobody to credit, so the cell
 // says so rather than naming a party that has not delivered anything.
 function ocaUploadedBy(r){return r.status==='Awaiting Upload'?'Not uploaded':ocaCat(r.cat).source;}
+/* ── The file behind the row ───────────────────────────────────────────────
+   Every row on this dashboard IS a document, but the dashboard only ever
+   described one — name, owner, due date — and never let anyone open it. That
+   made the single decision this role exists to take, approve or reject, a
+   decision taken blind.
+
+   There is no file store behind this prototype, so the file is DERIVED from
+   the row the same way its history is: name, type, page count, size and who
+   sent it all come out of the record's own id, document name and category.
+   Derived means stable — the same row shows the same file every time it is
+   opened — and a row nobody has uploaded to has no file at all rather than a
+   placeholder pretending to be one. */
+function ocaHasFile(r){return !!r&&r.status!=='Awaiting Upload';}
+function ocaSlug(v){return String(v).trim().replace(/[^A-Za-z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+// Photo IDs and scans arrive as images, everything else as a PDF. Read off the
+// document's own name so the icon, the page count and the viewer all agree.
+function ocaFileKind(r){return /passport|photo|visa page|identity document|residence card/i.test(r.doc)?'JPG':'PDF';}
+function ocaFileMeta(r){
+  const kind=ocaFileKind(r);
+  return {
+    kind:kind,
+    name:ocaSlug(r.doc)+'_'+ocaRef(r)+'.'+kind.toLowerCase(),
+    pages:kind==='JPG'?1:2+(r.id%5),        // 2–6 pages, stable per row
+    size:(140+((r.id*37)%680))+' KB',       // 140–819 KB, stable per row
+    by:ocaCat(r.cat).source
+  };
+}
+function ocaFileLine(r){
+  const f=ocaFileMeta(r);
+  return f.kind+' · '+f.pages+(f.pages===1?' page':' pages')+' · '+f.size;
+}
 // One date column, two meanings, and the status says which: a document in force
 // shows how long it stays in force, one still in the queue shows when it is due.
 function ocaDateLabel(r){return ocaHasValidity(r)?'Valid Till':'Action Due';}
@@ -3177,23 +3274,23 @@ function hdNextUpId(){
   return up.length?up[0].id:null;
 }
 const holidaysData=[
-  {id:1,name:'New Year’s Day',date:'2026-01-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:2,name:'Makar Sankranti',date:'2026-01-14',type:'Optional Holiday',branch:'Hyderabad',entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:3,name:'Republic Day',date:'2026-01-26',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:4,name:'Holi',date:'2026-03-04',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:5,name:'Ugadi',date:'2026-03-19',type:'Optional Holiday',branch:'Hyderabad',entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
-  {id:6,name:'Ram Navami',date:'2026-03-26',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
-  {id:7,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
-  {id:8,name:'Independence Day',date:'2026-08-15',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:9,name:'Ganesh Chaturthi',date:'2026-09-14',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
-  {id:10,name:'Gandhi Jayanti',date:'2026-10-02',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
-  {id:11,name:'Dussehra',date:'2026-10-20',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
-  {id:12,name:'Diwali',date:'2026-11-08',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
-  {id:13,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
-  {id:14,name:'Foundation Day',date:'2026-12-31',type:'Company Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:false,status:'Active',createdBy:'Shaun Test1',createdAt:'02 Feb 2026 | 09:18:00 AM',logs:[]},
-  {id:15,name:'Quarantine Day',date:'2025-04-20',type:'Company Holiday',branch:HD_ALL_BRANCHES,entity:'Dhi Hyperlocal',recurring:false,status:'Inactive',createdBy:'Shaun Test1',createdAt:'12 Apr 2025 | 05:44:00 PM',logs:[]},
-  {id:16,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branch:HD_ALL_BRANCHES,entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
-  {id:17,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branch:HD_ALL_BRANCHES,entity:'Closedhi',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]}
+  {id:1,name:'New Year’s Day',date:'2026-01-01',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:2,name:'Makar Sankranti',date:'2026-01-14',type:'Optional Holiday',branches:['Hyderabad','Mumbai'],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:3,name:'Republic Day',date:'2026-01-26',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:4,name:'Holi',date:'2026-03-04',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:5,name:'Ugadi',date:'2026-03-19',type:'Optional Holiday',branches:['Hyderabad'],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:6,name:'Ram Navami',date:'2026-03-26',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:7,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:8,name:'Independence Day',date:'2026-08-15',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:9,name:'Ganesh Chaturthi',date:'2026-09-14',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:10,name:'Gandhi Jayanti',date:'2026-10-02',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Pallavi Parate',createdAt:'18 Dec 2025 | 10:12:00 AM',logs:[]},
+  {id:11,name:'Dussehra',date:'2026-10-20',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:12,name:'Diwali',date:'2026-11-08',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:13,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:14,name:'Foundation Day',date:'2026-12-31',type:'Company Holiday',branches:['Hyderabad','Mumbai','Delhi'],entity:'Dhi Hyperlocal',recurring:false,status:'Active',createdBy:'Shaun Test1',createdAt:'02 Feb 2026 | 09:18:00 AM',logs:[]},
+  {id:15,name:'Quarantine Day',date:'2025-04-20',type:'Company Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:false,status:'Inactive',createdBy:'Shaun Test1',createdAt:'12 Apr 2025 | 05:44:00 PM',logs:[]},
+  {id:16,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
+  {id:17,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]}
 ];
 let holidayNextId=18;
 let hdSelectedId=null,hdTab='basic-details';
@@ -3206,7 +3303,127 @@ let hdModalOpen=false;              // creation is a popup, like every other cre
    list, and anything already typed has to survive that repaint. */
 let hdDraftRows=[];
 let hdDraftEntity='';
-let hdDraftBranch=HD_ALL_BRANCHES;   // asked once per batch, not per row
+/* ── The branch picker ─────────────────────────────────────────────────────
+   One widget, used by the create rows and by the detail panel's edit form, so
+   choosing who a holiday is for reads the same in both places.
+
+   It is addressed by a KEY: 'r0', 'r1' … for the create rows, 'sb' for the
+   sidebar. A row key reads and writes the draft row itself rather than a copy,
+   which is what keeps the picker honest across an Add Holiday repaint - there
+   is no second place for the answer to live and go stale.
+
+   IT DOES NOT REPAINT THE LIST. Everything it changes - the trigger's label,
+   the ticks in the popover - is written straight into the nodes. A repaint
+   here would close the popover the click just opened, and would take the focus
+   out of whatever row was being typed into. */
+let hdPickOpen='';        // key of the open popover, '' when none
+let hdPickState={};       // non-row keys ('sb') keep their working list here
+function hdPickGet(key){
+  if(key.charAt(0)==='r'){
+    const r=hdDraftRows[+key.slice(1)];
+    return r&&r.branches?r.branches:[];
+  }
+  return hdPickState[key]||[];
+}
+function hdPickPut(key,list){
+  if(key.charAt(0)==='r'){
+    const r=hdDraftRows[+key.slice(1)];
+    if(r)r.branches=list;
+  }else hdPickState[key]=list;
+}
+function hdPickClose(){
+  if(!hdPickOpen)return;
+  const pop=document.getElementById('hd-bp-pop-'+hdPickOpen);
+  if(pop)pop.remove();
+  const btn=document.getElementById('hd-bp-btn-'+hdPickOpen);
+  if(btn){btn.classList.remove('is-open');btn.setAttribute('aria-expanded','false');}
+  hdPickOpen='';
+  document.removeEventListener('mousedown',hdPickDocClose,true);
+}
+// Anything outside the widget closes it. Capture, so it runs before the click
+// lands on whatever was pressed — the field being clicked into keeps its focus
+// because nothing is re-rendered on the way past.
+function hdPickDocClose(e){
+  const t=e.target;
+  if(t&&t.closest&&t.closest('.hd-bp'))return;
+  hdPickClose();
+}
+function hdPickToggle(key,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  const was=hdPickOpen;
+  hdPickClose();
+  if(was===key)return;
+  const btn=document.getElementById('hd-bp-btn-'+key);
+  if(!btn)return;
+  hdPickOpen=key;
+  btn.classList.add('is-open');btn.setAttribute('aria-expanded','true');
+  btn.insertAdjacentHTML('afterend',hdPickPopHTML(key));
+  /* The last row of a long batch sits near the bottom of a modal that is
+     already at its full height, so a popover that always opened downward would
+     open into the footer. Measured against the modal rather than the viewport,
+     because the modal is what does the clipping. */
+  const pop=document.getElementById('hd-bp-pop-'+key);
+  const box=btn.closest('.ct-modal')||btn.closest('.lp-isb');
+  if(pop&&box){
+    // The row may be scrolled out of the modal's visible box; bring it in
+    // before measuring, or the popover is placed against a trigger nobody can
+    // see and lands half outside.
+    if(btn.scrollIntoView)btn.scrollIntoView({block:'nearest'});
+    const bb=box.getBoundingClientRect(),tb=btn.getBoundingClientRect();
+    const below=bb.bottom-tb.bottom,above=tb.top-bb.top;
+    // Downward by default. Upward only when down does not fit AND up fits better.
+    if(below<pop.offsetHeight+14&&above>below)pop.classList.add('is-up');
+  }
+  document.addEventListener('mousedown',hdPickDocClose,true);
+}
+function hdPickAll(key,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  hdPickPut(key,[]);
+  hdPickPaint(key);
+}
+function hdPickBranch(key,name,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  const cur=hdPickGet(key).slice(),i=cur.indexOf(name);
+  if(i>-1)cur.splice(i,1);else cur.push(name);
+  /* Ticking every office is NOT folded into "All Branches", tempting as it
+     looks. They are different instructions: All Branches means whoever this
+     entity has, including the office that opens next quarter; three ticked
+     names mean those three and nothing else. Collapsing one into the other
+     would quietly widen a holiday somebody had deliberately narrowed. */
+  hdPickPut(key,cur);
+  hdPickPaint(key);
+}
+// The create rows only: give every row in the batch the audience of this one.
+function hdPickApplyAll(key,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation();}
+  if(key.charAt(0)!=='r')return;
+  const list=hdPickGet(key).slice();
+  hdSyncRows();
+  hdDraftRows.forEach(function(r){r.branches=list.slice();});
+  hdPickClose();
+  hdRenderRows();
+  showToast('Applied to all rows','info',hdBranchLabel(list)+' set on '+hdDraftRows.length+' row'+(hdDraftRows.length===1?'':'s')+'.');
+}
+function hdPickPaint(key){
+  const list=hdPickGet(key);
+  const btn=document.getElementById('hd-bp-btn-'+key);
+  if(btn){
+    const lbl=btn.querySelector('.hd-bp-lbl');
+    if(lbl)lbl.textContent=hdBranchLabel(list);
+    btn.classList.toggle('is-all',!list.length);
+    btn.title=list.length?('Applies to '+list.join(', ')):'Applies to every branch of this entity';
+  }
+  const pop=document.getElementById('hd-bp-pop-'+key);
+  if(!pop)return;
+  pop.querySelectorAll('[data-branch]').forEach(function(el){
+    const b=el.getAttribute('data-branch');
+    el.classList.toggle('is-on',b===''?!list.length:list.indexOf(b)>-1);
+  });
+  const note=pop.querySelector('.hd-bp-note');
+  if(note)note.textContent=list.length
+    ?('Only '+list.join(', ')+' will see this holiday.')
+    :'Every branch of this entity will see this holiday.';
+}
 
 // The entity being worked in — the one named in the topbar switcher.
 function hdCurrentEntityName(){
@@ -3229,25 +3446,71 @@ function hdYearOptions(){
   if(!seen[cur])out.push(cur);
   return out.sort().reverse();
 }
+/* ── WHO A HOLIDAY IS FOR ──────────────────────────────────────────────────
+   A holiday used to carry ONE branch, or the string "All Branches". That is a
+   choice between "everywhere" and "exactly one place", and real calendars are
+   not shaped like that: Makar Sankranti is observed in Hyderabad and Mumbai
+   and nowhere else in the entity, and the only way to file it was as two
+   separate holidays with the same name and date — two records to edit, two to
+   deactivate, and a clash check that had to be taught to ignore them.
+
+   So the audience is a LIST. Empty means every branch, which keeps the common
+   case free of decoration: most holidays are entity-wide and say nothing about
+   branches at all.
+
+   Everything reads it through hdBranches(), which also understands the older
+   single-branch shape, so a record written before this change still resolves. */
+function hdBranches(h){
+  if(!h)return [];
+  if(h.branches&&h.branches.length)return h.branches.slice();
+  if(h.branch&&h.branch!==HD_ALL_BRANCHES)return [h.branch];
+  return [];
+}
+function hdIsAllBranches(h){return !hdBranches(h).length;}
+function hdBranchText(h){
+  const b=hdBranches(h);
+  return b.length?b.join(', '):HD_ALL_BRANCHES;
+}
+// What a picker's trigger says: the whole list while it is short, a count once
+// it is not, because three office names in a table cell is not a table cell.
+function hdBranchLabel(list){
+  if(!list||!list.length)return HD_ALL_BRANCHES;
+  if(list.length===1)return list[0];
+  return list.length+' branches';
+}
 /* Read off the employees rather than hard-coded, so opening an office adds it
    to the list by putting somebody in it — the same reason the year filter is
    derived from the dates rather than typed out. */
-function hdBranchOptions(){
-  const seen={},out=[HD_ALL_BRANCHES];
-  seen[HD_ALL_BRANCHES]=1;
+function hdBranchChoices(){
+  const seen={},out=[];
   if(typeof empPoolExt!=='undefined')
     Object.keys(empPoolExt).forEach(function(k){
       const b=empPoolExt[k].branch;
       if(b&&!seen[b]){seen[b]=1;out.push(b);}
     });
-  holidaysData.forEach(function(h){if(h.branch&&!seen[h.branch]){seen[h.branch]=1;out.push(h.branch);}});
-  return out;
+  holidaysData.forEach(function(h){
+    hdBranches(h).forEach(function(b){if(!seen[b]){seen[b]=1;out.push(b);}});
+  });
+  return out.sort();
 }
+// The filter wants the same list with "All Branches" on the front, because
+// there it means "do not filter" rather than "everyone".
+function hdBranchOptions(){return [HD_ALL_BRANCHES].concat(hdBranchChoices());}
 /* Filtering to one branch shows the holidays that branch actually observes,
-   which INCLUDES the all-branch ones — a Bengaluru calendar is its own days
-   plus the company-wide days, not just the days unique to it. */
+   which INCLUDES the entity-wide ones — a Mumbai calendar is its own days plus
+   the company-wide days, not just the days unique to it. */
 function hdBranchMatch(h,f){
-  return !f||h.branch===f||h.branch===HD_ALL_BRANCHES||f===HD_ALL_BRANCHES;
+  if(!f||f===HD_ALL_BRANCHES)return true;
+  const b=hdBranches(h);
+  return !b.length||b.indexOf(f)>-1;
+}
+/* Two holidays clash only if the same person could be told both. Entity-wide
+   overlaps everything; two branch lists overlap only where they share an
+   office. Hyderabad's Ugadi and Mumbai's Gudi Padwa on one date is an
+   arrangement, not a conflict. */
+function hdAudienceOverlap(a,b){
+  if(!a.length||!b.length)return true;
+  return a.some(function(x){return b.indexOf(x)>-1;});
 }
 // Chronological, because a holiday calendar that is not in date order is not a
 // calendar. Newest-first is right for records people file; it is wrong here.
@@ -3592,8 +3855,216 @@ const tsAttendance={
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
   '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'}
 };
-function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';renderADTPage();}
-function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';renderADTPage();}
+function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';tsEdit=null;renderADTPage();}
+function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage();}
+
+/* ══ FILLING THE TIMESHEET IN ═══════════════════════════════════════════════
+   The month grid could be read and nothing else: every punch on it came from
+   the clock, a day the clock missed stayed "Absent" for good, and the Submit
+   button at the foot of the page was wired to nothing. A timesheet you cannot
+   correct is not a timesheet, it is a report.
+
+   Three things go on top of it, and they are one idea:
+
+     · ENTER a day by hand — clock-in, clock-out, where — for any day of the
+       month being shown that has already happened.
+     · EDIT a day that already has times, on the same form. A record that came
+       off the clock and one typed in are the same shape; only src differs,
+       and the grid has always labelled that.
+     · LOCK a week, which is what makes the first two stop. A locked week is
+       the employee saying "this week is final"; only then can it be submitted
+       for approval, and until it is submitted it can be unlocked again.
+
+   THE WEEK IS THE UNIT OF SUBMISSION, not the month. That is the whole reason
+   lock exists: approval is a claim about a settled set of days, and a set that
+   can still change underneath the approver is not settled. So submit is only
+   ever offered on a week that is locked, and locking is only offered on a week
+   that has actually started.
+
+   TODAY IS FIXED IN THIS PROTOTYPE. The grid's data is June 2026, so "today"
+   is a constant rather than a live clock - otherwise every day of the fixture
+   month would read as the future and none of it could be edited. */
+const TS_TODAY='2026-06-24';
+let tsEdit=null;            // {date} while the day panel is in edit mode
+let tsWeekState={};         // 'YYYY-MM-W<n>' -> 'locked' | 'submitted'
+let tsReadOnly=false;       // true while looking at somebody else's timesheet
+
+// Monday-based, and worked out exactly the way the grid lays its rows out, so
+// "Week 3" in the rail and week 3 here are always the same seven days.
+function tsMonOff(y,m){const dow=new Date(y,m,1).getDay();return dow===0?6:dow-1;}
+function tsWeekCount(y,m){return Math.ceil((tsMonOff(y,m)+new Date(y,m+1,0).getDate())/7);}
+function tsWeekDates(y,m,w){
+  const off=tsMonOff(y,m),dim=new Date(y,m+1,0).getDate(),out=[];
+  for(let c=0;c<7;c++){
+    const dn=(w-1)*7+c+1-off;
+    if(dn>=1&&dn<=dim)out.push(y+'-'+tsPad(m+1)+'-'+tsPad(dn));
+  }
+  return out;
+}
+function tsWeekOf(dateStr){
+  const p=dateStr.split('-'),y=+p[0],m=+p[1]-1,d=+p[2];
+  return Math.floor((tsMonOff(y,m)+d-1)/7)+1;
+}
+function tsWeekKey(y,m,w){return y+'-'+tsPad(m+1)+'-W'+w;}
+function tsWeekStatus(y,m,w){return tsWeekState[tsWeekKey(y,m,w)]||'open';}
+// A week nobody has reached yet cannot be closed off. Anything with at least
+// one day already behind it can.
+function tsWeekStartable(y,m,w){
+  return tsWeekDates(y,m,w).some(function(d){return d<=TS_TODAY;});
+}
+function tsDayLocked(dateStr){
+  const p=dateStr.split('-');
+  return tsWeekStatus(+p[0],+p[1]-1,tsWeekOf(dateStr))!=='open';
+}
+/* One rule, asked in every place that offers a control: this month, not the
+   future, not inside a locked week, and not somebody else's sheet. */
+function tsDayEditable(dateStr){
+  if(tsReadOnly)return false;
+  const p=dateStr.split('-');
+  if(+p[0]!==tsMonth.year||+p[1]-1!==tsMonth.month)return false;
+  if(dateStr>TS_TODAY)return false;
+  return !tsDayLocked(dateStr);
+}
+
+// ── Times in, times out ───────────────────────────────────────────────────
+// The records read '09:05 AM'; <input type="time"> speaks '09:05'. Two
+// conversions in one place, so no caller has to know both formats.
+function tsTo24(t){
+  if(!t||t==='--')return '';
+  const m=/^(d{1,2}):(d{2})s*(AM|PM)$/i.exec(String(t).trim());
+  if(!m)return '';
+  let h=(+m[1])%12;
+  if(/pm/i.test(m[3]))h+=12;
+  return tsPad(h)+':'+m[2];
+}
+function tsTo12(v){
+  if(!v)return '--';
+  const p=String(v).split(':'),h=+p[0];
+  return tsPad(h%12||12)+':'+p[1]+' '+(h>=12?'PM':'AM');
+}
+function tsMins(v){const p=String(v).split(':');return (+p[0])*60+(+p[1]);}
+function tsFmtDay(dateStr){
+  const mS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const p=dateStr.split('-');
+  return (+p[2])+' '+mS[+p[1]-1]+' '+p[0];
+}
+function tsStartEdit(dateStr){
+  if(!tsDayEditable(dateStr))return;
+  tsEdit={date:dateStr};tsMapOpen='';renderADTPage();
+}
+function tsCancelEdit(){tsEdit=null;renderADTPage();}
+/* The running total under the two fields, updated straight into the node. The
+   rest of this page repaints through renderADTPage(), which would be wrong
+   here: a repaint on every keystroke would take the focus out of the field
+   being typed into. Nothing else on the page depends on a half-entered time,
+   so nothing else needs to know about it yet. */
+function tsEditPreview(){
+  const el=document.getElementById('ts-ed-total');if(!el)return;
+  const i=document.getElementById('ts-ed-in'),o=document.getElementById('ts-ed-out');
+  const iv=i?i.value:'',ov=o?o.value:'';
+  const mins=(iv&&ov)?tsMins(ov)-tsMins(iv):0;
+  el.textContent=mins>0?(mins/60).toFixed(2)+'h':'0.00h';
+  const err=document.getElementById('ts-ed-err');
+  if(err&&iv&&ov&&mins>0)err.classList.remove('is-on');
+}
+function tsSaveEntry(){
+  const date=tsEdit&&tsEdit.date;if(!date)return;
+  // Re-checked at the moment of saving, not only when the form was opened: the
+  // week could have been locked from the grid behind the panel.
+  if(!tsDayEditable(date)){
+    tsEdit=null;renderADTPage();
+    showToast('Week is locked','info','Unlock week '+tsWeekOf(date)+' to change this day.');
+    return;
+  }
+  const inEl=document.getElementById('ts-ed-in');
+  const outEl=document.getElementById('ts-ed-out');
+  const locEl=document.getElementById('ts-ed-loc');
+  const iv=inEl?inEl.value:'',ov=outEl?outEl.value:'';
+  const fail=function(msg){
+    const e=document.getElementById('ts-ed-err');
+    if(e){e.textContent=msg;e.classList.add('is-on');}
+    return false;
+  };
+  if(!iv||!ov)return fail('Enter both a clock-in and a clock-out time.');
+  const mins=tsMins(ov)-tsMins(iv);
+  // No overnight shifts: a record here carries one date, so a clock-out before
+  // the clock-in would silently belong to a day this row cannot represent.
+  if(mins<=0)return fail('Clock-out has to be later than clock-in.');
+  const had=tsAttendance[date]&&tsAttendance[date].status==='present';
+  tsAttendance[date]={
+    in:tsTo12(iv),out:tsTo12(ov),
+    loc:(locEl&&locEl.value)||'Hyderabad',
+    hours:(mins/60).toFixed(2)+'h',
+    src:'Manual',                       // typed in, and the grid says so
+    status:'present'
+  };
+  tsEdit=null;
+  renderADTPage();
+  showToast(had?'Entry updated':'Entry added','success',
+    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged.');
+}
+
+// ── Locking, unlocking, submitting ────────────────────────────────────────
+function tsLockWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(!tsWeekStartable(y,m,w))return;
+  tsWeekState[tsWeekKey(y,m,w)]='locked';
+  tsEdit=null;tsSelectedDay=null;
+  renderADTPage();
+  // Locking a week with gaps in it is allowed - the employee may simply not
+  // have worked those days - but they are counted out loud, because a gap
+  // nobody meant to leave is the one thing lock makes expensive to fix.
+  const gaps=tsWeekDates(y,m,w).filter(function(d){
+    if(d>TS_TODAY)return false;
+    const dow=new Date(d+'T00:00:00').getDay();
+    if(dow===0||dow===6)return false;               // weekends are not gaps
+    const a=tsAttendance[d];
+    return !a||a.status!=='present';
+  }).length;
+  showToast('Week '+w+' locked','success',gaps
+    ?gaps+' weekday'+(gaps===1?'':'s')+' with no hours. Unlock to fill '+(gaps===1?'it':'them')+' in.'
+    :'No further edits until it is unlocked. It can be submitted now.');
+}
+function tsUnlockWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(tsWeekStatus(y,m,w)!=='locked')return;         // submitted weeks do not come back
+  delete tsWeekState[tsWeekKey(y,m,w)];
+  renderADTPage();
+  showToast('Week '+w+' unlocked','info','Its days can be edited again.');
+}
+function tsSubmitWeek(w){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month;
+  if(tsWeekStatus(y,m,w)!=='locked'){
+    showToast('Lock it first','info','Only a locked week can be submitted for approval.');
+    return;
+  }
+  tsWeekState[tsWeekKey(y,m,w)]='submitted';
+  const hrs=tsWeekDates(y,m,w).reduce(function(s,d){
+    const a=tsAttendance[d];
+    return s+(a&&a.status==='present'?parseFloat(a.hours):0);
+  },0);
+  renderADTPage();
+  showToast('Week '+w+' submitted','success',hrs.toFixed(2)+'h sent for approval.');
+}
+// The footer button, which used to do nothing at all. It submits every week
+// that is locked and not yet sent - never a week that is still open, because
+// that is exactly the claim lock exists to make.
+function tsSubmitLockedWeeks(){
+  if(tsReadOnly)return;
+  const y=tsMonth.year,m=tsMonth.month,ready=[];
+  for(let w=1;w<=tsWeekCount(y,m);w++)if(tsWeekStatus(y,m,w)==='locked')ready.push(w);
+  if(!ready.length){
+    showToast('Nothing to submit','info','Lock a week first — only a locked week can be submitted.');
+    return;
+  }
+  ready.forEach(function(w){tsWeekState[tsWeekKey(y,m,w)]='submitted';});
+  renderADTPage();
+  showToast(ready.length+' week'+(ready.length===1?'':'s')+' submitted','success',
+    'Week '+ready.join(', ')+' sent for approval.');
+}
 
 // ── TIMESHEET MONTH PICKER ──
 let tsMpOpen=false;

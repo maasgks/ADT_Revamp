@@ -270,22 +270,37 @@ tr.lp-row-selected>td:first-child,
    would clip an absolutely-positioned panel. The browser's own popup never had
    that problem because it was never in the document. cdToggle() measures and
    places it. */
-.cd-panel{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.14);z-index:1000;display:none;padding:12px;width:266px;box-sizing:border-box}
-.cd-panel.cd-open{display:block;animation:cdIn .16s cubic-bezier(.16,1,.3,1)}
+/* IT MUST SURVIVE BEING CAPPED. placeAnchoredMenu() writes a max-height when
+   neither the space above the field nor the space below it can hold the whole
+   calendar — a short window, or a field near the middle of a tall modal. The
+   panel had no overflow rule, so a cap did not shorten it: it clipped nothing
+   and the last week plus the Clear / Today row simply spilled out of the white
+   box and sat on top of the field underneath. The calendar looked broken
+   because it WAS broken — drawn outside its own border.
+
+   So the panel is a column that owns its height: the month header and the
+   footer keep theirs, and the weeks give. Capped, it still reads as a calendar
+   with a header, a scrollable month and its two actions, instead of loose rows
+   over the form. */
+.cd-panel{position:fixed;background:#fff;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(15,23,42,.14);z-index:1000;display:none;padding:12px;width:266px;box-sizing:border-box;overflow:hidden;flex-direction:column}
+.cd-panel.cd-open{display:flex;animation:cdIn .16s cubic-bezier(.16,1,.3,1)}
 @keyframes cdIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.cd-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px}
+.cd-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:10px;flex-shrink:0}
 .cd-title{font-size:13px;font-weight:700;color:var(--navy);letter-spacing:.1px}
 .cd-nav{width:26px;height:26px;flex-shrink:0;border:1px solid var(--border);border-radius:7px;background:#fff;color:var(--navy);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.13s;padding:0}
 .cd-nav:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .cd-nav:active{transform:scale(.94)}
-.cd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+/* The one part that gives. min-height:0 is what lets it: a grid item defaults
+   to min-height:auto and would refuse to shrink below its content, pushing the
+   footer back out of the panel again. */
+.cd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;min-height:0;overflow-y:auto;scrollbar-width:thin}
 .cd-dow{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0 6px}
 .cd-day{height:32px;border:none;background:none;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--navy);cursor:pointer;transition:background .12s,color .12s;padding:0}
 .cd-day:hover:not(.cd-sel){background:#f1f5f9}
 .cd-day.cd-mute{color:#cbd5e1}          /* leading/trailing days of the neighbouring months */
 .cd-day.cd-today{font-weight:700;color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--border)}
 .cd-day.cd-sel{background:var(--orange);color:#fff;font-weight:700}
-.cd-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9}
+.cd-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;flex-shrink:0}
 .cd-link{border:none;background:none;font-family:inherit;font-size:12px;font-weight:600;color:var(--gray);cursor:pointer;padding:2px 4px;border-radius:6px;transition:.13s}
 .cd-link:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .cd-link.cd-strong{color:var(--orange)}
@@ -581,9 +596,16 @@ tr.lp-row-selected>td:first-child,
    the fold. The footer sticks to the bottom of the popup so Create/Add stays
    reachable while the fields scroll under it; on a short form there is nothing
    to scroll and sticky behaves exactly like static, so it costs those nothing. */
+/* Z-INDEX 2 LOST TO THE FIELDS. .custom-select carries z-index:5 so its menu
+   can sit over its neighbours, which also put every closed Type select ON TOP
+   of this bar: scroll a long form and the row underneath drew straight through
+   the footer, next to the buttons. The footer is chrome — whatever scrolls
+   beneath it goes beneath it — so it outranks the fields. It stays below an
+   OPEN menu (those are position:fixed at z-index 900+) because a dropdown the
+   user just opened has to clear the bar. */
 .ct-modal-foot{
   display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
-  position:sticky;bottom:-28px;z-index:2;
+  position:sticky;bottom:-28px;z-index:20;
   margin:0 -28px -28px;padding:16px 28px;
   background:#fff;border-top:1px solid var(--border);border-radius:0 0 16px 16px}
 .ct-modal-btns{display:flex;gap:10px;flex-shrink:0;margin-left:auto}
@@ -685,16 +707,7 @@ tr.lp-row-selected>td:first-child,
   flex-shrink:0;display:inline-flex;align-items:center;gap:5px;
   padding:4px 10px;border-radius:var(--r-status);background:var(--ol);
   color:var(--gray);font-size:11px;font-weight:600;white-space:nowrap;cursor:default}
-/* Branch rides in the stated-entity row because it is the same kind of fact —
-   whose calendar this batch is for — and asking it once is the whole reason it
-   is not a column on every row. */
-.hd-branch-field{flex-shrink:0;width:200px}
-.hd-branch-field .hd-entity-label{display:block;margin-bottom:4px}
-.hd-branch-field .custom-select-trigger{height:34px;min-height:34px;padding-top:0;padding-bottom:0;font-size:12.5px}
-@media (max-width:820px){
-  .hd-entity-row{flex-wrap:wrap}
-  .hd-branch-field{width:100%}
-}
+@media (max-width:820px){.hd-entity-row{flex-wrap:wrap}}
 @media (max-width:560px){.hd-entity-lock{display:none}}
 
 .hd-rows-head{
@@ -711,6 +724,9 @@ tr.lp-row-selected>td:first-child,
   transition:background .15s ease,color .15s ease}
 .hd-add-row:hover{background:var(--orange);color:#fff}
 .hd-rows-body{padding:16px 20px}
+/* The last row's picker opens downward like every other one; without this the
+   card ends flush under it and the popover would be the thing that scrolls. */
+.hd-rows-body{padding-bottom:24px}
 
 /* A holiday is one fact — "this day, called this, of this kind" — so it is one
    line. The grid is weighted, not equal: a name needs room to be a name, Day
@@ -726,7 +742,7 @@ tr.lp-row-selected>td:first-child,
    rather than to the grid. Without this the columns visibly step between one
    row and the next as their values are picked. */
 .hd-row-head,.hd-row-form{
-  display:grid;grid-template-columns:22px 1.3fr 1.05fr .8fr minmax(0,1.65fr) 96px 34px;gap:12px}
+  display:grid;grid-template-columns:22px 1.25fr 1.05fr minmax(0,1.35fr) minmax(0,1.15fr) 96px 34px;gap:12px}
 .hd-row-head>*,.hd-row-form>*{min-width:0}
 /* A date trigger that wraps turns a 40px row into a 60px one and knocks the
    whole line out of alignment. It gets one line and an ellipsis instead. */
@@ -737,11 +753,22 @@ tr.lp-row-selected>td:first-child,
 .hd-row-head{
   align-items:end;padding-bottom:9px;margin-bottom:12px;border-bottom:1px solid var(--border)}
 .hd-row-head>span{font-size:11.5px;font-weight:600;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* START, NOT CENTRE. Every control in the row is 40px, so aligning them at the
+   top puts them all on one line. Centring did that too — right up until the
+   date cell grew a weekday caption under its field: that cell is then ~20px
+   taller than the rest, and centring it lifted the date field above the line
+   its neighbours sit on. The caption now hangs below the row's line, where it
+   belongs, and nothing else moves. */
 .hd-row-form{
-  align-items:center;
+  align-items:start;
   padding-bottom:14px;margin-bottom:14px;border-bottom:1px dashed var(--border)}
 .hd-row-form:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0}
 .hd-cell{min-width:0}
+/* Derived, and said where it is derived FROM. As its own column it was a
+   disabled-looking box holding one word; here it is a caption. */
+.hd-cell-sub{
+  margin-top:4px;padding-left:2px;font-size:10.5px;color:#9ca3af;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* The row number, so a validation message that says "Row 3" has something to
    point at. */
 .hd-row-index{
@@ -773,6 +800,79 @@ tr.lp-row-selected>td:first-child,
 .hd-row-del:hover:not(:disabled){border-color:var(--st-bad-fg);color:var(--st-bad-fg);background:var(--st-bad-bg)}
 /* One row left: it is the batch, so it cannot be removed. */
 .hd-row-del:disabled{opacity:.4;cursor:not-allowed}
+/* ── Who a holiday is for ─────────────────────────────────────────────────
+   The trigger reads like the chips it will produce, so the control and the
+   record it writes look like the same statement. Entity-wide is the quiet
+   state — grey, no weight — because it is the default and most holidays are
+   it; naming branches is the exception and carries the ink. */
+.hd-bp{position:relative;min-width:0}
+.hd-bp-btn{
+  width:100%;box-sizing:border-box;height:40px;
+  display:inline-flex;align-items:center;gap:7px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--r-control);background:#fff;
+  color:var(--navy);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .15s ease,box-shadow .15s ease}
+.hd-bp-btn:hover{border-color:var(--btn-accent)}
+.hd-bp-btn.is-open{border-color:var(--btn-accent);box-shadow:0 0 0 3px rgba(15,23,42,.04)}
+.hd-bp-btn.is-all{color:var(--gray);font-weight:500}
+.hd-bp-btn svg{flex-shrink:0;stroke:currentColor;fill:none}
+.hd-bp-lbl{flex:1;min-width:0;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-bp-chev{opacity:.7;transition:transform .16s ease}
+.hd-bp-btn.is-open .hd-bp-chev{transform:rotate(180deg)}
+/* Anchored to the trigger and drawn over the rows below it. It is inside the
+   modal's own scroller, so it travels with the row rather than pinning itself
+   to a viewport the modal may have scrolled away from. */
+.hd-bp-pop{
+  position:absolute;top:calc(100% + 6px);left:0;z-index:60;min-width:216px;max-width:280px;
+  padding:8px;background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 12px 32px rgba(15,23,42,.14);animation:fadeUp .14s ease}
+.hd-bp-pop.is-up{top:auto;bottom:calc(100% + 6px)}
+.hd-bp-head{
+  padding:2px 8px 6px;font-size:10.5px;font-weight:700;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--gray)}
+.hd-bp-opt{
+  width:100%;display:flex;align-items:center;gap:9px;padding:7px 8px;
+  border:0;border-radius:7px;background:none;cursor:pointer;
+  font-family:inherit;font-size:12.5px;color:var(--navy);text-align:left}
+.hd-bp-opt:hover{background:var(--ol)}
+.hd-bp-box{
+  flex-shrink:0;width:16px;height:16px;border:1.5px solid #cbd5e1;border-radius:5px;
+  display:inline-flex;align-items:center;justify-content:center;color:transparent;
+  transition:background .14s ease,border-color .14s ease,color .14s ease}
+.hd-bp-box svg{stroke:currentColor;fill:none}
+.hd-bp-opt.is-on .hd-bp-box{background:var(--navy);border-color:var(--navy);color:#fff}
+.hd-bp-opt.is-on{font-weight:600}
+.hd-bp-sep{height:1px;margin:6px 4px;background:var(--border)}
+.hd-bp-empty{padding:8px;font-size:11.5px;color:var(--gray)}
+/* What the current selection actually means, in words, under the boxes that
+   made it — "Hyderabad, Mumbai" is a list; "only these two will see it" is the
+   consequence. */
+.hd-bp-note{padding:8px 8px 4px;font-size:10.5px;line-height:1.5;color:var(--gray)}
+.hd-bp-apply{
+  width:100%;margin-top:4px;padding:7px;border:1px solid var(--border);border-radius:7px;
+  background:#fff;color:var(--navy);font-family:inherit;font-size:11.5px;font-weight:600;cursor:pointer}
+.hd-bp-apply:hover{border-color:var(--btn-accent);color:var(--btn-accent)}
+
+/* The same answer, stated: the office it applies to, or one grey chip for the
+   whole entity. NOWRAP is the whole point — this sits in a table cell about
+   150px wide, and a second chip wrapping under the first made that row taller
+   than every other row in the table. The count carries the rest, the cell's
+   title carries the names, and the panel below has the width to list them. */
+.hd-br-chips{display:inline-flex;align-items:center;gap:4px;flex-wrap:nowrap;max-width:100%;min-width:0}
+.hd-br-chip{
+  display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--r-status);
+  background:var(--ol);color:var(--navy);font-size:11px;font-weight:600;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.hd-br-chip.is-all{background:transparent;border:1px dashed var(--border);color:var(--gray);font-weight:500}
+/* The remainder, in the same shape as a branch but plainly not one — it is a
+   number, so it does not compete with the name beside it. */
+.hd-br-chip.is-more{
+  flex-shrink:0;background:#fff;border:1px solid var(--border);color:var(--gray);
+  font-variant-numeric:tabular-nums;padding:2px 7px}
+/* The panel states the audience in full: it has the room, and it is the place
+   somebody goes to find out exactly who a holiday covers. */
+.lp-sb-field-value .hd-br-chips{margin-top:1px;flex-wrap:wrap;gap:5px}
+
 /* Said under the row it is about, while the row is still being typed. */
 .hd-row-note{
   grid-column:1/-1;margin-top:-2px;padding-left:34px;

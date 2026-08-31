@@ -74,6 +74,7 @@ function renderPageContent(target){
     if(typeof syncDashCardCounts==='function')syncDashCardCounts(el);
     // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
+    _attRestore();   // ...and the snapshot is always the idle clock — see _attRestore
     return;
   }
   el.innerHTML=buildListingHTML(page);
@@ -248,6 +249,8 @@ function renderADTPage(){
     if(content)content.scrollTop=0;
   }
   renderedPage=page;
+  // A record that was just filed is marked; this is where it is found on screen.
+  if(typeof lpFlashNew==='function')lpFlashNew();
 }
 
 // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ INIT ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
@@ -934,6 +937,8 @@ var _attInAt=null;             // Date of the current clock-in
 var _attOutAt=null;            // Date of the last clock-out
 var _attDaySecs=0;             // seconds banked from completed sessions today
 var _attDayKey=_attToday();
+var _attPlace='Hyderabad';     // last location shown, kept so a re-mount can restate it
+var _attPlacePending=false;    // ...and whether it was still being resolved
 
 function _attToday(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function _attEl(id){return document.getElementById(id);}
@@ -1042,6 +1047,37 @@ function _attTickLogged(){
     +'<span class="att-logged-val">'+val+'</span>';
 }
 
+/* ── Surviving a navigation ────────────────────────────────────────────────
+   THE CARD IS MARKUP; THE SHIFT IS NOT. #adt-content is re-injected from a
+   snapshot of the original dashboard HTML every time you come back to it
+   (dashboardContentHTML, taken once at load), and that snapshot is by
+   definition the IDLE card: is-idle, "Clock In", "--:-- --".
+
+   So clocking in and stepping into another module used to hand back a card
+   that said nobody was clocked in — while _attState still said 'in' and the
+   one-second tick, which looks its element up by id every time, went on
+   writing a running total into it. A running timer under a Clock In button is
+   the card contradicting itself, and clicking that button would have started a
+   SECOND clock-in over a shift that was already open.
+
+   The state was never wrong; it just stopped being on screen. Every mount of
+   the dashboard now ends here, and the card is told what it is again. */
+function _attRestore(){
+  if(!_attCard())return;                  // not the dashboard - nothing to restore onto
+  // A shift left open across midnight is not today's shift. Same rule the
+  // button applies, applied here too, so the roll cannot be missed by simply
+  // not clicking anything.
+  if(_attDayKey!==_attToday()){
+    _attDayKey=_attToday();_attDaySecs=0;_attInAt=_attOutAt=null;_attState='idle';
+  }
+  _attSetLocation(_attPlace,_attPlacePending);
+  _attPaint();
+  // One tick at a time, and only while a clock is actually running: the old
+  // interval outlives the element it was writing into.
+  clearInterval(_attTimer);_attTimer=null;
+  if(_attState==='in')_attTimer=setInterval(_attTickLogged,1000);
+}
+
 /* ── Location, and why the punch waits on it ───────────────────────────────
    Attendance recorded without a location is attendance nobody can audit, so
    location is a PRECONDITION of clocking in, not a decoration on it. That has
@@ -1090,6 +1126,7 @@ var _attLoc={state:'idle',reason:'',waiters:[]};
 var _attGate=null;              // the punch currently held at the location gate
 
 function _attSetLocation(text,pending){
+  _attPlace=text;_attPlacePending=!!pending;   // state, so a re-mounted card can be told again
   var el=_attEl('att-location');if(el){
     el.textContent=text;
     el.classList.toggle('is-pending',!!pending);

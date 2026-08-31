@@ -23,6 +23,7 @@ const ATTACH_SCOPES={
   ge:      {find:function(id){return globalEmpData.find(function(x){return x.id===id;});}},
   pm:      {find:function(id){return paymentsData.find(function(x){return x.id===id;});}},
   cmp:     {find:function(id){return complianceItemsData.find(function(x){return x.id===id;});}},
+  oca:     {find:function(id){return ocaItems.find(function(x){return x.id===id;});}},
   ctp:     {find:function(id){return contractTemplatesData.find(function(x){return x.id===id;});}},
   tk:      {find:function(id){return ticketsData.find(function(x){return x.id===id;});}},
   chat:    {find:function(id){return chatsData.find(function(x){return x.id===id;});}},
@@ -920,6 +921,10 @@ function wfTimelineHTML(wf){
       +(w.time?'<span class="lp-wf-meta-sep">|</span><span class="lp-wf-meta-item"><span>'+w.time+'</span></span>':'')
       +'</div>'
       +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
+      // Optional per-stage footer, for timelines whose stages have something to
+      // open — the compliance document viewer is the only one so far. Entries
+      // without it render exactly as they always have.
+      +(w.extra||'')
       +'</div></div>';
   }).join('')+'</div>';
 }
@@ -1074,6 +1079,7 @@ function submitAddLeave(isDraft){
     return p.length===3?p[2]+'-'+p[1]+'-'+p[0]:d;
   };
   const hrMap={'half':'Half Day','one':'Full Day','multiple':'Full Day'};
+  lpLanded('all-leaves',newId);
   allLeavesData.unshift({
     id:newId,empId:'CLOCLO'+Math.floor(10000+Math.random()*90000),name:empVal||'Unknown',
     leaveId:String(leaveIdNum),leaveType:typeVal||'Casual Leave',
@@ -1956,6 +1962,7 @@ function saveComplianceItem(){
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
   complianceItemsData.unshift({id:complianceNextId++,country,item:name,model,status:'Active',category,mandatory,payrollBlocking,evidenceRequired,createdBy:'Shaun Test1',createdAt,attachments:[],logs:[]});
+  lpLanded('compliance',complianceItemsData[0].id);
   complianceModalOpen=false;
   renderADTPage();
   showToast('Compliance item created','success','"'+name+'" added for '+country+' ('+model+').');
@@ -2239,6 +2246,43 @@ function ocaWorkflow(r){
   }
   return ocaWorkflowData[r.id];
 }
+/* ── What has NOT happened yet ─────────────────────────────────────────────
+   The Logs timeline only ever showed steps already taken, so a document sat
+   there with no statement of what it is waiting for — the reader had to infer
+   the pending move from the newest entry's status. It now opens with the step
+   that is still outstanding, drawn as pending: dashed, muted, no author and no
+   timestamp, because none of those exist yet. It is a statement, not a control.
+
+   A settled document has nothing outstanding, and says exactly that rather
+   than dressing up "done" as a step. */
+const OCA_NEXT_STEP={
+  'Pending Review': 'Your decision',
+  'Awaiting Upload':'Upload',
+  'Rejected':       'Corrected copy',
+  'Expiring Soon':  'Renewal',
+  'Approved':       'Nothing pending',
+  'Closed':         'Nothing pending'
+};
+// Settled records say WHY nothing is pending — OCA_NEXT only has "Nothing
+// pending" for these two, which the title has already said.
+const OCA_NEXT_DONE={
+  'Approved':'Reviewed, accepted and in force. Nothing further is required.',
+  'Closed':  'Out of force — lapsed, superseded or withdrawn. Nothing further is required.'
+};
+function ocaNextStepHTML(item){
+  const pending=ocaNeedsAction(item);
+  const clk='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+  const done='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+  return '<div class="lp-log-row oca-next-row">'
+    +'<div class="lp-log-avatar-col"><div class="lp-log-avatar oca-next-avatar">'+(pending?clk:done)+'</div>'
+    +'<div class="lp-log-connector"></div></div>'
+    +'<div class="lp-log-card oca-next-card">'
+    +'<div class="lp-log-status-row"><span class="lp-log-dot oca-next-dot"></span>'
+    +'<span class="oca-next-title">'+(OCA_NEXT_STEP[item.status]||'Next step')+'</span>'
+    +'<span class="oca-next-tag">'+(pending?'Pending':'Complete')+'</span></div>'
+    +'<div class="oca-next-text">'+(pending?(OCA_NEXT[item.status]||''):(OCA_NEXT_DONE[item.status]||''))+'</div>'
+    +'</div></div>';
+}
 function ocaSeedLogs(r){
   const due=ocaDueObj(r);
   return seedLogs(r,[
@@ -2335,28 +2379,160 @@ function openOcaSidebar(id){
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='oca-row-'+id);});
 }
 function closeOcaSidebar(){
-  ocaSelectedId=null;ocaPendingStatus='';
+  ocaSelectedId=null;
   const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.remove('open');
   const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.remove('has-sb');
   document.querySelectorAll('.oca-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
 function navOcaTab(tab){ocaTab=tab;isbTab('oca',renderOcaSidebar);}
 function ocaCancelLog(){
-  ocaPendingStatus='';
-  isbTab('oca',renderOcaSidebar);   // redraw so the pre-set status clears with it
+  const inp=document.getElementById('oca-log-comment-inp');if(inp)inp.value='';
+  isbTab('oca',renderOcaSidebar);
 }
 
 /* ── The decision bar ──────────────────────────────────────────────────────
    Reviewing a document is this role's actual job, so it is a button on the
    panel, not a status buried in a dropdown on a second tab.
 
-   The two directions are deliberately NOT symmetric. Approving is a clean
-   outcome and commits on the spot. Rejecting is not: the party who uploaded it
-   has to be told what was wrong with it, and a rejection with no reason is a
-   round trip nobody can act on. So Reject does not decide anything by itself —
-   it opens Logs with the status already set to Rejected and makes the admin
-   type the reason before it commits. Same for a renewal: it moves the document
-   back to Awaiting Upload, which is a real state change, so it is logged. */
+   NO DECISION COMMITS ON THE CLICK. Approve used to move the document the
+   instant it was pressed and write itself a canned log line — "Reviewed and
+   approved by the compliance admin" — which is not a review note, it is the
+   button describing itself. A compliance record whose entire history is the
+   system paraphrasing its own buttons cannot answer the one question anyone
+   ever asks of it later: on what basis was this accepted?
+
+   So every button that MOVES a document now opens the decision dialog, and the
+   dialog will not commit without a comment. The admin's own words become the
+   log entry and the workflow stage. Approve and Reject are the same shape as
+   each other now — the asymmetry that sent Reject to the Logs tab and let
+   Approve through unchallenged is gone.
+
+   Actions that move nothing — Send Reminder, Chase Corrected Copy — still go
+   straight through. There is no decision to justify: the document has not
+   moved, and the log says so. */
+/* One entry per button that moves a document. Each names the move, the words
+   it needs, and what the button on the dialog says — so the four decisions
+   read as four different acts rather than one generic "change status" form.
+   `to` is the status the record lands on; the dialog refuses to open on a move
+   the document cannot legally make, which keeps this table and OCA_MOVES from
+   ever drifting apart. */
+const OCA_DECIDE={
+  approve:{to:'Approved',   title:'Approve document', verb:'Approve', tone:'ok',
+    ask:'This puts the document in force. Say what you checked.',
+    label:'Approval note',
+    ph:'e.g. Signatures and company number verified against the registry copy'},
+  reject: {to:'Rejected',   title:'Reject document',  verb:'Reject',  tone:'bad',
+    ask:'Say what is wrong with it — the {who} will see this reason and has to act on it.',
+    label:'Reason for rejection',
+    ph:'e.g. Page 2 is illegible — re-upload a clear scan of the full page'},
+  renew:  {to:'Awaiting Upload',title:'Start renewal',verb:'Start renewal',tone:'idle',
+    ask:'This asks the {who} for a fresh copy before the current one lapses.',
+    label:'Renewal note',
+    ph:'e.g. Expires 12 Sep — renewal requested from the client'},
+  file:   {to:'Approved',   title:'Upload & file',    verb:'Upload & file', tone:'ok',
+    ask:'You own this one outright, so filing it puts it straight in force.',
+    label:'Filing note',
+    ph:'e.g. Filed from the portal acknowledgement dated 24 Aug'}
+};
+/* The dialog is one record and one move, held only while it is on screen. */
+let ocaDecision=null;   // {id, act}
+function ocaDecideCopy(act,item){
+  const d=OCA_DECIDE[act];
+  return d?{to:d.to,title:d.title,verb:d.verb,tone:d.tone,label:d.label,ph:d.ph,
+    ask:d.ask.replace('{who}',ocaCat(item.cat).source.toLowerCase())}:null;
+}
+function openOcaDecision(id,act){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  const c=ocaDecideCopy(act,item);if(!c)return;
+  closeOcaDecision();
+  ocaDecision={id:id,act:act};
+  const host=document.createElement('div');
+  host.id='oca-dec-host';
+  host.innerHTML=ocaDecisionHTML(item,c);
+  document.body.appendChild(host);
+  document.addEventListener('keydown',ocaDecisionKey);
+  const ta=document.getElementById('oca-dec-inp');if(ta)ta.focus();
+}
+function closeOcaDecision(){
+  const host=document.getElementById('oca-dec-host');
+  if(host)host.remove();
+  ocaDecision=null;
+  document.removeEventListener('keydown',ocaDecisionKey);
+}
+// Escape belongs to whatever is on top: with the document open over the dialog,
+// it closes the document and leaves the half-typed decision where it was.
+function ocaDecisionKey(e){
+  if(e.key!=='Escape')return;
+  if(document.getElementById('oca-doc-host'))return;
+  ocaDecisionDismiss();
+}
+/* A stray click on the backdrop must not throw away a reason someone has
+   already typed — that is a round trip they have to make again from memory.
+   Empty, it closes like any other modal; part-written, it stays put. */
+function ocaDecisionDismiss(){
+  const ta=document.getElementById('oca-dec-inp');
+  if(ta&&ta.value.trim()){
+    ta.focus();
+    return;
+  }
+  closeOcaDecision();
+}
+function ocaDecisionHTML(item,c){
+  const arrow='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  const moved=c.to!==item.status;
+  return '<div class="oca-dec-ov" onclick="ocaDecisionDismiss()">'
+    +'<div class="oca-dec" role="dialog" aria-modal="true" onclick="event.stopPropagation()">'
+    +'<div class="oca-dec-hd">'
+    +'<div><div class="oca-dec-title">'+c.title+'</div>'
+    +'<div class="oca-dec-sub">'+c.ask+'</div></div>'
+    +'<button class="oca-doc-close" onclick="ocaDecisionDismiss()" title="Cancel">'+OCA_ICO.x+'</button>'
+    +'</div>'
+    +'<div class="oca-dec-body">'
+    // The file the decision is about, with its own way in - so "read it first"
+    // is one click from the dialog rather than a trip back to the panel.
+    +ocaDocStripHTML(item)
+    +(moved?'<div class="oca-dec-move">'
+      +'<span class="lp-status-badge tone-'+statusTone(item.status)+'">'+item.status+'</span>'
+      +'<span class="oca-dec-arrow">'+arrow+'</span>'
+      +'<span class="lp-status-badge tone-'+statusTone(c.to)+'">'+c.to+'</span>'
+      +'</div>':'')
+    +'<div class="oca-dec-label">'+c.label+' <span class="lp-logs-form-req">*</span></div>'
+    +'<textarea class="oca-dec-ta" id="oca-dec-inp" placeholder="'+attrSafe(c.ph)+'" oninput="ocaDecisionTyped()"></textarea>'
+    +'<div class="oca-dec-err" id="oca-dec-err">This goes on the document\'s record, so it cannot be left empty.</div>'
+    +'</div>'
+    +'<div class="oca-dec-ft">'
+    +'<button class="oca-act" onclick="closeOcaDecision()">Cancel</button>'
+    +'<button class="oca-act oca-dec-go tone-'+c.tone+'" onclick="ocaDecisionCommit()">'+c.verb+'</button>'
+    +'</div>'
+    +'</div></div>';
+}
+// The error is raised by trying to commit, and cleared by doing something about
+// it - it never sits there scolding someone who is already typing.
+function ocaDecisionTyped(){
+  const err=document.getElementById('oca-dec-err');
+  const ta=document.getElementById('oca-dec-inp');
+  if(err&&ta&&ta.value.trim()){err.classList.remove('is-on');ta.classList.remove('is-bad');}
+}
+function ocaDecisionCommit(){
+  if(!ocaDecision)return;
+  const item=ocaItems.find(function(x){return x.id===ocaDecision.id;});if(!item)return;
+  const c=ocaDecideCopy(ocaDecision.act,item);if(!c)return;
+  const ta=document.getElementById('oca-dec-inp');
+  const comment=ta?ta.value.trim():'';
+  if(!comment){
+    const err=document.getElementById('oca-dec-err');
+    if(err)err.classList.add('is-on');
+    if(ta){ta.classList.add('is-bad');ta.focus();}
+    return;
+  }
+  const id=item.id,to=c.to;
+  closeOcaDecision();
+  // The admin's own words ARE the log entry. ocaMove does the rest - the status
+  // move, the workflow stage, the redraw and the toast - so the dialog adds a
+  // step to the decision without adding a second way of recording it.
+  ocaMove(id,to,comment);
+}
+
 function ocaMove(id,to,line){
   const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
   const was=item.status;
@@ -2365,31 +2541,18 @@ function ocaMove(id,to,line){
   item.logs.unshift({date:now.date,time:now.time,user:CURRENT_USER,status:to,action:line});
   item.status=to;
   wfPush(ocaWorkflowData,id,(OCA_STAGE[to]||OCA_STAGE['Pending Review']).title,line);
-  ocaPendingStatus='';
   renderOcaDashboard();
   showToast(to==='Approved'?'Document approved':'Document updated','success',
     '"'+item.doc+'" moved from '+was+' to '+to+'.');
 }
-function ocaApprove(id){
-  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
-  ocaMove(id,'Approved','Reviewed and approved by the compliance admin. "'+item.doc+'" is now in force.');
-}
-// Hands off to Logs rather than deciding — see the note above.
-function ocaReject(id){
-  ocaPendingStatus='Rejected';
-  ocaTab='logs';
-  isbTab('oca',renderOcaSidebar);
-}
-function ocaRenew(id){
-  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
-  ocaMove(id,'Awaiting Upload','Renewal started before validity lapses on '+(item.validTill||'the expiry date')+'. A fresh copy is now required.');
-}
-// The admin owns the country pack outright, so filing one is a single move:
-// there is no third party to review it back to them.
-function ocaFile(id){
-  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
-  ocaMove(id,'Approved','Uploaded and filed by the compliance admin. "'+item.doc+'" is now in force.');
-}
+// All four go through the dialog, which is where the comment is collected and
+// where the move is committed from. Nothing here decides anything by itself.
+function ocaApprove(id){openOcaDecision(id,'approve');}
+function ocaReject(id){openOcaDecision(id,'reject');}
+function ocaRenew(id){openOcaDecision(id,'renew');}
+// The admin owns the country pack outright, so filing it is one move: there is
+// no third party to review it back to them. It still has to be justified.
+function ocaFile(id){openOcaDecision(id,'file');}
 // A chase is not a state change — it goes on the log and leaves the row where
 // it is, because nothing about the document has actually moved.
 function ocaRemind(id){
@@ -2425,6 +2588,304 @@ function ocaActionsHTML(item){
   return '<div class="oca-actbar"><span class="oca-actbar-q">'+(OCA_NEXT[item.status]||'')+'</span>'
     +'<div class="oca-actbar-btns">'+btns+'</div></div>';
 }
+/* == DOCUMENT PREVIEW =====================================================
+   The panel asked the admin to "read the document and approve or reject it"
+   and then never showed them the document. Approve and Reject were the only
+   two controls on a screen that described a file it would not open - which is
+   not a review, it is a coin toss with an audit trail.
+
+   So every place that names the document now opens it: the row, the Document
+   field, the strip above the decision bar, and the log entries that record the
+   document actually changing hands. One viewer serves all of them.
+
+   It mounts on <body>, not inside the panel. The panel is rebuilt by
+   renderOcaDashboard() on every status move, and a viewer living inside it
+   would be destroyed mid-decision - including by the very Approve click taken
+   from its own footer. On body it outlives the redraw and closes on its own
+   terms: the X, the backdrop, or Escape.
+
+   There is no file store behind this prototype, so the pages are RENDERED
+   from the record - same derivation as ocaFileMeta(), so what the viewer shows
+   and what the strip claims can never disagree. */
+let ocaDocOpenId=null,ocaDocZoom=1;
+const OCA_DOC_MIN=.7,OCA_DOC_MAX=1.6;
+
+// Icons kept together: the viewer, the strip and the row buttons all draw from
+// this one set, so a document reads the same everywhere it is offered.
+const OCA_ICO={
+  eye:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  file:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  img:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  dl:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  x:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+};
+function ocaFileIco(item){return ocaFileKind(item)==='JPG'?OCA_ICO.img:OCA_ICO.file;}
+
+/* -- The pages ------------------------------------------------------------
+   Enough of a document to be reviewed like one: a letterhead that names who
+   issued it, the reference the row is filed under, the dates the record holds,
+   and a body. The body's opening lines are real sentences built from the
+   record; the dense fine print under them is set as rules rather than invented
+   legalese, because a prototype that puts fabricated contract clauses in front
+   of a compliance admin is worse than one that visibly abstracts them. */
+function ocaDocIssuer(item){
+  if(item.cat==='country')return item.who+' - Statutory Authority';
+  return item.who;
+}
+function ocaDocLines(n,seed){
+  let out='';
+  for(let i=0;i<n;i++){
+    const w=58+((seed+i*29)%40);   // 58-97% - stable per page, so it never reflows
+    out+='<div class="oca-doc-rule" style="width:'+w+'%"></div>';
+  }
+  return '<div class="oca-doc-rules">'+out+'</div>';
+}
+function ocaDocMetaRow(k,v){
+  return '<div class="oca-doc-mrow"><span class="oca-doc-mk">'+k+'</span><span class="oca-doc-mv">'+v+'</span></div>';
+}
+// A scan of an ID is not a page of prose, so it is not drawn as one.
+function ocaDocScanHTML(item){
+  return '<div class="oca-doc-scan">'
+    +'<div class="oca-doc-scan-hd"><span>'+item.doc+'</span><span>'+ocaRef(item)+'</span></div>'
+    +'<div class="oca-doc-scan-body">'
+    +'<div class="oca-doc-scan-photo">'+OCA_ICO.img+'<span>PHOTO</span></div>'
+    +'<div class="oca-doc-scan-fields">'
+    +ocaDocMetaRow('Holder',item.who)
+    +ocaDocMetaRow('Document',item.doc)
+    +ocaDocMetaRow('Issued by',ocaCat(item.cat).source)
+    +ocaDocMetaRow(ocaDateLabel(item),ocaDateValue(item))
+    +'</div></div>'
+    +'<div class="oca-doc-scan-mrz">'+ocaDocLines(2,7)+'</div>'
+    +'</div>';
+}
+function ocaDocPageHTML(item,n,total){
+  const cat=ocaCat(item.cat);
+  // A single-page document has nothing to count, so it is not numbered.
+  const foot=total>1?'<div class="oca-doc-pg-no">Page '+n+' of '+total+'</div>':'';
+  if(ocaFileKind(item)==='JPG')
+    return '<section class="oca-doc-page is-scan" data-pg="'+n+'">'+ocaDocScanHTML(item)+foot+'</section>';
+  let body='';
+  if(n===1){
+    body='<div class="oca-doc-lh">'
+      +'<div class="oca-doc-lh-org">'+ocaDocIssuer(item)+'</div>'
+      +'<div class="oca-doc-lh-kind">'+cat.label+'</div>'
+      +'</div>'
+      +'<h1 class="oca-doc-h1">'+item.doc+'</h1>'
+      +'<div class="oca-doc-meta">'
+      +ocaDocMetaRow('Reference',ocaRef(item))
+      +ocaDocMetaRow('Employee / Client',item.who)
+      +ocaDocMetaRow('Submitted by',cat.source)
+      +ocaDocMetaRow(ocaDateLabel(item),ocaDateValue(item))
+      +'</div>'
+      +'<p class="oca-doc-p">This document has been provided by the '+cat.source.toLowerCase()
+      +' in respect of <strong>'+item.who+'</strong> and is filed against reference '
+      +ocaRef(item)+'.</p>'
+      +'<p class="oca-doc-p">The pages that follow set out the particulars, the terms they are given '
+      +'under and the signatures relied on. Read them in full before recording a decision - what is '
+      +'written on the Logs tab is the record of this review.</p>'
+      +ocaDocLines(7,item.id);
+  }else if(n===total){
+    body='<h2 class="oca-doc-h2">Execution</h2>'
+      +ocaDocLines(4,item.id+n)
+      +'<div class="oca-doc-sign">'
+      +'<div class="oca-doc-sign-col"><div class="oca-doc-sign-rule"></div>'
+      +'<div class="oca-doc-sign-k">For and on behalf of</div>'
+      +'<div class="oca-doc-sign-v">'+item.who+'</div></div>'
+      +'<div class="oca-doc-sign-col"><div class="oca-doc-sign-rule"></div>'
+      +'<div class="oca-doc-sign-k">Received by</div>'
+      +'<div class="oca-doc-sign-v">Opendhi Compliance</div></div>'
+      +'</div>';
+  }else{
+    body='<h2 class="oca-doc-h2">Annexure '+(n-1)+'</h2>'+ocaDocLines(12,item.id+n*3);
+  }
+  return '<section class="oca-doc-page" data-pg="'+n+'">'+body+foot+'</section>';
+}
+
+/* -- The viewer -----------------------------------------------------------
+   The footer carries the same two decisions the panel offers, and calls the
+   same two functions - ocaApprove() and ocaReject() - rather than repeating
+   what they do. Approve commits; Reject hands off to the Logs form for the
+   reason, exactly as it does from the panel, so a document still cannot be
+   refused without one. Anything already settled gets no decision footer:
+   there is nothing to decide, and the viewer is then simply a reader. */
+function ocaDocViewerHTML(item){
+  const f=ocaFileMeta(item);
+  const pending=item.status==='Pending Review';
+  let pages='';
+  for(let i=1;i<=f.pages;i++)pages+=ocaDocPageHTML(item,i,f.pages);
+  const foot=pending
+    ?'<button class="oca-act oca-act-reject" onclick="ocaDocReject('+item.id+')">Reject</button>'
+     +'<button class="oca-act oca-act-approve" onclick="ocaDocApprove('+item.id+')">Approve</button>'
+    :'<button class="oca-act" onclick="closeOcaDocPreview()">Close</button>';
+  return '<div class="oca-doc-ov" onclick="closeOcaDocPreview()">'
+    +'<div class="oca-doc-modal" role="dialog" aria-modal="true" aria-label="Document preview" onclick="event.stopPropagation()">'
+    +'<div class="oca-doc-hd">'
+    +'<div class="oca-doc-hd-ico">'+ocaFileIco(item)+'</div>'
+    +'<div class="oca-doc-hd-txt">'
+    +'<div class="oca-doc-hd-name" title="'+attrSafe(f.name)+'">'+f.name+'</div>'
+    +'<div class="oca-doc-hd-sub">'+item.who+' &middot; '+ocaRef(item)+' &middot; '+ocaFileLine(item)
+    +' &middot; uploaded by '+f.by+'</div>'
+    +'</div>'
+    +'<span class="lp-status-badge tone-'+statusTone(item.status)+'">'+item.status+'</span>'
+    +'<button class="oca-doc-close" onclick="closeOcaDocPreview()" title="Close preview">'+OCA_ICO.x+'</button>'
+    +'</div>'
+    +'<div class="oca-doc-bar">'
+    +'<span class="oca-doc-pgind" id="oca-doc-pgind">Page 1 of '+f.pages+'</span>'
+    +'<div class="oca-doc-zoom">'
+    +'<button class="oca-doc-zbtn" onclick="ocaDocZoomBy(-.1)" title="Zoom out">&minus;</button>'
+    +'<span class="oca-doc-zlbl" id="oca-doc-zoom-lbl">100%</span>'
+    +'<button class="oca-doc-zbtn" onclick="ocaDocZoomBy(.1)" title="Zoom in">+</button>'
+    +'</div>'
+    +'<button class="oca-doc-dl" onclick="ocaDocDownload('+item.id+')" title="Download">'+OCA_ICO.dl+'<span>Download</span></button>'
+    +'</div>'
+    +'<div class="oca-doc-viewer" id="oca-doc-viewer" onscroll="ocaDocOnScroll()">'+pages+'</div>'
+    +'<div class="oca-doc-ft">'
+    +'<span class="oca-doc-ft-q">'+(pending?'Read the document, then approve it or reject it with a reason':(OCA_NEXT[item.status]||''))+'</span>'
+    +'<div class="oca-doc-ft-btns">'+foot+'</div>'
+    +'</div>'
+    +'</div></div>';
+}
+function openOcaDocPreview(id){
+  const item=ocaItems.find(function(x){return x.id===id;});
+  if(!item)return;
+  // Nothing has been provided, so there is nothing to open - say so rather than
+  // opening an empty viewer that implies a file arrived.
+  if(!ocaHasFile(item)){
+    showToast('Nothing to preview','info','"'+item.doc+'" has not been uploaded yet.');
+    return;
+  }
+  closeOcaDocPreview();
+  ocaDocOpenId=id;ocaDocZoom=1;
+  const host=document.createElement('div');
+  host.id='oca-doc-host';
+  host.innerHTML=ocaDocViewerHTML(item);
+  document.body.appendChild(host);
+  document.addEventListener('keydown',ocaDocKey);
+}
+function closeOcaDocPreview(){
+  const host=document.getElementById('oca-doc-host');
+  if(host)host.remove();
+  ocaDocOpenId=null;
+  document.removeEventListener('keydown',ocaDocKey);
+}
+function ocaDocKey(e){if(e.key==='Escape')closeOcaDocPreview();}
+// Zoom drives one custom property; the page and everything on it is sized in
+// em off it, so zooming re-lays the pages out instead of scaling a picture of
+// them - the scrollbars stay honest at every step.
+function ocaDocZoomBy(d){
+  ocaDocZoom=Math.min(OCA_DOC_MAX,Math.max(OCA_DOC_MIN,Math.round((ocaDocZoom+d)*10)/10));
+  const v=document.getElementById('oca-doc-viewer');
+  if(v)v.style.setProperty('--oca-z',ocaDocZoom);
+  const l=document.getElementById('oca-doc-zoom-lbl');
+  if(l)l.textContent=Math.round(ocaDocZoom*100)+'%';
+}
+function ocaDocOnScroll(){
+  const v=document.getElementById('oca-doc-viewer'),l=document.getElementById('oca-doc-pgind');
+  if(!v||!l)return;
+  const pages=v.querySelectorAll('.oca-doc-page');
+  let cur=1;
+  for(let i=0;i<pages.length;i++)if(pages[i].offsetTop-v.scrollTop<=v.clientHeight*.35)cur=i+1;
+  l.textContent='Page '+cur+' of '+pages.length;
+}
+// No file store, so there is nothing to hand over. Saying that is better than
+// a button that silently does nothing.
+function ocaDocDownload(id){
+  const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
+  showToast('Preview only','info','"'+ocaFileMeta(item).name+'" is not downloadable in this prototype.');
+}
+/* Deciding FROM the viewer. Both close it first and hand to the same dialog
+   the panel's buttons use, so a decision taken while reading the document is
+   recorded exactly like one taken from the panel - and still cannot go through
+   without a comment. */
+function ocaDocApprove(id){closeOcaDocPreview();ocaApprove(id);}
+function ocaDocReject(id){closeOcaDocPreview();ocaReject(id);}
+
+/* -- Offering the document ------------------------------------------------
+   The strip above the decision bar. It states the file the decision is about -
+   name, type, weight, who sent it - and opens it. A document that has not
+   arrived gets the same strip in a muted form, because "there is nothing to
+   read yet" is exactly what the admin needs to know before hunting for a
+   button that is not there. */
+function ocaDocStripHTML(item){
+  if(!ocaHasFile(item)){
+    return '<div class="oca-docstrip is-empty">'
+      +'<div class="oca-docstrip-ico">'+OCA_ICO.file+'</div>'
+      +'<div class="oca-docstrip-txt">'
+      +'<div class="oca-docstrip-name">'+item.doc+'</div>'
+      +'<div class="oca-docstrip-meta">Not uploaded yet &mdash; nothing to preview</div>'
+      +'</div></div>';
+  }
+  const f=ocaFileMeta(item);
+  return '<div class="oca-docstrip">'
+    +'<div class="oca-docstrip-ico">'+ocaFileIco(item)+'</div>'
+    +'<div class="oca-docstrip-txt">'
+    +'<div class="oca-docstrip-name" title="'+attrSafe(f.name)+'">'+f.name+'</div>'
+    +'<div class="oca-docstrip-meta">'+ocaFileLine(item)+' &middot; '+f.by+'</div>'
+    +'</div>'
+    +'<button class="oca-act oca-act-view" onclick="openOcaDocPreview('+item.id+')">'
+    +OCA_ICO.eye+'<span>Preview</span></button>'
+    +'</div>';
+}
+/* The Attachments tab's version: the same strip, with the facts about the file
+   underneath it. This is the one place in the panel that is ABOUT the file
+   rather than about the decision, so it is the one place that states its
+   particulars in full. */
+function ocaDocFileCardHTML(item){
+  const cat=ocaCat(item.cat);
+  if(!ocaHasFile(item)){
+    return '<div class="oca-att-card">'+ocaDocStripHTML(item)+'</div>';
+  }
+  const f=ocaFileMeta(item);
+  const row=function(k,v){return '<div class="oca-att-f"><span class="oca-att-k">'+k+'</span>'
+    +'<span class="oca-att-v">'+v+'</span></div>';};
+  return '<div class="oca-att-card">'+ocaDocStripHTML(item)
+    +'<div class="oca-att-grid">'
+    +row('File type',f.kind+' · '+f.pages+(f.pages===1?' page':' pages'))
+    +row('Size',f.size)
+    +row('Uploaded by',f.by)
+    +row('Reference',ocaRef(item))
+    +row('Document type',cat.label)
+    +row(ocaDateLabel(item),ocaDateValue(item))
+    +'</div>'
+    +'<div class="oca-att-acts">'
+    +'<button class="oca-act" onclick="ocaDocDownload('+item.id+')">Download</button>'
+    +'<button class="oca-act oca-act-approve" onclick="openOcaDocPreview('+item.id+')">Open document</button>'
+    +'</div>'
+    +'</div>';
+}
+/* On a log entry — and only on ONE of them: the newest, and only while the
+   document is still somebody's job.
+
+   A timeline is history. Offering "view the document" against a step taken
+   three weeks ago invites a reviewer to act on a line that has already been
+   closed out, and on an approved record it offered a review of something that
+   is not up for review any more. The entry at the top is the only one that
+   describes where the document stands NOW, so it is the only one that carries
+   the way in; once the record settles into Approved or Closed, no entry does.
+
+   The file itself never becomes unreachable - the strip above the form, the
+   Document field and the row's own button all still open it. What goes away is
+   the suggestion that there is a decision waiting on it. */
+function ocaLogViewHTML(item,l,i){
+  if(i!==0||!ocaHasFile(item)||!ocaNeedsAction(item))return '';
+  return ocaViewLinkHTML(item);
+}
+function ocaViewLinkHTML(item){
+  return '<button class="oca-log-view" onclick="openOcaDocPreview('+item.id+')">'
+    +OCA_ICO.eye+'<span>View document</span></button>';
+}
+/* The Workflow tab reads the same way: the current stage carries the link, the
+   stages behind it are history, and a settled document offers none at all. */
+const OCA_WF_NO_FILE=['Document Required','Document Requested','Upload Requested'];
+function ocaWorkflowRows(item){
+  const live=ocaHasFile(item)&&ocaNeedsAction(item);
+  return ocaWorkflow(item).map(function(w,i){
+    if(i!==0||!live||OCA_WF_NO_FILE.indexOf(w.title)>-1)return w;
+    return {title:w.title,user:w.user,date:w.date,time:w.time,description:w.description,
+      extra:ocaViewLinkHTML(item)};
+  });
+}
+
 function ocaSaveLog(id){
   const item=ocaItems.find(function(x){return x.id===id;});if(!item)return;
   const was=item.status;
@@ -2442,7 +2903,6 @@ function ocaSaveLog(id){
     wfPush(ocaWorkflowData,id,(OCA_STAGE[item.status]||OCA_STAGE['Pending Review']).title,
       'Moved from '+was+' to '+item.status+'. '+comment);
   }
-  ocaPendingStatus='';    // the decision it was pre-set from has now been made
   renderOcaDashboard();   // status drives the tiles and the row, so redraw both
   showToast('Log added','success',item.status!==was
     ? '"'+item.doc+'" moved to '+item.status+'.'
@@ -2451,7 +2911,8 @@ function ocaSaveLog(id){
 function renderOcaSidebar(){
   const item=ocaItems.find(function(x){return x.id===ocaSelectedId;});if(!item)return'';
   const cat=ocaCat(item.cat);
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},
+              {id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="oca-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(ocaTab===t.id?' active':'')+'" onclick="navOcaTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -2490,8 +2951,9 @@ function renderOcaSidebar(){
     // These four statuses are not the Active/Inactive pair the other panels use,
     // so the timeline colours come from the shared tone map instead.
     const tone=function(s){return statusTone(s);};
+    // Newest first, so the step still outstanding sits above the newest entry.
     const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
+      ?'<div class="lp-logs-timeline">'+ocaNextStepHTML(item)+logs.map(function(l,i,_all){
         const sk=tone(l.status);
         return '<div class="lp-log-row">'
           +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
@@ -2499,23 +2961,17 @@ function renderOcaSidebar(){
           +logHeadRow(_all,i,sk,l.status)
           +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
           +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
+          +ocaLogViewHTML(item,l,i)
           +'</div></div>';
       }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    // Arriving here from the Reject button, the form opens on that decision and
-    // asks for the one thing the button could not supply: why.
-    const preset=ocaPendingStatus||item.status;
-    const rejecting=ocaPendingStatus==='Rejected';
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+tone(item.status)+'"></span>'+item.status+'</div>'
-      +'<p class="lp-logs-form-sub">'+(rejecting
-        ?'Say what is wrong with this document — the '+ocaCat(item.cat).source.toLowerCase()+' will see this reason'
-        :(OCA_MOVE_PROMPT[item.status]||'Move this document on and say why'))+'</p>'
+      +'<p class="lp-logs-form-sub">'+(OCA_MOVE_PROMPT[item.status]||'Move this document on and say why')+'</p>'
       // Only the moves this document can actually make from where it is.
-      +lpLogStatusField('oca-log-status-sel',preset,ocaMoveOptions(item))
-      +'<div class="lp-logs-form-label">'+(rejecting?'Reason for rejection':'Comment')+' <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" id="oca-log-comment-inp" placeholder="'
-      +(rejecting?'e.g. Page 2 is illegible — re-upload a clear scan':'Enter comment')+'"></textarea>'
+      +lpLogStatusField('oca-log-status-sel',item.status,ocaMoveOptions(item))
+      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+      +'<textarea class="lp-logs-form-textarea" id="oca-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
       +'<button class="ep-cancel-btn" style="flex:1" onclick="ocaCancelLog()">Cancel</button>'
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ocaSaveLog('+item.id+')">Submit</button>'
@@ -2528,10 +2984,25 @@ function renderOcaSidebar(){
        row. The bar belongs WITH the form, not beside it, so both go in one
        column wrapper and the grid keeps the two children it expects. */
     body='<div class="lp-logs-wrap">'+timelineHTML
-      +'<div class="lp-logs-side">'+ocaActionsHTML(item)+formHTML+'</div>'
+      +'<div class="lp-logs-side">'+ocaDocStripHTML(item)+ocaActionsHTML(item)+formHTML+'</div>'
+      +'</div>';
+  }else if(ocaTab==='attachments'){
+    /* Two different kinds of file, and they are not interchangeable. The
+       compliance document is the record itself — derived, never uploaded here,
+       and the thing the decision is about. Anything else is supporting paper,
+       which is what the app's shared attachments tab handles everywhere else.
+       Stacking them under two headings keeps that difference visible instead of
+       dropping the document into a list where it could be "removed". */
+    body='<div class="oca-att">'
+      +'<div class="oca-att-h">Document under review</div>'
+      +ocaDocFileCardHTML(item)
+      +'<div class="oca-att-h">Supporting files</div>'
+      +'<div class="oca-att-sub">Anything else that belongs on this record — correspondence, '
+      +'earlier versions, proof of submission.</div>'
+      +attachTabHTML('oca',item.id)
       +'</div>';
   }else if(ocaTab==='workflow'){
-    body=wfTimelineHTML(ocaWorkflow(item));   // shared renderer, so it reads like every other Workflow tab
+    body=wfTimelineHTML(ocaWorkflowRows(item));   // shared renderer, so it reads like every other Workflow tab
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -2805,6 +3276,7 @@ function saveRule(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  lpLanded('rates-rules',ratesRuleNextId);
   ratesRulesData.unshift({id:ratesRuleNextId++,country,ruleName:name,category,applicableTo,valueRate,status,createdBy:'Shaun Test1',createdAt,logs:[],
     ruleType,employmentType,currency,valueType,conditionOperator,conditionValue,minLimit,maxLimit,effectiveFrom,effectiveTo});
   ratesRuleModalOpen=false;
@@ -3040,6 +3512,7 @@ function saveTemplate(){
   let h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const ampm=h>=12?'PM':'AM';h=h%12||12;
   const createdAt=String(now.getDate()).padStart(2,'0')+' '+months[now.getMonth()]+' '+now.getFullYear()+' | '+(h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s)+' '+ampm;
+  lpLanded('contract-templates',ctpNextId);
   contractTemplatesData.unshift({id:ctpNextId,templateName:name,employmentType,templateId:String(ctpNextId),status,country,category,createdBy:'Shaun Test1',createdAt,
     attachments:fileName?[{name:fileName}]:[],logs:[]});
   ctpNextId++;
@@ -3652,6 +4125,7 @@ function submitAddTeam(){
   const member=getCSValue('team-member');
   const teamName=name.value.trim();
   const newId=teamsData.length?Math.max.apply(null,teamsData.map(function(t){return t.id;}))+1:1;
+  lpLanded('teams',newId);
   teamsData.unshift({id:newId,teamId:String(2880+newId),name:teamName,dept:dept,country:'India',members:member&&member!=='Select'?1:0,email:email.value.trim(),createdBy:'Pallavi Parate',joinDate:'From: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),status:'Active',membersList:member&&member!=='Select'?[{name:member,role:'Member',desig:'--'}]:[]});
   const rows=supportPageMeta.teams.rows;
   rows.unshift([0,teamName,dept,'India',member&&member!=='Select'?'1':'0','Active']);
@@ -4005,6 +4479,7 @@ function submitAddPayhead(){
   const now=new Date();
   const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
     +' | '+now.toLocaleTimeString('en-US',{hour12:true});
+  lpLanded('payheads',payheadNextId);
   payheadsData.unshift({id:payheadNextId++,name:name,category:cat,calcOn:calc,status:'Active',
     createdBy:CURRENT_USER,createdAt:stamp,slabs:phDraftSlabs.slice(),logs:[]});
   phDraftSlabs=[];
@@ -4091,7 +4566,17 @@ function closeHdSidebar(){
 function navHdTab(tab){hdTab=tab;hdEditMode=false;isbTab('hd',renderHdSidebar);}
 /* The tab strip is unchanged between the two modes, so isbTab swaps only the
    body — the tabs keep their identity and the panel does not flash. */
-function hdSetEdit(on){hdEditMode=!!on;isbTab('hd',renderHdSidebar);}
+function hdSetEdit(on){
+  hdPickClose();
+  hdEditMode=!!on;
+  // The picker edits a working copy of this record's audience, seeded when the
+  // form opens and read back by saveHdEdit. Cancel simply never reads it.
+  if(hdEditMode){
+    const h=holidaysData.find(function(x){return x.id===hdSelectedId;});
+    hdPickState.sb=h?hdBranches(h):[];
+  }
+  isbTab('hd',renderHdSidebar);
+}
 /* WHAT EDIT DOES NOT TOUCH: the entity, and the status.
 
      The entity, because a holiday moved to another entity's calendar is not
@@ -4108,7 +4593,7 @@ function saveHdEdit(){
   const name=nameEl?nameEl.value.trim():'';
   const date=getCDValue('hdsb-date');
   const type=getCustomSelectValue('hdsb-type');
-  const branch=getCustomSelectValue('hdsb-branch')||h.branch||HD_ALL_BRANCHES;
+  const branches=hdPickGet('sb').slice();
   const recEl=document.getElementById('hdsb-rec');
   const rec=recEl?recEl.checked:h.recurring;
   if(!name){showToast('Holiday name is required','error');if(nameEl)nameEl.focus();return;}
@@ -4118,7 +4603,8 @@ function saveHdEdit(){
      without the id check, saving a holiday without moving it would report a
      clash against itself. */
   const clash=holidaysData.find(function(x){
-    return x.id!==h.id&&x.entity===h.entity&&x.status==='Active'&&x.date===date&&hdBranchMatch(x,branch);
+    return x.id!==h.id&&x.entity===h.entity&&x.status==='Active'&&x.date===date
+      &&hdAudienceOverlap(hdBranches(x),branches);
   });
   if(clash){showToast(hdDateLabel(date)+' is already a holiday','error',
     '"'+clash.name+'" is on the '+h.entity+' calendar for that date.');return;}
@@ -4128,10 +4614,13 @@ function saveHdEdit(){
   if(h.name!==name)changes.push('renamed from "'+h.name+'"');
   if(h.date!==date)changes.push('moved from '+hdDateLabel(h.date)+' to '+hdDateLabel(date));
   if(h.type!==type)changes.push('type changed from '+h.type+' to '+type);
-  if((h.branch||HD_ALL_BRANCHES)!==branch)changes.push('moved to '+branch);
+  const wasBr=hdBranches(h);
+  if(wasBr.join('|')!==branches.join('|'))
+    changes.push('now applies to '+hdBranchText({branches:branches})+' (was '+hdBranchText({branches:wasBr})+')');
   if(h.recurring!==rec)changes.push(rec?'now repeats every year':'no longer repeats yearly');
   if(!changes.length){hdSetEdit(false);showToast('No changes','info','Nothing was different.');return;}
-  h.name=name;h.date=date;h.type=type;h.branch=branch;h.recurring=rec;
+  h.name=name;h.date=date;h.type=type;h.branches=branches;h.recurring=rec;
+  delete h.branch;   // the old single-branch field is gone for good on this record
   hdWorkflow(h);   // seed first, so the edit sits on top of the history
   wfPush(hdWorkflowData,h.id,'Holiday Edited',changes.join('; ')+'.');
   hdEditMode=false;
@@ -4217,8 +4706,8 @@ function renderHdSidebar(){
         +apCD('hdsb-date',h.date,'Select date')+'</div>'
       +'<div class="lp-sb-field"><label>Type <span class="req">*</span></label>'
         +customSelect('hdsb-type',h.type,HD_TYPES,'Select Type')+'</div>'
-      +'<div class="lp-sb-field"><label>Branch</label>'
-        +customSelect('hdsb-branch',h.branch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)+'</div>'
+      +'<div class="lp-sb-field"><label>Applies to</label>'
+        +hdBranchPickerHTML('sb')+'</div>'
       +'<div class="lp-sb-field"><label>Repeats</label>'
         +'<label class="hd-check" style="justify-content:flex-start" title="Recurs on the same date every year">'
         +'<input type="checkbox" id="hdsb-rec"'+(h.recurring?' checked':'')+'><span>Repeats every year</span></label></div>'
@@ -4257,7 +4746,7 @@ function renderHdSidebar(){
       +(off?'<div class="hd-sb-note">Withdrawn — '+hdDateLabel(h.date)+' is treated as an ordinary working day.</div>':'')
       +'<div class="lp-sb-detail-grid">'
       +fc(iBuild,'Entity',h.entity)
-      +fc(iPin,'Branch',h.branch||HD_ALL_BRANCHES)
+      +fc(iPin,'Applies to',hdBranchChipsHTML(h,4))
       +fc(iRepeat,'Repeats',h.recurring?'Every year':'One-off')
       +fc(iUser,'Created By',h.createdBy)
       +fc(iCal,'Created At',h.createdAt)
@@ -4314,9 +4803,9 @@ function buildHolidaysPageHTML(){
         +'<td style="color:var(--gray);white-space:nowrap">'+(hdDayName(h.date)||'—')
           +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')+'</td>'
         +'<td>'+hdTypeBadge(h.type)+'</td>'
-        +'<td'+(h.branch&&h.branch!==HD_ALL_BRANCHES
-            ?' style="font-weight:600;color:var(--navy)"'
-            :' style="color:var(--gray)"')+'>'+(h.branch||HD_ALL_BRANCHES)+'</td>'
+        // Entity-wide recedes, named branches carry weight — the cell answers
+        // "is this one mine?" before it answers "which offices".
+        +'<td>'+hdBranchChipsHTML(h)+'</td>'
         +'<td style="color:'+(h.recurring?'var(--navy)':'var(--gray)')+'">'+(h.recurring?'Yearly':'One-off')+'</td>'
         +'<td><span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></td>'
         +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openHdSidebar('+h.id+')" title="View Details">'+dotsIco+'</button></td>'
@@ -4340,7 +4829,7 @@ function buildHolidaysPageHTML(){
     +'<div class="listing-stat'+(hdStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="hdToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+inactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="hd-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Branch</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Applies To</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -4361,7 +4850,77 @@ function buildHolidaysPageHTML(){
    the date lands on a Saturday or Sunday, says so under the row — a holiday on
    a weekend costs the entity no working day, and that is worth knowing BEFORE
    it is published, not after somebody asks why the leave balance did not move. */
-function hdBlankRow(){return {name:'',date:'',type:'',recurring:true};}
+/* ── Showing who a holiday is for ─────────────────────────────────────────
+   Two shapes, one idea. CHIPS state an audience that is already decided — the
+   listing cell and the detail panel. The PICKER is the same statement made
+   editable: a trigger that reads like the chips do, and a popover of branches
+   with ticks.
+
+   Entity-wide is deliberately not drawn as "every branch ticked". It is one
+   quiet chip, because it is the default and the common case, and a row of five
+   ticked boxes would make the ordinary holiday look like the complicated one. */
+/* ONE LINE, WHATEVER THE COUNT. Two chips side by side wrapped in a table cell
+   this narrow, and a wrapped cell makes its whole row taller than every other
+   row on the page — one holiday observed in two offices should not restripe the
+   table. So the cell names the first office and counts the rest; the full list
+   is on the cell itself, and the panel (which has the width) shows them all.
+
+   The count chip is not "+1" hanging off the end — it reads "+1 more" nowhere,
+   it just carries the number, and the title says what the number is. */
+function hdBranchChipsHTML(h,max){
+  const list=hdBranches(h);
+  if(!list.length)return '<span class="hd-br-chip is-all">'+HD_ALL_BRANCHES+'</span>';
+  const cap=Math.max(1,max||1),shown=list.slice(0,cap);
+  const title=list.length===1?list[0]:('Applies to '+list.join(', '));
+  return '<span class="hd-br-chips" title="'+attrSafe(title)+'">'
+    +shown.map(function(b){return '<span class="hd-br-chip">'+b+'</span>';}).join('')
+    +(list.length>cap?'<span class="hd-br-chip is-more">+'+(list.length-cap)+'</span>':'')
+    +'</span>';
+}
+const HD_BP_ICO={
+  pin:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  chev:'<svg class="hd-bp-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="6 9 12 15 18 9"/></svg>',
+  tick:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'
+};
+function hdBranchPickerHTML(key){
+  const list=hdPickGet(key);
+  return '<div class="hd-bp">'
+    +'<button type="button" class="hd-bp-btn'+(list.length?'':' is-all')+'" id="hd-bp-btn-'+key+'"'
+      +' aria-expanded="false" aria-haspopup="true"'
+      +' title="'+attrSafe(list.length?('Applies to '+list.join(', ')):'Applies to every branch of this entity')+'"'
+      +' onclick="hdPickToggle(\''+key+'\',event)">'
+      +HD_BP_ICO.pin+'<span class="hd-bp-lbl">'+hdBranchLabel(list)+'</span>'+HD_BP_ICO.chev
+    +'</button></div>';
+}
+function hdPickPopHTML(key){
+  const list=hdPickGet(key);
+  const opt=function(b,label,on){
+    return '<button type="button" class="hd-bp-opt'+(on?' is-on':'')+'" data-branch="'+attrSafe(b)+'"'
+      +' onclick="'+(b===''?'hdPickAll(\''+key+'\',event)':'hdPickBranch(\''+key+'\',\''+attrSafe(b)+'\',event)')+'">'
+      +'<span class="hd-bp-box">'+HD_BP_ICO.tick+'</span><span>'+label+'</span></button>';
+  };
+  const branches=hdBranchChoices();
+  return '<div class="hd-bp-pop" id="hd-bp-pop-'+key+'" onclick="event.stopPropagation()">'
+    +'<div class="hd-bp-head">Applies to</div>'
+    +opt('',HD_ALL_BRANCHES,!list.length)
+    +'<div class="hd-bp-sep"></div>'
+    +(branches.length
+      ?branches.map(function(b){return opt(b,b,list.indexOf(b)>-1);}).join('')
+      :'<div class="hd-bp-empty">No branches on this entity yet.</div>')
+    +'<div class="hd-bp-note">'+(list.length
+      ?'Only '+list.join(', ')+' will see this holiday.'
+      :'Every branch of this entity will see this holiday.')+'</div>'
+    +(key.charAt(0)==='r'&&hdDraftRows.length>1
+      ?'<button type="button" class="hd-bp-apply" onclick="hdPickApplyAll(\''+key+'\',event)">Apply to all rows</button>'
+      :'')
+    +'</div>';
+}
+// A new row starts where the last one left off: a batch is usually for one
+// audience, and re-picking it on every row would be the fastest way to end up
+// with a row nobody meant to publish entity-wide.
+function hdBlankRow(prev){
+  return {name:'',date:'',type:'',recurring:true,branches:prev&&prev.branches?prev.branches.slice():[]};
+}
 /* THE ENTITY IS NOT A QUESTION. Which calendar a holiday goes on is already
    decided by the entity being worked in — the one named in the topbar switcher
    — so the popup states it rather than asking. Offering it as a field would be
@@ -4371,13 +4930,18 @@ function hdBlankRow(){return {name:'',date:'',type:'',recurring:true};}
    was off. Switching entity is one action, in one place, and it is not here. */
 function startAddHoliday(){
   hdDraftRows=[hdBlankRow()];
-  hdDraftEntity=hdCurrentEntityName();
   /* Pre-set to whatever the list is filtered to: if you are looking at the
-     Bengaluru calendar, that is the calendar you are adding to. */
-  hdDraftBranch=hdBranchFilter||HD_ALL_BRANCHES;
+     Mumbai calendar, that is the calendar you are adding to. Otherwise the row
+     starts entity-wide, which is what most holidays are. */
+  if(hdBranchFilter&&hdBranchFilter!==HD_ALL_BRANCHES)hdDraftRows[0].branches=[hdBranchFilter];
+  hdDraftEntity=hdCurrentEntityName();
+  hdPickOpen='';hdPickState={};
   hdModalOpen=true;renderADTPage();
 }
-function cancelAddHoliday(){hdDraftRows=[];hdDraftEntity='';hdModalOpen=false;renderADTPage();}
+function cancelAddHoliday(){
+  hdPickClose();
+  hdDraftRows=[];hdDraftEntity='';hdModalOpen=false;renderADTPage();
+}
 // Read the DOM back into state before any repaint.
 function hdSyncRows(){
   hdDraftRows.forEach(function(r,i){
@@ -4385,8 +4949,9 @@ function hdSyncRows(){
     const d=document.getElementById('hd-row-date-'+i);if(d)r.date=d.value;
     const c=document.getElementById('hd-row-rec-'+i);if(c)r.recurring=c.checked;
     r.type=getCustomSelectValue('hd-row-type-'+i)||r.type;
+    // branches are written straight onto the row by the picker, so there is
+    // nothing to read back for them.
   });
-  hdDraftBranch=getCustomSelectValue('hd-new-branch')||hdDraftBranch;
 }
 function hdRenderRows(){
   const list=document.getElementById('hd-row-list');
@@ -4394,9 +4959,13 @@ function hdRenderRows(){
   list.innerHTML=hdRowsHTML();
   hdPaintSummary();
 }
-function hdAddRow(){hdSyncRows();hdDraftRows.push(hdBlankRow());hdRenderRows();}
+function hdAddRow(){
+  hdPickClose();hdSyncRows();
+  hdDraftRows.push(hdBlankRow(hdDraftRows[hdDraftRows.length-1]));
+  hdRenderRows();
+}
 function hdRemoveRow(i){
-  hdSyncRows();
+  hdPickClose();hdSyncRows();
   if(hdDraftRows.length<=1)return;   // an empty batch is not a batch
   hdDraftRows.splice(i,1);hdRenderRows();
 }
@@ -4405,7 +4974,7 @@ function hdRemoveRow(i){
    and repainting it is what lets the weekend note under a row appear the
    moment its date makes it true. Nothing is focused at this point: the click
    that got here was on a calendar cell. */
-function hdDatePicked(){hdSyncRows();hdRenderRows();}
+function hdDatePicked(){hdPickClose();hdSyncRows();hdRenderRows();}
 function hdRowsHTML(){
   const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
   return hdDraftRows.map(function(r,i){
@@ -4418,16 +4987,21 @@ function hdRowsHTML(){
     let note='';
     if(dupe)note='<div class="hd-row-note is-bad">Row '+(i+1)+' repeats a date already used above.</div>';
     else if(hdIsWeekend(r.date))note='<div class="hd-row-note">Falls on a '+day+' — no working day is lost.</div>';
+    /* DAY LOST ITS COLUMN, NOT ITS PLACE. It was a whole grid column holding
+       one derived word in a disabled-looking box — and the column the row
+       actually needed was who the holiday is for. The weekday now sits under
+       the date it comes from, which is where it was always true. */
     return '<div class="hd-row-form'+(dupe?' is-bad':'')+'">'
       +'<div class="hd-row-index">'+(i+1)+'</div>'
       +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-name-'+i+'" value="'+attrSafe(r.name)+'" placeholder="e.g. Republic Day" aria-label="Holiday name, row '+(i+1)+'" oninput="hdUpdateSummary()"></div>'
-      +'<div class="hd-cell">'+apCD('hd-row-date-'+i,r.date,'Select date','hdDatePicked')+'</div>'
-      +'<div class="hd-cell"><input class="ep-form-input" id="hd-row-day-'+i+'" value="'+attrSafe(day)+'" readonly placeholder="From date" aria-label="Day, row '+(i+1)+'" title="Taken from the date — not typed"></div>'
+      +'<div class="hd-cell">'+apCD('hd-row-date-'+i,r.date,'Select date','hdDatePicked')
+        +'<div class="hd-cell-sub">'+(day||'Weekday appears here')+'</div></div>'
       /* The shared customSelect has no change hook, so the cell listens instead:
          the click bubbles up after selectCustomOption has written the value, and
          the deferred call reads it back so the footer count and the button label
          move on a Type pick the same way they move on a name keystroke. */
       +'<div class="hd-cell" onclick="setTimeout(hdUpdateSummary,0)">'+customSelect('hd-row-type-'+i,r.type,HD_TYPES,'Select Type')+'</div>'
+      +'<div class="hd-cell">'+hdBranchPickerHTML('r'+i)+'</div>'
       +'<div class="hd-cell"><label class="hd-check" title="Recurs on the same date every year"><input type="checkbox" id="hd-row-rec-'+i+'"'+(r.recurring?' checked':'')+' onchange="hdUpdateSummary()"><span>Yearly</span></label></div>'
       +'<button class="hd-row-del" onclick="hdRemoveRow('+i+')" title="'
         +(only?'A batch needs at least one holiday':'Remove this holiday')+'"'+(only?' disabled':'')+'>'+iTrash+'</button>'
@@ -4472,7 +5046,7 @@ function buildAddHolidaysModalHTML(){
     +'<div class="ct-modal" style="width:min(940px,96vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
       +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
-    +'<p class="ct-modal-sub">One row per holiday, each with its own name. Add as many as the calendar needs — they are published to the entity together.</p>'
+    +'<p class="ct-modal-sub">One row per holiday — its own name, its own date, and its own branches. A holiday can apply to the whole entity or to any set of its offices.</p>'
 
     /* Entity is stated, not offered — see startAddHoliday. */
     +'<div class="hd-entity-row">'
@@ -4480,15 +5054,6 @@ function buildAddHolidaysModalHTML(){
       +'<div class="hd-entity-text">'
         +'<div class="hd-entity-label">Entity</div>'
         +'<div class="hd-entity-name">'+(hdDraftEntity||'—')+'</div>'
-      +'</div>'
-      /* Entity is stated because it is decided elsewhere; BRANCH is asked,
-         because it is the one thing about this batch only the person filing it
-         knows. Once per batch rather than per row: a batch is one branch's
-         calendar — the Bengaluru list and the all-branch list are two
-         sittings, not two rows of one. */
-      +'<div class="hd-branch-field">'
-        +'<label class="hd-entity-label">Branch</label>'
-        +customSelect('hd-new-branch',hdDraftBranch||HD_ALL_BRANCHES,hdBranchOptions(),HD_ALL_BRANCHES)
       +'</div>'
       +'<span class="hd-entity-lock" title="Holidays are added to the entity you are working in — switch entity from the top bar">'+lockSvg+' Current entity</span>'
     +'</div>'
@@ -4504,7 +5069,7 @@ function buildAddHolidaysModalHTML(){
     +'<div class="hd-rows-body">'
       +'<div class="hd-row-head" aria-hidden="true">'
         +'<span></span><span>Holiday Name <b class="req">*</b></span><span>Date <b class="req">*</b></span>'
-        +'<span>Day</span><span>Type <b class="req">*</b></span><span>Repeats</span><span></span>'
+        +'<span>Type <b class="req">*</b></span><span>Applies to</span><span>Repeats</span><span></span>'
       +'</div>'
       +'<div id="hd-row-list">'+hdRowsHTML()+'</div>'
     +'</div>'
@@ -4520,9 +5085,8 @@ function buildAddHolidaysModalHTML(){
     +'</div></div>';
 }
 function submitAddHolidays(){
-  hdSyncRows();
+  hdPickClose();hdSyncRows();
   const entity=hdDraftEntity||hdCurrentEntityName();
-  const branch=hdDraftBranch||HD_ALL_BRANCHES;
   if(!entity){showToast('No entity selected','error','Pick an entity from the top bar first.');return;}
   /* Validated per row rather than once at the end, so the message can name
      WHICH holiday is wrong — "Diwali has no date" is actionable, "check your
@@ -4533,23 +5097,30 @@ function submitAddHolidays(){
     if(!r.name){showToast('Row '+n+' has no Holiday Name','error');return;}
     if(!r.date){showToast('"'+r.name+'" has no date','error','Every holiday needs a date.');return;}
     if(!r.type){showToast('"'+r.name+'" has no type','error','Pick Public, Optional or Company.');return;}
-    if(seen[r.date]){showToast('Two holidays on '+hdDateLabel(r.date),'error','"'+seen[r.date]+'" already uses that date in this batch.');return;}
-    seen[r.date]=r.name;
-    /* Clashes are checked against the SAME audience only. A Hyderabad-only
-       holiday sharing a date with a Bengaluru-only one is a real arrangement,
-       not a conflict — but two all-branch holidays on one date is. */
+    /* A repeated date is only a problem where the two rows reach the same
+       office. Two rows on one date for two different branches is exactly what
+       the audience list is for. */
+    const rb=r.branches||[];
+    const twin=seen[r.date]&&hdAudienceOverlap(rb,seen[r.date].branches);
+    if(twin){showToast('Two holidays on '+hdDateLabel(r.date),'error',
+      '"'+seen[r.date].name+'" already uses that date for '+hdBranchLabel(rb)+' in this batch.');return;}
+    if(!seen[r.date])seen[r.date]={name:r.name,branches:rb};
+    /* Same rule against what is already published. A Hyderabad-only holiday
+       sharing a date with a Mumbai-only one is a real arrangement, not a
+       conflict — two entity-wide ones on a date is. */
     const clash=holidaysData.find(function(h){
-      return h.entity===entity&&h.status==='Active'&&h.date===r.date&&hdBranchMatch(h,branch);
+      return h.entity===entity&&h.status==='Active'&&h.date===r.date&&hdAudienceOverlap(hdBranches(h),rb);
     });
     if(clash){showToast(hdDateLabel(r.date)+' is already a holiday','error',
-      '"'+clash.name+'" ('+(clash.branch||HD_ALL_BRANCHES)+') is on the '+entity+' calendar for that date.');return;}
+      '"'+clash.name+'" ('+hdBranchText(clash)+') is on the '+entity+' calendar for that date.');return;}
   }
   const now=new Date();
   const stamp=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
     +' | '+now.toLocaleTimeString('en-US',{hour12:true});
   const added=hdDraftRows.slice();
   added.forEach(function(r){
-    holidaysData.push({id:holidayNextId++,name:r.name,date:r.date,type:r.type,branch:branch,entity:entity,
+    holidaysData.push({id:holidayNextId++,name:r.name,date:r.date,type:r.type,
+      branches:(r.branches||[]).slice(),entity:entity,
       recurring:!!r.recurring,status:'Active',createdBy:CURRENT_USER,createdAt:stamp,logs:[]});
   });
   hdDraftRows=[];hdModalOpen=false;
@@ -4557,13 +5128,29 @@ function submitAddHolidays(){
      showing would otherwise save into a screen that does not contain it. */
   const y=hdYearOf(added[0].date);
   if(hdYearFilter&&hdYearFilter!==y)hdYearFilter=y;
-  if(hdBranchFilter&&!hdBranchMatch({branch:branch},hdBranchFilter))hdBranchFilter=branch;
+  // A filter that hides what was just filed is a filter that has to go.
+  if(hdBranchFilter&&!added.some(function(r){return hdBranchMatch({branches:r.branches},hdBranchFilter);}))hdBranchFilter='';
+  if(hdTypeFilter&&!added.some(function(r){return r.type===hdTypeFilter;}))hdTypeFilter='';
+  hdStatusFilter='';
   hdUpcomingOnly=false;
-  page='holidays';renderADTPage();
+  hdDraftEntity='';hdPickState={};
+  /* THIS LIST IS BY DATE, NOT BY WHEN IT WAS FILED. A calendar out of date
+     order is not a calendar, so a new holiday cannot simply be put on top the
+     way every other listing does it. The page goes to wherever the row landed
+     instead, and the row is marked so the eye finds it there. */
+  const newIds=holidaysData.slice(-added.length).map(function(h){return h.id;});
+  lpLanded('holidays',newIds);
+  page='holidays';
+  const at=hdRows().findIndex(function(h){return h.id===newIds[0];});
+  if(at>-1)lpLandedAt('holidays',at);
+  renderADTPage();
   const n=added.length;
+  const wide=added.filter(function(r){return !(r.branches&&r.branches.length);}).length;
   showToast(n+' holiday'+(n===1?'':'s')+' added','success',
-    n===1?('"'+added[0].name+'" is on the '+entity+' calendar for '+hdDateLabel(added[0].date)+'.')
-         :('Published to the '+entity+' calendar for '+(branch===HD_ALL_BRANCHES?'all branches':branch)+'.'));
+    n===1?('"'+added[0].name+'" is on the '+entity+' calendar for '+hdDateLabel(added[0].date)
+           +' — '+hdBranchLabel(added[0].branches)+'.')
+         :('Published to the '+entity+' calendar'
+           +(wide===n?' for every branch.':wide?', '+(n-wide)+' of them branch-specific.':' for selected branches.')));
 }
 
 /* CREATION IS A POPUP, like every other create form in the app — Payheads,
@@ -4645,6 +5232,7 @@ function submitAddLeavePolicy(){
   const filterValWrap=document.getElementById('csw-ap-filter-value');
   const filterValStr=filterValWrap?filterValWrap.querySelector('.cs-value').textContent.trim():'';
   const employees=[...selectedEmps].map(id=>{const e=empPool.find(x=>x.id===id);return e?e.name:'';}).filter(Boolean);
+  lpLanded('leave-policies',newId);
   leavePoliciesData.unshift({
     id:newId,type:typeVal,yearly:parseInt(yearly.value)||0,
     monthly:monthly&&monthly.value?parseInt(monthly.value):null,
@@ -5082,6 +5670,42 @@ function tsCopyCoord(coord){
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(coord);
   showToast('Coordinates copied','success',coord);
 }
+/* The two lock icons and the small form the panel grows when a day is being
+   entered by hand. Kept next to the panel that uses them rather than in the
+   shared icon set: nothing else in the app locks a week. */
+const TS_ICO={
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  unlock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',
+  pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+};
+/* The form. Two times and a place — the same three facts the panel reads back
+   above it, so entering a day and reading one are visibly the same record.
+   The total under them is not a field: it is the arithmetic, shown live, so a
+   typo in the hour is caught here and not in a payroll run. */
+function buildTsEditHTML(dateStr){
+  const att=tsAttendance[dateStr]||{};
+  const inV=tsTo24(att.in),outV=tsTo24(att.out);
+  const mins=(inV&&outV)?tsMins(outV)-tsMins(inV):0;
+  const locOpts=Object.keys(TS_PLACES).map(function(k){
+    const on=(att.loc||'Hyderabad')===k;
+    return '<option value="'+k+'"'+(on?' selected':'')+'>'+TS_PLACES[k].label+'</option>';
+  }).join('');
+  return '<div class="ts-ed">'
+    +'<div class="ts-ed-row">'
+    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Clock in</span>'
+      +'<input type="time" class="ts-ed-inp" id="ts-ed-in" value="'+inV+'" oninput="tsEditPreview()"></label>'
+    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Clock out</span>'
+      +'<input type="time" class="ts-ed-inp" id="ts-ed-out" value="'+outV+'" oninput="tsEditPreview()"></label>'
+    +'</div>'
+    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Location</span>'
+      +'<select class="ts-ed-sel" id="ts-ed-loc">'+locOpts+'</select></label>'
+    +'<div class="ts-ed-total"><span>Total</span><span id="ts-ed-total">'
+      +(mins>0?(mins/60).toFixed(2):'0.00')+'h</span></div>'
+    +'<div class="ts-ed-err" id="ts-ed-err"></div>'
+    +'<div class="ts-ed-note">Saved by hand, this day is marked <b>Manual</b> on the grid.</div>'
+    +'</div>';
+}
 function buildTsSidebarHTML(dateStr) {
   const att = tsAttendance[dateStr];
   const d = new Date(dateStr + 'T00:00:00');
@@ -5110,13 +5734,20 @@ function buildTsSidebarHTML(dateStr) {
       +'</button>'
       +(open?tsMapPanelHTML(loc,dateStr,which,timeStr):'');
   };
-  return '<div class="ts-sb-head">'
-    + '<span class="ts-sb-title">Work Details</span>'
-    + '<button class="ts-sb-close" onclick="tsCloseDay()">'+xSvg+'</button>'
-    + '</div>'
-    + '<div class="ts-sb-inner">'
-    + '<div class="ts-sb-date-box">'+calSvg+'<div><div class="ts-sb-date-val">'+label+'</div><div class="ts-sb-date-day">'+dayNames[d.getDay()]+'</div></div></div>'
-    + '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot in"></div>Check In</div>'
+  /* WHAT THIS PANEL IS FOR DEPENDS ON THE DAY IT IS SHOWING. A day inside a
+     locked week can only be read, and says why. A day of this month that has
+     already happened can be corrected, or filled in if the clock never caught
+     it. A day being filled in swaps the two read-only sections for the form —
+     the panel does not grow a second place where a day is described. */
+  const wk = tsWeekOf(dateStr);
+  const wkStatus = tsWeekStatus(tsMonth.year, tsMonth.month, wk);
+  const editing = !!(tsEdit && tsEdit.date === dateStr);
+  const editable = tsDayEditable(dateStr);
+  const chip = wkStatus === 'submitted'
+    ? '<span class="ts-wk-chip is-sent">Submitted</span>'
+    : wkStatus === 'locked' ? '<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>' : '';
+
+  const readBody = '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot in"></div>Check In</div>'
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+ci+'</span></div>'
     + locRow('in',ci)
     + '</div>'
@@ -5125,8 +5756,36 @@ function buildTsSidebarHTML(dateStr) {
     + locRow('out',co)
     + '</div>'
     + '<div class="ts-sb-total"><span class="ts-sb-total-label">Total Hours</span><span class="ts-sb-total-val">'+(hrs==='--'?'0.00h':hrs)+'</span></div>'
-    + (src ? '<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '')
-    + '<div class="ts-sb-actions"><button class="ts-sb-submit">Submit for Approval</button></div>'
+    + (src ? '<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '');
+
+  let actions = '';
+  if (editing) {
+    actions = '<div class="ts-sb-btns">'
+      + '<button class="ts-sb-btn" onclick="tsCancelEdit()">Cancel</button>'
+      + '<button class="ts-sb-btn is-primary" onclick="tsSaveEntry()">Save entry</button>'
+      + '</div>';
+  } else if (editable) {
+    actions = '<button class="ts-sb-btn is-wide" onclick="tsStartEdit(\''+dateStr+'\')">'
+      + (att ? TS_ICO.pen+'Edit entry' : TS_ICO.plus+'Add entry')+'</button>';
+  } else if (wkStatus !== 'open') {
+    // Locked is not an error, so it is stated rather than warned about — and it
+    // names the way back out, which lives on the week rail.
+    actions = '<div class="ts-sb-lockmsg">'+TS_ICO.lock
+      + (wkStatus === 'submitted'
+        ? '<span>Week '+wk+' has been submitted for approval. Its days are final.</span>'
+        : '<span>Week '+wk+' is locked. Unlock it from the week column to edit this day.</span>')
+      + '</div>';
+  }
+
+  return '<div class="ts-sb-head">'
+    + '<span class="ts-sb-title">Work Details</span>'
+    + '<div class="ts-sb-head-right">'+chip
+    + '<button class="ts-sb-close" onclick="tsCloseDay()">'+xSvg+'</button></div>'
+    + '</div>'
+    + '<div class="ts-sb-inner">'
+    + '<div class="ts-sb-date-box">'+calSvg+'<div><div class="ts-sb-date-val">'+label+'</div><div class="ts-sb-date-day">'+dayNames[d.getDay()]+'</div></div></div>'
+    + (editing ? buildTsEditHTML(dateStr) : readBody)
+    + '<div class="ts-sb-actions">'+actions+'</div>'
     + '</div>';
 }
 
@@ -5167,7 +5826,34 @@ function buildTsMonthPickerHTML() {
     + '</div>';
 }
 
+/* The week column earns a third line. It already carried the week's number and
+   its total; the control that closes the week off belongs with them, because
+   locking is a statement ABOUT those seven days and nowhere else on the page
+   is a week addressable.
+
+   Three states, and each shows only what is true of it: an open week can be
+   locked, a locked one can be submitted or let go again, a submitted one is
+   done and says so. Somebody looking at another employee's sheet gets the
+   state and none of the controls. */
+function tsWeekRailHTML(w){
+  const y=tsMonth.year,m=tsMonth.month,st=tsWeekStatus(y,m,w);
+  if(st==='submitted')return '<span class="ts-wk-chip is-sent">Submitted</span>';
+  if(tsReadOnly)return st==='locked'?'<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>':'';
+  if(st==='locked'){
+    return '<div class="ts-wk-line">'
+      +'<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>'
+      +'<button class="ts-wk-icon" onclick="tsUnlockWeek('+w+')" title="Unlock week '+w+'">'+TS_ICO.unlock+'</button>'
+      +'</div>'
+      +'<button class="ts-wk-btn is-primary" onclick="tsSubmitWeek('+w+')" title="Submit week '+w+' for approval">Submit</button>';
+  }
+  // A week that has not started yet has nothing to close off.
+  if(!tsWeekStartable(y,m,w))return '';
+  return '<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock week '+w+' so it can be submitted">'
+    +TS_ICO.lock+'Lock</button>';
+}
 function buildMyTimesheetHTML(viewingOther) {
+  // Somebody else's sheet is a record to read, not one to fill in.
+  tsReadOnly = !!viewingOther;
   const emp = (viewingOther && atViewedEmp) ? atViewedEmp : tsEmp;
   const y = tsMonth.year, m = tsMonth.month;
   const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -5175,8 +5861,11 @@ function buildMyTimesheetHTML(viewingOther) {
   const mName = mNames[m];
   const firstDay = new Date(y, m, 1);
   const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const todayStr = '2026-06-24';
-  const todayDate = new Date(2026, 5, 24);
+  // One "today" for the whole feature — the grid, the editable test and the
+  // week-lock test all read the same constant.
+  const todayStr = TS_TODAY;
+  const tp = TS_TODAY.split('-');
+  const todayDate = new Date(+tp[0], +tp[1]-1, +tp[2]);
 
   // Mon-based offset for first day (0=Mon ... 6=Sun)
   let startDow = firstDay.getDay();
@@ -5240,7 +5929,9 @@ function buildMyTimesheetHTML(viewingOther) {
     }
     calRows += '<div class="ts-cal-row">';
     calRows += '<div class="ts-week-cell"><span class="ts-wk-label">Week '+(w+1)+'</span>'
-      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':'&mdash;')+'</span></div>';
+      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':'&mdash;')+'</span>'
+      + tsWeekRailHTML(w+1)
+      + '</div>';
     for (let col = 0; col < 7; col++) {
       const dayNum = w * 7 + col + 1 - monOff;
       const isWe = col >= 5;
@@ -5270,8 +5961,13 @@ function buildMyTimesheetHTML(viewingOther) {
       if (inRange && att) cellCls += ' st-'+(att.status === 'inprog' ? 'inprog' : att.status === 'present' ? 'present' : 'absent');
       else if (inRange && !isWe && !isFuture) cellCls += ' st-absent';
 
-      const clickable = inRange && !isFuture && (att || !isWe);
+      /* Every past day of the month opens now, weekends included: a Saturday
+         with no punch on it is exactly the day somebody needs to add hours to,
+         and it used to be the one cell you could not click. */
+      const clickable = inRange && !isFuture;
       if (clickable) cellCls += ' is-clickable';
+      const dayLocked = inRange && tsDayLocked(dateStr);
+      if (dayLocked) cellCls += ' is-locked';
       const clickH = clickable ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
 
       // Weekend cells carry no pill: the tinted column and its SAT/SUN header
@@ -5303,10 +5999,12 @@ function buildMyTimesheetHTML(viewingOther) {
       // The whole cell already opens the day panel, so the per-cell "View"
       // link was twenty copies of the affordance the cursor gives for free.
       // It becomes an icon that only surfaces on hover.
-      calRows += '<div class="'+cellCls+'"'+clickH+(clickH?' title="View '+dd+' '+mName+'"':'')+'>'
+      // The hover glyph says which of the two the cell is: a day you can open
+      // and change, or one the week lock has closed.
+      calRows += '<div class="'+cellCls+'"'+clickH+(clickH?' title="'+(dayLocked?'Locked — ':'')+dd+' '+mName+'"':'')+'>'
         + '<span class="ts-day-num'+(isToday?' today':'')+'">'+dd+'</span>'
         + body
-        + (clickH ? '<span class="ts-day-peek">'+eyeSvg+'</span>' : '')
+        + (clickH ? '<span class="ts-day-peek">'+(dayLocked?TS_ICO.lock:eyeSvg)+'</span>' : '')
         + '</div>';
     }
     calRows += '</div>';
@@ -5333,6 +6031,20 @@ function buildMyTimesheetHTML(viewingOther) {
       + '</div>'
     : '';
 
+  /* The footer submits the weeks that are ready, so it says how many that is.
+     It used to be a button with no handler under a grid with no lock. */
+  let lockedCount=0,sentCount=0;
+  for(let wi=1;wi<=totalWeeks;wi++){
+    const st=tsWeekStatus(y,m,wi);
+    if(st==='locked')lockedCount++;else if(st==='submitted')sentCount++;
+  }
+  const footNote = tsReadOnly ? '' : '<span class="ts-foot-note">'
+    + (lockedCount
+      ? lockedCount+' week'+(lockedCount===1?'':'s')+' locked and ready to submit'
+      : 'Lock a week to submit it for approval')
+    + (sentCount?' · '+sentCount+' already submitted':'')
+    + '</span>';
+
   const backBar = viewingOther
     ? '<div class="ts-back-bar"><button class="ep-back" onclick="atBackToAllTimesheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to All Timesheet</button></div>'
     : '';
@@ -5343,7 +6055,8 @@ function buildMyTimesheetHTML(viewingOther) {
     + userBar
     + statsHtml
     + calHtml
-    + '<div class="ts-footer"><button class="ts-submit-btn">Submit for Approval</button></div>'
+    + '<div class="ts-footer">'+footNote
+      +'<button class="ts-submit-btn" onclick="tsSubmitLockedWeeks()">Submit for Approval</button></div>'
     + '</div>'
     + overlayHTML;
 }
@@ -7050,6 +7763,7 @@ function saveNewTicket(){
     description:descEl&&descEl.value.trim()?descEl.value.trim():title
   };
   ticketsData.unshift(t);
+  lpLanded('support-tickets',t.id);
 
   /* Seeded so the panel opens on a real history rather than "no logs yet". The
      trigger message is the CLIENT's entry and is stamped as such — it is the
