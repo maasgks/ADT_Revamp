@@ -5765,8 +5765,18 @@ function buildTsSidebarHTML(dateStr) {
       + '<button class="ts-sb-btn is-primary" onclick="tsSaveEntry()">Save entry</button>'
       + '</div>';
   } else if (editable) {
-    actions = '<button class="ts-sb-btn is-wide" onclick="tsStartEdit(\''+dateStr+'\')">'
-      + (att ? TS_ICO.pen+'Edit entry' : TS_ICO.plus+'Add entry')+'</button>';
+    /* A CLOSED DAY IS CLAIMED, NOT ENTERED — and it is ONLY claimed. On a
+       working day the clock either caught the hours or it did not, and Add
+       entry fixes that on the spot. On a weekly off or a holiday the same
+       hours need approval, so the request REPLACES Add entry rather than
+       sitting above it: leaving both would have offered a way to write the
+       times without anybody agreeing to them, which is the one thing the
+       approval exists to prevent. */
+    const arBlock = arDayPanelHTML(dateStr);
+    actions = arBlock
+      ? arBlock
+      : '<button class="ts-sb-btn is-wide is-primary" onclick="tsStartEdit(\''+dateStr+'\')">'
+        + (att ? TS_ICO.pen+'Edit entry' : TS_ICO.plus+'Add entry')+'</button>';
   } else if (wkStatus !== 'open') {
     // Locked is not an error, so it is stated rather than warned about — and it
     // names the way back out, which lives on the week rail.
@@ -5782,9 +5792,20 @@ function buildTsSidebarHTML(dateStr) {
     + '<div class="ts-sb-head-right">'+chip
     + '<button class="ts-sb-close" onclick="tsCloseDay()">'+xSvg+'</button></div>'
     + '</div>'
-    + '<div class="ts-sb-inner">'
+    + '<div class="ts-sb-inner"'+(!att&&!editing&&typeof arNonWorkingDay==='function'&&arNonWorkingDay(dateStr)?' data-ar-claim="1"':'')+'>'
     + '<div class="ts-sb-date-box">'+calSvg+'<div><div class="ts-sb-date-val">'+label+'</div><div class="ts-sb-date-day">'+dayNames[d.getDay()]+'</div></div></div>'
-    + (editing ? buildTsEditHTML(dateStr) : readBody)
+    /* The state in words, under the date it belongs to. The grid carries it
+       as a rail colour only; this is where it is spelled out, with the
+       arithmetic that produced it. */
+    + dsTagHTML(dateStr)
+    /* A CLOSED DAY WITH NO PUNCH HAS NOTHING TO READ. Check In, Check Out and
+       Total Hours were rendering as three boxes of dashes above the claim
+       block — a report that the clock saw nothing on a day nobody was asked to
+       work. The claim block below says everything there is to say; where a
+       punch DOES exist (a badge still reads on a holiday) the sections come
+       back, because then there is something to look at. */
+    + (editing ? buildTsEditHTML(dateStr)
+        : (!att && typeof arNonWorkingDay==='function' && arNonWorkingDay(dateStr) ? '' : readBody))
     + '<div class="ts-sb-actions">'+actions+'</div>'
     + '</div>';
 }
@@ -5887,6 +5908,10 @@ function buildMyTimesheetHTML(viewingOther) {
     + '</div>'
     + '<button class="ts-btn-reset">Reset</button>'
     + '<button class="ts-btn-search">Search</button>'
+    /* Export sits AFTER Search and outlined, not before it and filled: the bar
+       reads left to right as narrow-the-view, then take-it-away, and Search is
+       the affirmative action on it. See css/export-panel.css. */
+    + tsxExportBtn('my')
     + '</div>';
 
   // ── User bar ──
@@ -5901,10 +5926,17 @@ function buildMyTimesheetHTML(viewingOther) {
     + '</div>'
     + '</div></div>';
 
+  // The month's totals for the header, over the filtered range only.
+  const dsTotals = dsMonthTotals(Object.keys(tsAttendance).concat(
+    (function(){var out=[],dim=new Date(y,m+1,0).getDate();
+     for(var d=1;d<=dim;d++)out.push(y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0'));
+     return out;})()
+  ).filter(function(v,i,arr){return arr.indexOf(v)===i;}).filter(tsInRange));
+
   // ── Stats ──
   const statsHtml = '<div class="ts-stats">'
     + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+presentCount+'</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs pos">+'+presentCount+' days vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">0</div><div class="ts-stat-sub">No leaves taken</div><div class="ts-stat-vs neu">+0 days vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">'+dsTotals.leaves+'</div><div class="ts-stat-sub">'+(dsTotals.leaves?'Approved absences':'No leaves taken')+'</div><div class="ts-stat-vs neu">+0 days vs last month</div></div>'
     + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+totalHoursNum.toFixed(0)+'h</div><div class="ts-stat-sub">8h average/day</div><div class="ts-stat-vs pos">+0% vs last month</div></div>'
     + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">0h</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs neu">+0h vs last month</div></div>'
     + '</div>';
@@ -5968,6 +6000,12 @@ function buildMyTimesheetHTML(viewingOther) {
       if (clickable) cellCls += ' is-clickable';
       const dayLocked = inRange && tsDayLocked(dateStr);
       if (dayLocked) cellCls += ' is-locked';
+      // The rail says how the shift was kept — the grid's only status mark.
+      if (inRange) cellCls += dsRailClass(dateStr);
+      // A closed day carrying a claim gets the amber rail its chip is, so a
+      // month can be scanned for them without reading a cell. See js/attendance-request.js.
+      const arReq = inRange ? arGet(dateStr) : null;
+      if (arReq && arReq.status === 'Pending Approval') cellCls += ' ar-pending';
       const clickH = clickable ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
 
       // Weekend cells carry no pill: the tinted column and its SAT/SUN header
@@ -5984,6 +6022,13 @@ function buildMyTimesheetHTML(viewingOther) {
             + (att.hours !== '--' ? '<span class="ts-day-hrs">'+att.hours+'</span>' : '');
         } else if (att.status === 'absent') {
           body = '<span class="ts-day-pill absent">Absent</span>';
+        } else if (att.status === 'leave') {
+          /* A leave day has no hours, so printing att.hours put "--" in the
+             cell — the one day of the month that reads as missing data when it
+             is the best-documented day on the sheet. It names the leave, the
+             way an absence and a closed day already name themselves. */
+          body = '<span class="ts-day-pill leave" title="'+attrSafe(att.leaveType||'Leave')+'">'
+            + (att.leaveType || 'Leave') + '</span>';
         } else {
           // Only the exception is labelled — "Auto" on every present day is
           // sixteen repetitions of the default.
@@ -5993,8 +6038,17 @@ function buildMyTimesheetHTML(viewingOther) {
       } else if (isWe) {
         body = '';
       } else {
-        body = '<span class="ts-day-pill absent">Absent</span>';
+        /* A DAY THE ENTITY HAS CLOSED IS NOT AN ABSENCE. Every empty weekday
+           was reading "Absent", public holidays included — so Republic Day
+           looked like somebody had failed to turn up. The holiday calendar is
+           the same one the Holidays listing and the export read. */
+        const closed = arNonWorkingDay(dateStr);
+        body = closed
+          ? '<span class="ts-day-pill closed" title="'+attrSafe(closed.label)+'">'+closed.label+'</span>'
+          : '<span class="ts-day-pill absent">Absent</span>';
       }
+      // Claim, or the claim's status, on a day the calendar says is closed.
+      if (inRange && !isFuture) body += arCellHTML(dateStr);
 
       // The whole cell already opens the day panel, so the per-cell "View"
       // link was twenty copies of the affordance the cursor gives for free.
@@ -6012,12 +6066,14 @@ function buildMyTimesheetHTML(viewingOther) {
 
   const calHtml = '<div class="ts-cal-card">'
     + '<div class="ts-cal-head">'
-    + '<div class="ts-cal-title">'+mName+' '+y+' <span class="ts-inprog">In Progress</span></div>'
-    + '<div class="ts-cal-legend">'
-    + '<div class="ts-leg-item"><div class="ts-leg-dot" style="background:#22c55e"></div>Present ('+presentCount+')</div>'
-    + '<div class="ts-leg-item"><div class="ts-leg-dot" style="background:#ef4444"></div>Absent</div>'
-    + '<div class="ts-leg-item"><div class="ts-leg-dot" style="background:#f59e0b"></div>Leave</div>'
-    + '<div class="ts-leg-item"><div class="ts-leg-dot" style="background:#e2e8f0"></div>Weekend</div>'
+    + '<div class="ts-cal-title">'+mName+' '+y+' <span class="ts-inprog">In Progress</span>'+arHeaderChipHTML()+'</div>'
+    /* The header carries the month's totals and the FOOT carries the key. The
+       four-item legend used to sit up here beside the month name, which put
+       the explanation of the grid above the grid and left no room to say what
+       any of the four terms meant. See js/day-status.js. */
+    + '<div class="ds-totals">'
+      + '<span class="ds-total">Total working days <b>'+dsTotals.working+'</b></span>'
+      + '<span class="ds-total">Leaves taken <b>'+dsTotals.leaves+'</b></span>'
     + '</div></div>'
     + '<div class="ts-col-hdrs"><div class="ts-col-hdr"></div><div class="ts-col-hdr">MON</div><div class="ts-col-hdr">TUE</div><div class="ts-col-hdr">WED</div><div class="ts-col-hdr">THU</div><div class="ts-col-hdr">FRI</div><div class="ts-col-hdr we">SAT</div><div class="ts-col-hdr we">SUN</div></div>'
     + calRows
@@ -6213,6 +6269,8 @@ function buildAllTimesheetHTML(){
     +apCS('at-f-month',months,'Jun','Month')
     +clearFiltersBtn([atTsQuickFilter],'resetAtFilters()')
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
+    // The listing is a set to begin with, so its export opens on the roster.
+    +tsxExportBtn('all')
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'
@@ -6993,8 +7051,6 @@ function renderCsSidebar(){
   const iPct='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>';
   const iPaperclip='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
   const iComment='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
-  const iClock='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-  const iPin='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
   const fc=(icon,label,value)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
   const fcW=(icon,label,value)=>'<div class="lp-sb-field-card is-wide"><div class="lp-sb-field-icon">'+icon+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+(value!=null?value:'<span style="color:#9ca3af">-</span>')+'</div></div></div>';
@@ -7094,37 +7150,19 @@ function renderCsSidebar(){
       +'</div>';
   }
   else if(csTab==='leaves'){
-    const thS='padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-    const tdS='padding:8px 9px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-    const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Leave Settings</span>'+editBtn+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">'
-      +fc(iCal,'Leave Period','14/01/2026 - 14/04/2027')+fc(iDoc,'Allocation Frequency','Yearly')
-      +fc(iClock,'Probation Period','1 Months')+fc(iDoc,'LOP Allowed','Yes')
-      +'</div>'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
-      +'<span style="font-size:13px;font-weight:700;color:var(--navy)">Leaves List</span>'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Leave Type</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px">'
-      +'<thead><tr><th style="'+thS+'">SR</th><th style="'+thS+'">Type</th><th style="'+thS+'">Yearly</th><th style="'+thS+'">Monthly</th><th style="'+thS+'">CF Limit</th><th style="'+thS+'">Probation</th><th style="'+thS+'">Prorate</th><th style="'+thS+'">Status</th><th style="'+thS+'">Action</th></tr></thead>'
-      +'<tbody><tr>'
-      +'<td style="'+tdS+';font-weight:600;color:var(--navy)">1</td>'
-      +'<td style="'+tdS+';font-weight:600">Casual Leave</td>'
-      +'<td style="'+tdS+'">24</td><td style="'+tdS+'">5</td><td style="'+tdS+'">10</td>'
-      +'<td style="'+tdS+'"><span style="color:#16a34a;font-weight:600">Yes</span></td>'
-      +'<td style="'+tdS+'"><span style="color:#f97316;font-weight:600">No</span></td>'
-      +'<td style="'+tdS+'"><span style="color:#16a34a;font-weight:600">Active</span></td>'
-      +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:var(--orange);padding:2px;line-height:0">'+editSvg+'</button></td>'
-      +'</tr></tbody></table>';
+    /* The four leave-year facts and the type table were written inline here
+       with their styles repeated on every cell, and none of it could be
+       changed. js/leave-settings.js owns the tab now — the same four facts
+       plus the restrictions, the sandwich rule and the approval workflow,
+       with a working edit mode. */
+    body=csLeavesTabHTML();
   }
   else if(csTab==='attendance'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Attendance Settings</span>'+editBtn+'</div>'
-      +'<div class="lp-sb-detail-grid">'
-      +fc(iClock,'Attendance Mode','Auto')+fc(iClock,'Daily Work Hours','8 Hours')
-      +fc(iClock,'Shift Type','Fixed')+fc(iDoc,'Overtime Allowed','No')
-      +fc(iClock,'Late Policy','30 Minutes')+fc(iPin,'Geolocation','Enable')
-      +'</div>';
+    /* Six read-only cards that could not be changed and did not describe how
+       attendance is actually configured. js/attendance-settings.js owns the
+       real set now — working hours, grace, freeze, week-off requests,
+       absconding flow and the geofence — with a working edit mode. */
+    body=csAttendanceTabHTML();
   }
   else if(csTab==='logs'){
     const lsk=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');

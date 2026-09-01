@@ -229,6 +229,8 @@ function renderADTPage(){
   }
   const ccBtn=document.getElementById('tb-cost-calc-btn');
   if(ccBtn)ccBtn.style.display=page==='contracts'?'':'none';
+  const ohBtn=document.getElementById('tb-opt-hol-btn');
+  if(ohBtn)ohBtn.style.display=page==='holidays'?'':'none';
   /* The sidebar depends on the page, the collapse state and which dropdown is
      open - none of which a filter can touch. Rebuilding it on every repaint was
      the other half of the page-reload feeling, so it is rebuilt only when one of

@@ -18,7 +18,23 @@
      on top of the finished component set; neither redefines a colour or a
      size, so order only matters for the transitions they layer on. -->
 <link rel="stylesheet" href="css/motion.css">
-<link rel="stylesheet" href="css/quick-actions.css"></head>
+<link rel="stylesheet" href="css/quick-actions.css">
+<!-- The timesheet's export drawer. Additive: it defines only .tsx-* selectors
+     and reuses the shared tokens, so it can load anywhere after main.css. -->
+<link rel="stylesheet" href="css/export-panel.css">
+<!-- Company Settings' Attendance tab, plus apMS (the multi-select). Additive:
+     .csa-* / .ms-* selectors only, everything else borrowed from main.css. -->
+<link rel="stylesheet" href="css/attendance-settings.css">
+<!-- The Holidays page's "View Optional Holidays" overlay. Additive: .oh-* /
+     .tb-opt-hol selectors only; the tabs are main.css's own .cc-tab. -->
+<link rel="stylesheet" href="css/optional-holidays.css">
+<!-- Claiming attendance on a weekly off or holiday. Additive: .ar-* only,
+     plus one .ts-day-pill.closed the timesheet grid now needs. -->
+<link rel="stylesheet" href="css/attendance-request.css">
+<!-- Leaves tab: one scoped height correction; everything else is shared. -->
+<link rel="stylesheet" href="css/leave-settings.css">
+<!-- How a day is judged: the rail colour, the day-panel tag and the legend. -->
+<link rel="stylesheet" href="css/day-status.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <div id="v-adt" class="view active">
@@ -30,6 +46,9 @@
       <span class="topbar-page" id="adt-page-title">Dashboard</span>
       <button class="tb-page-add" id="tb-page-add-btn" style="display:none" title="Add new"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
       <button class="tb-cost-calc" id="tb-cost-calc-btn" style="display:none" onclick="openCostCalculator()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg> Cost Calculator</button>
+      <!-- Same slot, same treatment as Cost Calculator above; renderer.js shows
+           it on the Holidays page and hides it everywhere else. -->
+      <button class="tb-opt-hol" id="tb-opt-hol-btn" style="display:none" onclick="openOptionalHolidays()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg> View Optional Holidays</button>
     </div>
     <div class="topbar-right" style="position:relative">
       <button class="tb-icon" onclick="openSearch()" title="Search (Ctrl+K)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
@@ -1983,6 +2002,22 @@
 </div>
 
 <script src="js/core.js"></script>
+<!-- Before pages.js only for tidiness: the timesheet builders call
+     tsxExportBtn() at RENDER time, long after every file here has parsed. -->
+<script src="js/ts-export.js"></script>
+<!-- Owns the Attendance tab body that renderCsSidebar() calls into, and apMS.
+     Order is immaterial: both are called at render time. -->
+<script src="js/attendance-settings.js"></script>
+<!-- Reads holidaysData and hdEntityRows() from core.js at render time. -->
+<script src="js/optional-holidays.js"></script>
+<!-- Read by the timesheet grid and day panel at render time; governed by
+     csAtt (attendance-settings.js) and the entity holiday calendar. -->
+<script src="js/attendance-request.js"></script>
+<!-- Owns the Leaves tab body renderCsSidebar() calls into. Borrows the
+     generic form helpers from css/attendance-settings.css; adds no CSS. -->
+<script src="js/leave-settings.js"></script>
+<!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
+<script src="js/day-status.js"></script>
 <script src="js/pages.js"></script>
 <script src="js/renderer.js"></script>
 <!-- After renderer.js: it enhances what the renderer paints, and needs the

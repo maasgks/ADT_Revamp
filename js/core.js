@@ -3853,7 +3853,12 @@ const tsAttendance={
   '2026-06-19':{in:'09:00 AM',out:'06:15 PM',loc:'Hyderabad',hours:'9.25h',src:'Auto',status:'present'},
   '2026-06-20':{in:'09:10 AM',out:'05:50 PM',loc:'Hyderabad',hours:'8.67h',src:'Auto',status:'present'},
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
-  '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'}
+  '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'},
+  /* Two approved absences. The fixture had none, so "Leave" was a term the
+     legend named and the month could never show — and the Leaves Taken tile
+     above it was a hard-coded 0 that no data could ever move. */
+  '2026-06-08':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave'},
+  '2026-06-22':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Sick Leave'}
 };
 function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';tsEdit=null;renderADTPage();}
 function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage();}
@@ -3931,7 +3936,11 @@ function tsDayEditable(dateStr){
 // conversions in one place, so no caller has to know both formats.
 function tsTo24(t){
   if(!t||t==='--')return '';
-  const m=/^(d{1,2}):(d{2})s*(AM|PM)$/i.exec(String(t).trim());
+  /* \d and \s, not d and s. The backslashes had been lost, so this matched the
+     literal letters and tsTo24 returned '' for every real time — which is why
+     Edit entry opened with two blank time fields on a day that already had
+     09:45 AM on it. */
+  const m=/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(String(t).trim());
   if(!m)return '';
   let h=(+m[1])%12;
   if(/pm/i.test(m[3]))h+=12;
@@ -3950,6 +3959,16 @@ function tsFmtDay(dateStr){
 }
 function tsStartEdit(dateStr){
   if(!tsDayEditable(dateStr))return;
+  /* HOURS ON A CLOSED DAY ARE CLAIMED, NOT TYPED. A weekly off or a holiday is
+     a day the entity has said nobody is working, so times entered against it
+     are an assertion someone has to approve — which is what the attendance
+     request is for. Letting Add entry write them directly would be a way round
+     that approval, so the door is shut here as well as in the panel: this is
+     the only function that opens the editor, whatever calls it. */
+  if(typeof arNonWorkingDay==='function'&&arNonWorkingDay(dateStr)){
+    if(typeof arOpen==='function')arOpen(dateStr);
+    return;
+  }
   tsEdit={date:dateStr};tsMapOpen='';renderADTPage();
 }
 function tsCancelEdit(){tsEdit=null;renderADTPage();}
