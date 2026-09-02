@@ -86,6 +86,13 @@ function arCanRequest(iso){
   return (typeof tsDayEditable==='function')?tsDayEditable(iso):true;
 }
 function arGet(iso){return arRequests[iso]||null;}
+/* Hours already standing on a closed day. A weekly off or a holiday cannot be
+   typed into — tsStartEdit sends Add entry to the request drawer — so hours
+   sitting on one got there by being claimed and agreed to. */
+function arPunch(iso){
+  const a=(typeof tsAttendance!=='undefined')?tsAttendance[iso]:null;
+  return (a&&(a.status==='present'||a.status==='inprog'))?a:null;
+}
 function arPendingCount(){
   let n=0;
   Object.keys(arRequests).forEach(function(k){
@@ -161,12 +168,31 @@ const AR_STATUS_TONE={'Pending Approval':'wait','Approved':'ok','Rejected':'bad'
 
 // The chip or link that sits at the foot of a non-working day's cell.
 function arCellHTML(iso){
+  /* THE GATE, BEFORE ANYTHING ELSE. This runs on every cell of the month, and
+     everything below it — the claim, its status, the button — belongs to days
+     the entity has closed. A Wednesday's hours are the clock's own record and
+     nobody's to approve, so the cell says nothing here. */
+  if(!arNonWorkingDay(iso))return '';
   const req=arGet(iso);
+  const att=arPunch(iso);
   if(req){
-    return '<span class="ar-cell-chip tone-'+(AR_STATUS_TONE[req.status]||'idle')+'" '
+    /* THE HOURS, THEN WHO HAS AGREED TO THEM. A claim still waiting carries no
+       row on the sheet, so the cell would otherwise show a bare "Pending" with
+       nothing pending ON it — the figure comes off the claim itself. A day
+       whose hours already stand has them printed by the cell above this. */
+    const span=arSpan(req.in,req.out);
+    return (!att&&span?'<span class="ts-day-hrs">'+(span.mins/60).toFixed(2)+'h</span>':'')
+      +'<span class="ar-cell-chip tone-'+(AR_STATUS_TONE[req.status]||'idle')+'" '
       +'title="'+arEsc(req.status+' · '+arTime12(req.in)+' – '+arTime12(req.out))+'">'
       +(req.status==='Pending Approval'?'Pending':req.status)+'</span>';
   }
+  /* HOURS ON A CLOSED DAY HAVE ALREADY BEEN GRANTED. They could not have been
+     typed in — tsStartEdit sends Add entry here instead — so they came through
+     this flow and somebody said yes, which is why they count in the month's
+     totals. Offering "Request" beside them asks for a second claim on hours
+     the sheet has already paid; the day says where it stands instead. */
+  if(att)return '<span class="ar-cell-chip tone-ok" title="'
+    +arEsc('Approved · '+att.in+' – '+att.out)+'">Approved</span>';
   if(!arCanRequest(iso))return '';
   /* ALWAYS VISIBLE, AND SHORT ENOUGH TO FIT. It was revealed on hover, which
      made the only route into the feature something you had to find by waving
@@ -201,6 +227,17 @@ function arDayPanelHTML(iso){
       +'<div class="ar-panel-times">'+arTime12(req.in)+' – '+arTime12(req.out)
         +(arSpan(req.in,req.out)?' · '+arSpan(req.in,req.out).text:'')+'</div>'
       +'<button class="ts-sb-btn is-wide" onclick="arOpen(\''+iso+'\')">View request</button>'
+    +'</div>';
+  }
+  /* The hours are above this block already; what they were missing is who
+     agreed to them. There is nothing left to request on such a day. */
+  const att=arPunch(iso);
+  if(att){
+    return '<div class="ar-panel-block">'
+      +'<div class="ar-panel-head"><span class="ar-panel-kind">'+arEsc(day.label)+'</span>'
+        +'<span class="ar-chip tone-ok">Approved</span></div>'
+      +'<p class="ar-panel-note">These hours were approved for this closed day, so they stand '
+      +'on the sheet and count toward the month. Nothing further is needed.</p>'
     +'</div>';
   }
   if(!arEnabled()){

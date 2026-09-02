@@ -7662,9 +7662,13 @@ const TK_PRIORITIES=['Low','Medium','High','Urgent'];
    dashboard — which does not render the ticket modal, so the form would never
    appear. Setting it first means the Tickets page draws with the form already
    open, in a single repaint. */
-function raiseTicketFromHelp(){
+function raiseTicketFromHelp(fromDashboard){
   tkModalOpen=true;tkLinkedRecord=null;tkSelectedId=null;
-  navigatePage('support-tickets',true);
+  /* WHO IS ASKING DECIDES WHETHER THERE IS A WAY BACK. The dashboard banner
+     sends the user off a page they were reading, so it earns the "Back to
+     Dashboard" button; the profile menu can be opened from anywhere, and
+     offering to return to a page they were never on is a lie. */
+  navigatePage('support-tickets',!!fromDashboard);
 }
 function openCreateTicket(){tkModalOpen=true;tkLinkedRecord=null;renderADTPage();}
 function closeCreateTicket(){tkModalOpen=false;tkLinkedRecord=null;renderADTPage();}
