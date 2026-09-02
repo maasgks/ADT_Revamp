@@ -144,8 +144,6 @@ function dsTagHTML(iso){
   if(c.late)bits.push('In '+dsDur(c.late)+' after '+dsClock(c.shift.start));
   if(c.early)bits.push('Out '+dsDur(c.early)+' before '+dsClock(c.shift.end));
   if(c.key==='inprog'&&!c.late)bits.push('In at '+dsClock(c.inM)+', not yet out');
-  if(!bits.length&&c.key==='ontime')
-    bits.push('Within the '+c.shift.graceIn+'/'+c.shift.graceOut+' min grace');
   if(!bits.length&&c.key==='absent')bits.push('No punch against a working day');
   /* The label only earns a line when it says something the state did not — a
      holiday's name does, "Weekly Off" under "Weekly Off" does not. */
