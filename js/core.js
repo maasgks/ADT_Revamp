@@ -47,6 +47,16 @@ const sbIco={
   shieldCheck:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
   sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  /* Contract-type tiles. Same 24x24 box and same 1.8 stroke as every icon
+     above, and all five drawn on currentColor - type is a FILTER, not a
+     status, and colour on this screen is already spoken for by the p1..p8
+     pipeline ladder and the compliance tones. A per-type palette here would
+     put a fifth colour system on a table that already carries two. */
+  ctAll:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 16 12 22 22 16"/><polyline points="2 12 12 18 22 12"/></svg>',
+  ctEor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M4 21V6l7-3v18"/><path d="M8 8h.01"/><path d="M8 12h.01"/><circle cx="16.5" cy="11.5" r="2.5"/><path d="M12.5 21v-1.5a4 4 0 0 1 8 0V21"/></svg>',
+  ctPeo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 21h20"/><path d="M4 21V9l6-3.5V21"/><path d="M10 21V12l7-3.5V21"/><path d="M7 12h.01"/><path d="M7 16h.01"/><path d="M13.5 15h.01"/></svg>',
+  ctImmigration:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><circle cx="11" cy="10" r="2.75"/><path d="M8.5 16h5"/><path d="M21 8v8"/></svg>',
+  ctContractor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h11.5a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8z"/><path d="M6.5 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><circle cx="18.5" cy="8.5" r="3.5"/><path d="M18.5 7v1.5l1 1"/></svg>',
   calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>',
   calStar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 12.6l1.15 2.35 2.6.38-1.88 1.83.44 2.59L12 18.53l-2.31 1.22.44-2.59-1.88-1.83 2.6-.38z"/></svg>',
   dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
@@ -511,7 +521,10 @@ const SB_STATUS_TONE={
   // idle — neutral / archived
   closed:'idle',archived:'idle',
   // pipeline end states
-  'ready-for-payroll':'ok','ready-for-payroll ':'ok'
+  'ready-for-payroll':'ok','ready-for-payroll ':'ok',
+  // Immigration / Contractor stages. 'pending-onboarding' and 'active' are
+  // already covered above and mean the same thing here.
+  'pending-kickoff':'wait','ready-for-filing':'wait','filed':'ok'
 };
 // Contract pipeline stages get their own ordered palette so a deal's
 // position is readable at a glance. Anything not listed here falls back to
@@ -1264,6 +1277,12 @@ function syncSidebarDropdown(pg){
   openDropdowns.clear();openDropdowns.add(group.dropdown);
 }
 function navigatePage(pg,fromDashboard){
+  /* Entering Contracts from the sidebar starts at the type chooser. Arriving
+     from a dashboard tile does not: openDashCard has already applied a status
+     filter and cleared this flag, and re-raising the gate here would throw
+     that choice away - apply() runs before navigatePage(), so this guard is
+     what keeps the two in the right order. */
+  if(pg==='contracts'&&!fromDashboard)ctLandingOpen=true;
   page=pg;
   syncSidebarDropdown(pg);
   cameFromDashboard=!!fromDashboard;
@@ -1416,7 +1435,9 @@ var DASH_CARD_LINK={
 var DASH_CARD_FILTER={
   'all-leaves':      function(v){alStatusFilter=v;alSelectedId=null;},
   'payments':        function(v){pmInvoiceStatusFilter=v;pmSelectedId=null;},
-  'contracts':       function(v){ctQuickStatusFilter=v;ctSelectedId=null;},
+  /* A dashboard tile names a status, so the type question is already answered
+     as "whichever type is in this state" - skip the chooser and show rows. */
+  'contracts':       function(v){ctQuickStatusFilter=v;ctSelectedId=null;ctTypeFilter=CT_TYPE_ALL;ctLandingOpen=false;},
   'support-tickets': function(v){tkQuickStatusFilter=v;tkSelectedId=null;},
   'compliance':      function(v){complianceStatusFilter=v;complianceSelectedId=null;}
 };
@@ -1900,6 +1921,20 @@ let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,
 let lpFilterField='',lpFilterStatus='';
 let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='',pmDateFilter='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
+/* ctQuickStatusFilter holds a STATUS when one type is selected and a PHASE
+   when the band is on All - the two vocabularies are never mixed in one
+   control, so one variable can carry whichever is currently meaningful. It is
+   cleared by ctSetType() on every type change for exactly that reason.
+   Country and Search survive a type change; both apply to all four types. */
+let ctTypeFilter=CT_TYPE_ALL,ctCountryFilter='',ctSearchQuery='';
+/* Contracts opens on a four-card type chooser rather than straight into the
+   table, and returns to it every time the section is entered afresh. The type
+   band still sits above the list once you are inside, All included, so
+   cross-type work stays reachable and switching type does not cost a trip back
+   out to the cards. Anything that arrives with a type or a status already
+   decided - a dashboard tile, a search result, a deep link - sets this false
+   and lands on the rows, because that choice has already been made. */
+let ctLandingOpen=true;
 /* One Tickets module, two filters: the status quick-filter above and the
    channel it came in on. Channel is what used to split this into two pages;
    it is a filter now, not a separate module. */
@@ -2050,6 +2085,10 @@ function csSelect(opt,val,csid){
   if(trigger){trigger.querySelector('.cs-value').textContent=val;trigger.classList.remove('cs-placeholder','cs-open');}
   drop.classList.remove('cs-open');
   if(csid==='ap-filter-type')setApFilterType(val);
+  /* Contract Type re-scopes the whole listing - Status options, column
+     headers, summary cards - so it applies on selection rather than waiting
+     for Search, which would leave those three showing the old type. */
+  else if(csid==='ct-f-type')ctSetType(ctTypeFromLabel(val));
   else if(csid==='ap-filter-value')apFilterValue=val;
   else if(csid==='lp-filter-field')lpFilterField=val;
   else if(csid==='lp-filter-status')lpFilterStatus=val;
@@ -2347,62 +2386,117 @@ let tmSelectedId=null,tmTab='basic-details';
 let tmTeamFilter='',tmStatusFilter='';
 const ctFlow=['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Onboarding','Ready for Payroll'];
 const contractsData=[
-  {id:1,contractId:'94135',empName:'TestEmp Antar',empDesig:'Business Analyst',country:'Netherlands',type:'EOR',date:'2026-06-11 15:17:26',status:'Submitted',
+  {id:1,contractId:'94135',empName:'TestEmp Antar',empDesig:'Business Analyst',country:'Netherlands',type:'EOR',serviceType:'Permanent',date:'2026-06-11 15:17:26',status:'Submitted',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'MALE',email:'antar@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Business Analyst',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:2,contractId:'94134',empName:'Rashi Singh',empDesig:'java',country:'Netherlands',type:'EOR',date:'2026-06-06 15:05:48',status:'Proposal Sent',
+  {id:2,contractId:'94134',empName:'Rashi Singh',empDesig:'java',country:'Netherlands',type:'EOR',serviceType:'Fixed term',date:'2026-06-06 15:05:48',status:'Proposal Sent',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'FEMALE',email:'rashi@testemp.com',contact:'+91 8888888888',dob:'1995-03-15',jobTitle:'Java Developer',skill:'Java, Spring Boot',empDuration:'2026-06-06 – 2026-12-06',empType:'EOR',workSchedule:'8',payAmount:'85000',currency:'INR',jobDesc:'Java backend development',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.04',baseGross:'0.06',holidayBonus:'0.06',month13:'0.06',monthlyGrossNet:'0.02',monthlyInvoice:'0.02',monthlySalary12:'0.05',monthlySalary1392:'0.06',netPay:'0.10',socialPremAmt:'0.05',socialPremPct:'26.02',totalMonthlyGross:'0.05'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:3,contractId:'94133',empName:'Deepak Singh',empDesig:'java',country:'Netherlands',type:'EOR',date:'2026-06-06 14:07:35',status:'Inactive',
+  {id:3,contractId:'94133',empName:'Deepak Singh',empDesig:'java',country:'Netherlands',type:'EOR',serviceType:'Permanent',date:'2026-06-06 14:07:35',status:'Inactive',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'MALE',email:'deepak@testemp.com',contact:'+91 7777777777',dob:'1993-07-22',jobTitle:'Java Developer',skill:'Java',empDuration:'2026-06-06 – 2026-12-06',empType:'EOR',workSchedule:'8',payAmount:'78000',currency:'INR',jobDesc:'Java development',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.04',baseGross:'0.05',holidayBonus:'0.05',month13:'0.05',monthlyGrossNet:'0.01',monthlyInvoice:'0.02',monthlySalary12:'0.04',monthlySalary1392:'0.05',netPay:'0.09',socialPremAmt:'0.04',socialPremPct:'26.02',totalMonthlyGross:'0.04'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Inactive',doc:null}]},
-  {id:4,contractId:'94132',empName:'Rajdeep Singh',empDesig:'java developer',country:'Netherlands',type:'EOR',date:'2026-06-06 12:34:17',status:'Proposal Sent',
+  {id:4,contractId:'94132',empName:'Rajdeep Singh',empDesig:'java developer',country:'Netherlands',type:'EOR',serviceType:'Fixed term',date:'2026-06-06 12:34:17',status:'Proposal Sent',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'MALE',email:'rajdeep@testemp.com',contact:'+91 6666666666',dob:'1990-11-10',jobTitle:'Java Developer',skill:'Java, Microservices',empDuration:'2026-06-06 – 2026-12-06',empType:'EOR',workSchedule:'8',payAmount:'90000',currency:'INR',jobDesc:'java developer',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.06',holidayBonus:'0.06',month13:'0.06',monthlyGrossNet:'0.02',monthlyInvoice:'0.02',monthlySalary12:'0.05',monthlySalary1392:'0.06',netPay:'0.11',socialPremAmt:'0.05',socialPremPct:'26.02',totalMonthlyGross:'0.05'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:5,contractId:'94136',empName:'Sanne de Vries',empDesig:'Payroll Specialist',country:'Netherlands',type:'EOR',date:'2026-06-12 10:10:00',status:'Ready for Payroll',
+  {id:5,contractId:'94136',empName:'Sanne de Vries',empDesig:'Payroll Specialist',country:'Netherlands',type:'EOR',serviceType:'Permanent',date:'2026-06-12 10:10:00',status:'Ready for Payroll',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'MALE',email:'sanne.de.vries@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Payroll Specialist',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:6,contractId:'94137',empName:'Marco Rossi',empDesig:'Frontend Engineer',country:'Netherlands',type:'EOR',date:'2026-06-13 10:11:00',status:'Ready for Payroll',
+  {id:6,contractId:'94137',empName:'Marco Rossi',empDesig:'Frontend Engineer',country:'Netherlands',type:'EOR',serviceType:'Part time',date:'2026-06-13 10:11:00',status:'Ready for Payroll',
    nationality:'India',countryOfOp:'Netherlands',workPermit:false,gender:'MALE',email:'marco.rossi@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Frontend Engineer',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:7,contractId:'94138',empName:'Priya Nair',empDesig:'QA Analyst',country:'India',type:'PEO',date:'2026-06-14 10:12:00',status:'Ready for Payroll',
+  {id:7,contractId:'94138',empName:'Priya Nair',empDesig:'QA Analyst',country:'India',type:'PEO',serviceType:'Permanent',date:'2026-06-14 10:12:00',status:'Ready for Payroll',
    nationality:'India',countryOfOp:'India',workPermit:false,gender:'MALE',email:'priya.nair@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'QA Analyst',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:8,contractId:'94139',empName:'Tom Baker',empDesig:'Account Manager',country:'United Kingdom',type:'EOR',date:'2026-06-15 10:13:00',status:'Ready for Payroll',
+  {id:8,contractId:'94139',empName:'Tom Baker',empDesig:'Account Manager',country:'United Kingdom',type:'EOR',serviceType:'Fixed term',date:'2026-06-15 10:13:00',status:'Ready for Payroll',
    nationality:'India',countryOfOp:'United Kingdom',workPermit:false,gender:'MALE',email:'tom.baker@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Account Manager',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:9,contractId:'94140',empName:'Lena Fischer',empDesig:'Data Engineer',country:'Germany',type:'EOR',date:'2026-06-16 10:14:00',status:'Ready for Payroll',
+  {id:9,contractId:'94140',empName:'Lena Fischer',empDesig:'Data Engineer',country:'Germany',type:'EOR',serviceType:'Permanent',date:'2026-06-16 10:14:00',status:'Ready for Payroll',
    nationality:'India',countryOfOp:'Germany',workPermit:false,gender:'MALE',email:'lena.fischer@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Data Engineer',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:10,contractId:'94141',empName:'Carlos Ruiz',empDesig:'Support Lead',country:'Spain',type:'EOR',date:'2026-06-17 10:15:00',status:'Onboarding',
+  {id:10,contractId:'94141',empName:'Carlos Ruiz',empDesig:'Support Lead',country:'Spain',type:'EOR',serviceType:'Permanent',date:'2026-06-17 10:15:00',status:'Onboarding',
    nationality:'India',countryOfOp:'Spain',workPermit:false,gender:'MALE',email:'carlos.ruiz@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Support Lead',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:11,contractId:'94142',empName:'Aisha Khan',empDesig:'HR Coordinator',country:'India',type:'PEO',date:'2026-06-18 10:16:00',status:'Onboarding',
+  {id:11,contractId:'94142',empName:'Aisha Khan',empDesig:'HR Coordinator',country:'India',type:'PEO',serviceType:'Permanent',date:'2026-06-18 10:16:00',status:'Onboarding',
    nationality:'India',countryOfOp:'India',workPermit:false,gender:'MALE',email:'aisha.khan@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'HR Coordinator',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:12,contractId:'94143',empName:'Jonas Meyer',empDesig:'DevOps Engineer',country:'Germany',type:'EOR',date:'2026-06-19 10:17:00',status:'Onboarding',
+  {id:12,contractId:'94143',empName:'Jonas Meyer',empDesig:'DevOps Engineer',country:'Germany',type:'EOR',serviceType:'Fixed term',date:'2026-06-19 10:17:00',status:'Onboarding',
    nationality:'India',countryOfOp:'Germany',workPermit:false,gender:'MALE',email:'jonas.meyer@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'DevOps Engineer',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:13,contractId:'94144',empName:'Emma Wilson',empDesig:'Product Designer',country:'United Kingdom',type:'EOR',date:'2026-06-20 10:18:00',status:'Contract Approved',
+  {id:13,contractId:'94144',empName:'Emma Wilson',empDesig:'Product Designer',country:'United Kingdom',type:'EOR',serviceType:'Permanent',date:'2026-06-20 10:18:00',status:'Contract Approved',
    nationality:'India',countryOfOp:'United Kingdom',workPermit:false,gender:'MALE',email:'emma.wilson@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Product Designer',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
    complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
-  {id:14,contractId:'94145',empName:'Ravi Shankar',empDesig:'Backend Engineer',country:'India',type:'PEO',date:'2026-06-21 10:19:00',status:'Contract Sent',
+  {id:14,contractId:'94145',empName:'Ravi Shankar',empDesig:'Backend Engineer',country:'India',type:'PEO',serviceType:'Part time',date:'2026-06-21 10:19:00',status:'Contract Sent',
    nationality:'India',countryOfOp:'India',workPermit:false,gender:'MALE',email:'ravi.shankar@testemp.com',contact:'+91 9999999996',dob:'2010-01-01',jobTitle:'Backend Engineer',skill:'JIRA',empDuration:'2026-06-11 – 2026-12-15',empType:'EOR',workSchedule:'7',payAmount:'100000',currency:'INR',jobDesc:'job desc',payFrequency:'Monthly',
    commercial:{adtFee:'549',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.07',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
-   complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]}
+   complianceItems:[{item:'EOR NL Proposal',note:'Optional',status:'Pending',doc:null}]},
+  /* ── Immigration ──────────────────────────────────────────────────────────
+     Same record shape as EOR/PEO on purpose. The four types differ in their
+     stage list, their column labels and their summary cards - not in their
+     storage - so one table renderer and one detail panel serve all four.
+     `serviceType` is the type-scoped sub-product; it is what the type column
+     reads for every type, with only the column's LABEL differing. */
+  {id:15,contractId:'94146',empName:'Priya Raman',empDesig:'Solutions Architect',country:'Germany',type:'Immigration',serviceType:'New hire sponsorship',date:'2026-06-22 09:20:00',status:'Submitted',
+   nationality:'India',countryOfOp:'Germany',workPermit:false,gender:'FEMALE',email:'priya.raman@testemp.com',contact:'+91 9812345670',dob:'1992-04-18',jobTitle:'Solutions Architect',skill:'Cloud Architecture',empDuration:'2026-07-01 – 2028-06-30',empType:'Immigration',workSchedule:'8',payAmount:'145000',currency:'INR',jobDesc:'Relocating to Germany on an EU Blue Card.',payFrequency:'Monthly',
+   commercial:{adtFee:'1450',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.00',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'20.10',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Passport copy',note:'Mandatory',status:'Pending',doc:null},{item:'Degree certificate',note:'Mandatory',status:'Pending',doc:null}]},
+  {id:16,contractId:'94147',empName:'Diego Alvarez',empDesig:'Regional Sales Lead',country:'Spain',type:'Immigration',serviceType:'Relocation',date:'2026-06-22 11:05:00',status:'Proposal Sent',
+   nationality:'Mexico',countryOfOp:'Spain',workPermit:false,gender:'MALE',email:'diego.alvarez@testemp.com',contact:'+34 600112233',dob:'1988-11-02',jobTitle:'Regional Sales Lead',skill:'Enterprise Sales',empDuration:'2026-08-01 – 2029-07-31',empType:'Immigration',workSchedule:'8',payAmount:'62000',currency:'EUR',jobDesc:'Intra-company relocation to Madrid.',payFrequency:'Monthly',
+   commercial:{adtFee:'1250',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.00',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'23.60',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Relocation proposal',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:17,contractId:'94148',empName:'Mei Tanaka',empDesig:'QA Lead',country:'Netherlands',type:'Immigration',serviceType:'Permit renewal',date:'2026-06-23 14:40:00',status:'Contract Sent',
+   nationality:'Japan',countryOfOp:'Netherlands',workPermit:true,gender:'FEMALE',email:'mei.tanaka@testemp.com',contact:'+31 612345678',dob:'1990-07-25',jobTitle:'QA Lead',skill:'Test Automation',empDuration:'2026-09-01 – 2029-08-31',empType:'Immigration',workSchedule:'8',payAmount:'5800',currency:'EUR',jobDesc:'Highly skilled migrant permit renewal.',payFrequency:'Monthly',
+   commercial:{adtFee:'980',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Current permit copy',note:'Mandatory',status:'Approved',doc:null},{item:'Salary threshold check',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:18,contractId:'94149',empName:'Omar Haddad',empDesig:'Data Scientist',country:'United Kingdom',type:'Immigration',serviceType:'New hire sponsorship',date:'2026-06-24 10:00:00',status:'Pending Kickoff',
+   nationality:'Jordan',countryOfOp:'United Kingdom',workPermit:false,gender:'MALE',email:'omar.haddad@testemp.com',contact:'+44 7700900123',dob:'1994-02-09',jobTitle:'Data Scientist',skill:'Machine Learning',empDuration:'2026-10-01 – 2029-09-30',empType:'Immigration',workSchedule:'8',payAmount:'4900',currency:'GBP',jobDesc:'Skilled Worker visa, Certificate of Sponsorship pending.',payFrequency:'Monthly',
+   commercial:{adtFee:'1680',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.00',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'15.05',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Certificate of Sponsorship',note:'Mandatory',status:'Pending',doc:null},{item:'English language evidence',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:19,contractId:'94150',empName:'Sara Lindqvist',empDesig:'Product Manager',country:'Germany',type:'Immigration',serviceType:'Transfer',date:'2026-06-25 16:30:00',status:'Ready for Filing',
+   nationality:'Sweden',countryOfOp:'Germany',workPermit:true,gender:'FEMALE',email:'sara.lindqvist@testemp.com',contact:'+49 15112345678',dob:'1991-09-14',jobTitle:'Product Manager',skill:'Product Strategy',empDuration:'2026-08-15 – 2029-08-14',empType:'Immigration',workSchedule:'8',payAmount:'7200',currency:'EUR',jobDesc:'Intra-company transfer from Stockholm to Berlin.',payFrequency:'Monthly',
+   commercial:{adtFee:'1120',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.00',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'20.10',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Transfer letter',note:'Mandatory',status:'Approved',doc:null},{item:'Host entity declaration',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:20,contractId:'94151',empName:'Kofi Mensah',empDesig:'Finance Analyst',country:'Netherlands',type:'Immigration',serviceType:'Dependent visa support',date:'2026-06-26 09:15:00',status:'Filed',
+   nationality:'Ghana',countryOfOp:'Netherlands',workPermit:true,gender:'MALE',email:'kofi.mensah@testemp.com',contact:'+31 687654321',dob:'1989-12-30',jobTitle:'Finance Analyst',skill:'FP&A',empDuration:'2026-07-01 – 2029-06-30',empType:'Immigration',workSchedule:'8',payAmount:'5100',currency:'EUR',jobDesc:'Dependent visas for spouse and one child.',payFrequency:'Monthly',
+   commercial:{adtFee:'760',annualGross:'0.05',baseGross:'0.07',holidayBonus:'0.07',month13:'0.00',monthlyGrossNet:'0.02',monthlyInvoice:'0.03',monthlySalary12:'0.06',monthlySalary1392:'0.07',netPay:'0.13',socialPremAmt:'0.06',socialPremPct:'26.02',totalMonthlyGross:'0.06'},
+   complianceItems:[{item:'Marriage certificate',note:'Mandatory',status:'Approved',doc:null},{item:'Birth certificate',note:'Mandatory',status:'Approved',doc:null}]},
+  /* ── Contractor ───────────────────────────────────────────────────────────── */
+  {id:21,contractId:'94152',empName:'Elena Petrova',empDesig:'UX Researcher',country:'Spain',type:'Contractor',serviceType:'Direct contractor management',date:'2026-06-22 13:10:00',status:'Submitted',
+   nationality:'Bulgaria',countryOfOp:'Spain',workPermit:true,gender:'FEMALE',email:'elena.petrova@testemp.com',contact:'+34 611223344',dob:'1993-05-11',jobTitle:'UX Researcher',skill:'User Research',empDuration:'2026-07-01 – 2026-12-31',empType:'Contractor',workSchedule:'6',payAmount:'55',currency:'EUR',jobDesc:'Six-month research engagement, hourly.',payFrequency:'Hourly',
+   commercial:{adtFee:'320',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.04',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Pending',doc:null}]},
+  {id:22,contractId:'94153',empName:'Tom Becker',empDesig:'DevOps Consultant',country:'Germany',type:'Contractor',serviceType:'Contractor of Record',date:'2026-06-23 10:45:00',status:'Proposal Sent',
+   nationality:'Germany',countryOfOp:'Germany',workPermit:true,gender:'MALE',email:'tom.becker@testemp.com',contact:'+49 15198765432',dob:'1986-08-21',jobTitle:'DevOps Consultant',skill:'Kubernetes',empDuration:'2026-07-15 – 2027-07-14',empType:'Contractor',workSchedule:'8',payAmount:'95',currency:'EUR',jobDesc:'Platform migration engagement.',payFrequency:'Hourly',
+   commercial:{adtFee:'480',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.05',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Approved',doc:null},{item:'Trade registration',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:23,contractId:'94154',empName:'Aditya Rao',empDesig:'Mobile Developer',country:'India',type:'Contractor',serviceType:'Direct contractor management',date:'2026-06-24 15:25:00',status:'Contract Sent',
+   nationality:'India',countryOfOp:'India',workPermit:true,gender:'MALE',email:'aditya.rao@testemp.com',contact:'+91 9876543210',dob:'1995-01-19',jobTitle:'Mobile Developer',skill:'React Native',empDuration:'2026-07-01 – 2027-06-30',empType:'Contractor',workSchedule:'8',payAmount:'2800',currency:'INR',jobDesc:'Mobile app build, retainer.',payFrequency:'Hourly',
+   commercial:{adtFee:'210',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.04',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Approved',doc:null},{item:'PAN / GST details',note:'Mandatory',status:'Pending',doc:null}]},
+  {id:24,contractId:'94155',empName:'Chloe Dubois',empDesig:'Brand Designer',country:'United Kingdom',type:'Contractor',serviceType:'Contractor conversion advisory',date:'2026-06-25 11:50:00',status:'Pending Onboarding',
+   nationality:'France',countryOfOp:'United Kingdom',workPermit:true,gender:'FEMALE',email:'chloe.dubois@testemp.com',contact:'+44 7700900456',dob:'1992-03-08',jobTitle:'Brand Designer',skill:'Brand Identity',empDuration:'2026-08-01 – 2027-01-31',empType:'Contractor',workSchedule:'5',payAmount:'70',currency:'GBP',jobDesc:'Advisory on converting to a permanent engagement.',payFrequency:'Hourly',
+   commercial:{adtFee:'395',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.05',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'IR35 assessment',note:'Mandatory',status:'Approved',doc:null}]},
+  {id:25,contractId:'94156',empName:'Nikhil Sharma',empDesig:'Data Engineer',country:'India',type:'Contractor',serviceType:'Contractor of Record',date:'2026-06-26 08:35:00',status:'Onboarding',
+   nationality:'India',countryOfOp:'India',workPermit:true,gender:'MALE',email:'nikhil.sharma@testemp.com',contact:'+91 9123456780',dob:'1990-10-27',jobTitle:'Data Engineer',skill:'Airflow, dbt',empDuration:'2026-07-01 – 2027-06-30',empType:'Contractor',workSchedule:'8',payAmount:'3100',currency:'INR',jobDesc:'Data platform engagement via Contractor of Record.',payFrequency:'Hourly',
+   commercial:{adtFee:'265',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.04',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Approved',doc:null},{item:'Bank verification',note:'Mandatory',status:'Pending',doc:null}]},
+  {id:26,contractId:'94157',empName:'Ana Costa',empDesig:'Technical Writer',country:'Spain',type:'Contractor',serviceType:'Direct contractor management',date:'2026-06-27 12:00:00',status:'Active',
+   nationality:'Portugal',countryOfOp:'Spain',workPermit:true,gender:'FEMALE',email:'ana.costa@testemp.com',contact:'+34 655443322',dob:'1994-06-05',jobTitle:'Technical Writer',skill:'API Documentation',empDuration:'2026-05-01 – 2027-04-30',empType:'Contractor',workSchedule:'6',payAmount:'48',currency:'EUR',jobDesc:'Ongoing documentation engagement.',payFrequency:'Hourly',
+   commercial:{adtFee:'290',annualGross:'0.00',baseGross:'0.00',holidayBonus:'0.00',month13:'0.00',monthlyGrossNet:'0.00',monthlyInvoice:'0.04',monthlySalary12:'0.00',monthlySalary1392:'0.00',netPay:'0.00',socialPremAmt:'0.00',socialPremPct:'0.00',totalMonthlyGross:'0.00'},
+   complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Approved',doc:null}]}
 ];
 const ctLogsData={
   1:[{date:'2026-06-11',time:'15:17:26',user:'Admin',status:'Submitted',action:'Contract submitted for review and quotation.'}],

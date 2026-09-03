@@ -50,7 +50,7 @@ function renderPageContent(target){
   if(page==='direct'){el.innerHTML=buildDirectListingHTML();return;}
   if(page==='global'){el.innerHTML=buildGlobalListingHTML();return;}
   if(page==='teams'){el.innerHTML=buildTeamsListingHTML();return;}
-  if(page==='contracts'){el.innerHTML=buildContractsListingHTML();return;}
+  if(page==='contracts'){el.innerHTML=ctLandingOpen?buildContractsLandingHTML():buildContractsListingHTML();return;}
   if(page==='all-leaves'){el.innerHTML=buildAllLeavesHTML();return;}
   if(page==='leave-policy-edit'){el.innerHTML=buildEditLeavePolicyHTML();return;}
   if(page==='payheads'){el.innerHTML=buildPayheadsPageHTML();return;}
@@ -227,8 +227,14 @@ function renderADTPage(){
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
+  /* The Cost Calculator prices an employment cost - gross to total employer
+     burden - which is an EOR/PEO question. An immigration case is priced on
+     government fees and professional time, and a contractor on a rate, so the
+     button is hidden rather than left to return a number that means nothing
+     for the type on screen. costCalc lives on the type config. */
   const ccBtn=document.getElementById('tb-cost-calc-btn');
-  if(ccBtn)ccBtn.style.display=page==='contracts'?'':'none';
+  const ccOK=page==='contracts'&&!ctLandingOpen&&(ctTypeFilter===CT_TYPE_ALL||(CT_TYPES[ctTypeFilter]||{}).costCalc);
+  if(ccBtn)ccBtn.style.display=ccOK?'':'none';
   const ohBtn=document.getElementById('tb-opt-hol-btn');
   if(ohBtn)ohBtn.style.display=page==='holidays'?'':'none';
   /* The sidebar depends on the page, the collapse state and which dropdown is

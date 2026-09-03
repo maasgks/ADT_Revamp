@@ -876,6 +876,156 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 /* .filter-reset/.filter-search hover: buttons.css owns both (outline + filled). */
 .filter-search{height:32px;padding:0 16px;border-radius:var(--r-control);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;background:#1e2530;border:1.5px solid #1e2530;color:#fff;transition:.15s}
 /* (.filter-search hover was here too - same note as the line above.) */
+/* ══ CONTRACT LOGS TAB ══════════════════════════════════════════════════════
+   Timeline of events, grouped by day, with the action panel above it. The
+   panel is first in the DOM because taking the next action is what most
+   visits are for; the history is what you scroll to. */
+.ct-log-wrap{display:flex;flex-direction:column;gap:16px;padding:2px}
+
+/* An override or a revert pins this for the life of the record. It is the one
+   place on these screens that uses the bad tone as a background rather than a
+   badge, because it is a standing condition of the record, not a status. */
+.ct-log-banner{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;
+  background:var(--st-bad-bg);border:1.5px solid var(--st-bad-bd);border-radius:var(--r-control);
+  font-size:var(--ds-caption);color:var(--st-bad-fg);line-height:1.5}
+.ct-log-banner-ico{flex-shrink:0;width:15px;height:15px;margin-top:1px}
+.ct-log-banner-ico svg{width:15px;height:15px}
+
+/* ── Action panel ──────────────────────────────────────────────────────── */
+.ct-log-act{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:15px}
+.ct-log-act-head{display:flex;align-items:center;gap:7px;font-size:var(--ds-title);font-weight:700;color:var(--navy)}
+.ct-log-act-dot{width:8px;height:8px;border-radius:50%;background:var(--st-wait-fg);flex-shrink:0}
+.ct-log-act-dot.is-done{background:var(--st-ok-fg)}
+.ct-log-act-sub{font-size:var(--ds-caption);color:var(--gray);margin:5px 0 13px;line-height:1.5}
+.ct-log-act.is-done .ct-log-act-sub{margin-bottom:0}
+.ct-log-act-label{display:block;font-size:var(--ds-caption);font-weight:600;color:var(--navy);margin-bottom:5px}
+.ct-log-req{color:var(--st-bad-fg)}
+.ct-log-textarea,.ct-log-select{width:100%;font-family:inherit;font-size:var(--ds-body);color:var(--navy);
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-control);padding:9px 11px;
+  margin-bottom:12px;transition:border-color .15s}
+.ct-log-textarea{min-height:66px;resize:vertical;line-height:1.5}
+.ct-log-textarea:focus,.ct-log-select:focus{outline:none;border-color:var(--navy)}
+/* A missing mandatory comment flags the field rather than firing an alert -
+   the same correction the Chats module already uses. */
+.ct-log-textarea.is-invalid,.ct-log-select.is-invalid{border-color:var(--st-bad-fg);background:var(--st-bad-bg)}
+.ct-log-btn{width:100%;padding:10px;border:1.5px solid var(--navy);border-radius:var(--r-control);
+  background:var(--navy);color:#fff;font-family:inherit;font-size:var(--ds-body);font-weight:600;cursor:pointer;transition:.15s}
+.ct-log-btn:hover{opacity:.88}
+.ct-log-btn.is-revert{background:var(--st-bad-fg);border-color:var(--st-bad-fg)}
+
+/* Revert is deliberately secondary: a link until opened, then a bordered
+   panel. Moving a record backwards should take an extra decision, not sit
+   beside the forward action as an equal choice. */
+.ct-log-revert-open{display:flex;align-items:center;gap:6px;background:none;border:none;padding:0;
+  font-family:inherit;font-size:var(--ds-caption);font-weight:600;color:var(--gray);cursor:pointer;align-self:flex-start}
+.ct-log-revert-open:hover{color:var(--navy)}
+.ct-log-revert{background:var(--card);border:1.5px dashed var(--st-bad-bd);border-radius:var(--r-card);padding:15px}
+.ct-log-revert-head{display:flex;align-items:center;justify-content:space-between;
+  font-size:var(--ds-title);font-weight:700;color:var(--st-bad-fg);margin-bottom:2px}
+.ct-log-revert-x{background:none;border:none;font-size:17px;line-height:1;color:var(--gray);cursor:pointer;padding:0 2px}
+.ct-log-revert-x:hover{color:var(--navy)}
+
+/* ── Timeline ──────────────────────────────────────────────────────────── */
+.ct-log-day{font-size:var(--ds-label);font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--gray);margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ct-log-day:first-child{margin-top:0}
+.ct-log-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--ol)}
+.ct-log-row:last-child{border-bottom:none}
+.ct-log-ico{flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:var(--light);border:1px solid var(--border);color:var(--gray)}
+.ct-log-ico svg{width:14px;height:14px}
+.ct-log-row.is-override .ct-log-ico{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
+.ct-log-body{flex:1;min-width:0}
+.ct-log-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ct-log-label{font-size:var(--ds-body);font-weight:600;color:var(--navy)}
+.ct-log-row.is-override .ct-log-label{color:var(--st-bad-fg)}
+.ct-log-family{font-size:var(--ds-micro);font-weight:600;color:var(--gray);background:var(--light);
+  border:1px solid var(--border);border-radius:var(--r-status);padding:1px 7px}
+.ct-log-time{margin-left:auto;font-size:var(--ds-caption);color:var(--gray);cursor:default}
+.ct-log-actor{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
+.ct-log-chips{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
+.ct-log-arrow{color:var(--gray);font-size:var(--ds-body)}
+/* The comment is CONTENT, not a heading. Rejections here carry no reason code
+   - only free text - so it is set as a quoted body with the author credited
+   beneath, never promoted to the row's title where it would read as a
+   category the system assigned. */
+.ct-log-comment{margin-top:8px;padding:9px 11px;background:var(--light);border-left:2px solid var(--border);
+  border-radius:0 var(--r-control) var(--r-control) 0;font-size:var(--ds-body);color:var(--navy);line-height:1.55}
+.ct-log-comment-by{display:block;margin-top:5px;font-size:var(--ds-caption);color:var(--gray);font-style:normal}
+.ct-log-empty{padding:34px 20px;text-align:center;font-size:var(--ds-body);color:var(--gray);line-height:1.55}
+
+/* ── Contracts landing: pick a type before the table ──────────────────────
+   Four cards, then the list. Shares the type band's icons and its rule about
+   colour: the count is ink, the card is white, and nothing here is tinted -
+   fill on the contracts screens means status or compliance, and a type is
+   neither. Hover and focus move the border, the same as the tiles. */
+.ct-land-head{margin-bottom:22px}
+.ct-land-title{font-size:var(--ds-h1);font-weight:700;color:var(--navy);letter-spacing:-.3px;margin-bottom:6px}
+.ct-land-sub{font-size:var(--ds-body);color:var(--gray);line-height:1.6;max-width:640px}
+.ct-land-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media(max-width:1180px){.ct-land-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.ct-land-grid{grid-template-columns:minmax(0,1fr)}}
+/* Cards carry real weight: they are the whole first screen, not a strip above
+   a table, so they get room rather than being squeezed to a header's height.
+   min-height keeps all four equal when the blurbs wrap to different depths -
+   without it "Engage and pay independent contractors compliantly." sits in a
+   visibly shorter box than EOR's two-liner, and four cards of four heights
+   read as four levels of importance. */
+.ct-land-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:190px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:24px;
+  font-family:inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s}
+.ct-land-card:not(.is-disabled):hover{border-color:var(--navy);box-shadow:0 4px 18px rgba(15,23,42,.08)}
+.ct-land-card:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+/* Icon left, count right. margin-left:auto rather than space-between so the
+   count is flush to the card edge whatever the icon does. */
+.ct-land-top{display:flex;align-items:center;width:100%;margin-bottom:18px}
+.ct-land-ico{display:flex;align-items:center;justify-content:center;width:52px;height:52px;flex-shrink:0;
+  border-radius:var(--r-control);background:var(--light);border:1px solid var(--border);color:var(--navy)}
+.ct-land-ico svg{width:26px;height:26px}
+.ct-land-count{margin-left:auto;font-size:var(--ds-metric);font-weight:700;color:var(--navy);line-height:1}
+.ct-land-label{font-size:var(--ds-h2);font-weight:700;color:var(--navy);letter-spacing:-.2px;margin-bottom:6px}
+.ct-land-desc{font-size:var(--ds-body);color:var(--gray);line-height:1.55}
+.ct-land-card.is-disabled{cursor:not-allowed;background:var(--light);border-style:dashed}
+.ct-land-card.is-disabled .ct-land-label,.ct-land-card.is-disabled .ct-land-desc,
+.ct-land-card.is-disabled .ct-land-count,.ct-land-card.is-disabled .ct-land-ico{color:#b0b8c4}
+
+/* ── Add Contract: four-card type chooser ─────────────────────────────────
+   Replaces a block that was built entirely from inline style="" attributes and
+   raw hex (#f1f5f9, #d1d5db, #64748b, #fed7aa) with inline onmouseenter/leave
+   for hover - a fifth styling dialect on a screen that already had a token
+   system. Same tokens as everything else here, and hover in CSS where it can
+   be seen and changed. */
+.ct-choose-sub{font-size:var(--ds-body);color:var(--gray);line-height:1.6;margin:-4px 0 18px;max-width:620px}
+.ct-choose-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:760px){.ct-choose-grid{grid-template-columns:minmax(0,1fr)}}
+.ct-choose-card{display:flex;flex-direction:column;gap:14px;background:var(--card);
+  border:1.5px solid var(--border);border-radius:var(--r-card);padding:22px 24px;transition:border-color .18s,box-shadow .18s}
+.ct-choose-card:not(.is-disabled):hover{border-color:var(--navy);box-shadow:0 4px 20px rgba(15,23,42,.08)}
+.ct-choose-ico{display:flex;align-items:center;justify-content:center;width:42px;height:42px;flex-shrink:0;
+  border-radius:var(--r-control);background:var(--light);border:1px solid var(--border);color:var(--navy)}
+.ct-choose-ico svg{width:21px;height:21px}
+.ct-choose-body{flex:1;min-width:0}
+.ct-choose-title{font-size:var(--ds-h2);font-weight:700;color:var(--navy);margin-bottom:7px;letter-spacing:-.2px}
+.ct-choose-desc{font-size:var(--ds-body);color:var(--gray);line-height:1.6}
+.ct-choose-foot{margin-top:auto}
+.ct-choose-btn{padding:9px 20px;border:1.5px solid var(--navy);border-radius:var(--r-status);background:var(--card);
+  color:var(--navy);font-size:var(--ds-body);font-weight:600;font-family:inherit;cursor:pointer;transition:.15s}
+.ct-choose-btn:hover{background:var(--navy);color:#fff}
+.ct-choose-card.is-disabled{background:var(--light);border-style:dashed}
+.ct-choose-card.is-disabled .ct-choose-title,.ct-choose-card.is-disabled .ct-choose-desc,.ct-choose-card.is-disabled .ct-choose-ico{color:#b0b8c4}
+.ct-choose-off{font-size:var(--ds-caption);font-weight:600;color:#b0b8c4}
+
+/* Empty states. Three distinct cases - nothing of this type yet, filters
+   matched nothing, type not enabled - each with its own copy and its own next
+   step, because one generic line cannot tell a new customer apart from a bad
+   filter and helps neither. */
+.ct-empty{display:flex;flex-direction:column;align-items:center;gap:9px;padding:44px 24px;text-align:center}
+.ct-empty-ico{width:34px;height:34px;color:#cbd5e1}
+.ct-empty-ico svg{width:34px;height:34px}
+.ct-empty-title{font-size:var(--ds-title);font-weight:600;color:var(--navy)}
+.ct-empty-sub{font-size:var(--ds-body);color:var(--gray);max-width:420px;line-height:1.55}
+.ct-empty .lp-pill-search{margin-top:6px}
+
 .listing-stats{display:flex;align-items:stretch;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;flex-shrink:0;align-self:flex-start}
 .listing-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 22px;min-width:88px;gap:3px;border-right:1px solid var(--border);cursor:pointer;user-select:none;transition:background .12s}
 .listing-stat:last-child{border-right:none}
@@ -1059,6 +1209,28 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-status-badge.contract-approved,.ct-sb-badge.contract-approved{background:var(--st-p6-bg);color:var(--st-p6-fg);border-color:var(--st-p6-bd)}  /* p6 Contract Approved */
 .lp-status-badge.onboarding,.ct-sb-badge.onboarding{background:var(--st-p7-bg);color:var(--st-p7-fg);border-color:var(--st-p7-bd)}  /* p7 Onboarding */
 .lp-status-badge.ready-for-payroll,.ct-sb-badge.ready-for-payroll{background:var(--st-p8-bg);color:var(--st-p8-fg);border-color:var(--st-p8-bd)}  /* p8 Ready for Payroll */
+/* Immigration and Contractor stages on the same p1..p8 ladder.
+   The ladder is eight MUTUALLY DISTINCT hues (cyan, teal, blue, lime, violet,
+   green, amber, deep green), documented above as clearing dE 12 pairwise - it
+   is not a gradient, so a stage's colour has to be distinct from its
+   neighbours', not numerically ordered against them. Each of the two new flows
+   below therefore uses eight different rungs, and no flow repeats one.
+
+   p2 (teal) is free in both new flows - neither has "Quotation Approved",
+   because the PRD keeps "Proposal" for Immigration and Contractor and
+   standardises on "Quote" for EOR/PEO only - so the pre-delivery "Pending"
+   stage takes it. Without this, Pending Onboarding would inherit the generic
+   --st-wait amber and sit next to Onboarding's p7 amber: two ADJACENT
+   Contractor stages in the same colour, which is the one thing the ladder
+   exists to prevent.
+
+   These override the generic tone rules above, and are deliberately scoped to
+   .ct-sb-badge (contracts only) rather than .lp-status-badge. "Active" and
+   "Pending Onboarding" mean other things on People, Teams and Payments, and
+   those screens keep the tone colours they already have. */
+.ct-sb-badge.pending-kickoff,.ct-sb-badge.pending-onboarding{background:var(--st-p2-bg);color:var(--st-p2-fg);border-color:var(--st-p2-bd)}  /* pre-delivery */
+.ct-sb-badge.ready-for-filing{background:var(--st-p7-bg);color:var(--st-p7-fg);border-color:var(--st-p7-bd)}  /* p7, as Onboarding */
+.ct-sb-badge.filed,.ct-sb-badge.active{background:var(--st-p8-bg);color:var(--st-p8-fg);border-color:var(--st-p8-bd)}  /* p8 terminal */
 .lp-status-badge.tone-ok,.ct-sb-badge.tone-ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
 .lp-status-badge.tone-wait,.ct-sb-badge.tone-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
 .lp-status-badge.tone-bad,.ct-sb-badge.tone-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}

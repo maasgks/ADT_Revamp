@@ -1640,12 +1640,24 @@ function ctToggleStatFilter(v){
 }
 function applyCtFilters(){
   const status=getCSValue('ct-f-status');
-  ctQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  const country=getCSValue('ct-f-country');
+  const inp=document.getElementById('ct-search-inp');
+  /* The placeholder is not one of the options, so an untouched control reads
+     back empty - but guard the label anyway in case one is ever added. */
+  ctQuickStatusFilter=status&&status!=='All Statuses'&&status!=='All Phases'?status:'';
+  ctCountryFilter=country&&country!=='All Countries'?country:'';
+  ctSearchQuery=inp?inp.value:'';
   ctSelectedId=null;
   renderADTPage();
 }
+/* Reset clears everything INCLUDING the type band, per the PRD: Reset reloads
+   the full list, and a "full list" that is still scoped to one type is not
+   one. */
 function resetCtFilters(){
   ctQuickStatusFilter='';
+  ctCountryFilter='';
+  ctSearchQuery='';
+  ctTypeFilter=CT_TYPE_ALL;
   ctSelectedId=null;
   renderADTPage();
 }
@@ -1705,6 +1717,223 @@ function openCtModal(id){
   document.getElementById('ct-modal-overlay').style.display='flex';
 }
 function closeCtModal(){document.getElementById('ct-modal-overlay').style.display='none';}
+/* ══ CONTRACT LOGS TAB ══════════════════════════════════════════════════════
+   PRD section 7. Reverse-chronological, grouped by day, one row per event:
+   family icon, the registry's type-correct label, actor, time, and a
+   prev -> new status chip pair where the event moved the record.
+
+   Two rules from the PRD that shape this more than they look:
+
+   1. LABELS COME FROM THE REGISTRY, ALREADY TYPE-CORRECT. Nothing here builds
+      a label by pasting a type onto a stage name at render time. An
+      Immigration record shows "Proposal sent"; an EOR record shows "Quote
+      sent"; both are the canonical QUOTE_SENT. Concatenating would produce
+      "Immigration Quote sent", which is a phrase this product does not use.
+
+   2. A COMMENT IS CONTENT, NOT A HEADING. Rejections in ADT carry no reason
+      CODE - only free text. Rendering that text as the row's title would make
+      one person's sentence look like a categorical reason the system
+      assigned. So the label is the heading, and the comment sits below it as
+      quoted content with a small attribution line. */
+
+const CT_EV_ICON={
+  Intake:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  Quote:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  Agreement:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>',
+  Delivery:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9 7V5h6v2"/></svg>',
+  Billing:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
+  Overrides:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M10.3 3.6l-8 13.9A2 2 0 0 0 4 20.5h16a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+};
+
+/* An override or a revert is a danger-tinted row for the life of the record,
+   and pins a banner at the top of the Logs tab. Someone reading this record in
+   six months has to see that a stage was walked back without hunting for it. */
+function ctIsOverrideRow(r){return r.family==='Overrides';}
+
+function ctLogsTabHTML(c){
+  const raw=ctLogsData[c.id]||[];
+  const rows=raw.map(function(l){return ctLogRow(l,c.type);});
+
+  /* Grouped by day. The dates in this data are display strings ("06 Jun
+     2026"), so grouping is by that string rather than by parsing it back into
+     a Date - the fixtures and stampNow() both produce the same format, and a
+     parse here would be a second source of truth about what a day is. */
+  const order=[];const byDay={};
+  rows.forEach(function(r){
+    const d=r.date||'—';
+    if(!byDay[d]){byDay[d]=[];order.push(d);}
+    byDay[d].push(r);
+  });
+  const today=stampNow().date;
+  const dayLabel=function(d){return d===today?'Today':d;};
+
+  const timeline=rows.length
+    ? order.map(function(d){
+        return '<div class="ct-log-day">'+dayLabel(d)+'</div>'
+          +byDay[d].map(ctLogRowHTML).join('');
+      }).join('')
+    : '<div class="ct-log-empty">No activity yet. Every status change on this contract will be recorded here.</div>';
+
+  const overrides=rows.filter(ctIsOverrideRow);
+  const banner=overrides.length
+    ? '<div class="ct-log-banner">'
+      +'<span class="ct-log-banner-ico">'+CT_EV_ICON.Overrides+'</span>'
+      +'<span><b>'+overrides.length+' override'+(overrides.length>1?'s':'')+' on this record.</b> '
+      +'Most recent: '+overrides[0].label+' by '+overrides[0].user+' on '+overrides[0].date+'.</span></div>'
+    : '';
+
+  return '<div class="ct-log-wrap">'
+    +banner
+    +ctLogActionHTML(c)
+    +'<div class="ct-log-timeline">'+timeline+'</div>'
+    +'</div>';
+}
+
+function ctLogRowHTML(r){
+  const ico=CT_EV_ICON[r.family]||CT_EV_ICON.Intake;
+  const over=ctIsOverrideRow(r);
+  /* prev -> new only when the event actually moved the record. An event that
+     changed nothing showing "Submitted -> Submitted" is noise that makes the
+     rows that DID move harder to pick out. */
+  const chips=(r.prevStatus&&r.newStatus&&r.prevStatus!==r.newStatus)
+    ? '<div class="ct-log-chips">'+ctStatusBadge(r.prevStatus)
+      +'<span class="ct-log-arrow">&rarr;</span>'+ctStatusBadge(r.newStatus)+'</div>'
+    : (r.newStatus&&!r.prevStatus?'<div class="ct-log-chips">'+ctStatusBadge(r.newStatus)+'</div>':'');
+  /* The comment is quoted content with an attribution line under it - never
+     the row's heading. See rule 2 at the top of this section. */
+  const comment=r.comment
+    ? '<div class="ct-log-comment">'+r.comment
+      +'<span class="ct-log-comment-by">&mdash; '+r.user+'</span></div>'
+    : '';
+  return '<div class="ct-log-row'+(over?' is-override':'')+'">'
+    +'<div class="ct-log-ico">'+ico+'</div>'
+    +'<div class="ct-log-body">'
+    +'<div class="ct-log-head">'
+    +'<span class="ct-log-label">'+r.label+'</span>'
+    +'<span class="ct-log-family">'+r.family+'</span>'
+    +'<span class="ct-log-time" title="'+r.date+' at '+r.time+'">'+r.time+'</span>'
+    +'</div>'
+    +'<div class="ct-log-actor">'+r.user+(r.actorType==='SYSTEM'?' &middot; system':'')+'</div>'
+    +chips
+    +comment
+    +'</div></div>';
+}
+
+/* ── The action panel ──────────────────────────────────────────────────────
+   Advance, or revert. Both write an event, both take a mandatory comment.
+
+   The comment is mandatory on BOTH because these rows are the only account of
+   why a contract is where it is - a stage that moved with no explanation is
+   the thing this tab exists to prevent. A revert additionally asks for more:
+   moving a record backwards is the kind of thing someone has to justify to an
+   auditor later, so it is styled as a secondary, deliberately-opened control
+   rather than sitting next to the primary action as an equal choice. */
+function ctLogActionHTML(c){
+  const flow=ctFlowFor(c.type);
+  const idx=flow.indexOf(c.status);
+  const next=idx>=0&&idx<flow.length-1?flow[idx+1]:null;
+  const cfg=ctTypeCfg(c.type);
+
+  /* Everything before the current stage is a legal revert target. Nothing
+     after it is - that is what the advance action is for, one stage at a
+     time, so a record cannot skip a stage by way of the revert control. */
+  const back=idx>0?flow.slice(0,idx):[];
+
+  let advance='';
+  if(next){
+    const evLabel=ctEventLabel(ctEventKeyFor(c.type,next),c.type,next);
+    advance='<div class="ct-log-act">'
+      +'<div class="ct-log-act-head"><span class="ct-log-act-dot"></span>Next: '+next+'</div>'
+      +'<p class="ct-log-act-sub">Moves this '+cfg.label+' contract to <b>'+next+'</b> and records &ldquo;'+evLabel+'&rdquo; in the log.</p>'
+      +'<label class="ct-log-act-label" for="ct-log-note-'+c.id+'">Comment <span class="ct-log-req">*</span></label>'
+      +'<textarea class="ct-log-textarea" id="ct-log-note-'+c.id+'" placeholder="What happened, and why? This is the only record of it."></textarea>'
+      +'<button class="ct-log-btn" onclick="ctAdvanceStatus('+c.id+')">'+next+'</button>'
+      +'</div>';
+  }else{
+    advance='<div class="ct-log-act is-done">'
+      +'<div class="ct-log-act-head"><span class="ct-log-act-dot is-done"></span>'+c.status+'</div>'
+      +'<p class="ct-log-act-sub">This contract has reached the end of the '+cfg.label+' flow.</p>'
+      +'</div>';
+  }
+
+  if(!back.length)return advance;
+
+  const opts=back.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+  const revert=ctRevertOpen
+    ? '<div class="ct-log-revert is-open">'
+      +'<div class="ct-log-revert-head">Revert this contract'
+      +'<button class="ct-log-revert-x" onclick="ctToggleRevert()" aria-label="Cancel revert">&times;</button></div>'
+      +'<p class="ct-log-act-sub">Moves the contract back to an earlier stage. The move is logged as an override and stays visible at the top of this tab.</p>'
+      +'<label class="ct-log-act-label" for="ct-revert-to-'+c.id+'">Revert to</label>'
+      +'<select class="ct-log-select" id="ct-revert-to-'+c.id+'">'+opts+'</select>'
+      +'<label class="ct-log-act-label" for="ct-revert-why-'+c.id+'">Reason <span class="ct-log-req">*</span></label>'
+      +'<textarea class="ct-log-textarea" id="ct-revert-why-'+c.id+'" placeholder="Why is this being moved back?"></textarea>'
+      +'<button class="ct-log-btn is-revert" onclick="ctRevertStatus('+c.id+')">Revert status</button>'
+      +'</div>'
+    : '<button class="ct-log-revert-open" onclick="ctToggleRevert()">'
+      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>'
+      +'Revert to an earlier stage</button>';
+
+  return advance+revert;
+}
+
+let ctRevertOpen=false;
+function ctToggleRevert(){ctRevertOpen=!ctRevertOpen;isbTab('ct',renderCtSidebar);}
+
+/* Shared by both actions: flag the field red rather than firing an alert, the
+   same way the Chats module already handles a missing comment. */
+function ctFlashField(el){
+  if(!el)return;
+  el.classList.add('is-invalid');
+  el.focus();
+  setTimeout(function(){el.classList.remove('is-invalid');},1600);
+}
+
+function ctAdvanceStatus(id){
+  const c=contractsData.find(function(x){return x.id===id;});
+  if(!c)return;
+  const flow=ctFlowFor(c.type);
+  const i=flow.indexOf(c.status);
+  const next=i>=0&&i<flow.length-1?flow[i+1]:null;
+  if(!next)return;
+  const box=document.getElementById('ct-log-note-'+id);
+  const comment=box?box.value.trim():'';
+  if(!comment){ctFlashField(box);return;}
+  const prev=c.status;
+  c.status=next;
+  /* The event is written in the same breath as the status change, from the
+     one registry key for this type and stage - which is what makes "no status
+     moved without an event" true by construction rather than by discipline. */
+  emitContractEvent(c,ctEventKeyFor(c.type,next),{
+    prevStatus:prev,newStatus:next,comment:comment,visibility:'CLIENT'});
+  delete window._ctPendingStatus;
+  renderADTPage();
+  showToast('Contract updated','success',c.contractId+' &rarr; '+next+'.');
+}
+
+function ctRevertStatus(id){
+  const c=contractsData.find(function(x){return x.id===id;});
+  if(!c)return;
+  const sel=document.getElementById('ct-revert-to-'+id);
+  const why=document.getElementById('ct-revert-why-'+id);
+  const to=sel?sel.value:'';
+  const reason=why?why.value.trim():'';
+  if(!reason){ctFlashField(why);return;}
+  if(!to)return;
+  const flow=ctFlowFor(c.type);
+  /* Guard the direction as well as the field. The select only offers earlier
+     stages, but a revert that moved a record FORWARD would bypass the comment
+     and gate rules the advance path enforces. */
+  if(flow.indexOf(to)>=flow.indexOf(c.status))return;
+  const prev=c.status;
+  c.status=to;
+  emitContractEvent(c,'STATUS_REVERTED',{
+    prevStatus:prev,newStatus:to,comment:reason,visibility:'INTERNAL'});
+  ctRevertOpen=false;
+  renderADTPage();
+  showToast('Contract reverted','info',c.contractId+' moved back to '+to+'.');
+}
+
 function renderCtSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const c=contractsData.find(x=>x.id===ctSelectedId);if(!c)return '';
@@ -1775,63 +2004,7 @@ function renderCtSidebar(){
         +'</tr>').join('')
       +'</tbody></table>';
   }else if(ctTab==='logs'){
-    const logs=ctLogsData[c.id]||[];
-    const ctLogKey=(s)=>({Submitted:'default','Quotation Approved':'active','Proposal Sent':'active','Proposal Approved':'active','Contract Sent':'active','Contract Approved':'active',Inactive:'inactive'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-          const sk=ctLogKey(l.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,l.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    const pendingStatus=window._ctPendingStatus||ctNextStep(c.status);
-    let actionPanel='';
-    const upIcoLg='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-    if(pendingStatus==='Contract Approved'){
-      actionPanel='<div class="lp-logs-form">'
-        +'<div class="lp-logs-form-header" style="color:#16a34a"><span style="width:9px;height:9px;border-radius:50%;background:#16a34a;display:inline-block;flex-shrink:0"></span>Contract Approved</div>'
-        +'<p class="lp-logs-form-sub">Contract has been signed and approved. View the contract details and confirm.</p>'
-        +'<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:9px;padding:12px;margin-bottom:12px;display:flex;align-items:center;gap:8px">'
-        +'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>'
-        +'<span style="font-size:12px;color:#15803d;font-weight:600">Signed contract document uploaded</span></div>'
-        +'<button class="lp-logs-save-btn" style="background:#2563eb" onclick="openCtModal('+c.id+')">View &amp; Verify Contract</button>'
-        +'</div>';
-    }else if(pendingStatus==='Contract Sent'||c.status==='Contract Sent'){
-      actionPanel='<div class="lp-logs-form">'
-        +'<div class="lp-logs-form-header"><span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0"></span>Upload Contract Document</div>'
-        +'<p class="lp-logs-form-sub">Upload the signed contract file to proceed to approval</p>'
-        +'<div class="ct-upload-area" onclick="document.getElementById(\'ct-file-inp-'+c.id+'\').click()">'
-        +upIcoLg
-        +'<p>Click to upload or drag &amp; drop<br><span style="color:#9ca3af;font-size:11px">PDF, DOC, DOCX (max 10 MB)</span></p></div>'
-        +'<input type="file" id="ct-file-inp-'+c.id+'" style="display:none" accept=".pdf,.doc,.docx">'
-        +'<button class="lp-logs-save-btn">Upload &amp; Send for Approval</button>'
-        +'</div>';
-    }else if(pendingStatus){
-      const nextLabels={'Quotation Approved':'Approve the quotation to proceed to the proposal stage.','Proposal Sent':'Send the EOR proposal to the employee for review.','Proposal Approved':'Approve the proposal received from the employee.','Contract Sent':'Upload and send the contract document to the employee.'};
-      const btnLabels={'Quotation Approved':'Approve Quotation','Proposal Sent':'Send Proposal','Proposal Approved':'Approve Proposal','Contract Sent':'Send Contract'};
-      actionPanel='<div class="lp-logs-form">'
-        +'<div class="lp-logs-form-header"><span style="width:9px;height:9px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0"></span>Next: '+pendingStatus+'</div>'
-        +'<p class="lp-logs-form-sub">'+(nextLabels[pendingStatus]||'Complete this step to advance the contract.')+'</p>'
-        +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-        +'<textarea class="lp-logs-form-textarea" placeholder="Add a note for this action..."></textarea>'
-        +'<button class="lp-logs-save-btn">'+(btnLabels[pendingStatus]||pendingStatus)+'</button>'
-        +'</div>';
-    }else{
-      actionPanel='<div class="lp-logs-form">'
-        +'<div class="lp-logs-form-header" style="color:#16a34a"><span style="width:9px;height:9px;border-radius:50%;background:#16a34a;display:inline-block;flex-shrink:0"></span>'+(c.status==='Inactive'?'Contract Inactive':'Contract Approved')+'</div>'
-        +'<p class="lp-logs-form-sub">'+(c.status==='Inactive'?'This contract has been set to Inactive.':'This contract has been fully approved and finalized.')+'</p>'
-        +(c.status==='Contract Approved'?'<button class="lp-logs-save-btn" style="background:#2563eb" onclick="openCtModal('+c.id+')">View Contract</button>':'')
-        +'</div>';
-    }
-    body='<div class="lp-logs-wrap">'+timelineHTML+actionPanel+'</div>';
+    body=ctLogsTabHTML(c);
   }else if(ctTab==='workflow'){
     const wf=ctWorkflowData[c.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -1909,7 +2082,16 @@ function saveManualContract(){
   const newId=contractsData.reduce(function(m,c){return Math.max(m,c.id);},0)+1;
   const contractId=String(90000+Math.floor(Math.random()*9999));
   const from=p.fromDate||now.date;
-  const record={id:newId,contractId:contractId,empName:fullName,empDesig:p.jobTitle||'—',country:p.country||'—',type:type,date:now.date+' '+now.time,status:'Submitted',
+  /* The type column reads serviceType for all four types; only its LABEL
+     differs (Employment Type for EOR/PEO, Service Type for the other two).
+     EOR/PEO can take it from the wizard's Permanent / Fixed term control;
+     Immigration and Contractor have no such control, so they take their
+     type's first service type until those intake forms are specced. */
+  const tcfg=ctTypeCfg(type);
+  const svcType=(tcfg.key==='EOR'||tcfg.key==='PEO')
+    ? (p.employmentTerm||tcfg.svcTypes[0])
+    : tcfg.svcTypes[0];
+  const record={id:newId,contractId:contractId,empName:fullName,empDesig:p.jobTitle||'—',country:p.country||'—',type:type,serviceType:svcType,date:now.date+' '+now.time,status:'Submitted',
     nationality:p.country||'—',countryOfOp:p.country||'—',workPermit:p.workPermit===true,gender:(p.gender||'').toUpperCase()||'—',
     email:p.email||'—',contact:p.mobile||'—',dob:p.dob||'—',jobTitle:p.jobTitle||'—',skill:p.skill||'—',
     empDuration:from+(p.toDate?' – '+p.toDate:''),empType:type,workSchedule:p.hours||'—',payAmount:p.pay||'—',currency:'INR',
@@ -1921,9 +2103,11 @@ function saveManualContract(){
   contractModalOpen=false;contractModalType='';manualContractFormData={};
   contractSuccessName=fullName;
   renderADTPage();
-  setTimeout(function(){if(contractSuccessName===fullName){contractSuccessName='';page='contracts';renderADTPage();}},2600);
+  setTimeout(function(){if(contractSuccessName===fullName){contractSuccessName='';ctLandingOpen=false;page='contracts';renderADTPage();}},2600);
 }
-function closeContractSuccess(){contractSuccessName='';page='contracts';renderADTPage();}
+/* Straight to the rows, not back to the type gate - the contract that was
+   just created is the thing the user is looking for. */
+function closeContractSuccess(){contractSuccessName='';ctLandingOpen=false;page='contracts';renderADTPage();}
 // ── COMPLIANCE ITEMS PAGE ──
 function applyComplianceFilters(){
   complianceCountryFilter=getCSValue('cmp-f-country');
@@ -3858,45 +4042,57 @@ function buildContractFormHTML(type,step,splitMode){
     +footer
     +'</div>';
 }
+/* ══ ADD CONTRACT: THE FOUR-CARD CHOOSER ════════════════════════════════════
+   This is where a full-page type chooser earns its place, and the reason the
+   listing does NOT have one: the four intake forms genuinely diverge, so the
+   choice has to be made before the form can be drawn. On the listing the same
+   choice is just a filter, and a filter does not need a whole screen.
+
+   Same icons as the type band, deliberately - the tile you filter by and the
+   card you create from are the same object seen twice, and using two icon sets
+   for that makes them look like two different concepts.
+
+   Cards are built from CT_TYPES, so a fifth type appears here automatically. */
+function ctStartIntake(key){
+  const cfg=CT_TYPES[key];
+  if(!cfg||!ctTypeEnabled(key))return;
+  /* Single entry point. The chooser calls it, and so can anything else that
+     already knows the type - a deep link, the AI assistant's routing, a
+     "Create Immigration request" button on an empty state - so none of them
+     has to walk the user through a chooser they have already answered. */
+  if(key==='EOR'){eorStep=0;page='contract-eor';renderADTPage();return;}
+  if(key==='PEO'){peoStep=0;page='contract-peo';renderADTPage();return;}
+  /* Immigration and Contractor reuse the generic three-step intake modal.
+     The PRD names their service types but never lists their form fields, so
+     rather than invent an Immigration form, these collect the same details the
+     EOR/PEO wizard collects and carry the right contract_type through. */
+  openContractModal(cfg.label);
+}
 function buildContractTypeSelectHTML(){
-  const icoStyle='width:44px;height:44px;border-radius:12px;background:#f1f5f9;border:1px solid #d1d5db;display:flex;align-items:center;justify-content:center;flex-shrink:0';
-  const peoBag='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="12"/></svg>';
-  const eorBuild='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M8 21V10h8v11"/><path d="M12 7h.01"/></svg>';
-  const card=function(ico,type,title,desc,onclick){
-    return '<div style="background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px 30px;display:flex;flex-direction:column;gap:20px;transition:.18s;cursor:default" '
-      +'onmouseenter="this.style.boxShadow=\'0 4px 20px rgba(15,23,42,.10)\';this.style.borderColor=\'#fed7aa\'" '
-      +'onmouseleave="this.style.boxShadow=\'\';this.style.borderColor=\'var(--border)\'">'
-      +'<div style="display:flex;align-items:flex-start;gap:18px">'
-      +'<div style="'+icoStyle+'">'+ico+'</div>'
-      +'<div>'
-      +'<div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px">'+title+'</div>'
-      +'<div style="font-size:13px;color:#64748b;line-height:1.6;max-width:520px">'+desc+'</div>'
+  const card=function(key){
+    const cfg=CT_TYPES[key];
+    const on=ctTypeEnabled(key);
+    return '<div class="ct-choose-card'+(on?'':' is-disabled')+'"'
+      +(on?'':' title="'+cfg.label+' is not enabled for this account. Talk to your account manager to add it."')+'>'
+      +'<div class="ct-choose-ico">'+sbIco[cfg.icon]+'</div>'
+      +'<div class="ct-choose-body">'
+      +'<div class="ct-choose-title">'+cfg.cardTitle+'</div>'
+      +'<div class="ct-choose-desc">'+cfg.desc+'</div>'
       +'</div>'
-      +'</div>'
-      +'<div>'
-      +'<button onclick="'+onclick+'" style="padding:9px 22px;border:1.5px solid var(--navy);border-radius:99px;background:#fff;color:var(--navy);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s" '
-      +'onmouseenter="this.style.background=\'var(--navy)\';this.style.color=\'#fff\'" '
-      +'onmouseleave="this.style.background=\'#fff\';this.style.color=\'var(--navy)\'">'
-      +'Create contract for employee</button>'
-      +'</div>'
-      +'</div>';
+      +'<div class="ct-choose-foot">'
+      +(on
+        ? '<button type="button" class="ct-choose-btn" onclick="ctStartIntake(\''+key+'\')">Create '+cfg.label+' contract</button>'
+        : '<span class="ct-choose-off">Not enabled for this account</span>')
+      +'</div></div>';
   };
-  return '<div class="ep-page" style="max-width:780px;margin:0 auto">'
+  return '<div class="ep-page" style="max-width:880px;margin:0 auto">'
     +'<div><button class="ep-back" onclick="page=\'contracts\';renderADTPage()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to Contracts</button></div>'
     +'<div class="ep-header">'
     +'<div class="ep-title-wrap"><span class="ep-title">Create Contract</span></div>'
     +'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:16px;margin-top:4px">'
-    +card(peoBag,'PEO','Professional Employer Organization (PEO)',
-      'An arrangement between you and a third party for the management of your employment agreements and associated documentation for businesses in several countries.',
-      'openContractModal(\'PEO\')')
-    +card(eorBuild,'EOR','Employer of Record (EOR)',
-      "An arrangement between you and a third party for the establishment of a legal relationship between a freelancer and a client that covers the terms and conditions of the freelancer's work.",
-      'openContractModal(\'EOR\')')
-    +'</div>'
-    +'</div>'
-    +(contractModalOpen?buildContractModalHTML():'')
-    +(contractSuccessName?buildContractSuccessModalHTML():'');
+    +'<div class="ct-choose-sub">Pick the type of engagement. Each one has its own intake, its own statuses and its own compliance checks.</div>'
+    +'<div class="ct-choose-grid">'+CT_TYPE_ORDER.map(card).join('')+'</div>'
+    +'</div>';
 }
 function buildContractModalHTML(){
   const type=contractModalType;
@@ -3946,24 +4142,201 @@ function buildContractSuccessModalHTML(){
     +'<div class="rr-success-sub">&ldquo;'+contractSuccessName+'&rdquo; contract has been submitted.</div>'
     +'</div></div>';
 }
+/* ══ ALL CONTRACTS: ONE LISTING, FOUR TYPES ═════════════════════════════════
+   The type band is a FILTER above the table, not a gate in front of it. An
+   interstitial that makes you choose a type before any data loads costs a
+   click on every visit, hides cross-type work (an AM owning one Immigration
+   case and two EOR placements can no longer see both), and lands every
+   bookmark and email deep link on a chooser instead of a record. The
+   four-card chooser belongs on Add Contract, where the four intake forms
+   genuinely diverge - and that is where it is.
+
+   Everything below reads CT_TYPES / CT_FLOWS from contract-types.js. There is
+   no per-type branch in this file beyond "look the config up". */
+
+/* One filter pass, shared by the table, the tile counts and the summary cards,
+   so a count can never disagree with the rows underneath it. */
+function ctFilteredRows(typeSel,statusSel){
+  const t=typeSel===undefined?ctTypeFilter:typeSel;
+  const s=statusSel===undefined?ctQuickStatusFilter:statusSel;
+  const q=ctSearchQuery.trim().toLowerCase();
+  /* A type the account has not bought returns nothing at all, rather than
+     rows the account is not entitled to see. The landing card already refuses
+     to open it and ctOpenType() refuses too, so this is the backstop for a
+     deep link or a stale filter - and it is what makes the "not enabled for
+     this account" empty state fire instead of a table full of rows. */
+  if(t&&t!==CT_TYPE_ALL&&!ctTypeEnabled(t))return [];
+  return contractsData.filter(function(c){
+    if(t&&t!==CT_TYPE_ALL&&ctTypeKey(c.type)!==t)return false;
+    if(ctCountryFilter&&c.country!==ctCountryFilter)return false;
+    if(q&&(c.empName+' '+c.contractId+' '+(c.empDesig||'')).toLowerCase().indexOf(q)===-1)return false;
+    if(s){
+      /* Inside a type, the filter is that type's own status. In the All view
+         it is normally a PHASE - that is all the dropdown offers there.
+
+         But the dashboard drills straight into this list with an exact status
+         ("Onboarding Pending", "Ready for Payroll" - see qaTargets), and it
+         arrives with the band still on All. So All accepts either: a known
+         phase filters by phase, anything else falls through to an exact status
+         match. Without this the dashboard tiles would all land on an empty
+         table. ("Active" is both a phase and a Contractor status; taking it as
+         the phase is the superset, which contains the exact match anyway.) */
+      if(t===CT_TYPE_ALL){
+        if(CT_PHASES.indexOf(s)!==-1){if(ctPhaseOf(c.status)!==s)return false;}
+        else if(c.status!==s)return false;
+      }
+      else if(c.status!==s)return false;
+    }
+    return true;
+  });
+}
+
+/* Per-type count, used by the landing cards.
+   Respects Country and Search, and respects the Status control only when it is
+   set to a PHASE. A type-scoped status cannot be applied to the other types -
+   "Ready for Filing" has no meaning for EOR - so counting with it would show
+   zeroes and read as "there is no EOR work", which is false. */
+function ctTileCount(typeKey){
+  const statusIsShared=ctTypeFilter===CT_TYPE_ALL?ctQuickStatusFilter:'';
+  return ctFilteredRows(typeKey,statusIsShared).length;
+}
+function ctSetType(key){
+  if(ctTypeFilter===key)return;
+  ctTypeFilter=key;
+  ctQuickStatusFilter='';
+  ctSelectedId=null;
+  renderADTPage();
+}
+
+/* ── Summary cards ────────────────────────────────────────────────────────
+   Type-scoped, and each one is a filter: clicking drills into the list below
+   rather than opening a separate report. */
+function ctSummaryCardsHTML(){
+  const cards=ctSummaryCardsFor(ctTypeFilter);
+  return '<div class="listing-stats">'+cards.map(function(card){
+    const val=card.phase||card.status;
+    const n=ctFilteredRows(ctTypeFilter,val).length;
+    const on=ctQuickStatusFilter===val;
+    return '<div class="listing-stat'+(on?' stat-selected':'')+'" onclick="ctToggleStatFilter(\''+val+'\')">'
+      +'<div class="listing-stat-count" style="color:var(--st-wait-fg)">'+n+'</div>'
+      +'<div class="listing-stat-label">'+card.label+'</div></div>';
+  }).join('')+'</div>';
+}
+
+/* ── Empty states ─────────────────────────────────────────────────────────
+   Three distinct cases. One generic "no data" line for all three is the thing
+   this replaces: it cannot tell a new customer apart from a bad filter, and it
+   gives neither of them the next step. */
+function ctEmptyStateHTML(){
+  const cfg=ctTypeFilter===CT_TYPE_ALL?null:CT_TYPES[ctTypeFilter];
+  const wrap=function(inner){return '<tr><td colspan="9"><div class="ct-empty">'+inner+'</div></td></tr>';};
+  if(cfg&&!ctTypeEnabled(ctTypeFilter)){
+    return wrap('<div class="ct-empty-ico">'+sbIco[cfg.icon]+'</div>'
+      +'<div class="ct-empty-title">'+cfg.label+' is not enabled for this account</div>'
+      +'<div class="ct-empty-sub">Your account manager can switch it on.</div>');
+  }
+  /* A filter is applied and matched nothing - the list itself is not empty. */
+  const anyOfType=ctFilteredRows(ctTypeFilter,'').length;
+  if(anyOfType>0||ctCountryFilter||ctSearchQuery||ctQuickStatusFilter){
+    return wrap('<div class="ct-empty-title">No results for these filters</div>'
+      +'<div class="ct-empty-sub">Try a different country, status or search term.</div>'
+      +'<button class="lp-pill-search" onclick="resetCtFilters()">Reset filters</button>');
+  }
+  if(cfg){
+    return wrap('<div class="ct-empty-ico">'+sbIco[cfg.icon]+'</div>'
+      +'<div class="ct-empty-title">No '+cfg.label+' contracts yet</div>'
+      +'<div class="ct-empty-sub">'+cfg.desc+'</div>'
+      +'<button class="lp-pill-search" onclick="addListingItem(\'contracts\')">Create '+cfg.label+' request</button>');
+  }
+  return wrap('<div class="ct-empty-title">No contracts yet</div>'
+    +'<button class="lp-pill-search" onclick="addListingItem(\'contracts\')">Add Contract</button>');
+}
+
+/* ══ CONTRACTS LANDING: PICK A TYPE FIRST ═══════════════════════════════════
+   Contracts opens on four type cards, and the table appears once one is
+   chosen. Counts are live, so the cards double as the breakdown you would
+   otherwise have gone to the list to read.
+
+   The type band stays on the listing underneath, All included. Without it this
+   gate would cost a trip back out to the cards every time you wanted a
+   different type, and there would be no way at all to see an Immigration case
+   and an EOR placement in one view - which is the thing an account manager
+   holding both actually needs. The gate decides where you START; the band
+   decides where you go next. */
+function buildContractsLandingHTML(){
+  const card=function(key){
+    const cfg=CT_TYPES[key];
+    const on=ctTypeEnabled(key);
+    const n=ctTileCount(key);
+    /* Icon and count on the top line, then the type name, then one line of
+       plain English. No footer link - the whole card is the button, and "View
+       EOR contracts" under an EOR card only restated what clicking it
+       obviously does. The long copy stays on the Add Contract chooser, where
+       someone is choosing a service rather than opening a list whose name they
+       already know. */
+    return '<button type="button" class="ct-land-card'+(on?'':' is-disabled')+'"'
+      +(on?' onclick="ctOpenType(\''+key+'\')"'
+          :' aria-disabled="true" title="'+cfg.label+' is not enabled for this account. Talk to your account manager to add it."')+'>'
+      +'<span class="ct-land-top">'
+      +'<span class="ct-land-ico">'+sbIco[cfg.icon]+'</span>'
+      +'<span class="ct-land-count">'+n+'</span>'
+      +'</span>'
+      +'<span class="ct-land-label">'+cfg.label+'</span>'
+      +'<span class="ct-land-desc">'+(on?cfg.blurb:'Not enabled for this account.')+'</span>'
+      +'</button>';
+  };
+  return '<div class="lp-page">'
+    +dashboardBackHTML()
+    +'<div class="ct-land-head">'
+    +'<div class="ct-land-title">All Contracts</div>'
+    /* No "view all together" shortcut here - the mixed list is reached by
+       picking any type and switching the Contract Type filter to All Types,
+       which is the same control that does every other type change. */
+    +'<div class="ct-land-sub">Pick a contract type to see its contracts.</div>'
+    +'</div>'
+    +'<div class="ct-land-grid">'+CT_TYPE_ORDER.map(card).join('')+'</div>'
+    +'</div>';
+}
+/* Entering the list from a card. Clears the status filter for the same reason
+   ctSetType does - the vocabulary the old value belonged to is being
+   replaced - and clears the row selection, which almost certainly is not in
+   the new result set. */
+function ctOpenType(key){
+  if(key!==CT_TYPE_ALL&&!ctTypeEnabled(key))return;
+  ctTypeFilter=key;
+  ctQuickStatusFilter='';
+  ctSelectedId=null;
+  ctLandingOpen=false;
+  renderADTPage();
+}
+function ctBackToTypes(){
+  ctLandingOpen=true;
+  ctSelectedId=null;
+  renderADTPage();
+}
 function buildContractsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  const proposalPending=contractsData.filter(c=>c.status==='Proposal Sent').length;
-  const contractPending=contractsData.filter(c=>c.status==='Contract Sent').length;
-  const countries=[...new Set(contractsData.map(c=>c.country))];
-  const types=[...new Set(contractsData.map(c=>c.type))];
+  const isAll=ctTypeFilter===CT_TYPE_ALL;
+  const cfg=isAll?null:CT_TYPES[ctTypeFilter];
+  const countries=[...new Set(contractsData.map(c=>c.country))].sort();
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const filteredContracts=ctQuickStatusFilter?contractsData.filter(c=>c.status===ctQuickStatusFilter):contractsData;
-  const pgn=listPage('contracts',ctQuickStatusFilter,filteredContracts.map((c,ctRowIdx)=>{
-    const flowIdx=ctFlow.indexOf(c.status);
-    const menuItems=ctFlow.map((step,i)=>{
+  const filteredContracts=ctFilteredRows();
+  /* Pagination resets to page 1 whenever any filter changes, and only then -
+     see listPage(). The signature has to name every filter or a type change
+     leaves you on page 3 of a list that now has one page. */
+  const sig=[ctTypeFilter,ctQuickStatusFilter,ctCountryFilter,ctSearchQuery].join('|');
+  const pgn=listPage('contracts',sig,filteredContracts.map((c,ctRowIdx)=>{
+    /* The Action menu walks THIS record's type's stage list. One menu builder,
+       four flows - not four menu builders. */
+    const flow=ctFlowFor(c.type);
+    const flowIdx=flow.indexOf(c.status);
+    const menuItems=flow.map((step,i)=>{
       const isDone=flowIdx>i;
       const isCurrent=flowIdx===i;
       const cls=isDone?'done':isCurrent?'current':'next';
-      const stepCls=isDone?'done':isCurrent?'current':'next';
       const checkIco=isDone?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
       const click=(!isDone&&!isCurrent)?'onclick="ctPickStatus('+c.id+',\''+step+'\')"':'';
-      return '<div class="ct-act-item '+cls+'" '+click+'><span class="ct-act-step '+stepCls+'">'+checkIco+'</span>'+step+'</div>';
+      return '<div class="ct-act-item '+cls+'" '+click+'><span class="ct-act-step '+cls+'">'+checkIco+'</span>'+step+'</div>';
     }).join('');
     const btnLabel=c.status.length>12?c.status.slice(0,10)+'…':c.status;
     const actionBtn='<div class="ct-action-wrap">'
@@ -3971,39 +4344,69 @@ function buildContractsListingHTML(){
       +'<button class="ct-dots-btn" onclick="openCtSidebar('+c.id+',\'basic-details\');event.stopPropagation()">'+dotsIco+'</button>'
       +'<div class="ct-action-menu" id="ctm-'+c.id+'">'+menuItems+'</div>'
       +'</div>';
+    /* In the All view the type cell is the ONLY thing that tells a mixed list
+       apart, so it carries both levels: contract type, then service or
+       employment type. Inside a single type the first line would repeat the
+       tile you already selected, so it drops away. */
+    const rowCfg=ctTypeCfg(c.type);
+    const svc=c[rowCfg.typeField]||d;
+    const typeCell=isAll
+      ? '<div style="font-weight:600;color:var(--navy)">'+rowCfg.short+'</div><div style="font-size:11px;color:#9ca3af">'+svc+'</div>'
+      : svc;
     return '<tr class="ct-row'+(ctSelectedId===c.id?' lp-row-selected':'')+'" id="ct-row-'+c.id+'" style="cursor:pointer" onclick="openCtSidebar('+c.id+')">'
       +'<td style="color:#6b7280;font-size:13px">'+(ctRowIdx+1)+'</td>'
       +'<td style="font-weight:600;color:var(--navy)">'+c.contractId+'</td>'
       +'<td><div style="font-weight:600;color:var(--navy)">'+c.empName+'</div><div style="font-size:11px;color:#9ca3af">'+c.empDesig+'</div></td>'
       +'<td>'+c.country+'</td>'
-      +'<td>'+c.type+'</td>'
+      +'<td>'+typeCell+'</td>'
       +'<td>'+d+'</td>'
       +'<td style="font-size:12px;color:#64748b">'+c.date+'</td>'
       +'<td>'+ctStatusBadge(c.status)+'</td>'
       +'<td onclick="event.stopPropagation()">'+actionBtn+'</td>'
       +'</tr>';
-  }),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No contracts match this filter.</td></tr>');
+  }),ctEmptyStateHTML());
   const sbInner=ctSelectedId?renderCtSidebar():'';
+  /* Column headers follow the type, per the PRD: an Immigration case has a
+     Client / Worker, not an Employee. */
+  const nameHdr=isAll?'Name':cfg.nameCol;
+  const typeHdr=isAll?'Type':cfg.typeCol;
   return '<div class="lp-page">'
     +dashboardBackHTML()
+    /* Having entered through the type cards, the gate needs a visible door
+       back or that first screen becomes unreachable. */
+    +'<button class="ep-back" style="margin:0 0 14px" onclick="ctBackToTypes()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Contract types</button>'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +apCS('ct-f-country',countries,'','All Countries')
-    +apCS('ct-f-type',types,'','All Types')
-    +apCS('ct-f-status',['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Inactive'],ctQuickStatusFilter,'All Statuses')
-    +'<input class="ct-search-input" placeholder="Search name, ID" type="text">'
-    +clearFiltersBtn([ctQuickStatusFilter],'resetCtFilters()')
+    /* Contract Type is a plain filter here, alongside Country and Status - the
+       four cards on the way in have already done the choosing, and repeating
+       them above the table would be the same control twice on one screen.
+
+       It is the one filter that applies on SELECTION rather than on Search.
+       The rest of the bar narrows rows; this one changes what the other
+       controls MEAN - the Status list, the column headers and the summary
+       cards all follow it. Deferring it to Search would leave a stale Status
+       dropdown offering the previous type's vocabulary, and picking from it
+       would return nothing. csSelect() routes the change (see its csid chain,
+       the same way ap-filter-type and lp-filter-field are handled). */
+    +apCS('ct-f-type',[CT_TYPE_LABEL_ALL].concat(CT_TYPE_ORDER.map(k=>CT_TYPES[k].label)),ctTypeFilterLabel(),'All Types')
+    +apCS('ct-f-country',countries,ctCountryFilter,'All Countries')
+    /* Options come from the selected type - never a merged list. On All Types
+       this offers the six shared phases and nothing else. */
+    +apCS('ct-f-status',ctStatusOptionsFor(ctTypeFilter),ctQuickStatusFilter,isAll?'All Phases':'All Statuses')
+    +'<input class="ct-search-input" id="ct-search-inp" placeholder="Search name, ID" type="text" value="'+ctSearchQuery.replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')applyCtFilters()">'
+    /* Contract Type counts as an applied filter now that it is one of the
+       controls in this bar - Reset clears it back to All Types along with the
+       rest. */
+    +clearFiltersBtn([ctQuickStatusFilter,ctCountryFilter,ctSearchQuery,isAll?'':ctTypeFilter],'resetCtFilters()')
     +'<button class="lp-pill-search" onclick="applyCtFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(ctQuickStatusFilter==='Proposal Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Proposal Sent\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+proposalPending+'</div><div class="listing-stat-label">Proposal Pending</div></div>'
-    +'<div class="listing-stat'+(ctQuickStatusFilter==='Contract Sent'?' stat-selected':'')+'" onclick="ctToggleStatFilter(\'Contract Sent\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+contractPending+'</div><div class="listing-stat-label">Contract Pending</div></div>'
-    +'</div></div>'
+    +ctSummaryCardsHTML()
+    +'</div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
-    +'<th>S.No</th><th>Contract ID</th><th>Employee Name</th><th>Country</th><th>Type</th><th>Compliance</th><th>Date</th><th>Status</th><th>Action</th>'
+    +'<th>S.No</th><th>Contract ID</th><th>'+nameHdr+'</th><th>Country</th><th>'+typeHdr+'</th><th>Compliance</th><th>Date</th><th>Status</th><th>Action</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
