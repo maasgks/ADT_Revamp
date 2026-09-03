@@ -48,15 +48,22 @@ const sbIco={
   sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
   /* Contract-type tiles. Same 24x24 box and same 1.8 stroke as every icon
-     above, and all five drawn on currentColor - type is a FILTER, not a
+     above, and all four drawn on currentColor - type is a FILTER, not a
      status, and colour on this screen is already spoken for by the p1..p8
      pipeline ladder and the compliance tones. A per-type palette here would
-     put a fifth colour system on a table that already carries two. */
-  ctAll:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 22 8 12 14 2 8 12 2"/><polyline points="2 16 12 22 22 16"/><polyline points="2 12 12 18 22 12"/></svg>',
-  ctEor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18"/><path d="M4 21V6l7-3v18"/><path d="M8 8h.01"/><path d="M8 12h.01"/><circle cx="16.5" cy="11.5" r="2.5"/><path d="M12.5 21v-1.5a4 4 0 0 1 8 0V21"/></svg>',
-  ctPeo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 21h20"/><path d="M4 21V9l6-3.5V21"/><path d="M10 21V12l7-3.5V21"/><path d="M7 12h.01"/><path d="M7 16h.01"/><path d="M13.5 15h.01"/></svg>',
-  ctImmigration:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><circle cx="11" cy="10" r="2.75"/><path d="M8.5 16h5"/><path d="M21 8v8"/></svg>',
-  ctContractor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8h11.5a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8z"/><path d="M6.5 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><circle cx="18.5" cy="8.5" r="3.5"/><path d="M18.5 7v1.5l1 1"/></svg>',
+     put a fifth colour system on a table that already carries two.
+
+     One subject each, centred in the box. The previous set drew two subjects
+     per icon - a building AND a person, a card AND a spine, a case AND a
+     clock - which at 27px is four or five strokes fighting inside a 4mm
+     square: what you actually saw was a smudge that told the four types
+     apart by position on the row rather than by shape. These read at a
+     glance and stay distinct from each other: a building we employ through,
+     two people sharing one employment, a passport, a case of one's own. */
+  ctEor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M6 21V5a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v16"/><path d="M15 10h3a2 2 0 0 1 2 2v9"/><path d="M9.5 7.5h2"/><path d="M9.5 11.5h2"/><path d="M9.5 15.5h2"/></svg>',
+  ctPeo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.3"/><path d="M2.5 20v-1.2A4.8 4.8 0 0 1 7.3 14h3.4a4.8 4.8 0 0 1 4.8 4.8V20"/><path d="M16.2 5.1a3.3 3.3 0 0 1 0 5.8"/><path d="M17.6 14.2A4.8 4.8 0 0 1 21.5 18.9V20"/></svg>',
+  ctImmigration:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><circle cx="12" cy="9.5" r="2.8"/><path d="M8.6 15.6h6.8"/><path d="M10 18.3h4"/></svg>',
+  ctContractor:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="13.5" rx="2.5"/><path d="M8.5 7V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2V7"/><path d="M2.5 12.5h19"/><path d="M10.5 12.5h3"/></svg>',
   calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>',
   calStar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 12.6l1.15 2.35 2.6.38-1.88 1.83.44 2.59L12 18.53l-2.31 1.22.44-2.59-1.88-1.83 2.6-.38z"/></svg>',
   dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
@@ -82,7 +89,7 @@ const sidebarItems=[
     {id:'teams',label:'Teams',color:'blue',icon:sbIco.users}
   ]},
   {dropdown:'Contracts',color:'teal',icon:sbIco.fileCheck,children:[
-    {id:'contracts',label:'All Contracts',color:'teal',icon:sbIco.fileCheck},
+    {id:'contracts',label:'Overview',color:'teal',icon:sbIco.fileCheck},
     {id:'contract-templates',label:'Templates',color:'teal',icon:sbIco.fileText}
   ]},
 
