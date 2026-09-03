@@ -507,7 +507,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employee-add')return{title:'Create New Employee',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){return getPageMeta(pg).title;}
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
 // Detail panels (the ones the action button opens) state the record's own status
@@ -548,7 +548,7 @@ function sbStatus(v,label){
   return '<span class="sb-status '+statusTone(v)+'">'+text+'</span>';
 }
 function titleForAdd(pg){return pg==='dashboard'?'Dashboard':getPageTitle(pg);}
-function getSidebarActivePage(pg){if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
+function getSidebarActivePage(pg){if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='employee-add')return 'employees';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
 
 function attrSafe(v){return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
 function customSelect(id,selected,options,placeholder,variant){
@@ -2057,11 +2057,16 @@ const lpWorkflowData={
 };
 function yn(v){return '<option'+(v?' selected':'')+'>Yes</option><option'+(!v?' selected':'')+'>No</option>';}
 function statusOpts(v){return '<option'+(v==='Active'?' selected':'')+'>Active</option><option'+(v==='Inactive'?' selected':'')+'>Inactive</option>';}
-function apCS(id,opts,defVal,placeholder){
+/* `hook` is the name of a global function called as hook(value,id) whenever a
+   selection is made — the same shape apCD's onpick already had. It exists so a
+   form that has to REACT to a pick (enable a dependent field, refresh a live
+   preview, re-count what is still required) does not have to add another
+   branch to the if-else chain inside csSelect, which is how that chain grew. */
+function apCS(id,opts,defVal,placeholder,hook){
   const sel=opts.find(o=>o===defVal)||'';
   const isEmpty=!sel;
   const optStr=opts.map(o=>`<div class="cs-option${sel===o?' cs-selected':''}" onclick="csSelect(this,'${o}','${id}')"><span>${o}</span><svg class="cs-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`).join('');
-  return `<div class="cs-wrap" id="csw-${id}"><button type="button" class="cs-trigger${isEmpty?' cs-placeholder':''}" onclick="csToggle(this)" data-csid="${id}"><span class="cs-value">${sel||placeholder}</span><svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="cs-dropdown" id="csd-${id}">${optStr}</div></div>`;
+  return `<div class="cs-wrap" id="csw-${id}"${hook?` data-cshook="${hook}"`:''}><button type="button" class="cs-trigger${isEmpty?' cs-placeholder':''}" onclick="csToggle(this)" data-csid="${id}"><span class="cs-value">${sel||placeholder}</span><svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="cs-dropdown" id="csd-${id}">${optStr}</div></div>`;
 }
 /* CLICKING AN OPEN FILTER'S OWN TRIGGER HAD TO CLOSE IT, AND DIDN'T.
    The "close the others" sweep excluded the current dropdown by comparing its
@@ -2099,6 +2104,11 @@ function csSelect(opt,val,csid){
   else if(csid==='ap-filter-value')apFilterValue=val;
   else if(csid==='lp-filter-field')lpFilterField=val;
   else if(csid==='lp-filter-status')lpFilterStatus=val;
+  /* Anything else that needs to react declares a hook on the select itself.
+     Add new side effects THERE, not as another branch above. */
+  const wrap=document.getElementById('csw-'+csid);
+  const hook=wrap&&wrap.dataset.cshook;
+  if(hook&&typeof window[hook]==='function')window[hook](val,csid);
 }
 /* ── CUSTOM DATE PICKER (apCD) ─────────────────────────────────────────────
    A drop-in replacement for <input type="date">, whose calendar is drawn by
@@ -2217,7 +2227,9 @@ function cdSet(id,iso){
     trigger.classList.toggle('cd-placeholder',!iso);
   }
   const hook=inp.dataset.cdpick;
-  if(hook&&typeof window[hook]==='function')window[hook](iso);
+  /* id as well as the value, matching apCS's hook, so one handler can serve
+     every date field on a form instead of one named handler per field. */
+  if(hook&&typeof window[hook]==='function')window[hook](iso,id);
 }
 function cdPick(id,iso){cdSet(id,iso);cdCloseAll();}
 function cdClear(id){cdSet(id,'');cdCloseAll();}
@@ -2238,24 +2250,15 @@ window.addEventListener('resize',cdCloseAll);
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';lpAddModalOpen=false;renderADTPage();}
 function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
-function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}else if(pg==='employees'){addDemoEmployee();}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
-// Demo add for the Employees page: appends a plausible record to the active tab.
-const demoEmpNames=['Arjun Kapoor','Sara Ali','Vikram Rao','Neha Gupta','Tom Becker','Julia Costa'];
-function addDemoEmployee(){
-  const nm=demoEmpNames[(directEmpData.length+globalEmpData.length)%demoEmpNames.length];
-  if(empSubTab==='global'){
-    const id=globalEmpData.length?Math.max.apply(null,globalEmpData.map(e=>e.id))+1:1;
-    lpLanded('global-employees',id);
-    globalEmpData.unshift({id:id,name:nm,empId:'GEP00'+id,dept:'Engineering',country:'Netherlands',jobTitle:'Consultant',workerType:'EOR',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
-  }else{
-    const id=directEmpData.length?Math.max.apply(null,directEmpData.map(e=>e.id))+1:1;
-    lpLanded('direct-employees',id);
-    directEmpData.unshift({id:id,name:nm,empId:'EMP00'+id,dept:'Engineering',branch:'Hyderabad',jobTitle:'Software Engineer',joinDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),desc:'Full time employee',contact:'--',email:nm.split(' ')[0].toLowerCase()+'@testemp.com',status:'Active'});
-  }
-  renderADTPage();
-  showToast('Employee added','success','"'+nm+'" has been added as a '+(empSubTab==='global'?'global':'direct')+' employee.');
-}
-// Generic demo add for listing pages driven by supportPageMeta rows.
+function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
+   the sub-tab decides which listing it lands in and which step-2 fields
+   exist. See js/employee-add.js. */
+else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
+/* addDemoEmployee() and its name pool lived here: one button that invented a
+   plausible record and inserted it. It is gone, not deprecated - the four-step
+   intake in js/employee-add.js is the only way an employee is created now, so
+   a second path that skipped every required field would only make the form
+   optional. */
 function addDemoMetaRow(pg){
   const meta=getPageMeta(pg);
   if(!meta||!meta.rows||!meta.columns||!meta.columns.length){showToast('Nothing to add here','info');return;}
@@ -2276,29 +2279,25 @@ function addDemoMetaRow(pg){
 }
 
 // -- DIRECT EMPLOYEE PAGE --
+/* `status` is the MAJOR STATUS - one of the eight rungs in
+   js/employee-lifecycle.js, not a separate Active/Inactive flag. Rows 5 and 8
+   of that ladder are the two that mean "employed"; the six in between are
+   onboarding and offboarding work in progress, and a listing that painted them
+   "Active" would be lying about the only column HR reads.
+
+   The log history for every row below lives in EMP_LIFE_SEED (employee-
+   lifecycle.js) so the fixture is built from the model rather than beside it. */
 const directEmpData=[
   {id:1,name:'Testemp Antar',empId:'EMP001',dept:'Engineering',branch:'Punjab',jobTitle:'Software Engineer',joinDate:'15 Jan 2025',desc:'Full time employee',contact:'+91 9999999996',email:'antar@testemp.com',status:'Active'},
   {id:2,name:'Pallavi Parate',empId:'EMP002',dept:'HR',branch:'Hyderabad',jobTitle:'HR Manager',joinDate:'20 Mar 2024',desc:'Full time employee',contact:'+91 8888888888',email:'pallavi@testemp.com',status:'Active'},
   {id:3,name:'Anika Shah',empId:'EMP003',dept:'Engineering',branch:'Mumbai',jobTitle:'Developer',joinDate:'05 Jun 2024',desc:'Contract employee',contact:'+91 7777777777',email:'anika@testemp.com',status:'Active'},
   {id:4,name:'Rahul Mehta',empId:'EMP004',dept:'Product',branch:'Delhi',jobTitle:'Product Manager',joinDate:'--',desc:'--',contact:'--',email:'rahul@testemp.com',status:'Inactive'},
+  /* Two records parked mid-ladder. Without them every employee in the app is
+     already at a terminal rung and the checklist gate is never seen doing its
+     job: Dev is BLOCKED (two mandatory setup items open), Meera is CLEAR. */
+  {id:5,name:'Dev Kulkarni',empId:'EMP005',dept:'Engineering',branch:'Bangalore',jobTitle:'QA Engineer',joinDate:'10 Sep 2026',desc:'Full time employee',contact:'+91 9812345670',email:'dev@testemp.com',status:'Onboarding Setup Completed'},
+  {id:6,name:'Meera Iyer',empId:'EMP006',dept:'Design',branch:'Hyderabad',jobTitle:'UX Designer',joinDate:'15 Sep 2026',desc:'Full time employee',contact:'+91 9812345671',email:'meera@testemp.com',status:'Onboarding'},
 ];
-const deLogsData={
-  1:[
-    {date:'10 Jun 2025',time:'03:30:00 PM',user:'Admin',status:'Updated',action:'Job title updated to Software Engineer'},
-    {date:'15 Jan 2025',time:'09:00:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  2:[
-    {date:'01 Jun 2025',time:'02:00:00 PM',user:'Pallavi P.',status:'Updated',action:'Department changed to HR'},
-    {date:'20 Mar 2024',time:'10:15:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  3:[
-    {date:'05 Jun 2024',time:'11:30:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  4:[
-    {date:'12 Feb 2025',time:'02:00:00 PM',user:'Admin',status:'Inactive',action:'Employee status set to Inactive'},
-    {date:'01 Feb 2024',time:'09:00:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ]
-};
 const deWorkflowData={
   1:[
     {title:'Onboarding Complete',user:'HR',date:'15 Jan 2025',time:'09:00:00 AM',description:'Employee onboarding checklist completed and access provisioned.'},
@@ -2313,6 +2312,12 @@ const deWorkflowData={
   4:[
     {title:'Exit Initiated',user:'Admin',date:'12 Feb 2025',time:'02:00:00 PM',description:'Offboarding workflow initiated. Final settlement pending review.'},
     {title:'Onboarding Complete',user:'Admin',date:'01 Feb 2024',time:'09:00:00 AM',description:'Employee onboarded. Role: Product Manager.'}
+  ],
+  5:[
+    {title:'Onboarding Setup Started',user:'HR',date:'31 Aug 2026',time:'10:20:00 AM',description:'Payroll and leave-holiday setup completed. Asset allocation and IT access still open.'}
+  ],
+  6:[
+    {title:'Onboarding Initiated',user:'HR',date:'02 Sep 2026',time:'09:15:00 AM',description:'Onboarding invitation sent. Awaiting information and documents from the employee.'}
   ]
 };
 let deSelectedId=null,deTab='basic-details';
@@ -2322,25 +2327,13 @@ const globalEmpData=[
   {id:2,name:'Lucas Dubois',empId:'GEP002',dept:'Finance',country:'France',jobTitle:'Finance Analyst',workerType:'EOR',joinDate:'15 Apr 2024',desc:'Full time employee',contact:'+33 6 12 34 56 78',email:'lucas@testemp.com',status:'Active'},
   {id:3,name:'Sofia Romano',empId:'GEP003',dept:'HR',country:'Italy',jobTitle:'HR Specialist',workerType:'Contractor',joinDate:'01 Mar 2024',desc:'Contract employee',contact:'+39 347 000 0001',email:'sofia@testemp.com',status:'Active'},
   {id:4,name:'James Wilson',empId:'GEP004',dept:'Operations',country:'United Kingdom',jobTitle:'Ops Manager',workerType:'EOR',joinDate:'--',desc:'--',contact:'+44 7000 000001',email:'james@testemp.com',status:'Inactive'},
+  /* Same reason as EMP005/EMP006 above: Marco is blocked on a missing
+     document, Ana cleared verification with the optional re-submission item
+     never needed. */
+  {id:5,name:'Marco Rossi',empId:'GEP005',dept:'Engineering',country:'Italy',jobTitle:'Backend Developer',workerType:'EOR',joinDate:'21 Sep 2026',desc:'Full time employee',contact:'+39 347 000 0002',email:'marco@testemp.com',status:'Documents & Info Submitted'},
+  {id:6,name:'Ana Silva',empId:'GEP006',dept:'Support',country:'Portugal',jobTitle:'Support Specialist',workerType:'EOR',joinDate:'14 Sep 2026',desc:'Full time employee',contact:'+351 91 000 0001',email:'ana@testemp.com',status:'Verification Completed'},
 ];
 let geStatusFilter='';
-const geLogsData={
-  1:[
-    {date:'14 May 2025',time:'11:00:00 AM',user:'Admin',status:'Updated',action:'Job title updated to Senior Developer'},
-    {date:'10 Feb 2024',time:'09:00:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  2:[
-    {date:'15 Apr 2024',time:'10:30:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  3:[
-    {date:'20 Nov 2024',time:'02:15:00 PM',user:'Admin',status:'Updated',action:'Contract renewed for 12 months'},
-    {date:'01 Mar 2024',time:'09:00:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ],
-  4:[
-    {date:'05 Jan 2025',time:'03:00:00 PM',user:'Admin',status:'Inactive',action:'Employee status set to Inactive — contract ended'},
-    {date:'01 Feb 2024',time:'09:00:00 AM',user:'Admin',status:'Created',action:'Employee profile created'}
-  ]
-};
 const geWorkflowData={
   1:[
     {title:'Onboarding Complete',user:'HR',date:'10 Feb 2024',time:'09:00:00 AM',description:'EOR onboarding via Dhi completed. Access provisioned for Germany entity.'},
@@ -2356,6 +2349,12 @@ const geWorkflowData={
   4:[
     {title:'Offboarding Initiated',user:'Admin',date:'05 Jan 2025',time:'03:00:00 PM',description:'Offboarding workflow started. Final settlement and access revocation pending.'},
     {title:'Onboarding Complete',user:'Admin',date:'01 Feb 2024',time:'09:00:00 AM',description:'EOR onboarding complete. UK entity payroll activated.'}
+  ],
+  5:[
+    {title:'Documents Received',user:'System',date:'01 Sep 2026',time:'07:40:00 PM',description:'Employee submitted mandatory information. Codice Fiscale document still outstanding.'}
+  ],
+  6:[
+    {title:'Verification Complete',user:'Compliance',date:'01 Sep 2026',time:'12:35:00 PM',description:'Portugal document verification cleared on first pass. Onboarding Setup available.'}
   ]
 };
 let geSelectedId=null,geTab='basic-details';

@@ -1,0 +1,23 @@
+/* ══ EMPLOYEE LIFECYCLE ════════════════════════════════════════════════════
+   The Logs tab itself adds NO styles — it is the shared .lp-logs-* timeline
+   and form from leaves.css, exactly as the Compliance, Rates & Rules,
+   Payheads and Holidays panels render it.
+
+   All that is left is the fallout from the status vocabulary getting longer:
+   eight major statuses instead of Active/Inactive, one of them four words.
+   The status CELL needed no rule in the end (see below); only the filter pill
+   did, because that one has to carry the full status. */
+
+/* NOTHING styles the status cell. empLifeBadge() swaps the four-word status
+   for its short label, and once the text is short .lp-status-badge already
+   does the rest - it is nowrap with a 68px floor, exactly as on Contracts,
+   Teams and every other listing. An .emp-life-badge override here would only
+   make this one column a different size from all of them. */
+
+/* The filter pill still carries the FULL status, because the option value is
+   what gets matched against the row. .lp-filter-bar-row sizes a pill to its label,
+   so cap the trigger and let the dropdown — which is where you actually read
+   the options — open wider than it. */
+#csw-de-f-status .cs-trigger,#csw-ge-f-status .cs-trigger{max-width:210px}
+#csw-de-f-status .cs-value,#csw-ge-f-status .cs-value{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#csw-de-f-status .cs-dropdown,#csw-ge-f-status .cs-dropdown{min-width:232px}

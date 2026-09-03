@@ -302,46 +302,7 @@ function renderDeSidebar(){
         +'<button class="ep-save-btn">Save</button>'
       +'</div>';
   }else if(deTab==='logs'){
-    const logs=deLogsData[emp.id]||[];
-    const deLogKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-          const sk=deLogKey(l.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col">'
-            +'<div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'
-            +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')
-            +'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,l.status)
-            +'<div class="lp-log-meta-row">'
-            +'<span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'
-            +(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')
-            +(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')
-            +'</div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-            +'</div>'
-            +'</div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    const csk=deLogKey(emp.status||'Active');
-    const formHTML='<div class="lp-logs-form">'
-      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+emp.status+'</div>'
-      +'<p class="lp-logs-form-sub">Update employee status and add a comment</p>'
-      +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select"><option value="">Select Status</option>'
-      +'<option value="Active"'+(emp.status==='Active'?' selected':'')+'>Active</option>'
-      +'<option value="Inactive"'+(emp.status==='Inactive'?' selected':'')+'>Inactive</option>'
-      +'</select>'+chevSvg+'</div>'
-      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" placeholder="Enter comment"></textarea>'
-      +'<button class="lp-logs-save-btn">Save</button>'
-      +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=renderEmpLogsTab('de',emp,EMP_LIFE_SEED.de[emp.id]);
   }else if(deTab==='workflow'){
     const wf=deWorkflowData[emp.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -377,7 +338,7 @@ function buildDirectListingHTML(){
     +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.branch||d)+'</td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
-    +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
+    +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openDeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=deSelectedId?renderDeSidebar():'';
@@ -386,7 +347,10 @@ function buildDirectListingHTML(){
     +'<div class="lp-filter-bar-row">'
     +apCS('de-f-dept',['Engineering','HR','Product','Design','Sales'],deDeptFilter,'Department')
     +apCS('de-f-branch',['Hyderabad','Mumbai','Delhi','Punjab','Bangalore'],deBranchFilter,'Branch')
-    +apCS('de-f-status',['Active','Inactive'],deStatusFilter,'Status')
+    /* All eight rungs, not just the two that mean "employed" - filtering on
+       Active/Inactive alone cannot find a record stuck in verification, which
+       is the search HR actually runs. */
+    +apCS('de-f-status',EMP_LIFE_STATUSES,deStatusFilter,'Status')
     +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter],'resetDeFilters()')
     +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
     +'</div></div>'
@@ -507,37 +471,9 @@ function renderGeSidebar(){
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:10px"><button class="ep-cancel-btn">Cancel</button><button class="ep-save-btn">Save</button></div>';
   }else if(geTab==='logs'){
-    const logs=geLogsData[emp.id]||[];
-    const geLogKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-          const sk=geLogKey(l.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,l.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    const csk=geLogKey(emp.status||'Active');
-    const formHTML='<div class="lp-logs-form">'
-      +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+emp.status+'</div>'
-      +'<p class="lp-logs-form-sub">Update employee status and add a comment</p>'
-      +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select"><option value="">Select Status</option>'
-      +'<option value="Active"'+(emp.status==='Active'?' selected':'')+'>Active</option>'
-      +'<option value="Inactive"'+(emp.status==='Inactive'?' selected':'')+'>Inactive</option>'
-      +'</select>'+chevSvg+'</div>'
-      +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" placeholder="Enter comment"></textarea>'
-      +'<button class="lp-logs-save-btn">Save</button></div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    /* Same renderer as the Direct Employee panel above — see
+       employee-lifecycle.js. */
+    body=renderEmpLogsTab('ge',emp,EMP_LIFE_SEED.ge[emp.id]);
   }else if(geTab==='workflow'){
     const wf=geWorkflowData[emp.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -565,7 +501,7 @@ function buildGlobalListingHTML(){
     +'<td>'+(e.country||d)+'</td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+(e.workerType?'<span class="lp-status-badge tone-info">'+e.workerType+'</span>':d)+'</td>'
-    +'<td><span class="lp-status-badge '+e.status.toLowerCase()+'">'+e.status+'</span></td>'
+    +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openGeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
     +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
@@ -575,7 +511,7 @@ function buildGlobalListingHTML(){
     +apCS('ge-f-country',['Germany','France','Italy','United Kingdom','Netherlands'],'','Country')
     +apCS('ge-f-dept',['Engineering','Finance','HR','Operations','Product'],'','Department')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
-    +apCS('ge-f-status',['Active','Inactive'],geStatusFilter,'Status')
+    +apCS('ge-f-status',EMP_LIFE_STATUSES,geStatusFilter,'Status')
     +clearFiltersBtn([geStatusFilter],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
     +'</div></div>'

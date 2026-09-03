@@ -34,7 +34,13 @@
 <!-- Leaves tab: one scoped height correction; everything else is shared. -->
 <link rel="stylesheet" href="css/leave-settings.css">
 <!-- How a day is judged: the rail colour, the day-panel tag and the legend. -->
-<link rel="stylesheet" href="css/day-status.css"></head>
+<link rel="stylesheet" href="css/day-status.css">
+<!-- Two fit rules for the longer employee status vocabulary; after main.css,
+     because it overrides .lp-status-badge. -->
+<link rel="stylesheet" href="css/employee-lifecycle.css">
+<!-- The four-step Create New Employee wizard. Builds on the form system in
+     main.css; adds only the stepper, chips, checklist and access preview. -->
+<link rel="stylesheet" href="css/employee-add.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <div id="v-adt" class="view active">
@@ -1991,6 +1997,13 @@
 <script src="js/contract-types.js"></script>
 <script src="js/core.js"></script>
 <script src="js/contract-events.js"></script>
+<!-- After core.js: it registers its eight statuses into SB_STATUS_TONE and
+     reads statusClass() at parse time. Before pages.js, which renders both
+     employee Logs tabs through renderEmpLogsTab(). -->
+<script src="js/employee-lifecycle.js"></script>
+<!-- After core.js for apCS/apCD and teamsData; before renderer.js, which
+     routes page==="employee-add" to buildAddEmployeeHTML(). -->
+<script src="js/employee-add.js"></script>
 <!-- Before pages.js only for tidiness: the timesheet builders call
      tsxExportBtn() at RENDER time, long after every file here has parsed. -->
 <script src="js/ts-export.js"></script>
