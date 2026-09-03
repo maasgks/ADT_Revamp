@@ -959,9 +959,51 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    colour: the count is ink, the card is white, and nothing here is tinted -
    fill on the contracts screens means status or compliance, and a type is
    neither. Hover and focus move the border, the same as the tiles. */
-.ct-land-head{margin-bottom:22px}
+.ct-land-head{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.ct-land-head-main{flex:1;min-width:260px}
 .ct-land-title{font-size:var(--ds-h1);font-weight:700;color:var(--navy);letter-spacing:-.3px;margin-bottom:6px}
 .ct-land-sub{font-size:var(--ds-body);color:var(--gray);line-height:1.6;max-width:640px}
+/* The one door the four cards cannot open: everything, in one list. Square
+   (--r-control) because it is a control, and outlined rather than filled - the
+   cards are the primary route in, this is the alternative. */
+.ct-land-all{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;background:var(--card);
+  border:1.5px solid var(--border);border-radius:var(--r-control);font-family:inherit;
+  font-size:var(--ds-body);font-weight:600;color:var(--navy);cursor:pointer;white-space:nowrap;
+  transition:border-color .18s,background .18s}
+.ct-land-all:hover{border-color:var(--navy);background:var(--row-hover)}
+.ct-land-all:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.ct-land-all-ico{display:flex;color:var(--gray)}
+.ct-land-all-ico svg{width:16px;height:16px}
+/* Filters that survived the trip back from the list. Amber, because it is a
+   "this is not the whole picture" warning and not an error. */
+.ct-land-note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;padding:9px 13px;
+  background:var(--st-wait-bg);border:1px solid var(--st-wait-bd);border-radius:var(--r-control);
+  font-size:var(--ds-caption);color:var(--st-wait-fg)}
+.ct-land-note-btn{background:none;border:none;font-family:inherit;font-size:var(--ds-caption);font-weight:700;
+  color:var(--st-wait-fg);text-decoration:underline;cursor:pointer;padding:0}
+/* ── Pipeline strip ───────────────────────────────────────────────────────
+   One row of five, hairline-separated inside a single card rather than five
+   floating tiles: it is one sentence about the whole book of work, and five
+   bordered boxes would compete with the four type cards directly beneath it.
+   Every cell is a filter into the mixed list. */
+.ct-land-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));margin-bottom:18px;
+  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);overflow:hidden}
+.ct-land-kpi{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:15px 18px;
+  background:none;border:none;border-left:1px solid var(--border);font-family:inherit;text-align:left;
+  cursor:pointer;transition:var(--row-fade)}
+.ct-land-kpi:first-child{border-left:none}
+.ct-land-kpi:hover{background:var(--row-hover)}
+.ct-land-kpi:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
+.ct-land-kpi-val{font-size:var(--ds-metric);font-weight:700;color:var(--navy);line-height:1}
+.ct-land-kpi-lbl{font-size:var(--ds-caption);color:var(--gray);line-height:1.4}
+/* The total is the sum of the other four plus everything else, so it is set
+   apart rather than sitting in the series as a fifth peer. */
+.ct-land-kpi.is-total{background:var(--light)}
+.ct-land-kpi.is-total:hover{background:var(--row-sel)}
+@media(max-width:900px){.ct-land-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ct-land-kpi{border-top:1px solid var(--border)}
+  .ct-land-kpi:nth-child(odd){border-left:none}
+  .ct-land-kpi:nth-child(-n+2){border-top:none}}
 .ct-land-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
 @media(max-width:1180px){.ct-land-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.ct-land-grid{grid-template-columns:minmax(0,1fr)}}
@@ -971,7 +1013,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    without it "Engage and pay independent contractors compliantly." sits in a
    visibly shorter box than EOR's two-liner, and four cards of four heights
    read as four levels of importance. */
-.ct-land-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:190px;
+.ct-land-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:232px;
   background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:24px;
   font-family:inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s}
 .ct-land-card:not(.is-disabled):hover{border-color:var(--navy);box-shadow:0 4px 18px rgba(15,23,42,.08)}
@@ -982,12 +1024,92 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ct-land-ico{display:flex;align-items:center;justify-content:center;width:52px;height:52px;flex-shrink:0;
   border-radius:var(--r-control);background:var(--light);border:1px solid var(--border);color:var(--navy)}
 .ct-land-ico svg{width:26px;height:26px}
-.ct-land-count{margin-left:auto;font-size:var(--ds-metric);font-weight:700;color:var(--navy);line-height:1}
-.ct-land-label{font-size:var(--ds-h2);font-weight:700;color:var(--navy);letter-spacing:-.2px;margin-bottom:6px}
+/* A bare number needs a unit. "11" alone was answering a question the reader
+   has to guess at; the caption under it costs one line and removes the guess. */
+.ct-land-metric{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.ct-land-count{font-size:var(--ds-metric);font-weight:700;color:var(--navy);line-height:1}
+.ct-land-unit{font-size:var(--ds-caption);color:var(--gray);line-height:1}
+/* Read-only state, so pill (--r-status) - it is not the thing you press. */
+.ct-land-chip{margin-left:auto;padding:4px 10px;border-radius:var(--r-status);background:var(--st-idle-bg);
+  border:1px solid var(--st-idle-bd);font-size:var(--ds-micro);font-weight:700;color:var(--st-idle-fg);
+  text-transform:uppercase;letter-spacing:.4px}
+.ct-land-label{display:flex;align-items:center;gap:7px;width:100%;font-size:var(--ds-h2);font-weight:700;
+  color:var(--navy);letter-spacing:-.2px;margin-bottom:6px}
+/* Direction, not a caption. The rejected "View EOR contracts" footer link
+   restated the card; an arrow that slides in on hover only confirms the card
+   goes somewhere, which is the one thing a flat white box does not say. */
+.ct-land-go{display:flex;color:var(--gray);opacity:0;transform:translateX(-4px);transition:opacity .18s,transform .18s}
+.ct-land-card:hover .ct-land-go,.ct-land-card:focus-visible .ct-land-go{opacity:1;transform:none}
 .ct-land-desc{font-size:var(--ds-body);color:var(--gray);line-height:1.55}
+/* Footer sits on the card's baseline whatever the blurb does, so the four bars
+   line up across the row and can be compared at a glance. */
+.ct-land-foot{width:100%;margin-top:auto;padding-top:14px}
+.ct-land-foot-txt{display:block;margin-top:8px;font-size:var(--ds-caption);color:var(--gray)}
+.ct-land-foot-txt b{font-weight:700;color:var(--navy)}
+.ct-land-foot-txt.is-quiet{color:#9ca3af}
+/* Phase mix. Colours are the pipeline ladder (--st-p*), so a segment means the
+   same thing here as the badge of that phase does in the table. */
+.ct-land-bar{display:flex;width:100%;height:6px;border-radius:999px;overflow:hidden;background:var(--ol)}
+.ct-land-bar.is-empty{opacity:.6}
+.ct-land-seg{display:block;min-width:3px}
+.ct-land-seg.ph-request{background:var(--st-p1-bd)}
+.ct-land-seg.ph-quote{background:var(--st-p3-bd)}
+.ct-land-seg.ph-agreement{background:var(--st-p5-bd)}
+.ct-land-seg.ph-delivery{background:var(--st-p7-bd)}
+.ct-land-seg.ph-active{background:var(--st-p8-bd)}
+.ct-land-seg.ph-closed{background:var(--st-idle-bd)}
 .ct-land-card.is-disabled{cursor:not-allowed;background:var(--light);border-style:dashed}
 .ct-land-card.is-disabled .ct-land-label,.ct-land-card.is-disabled .ct-land-desc,
 .ct-land-card.is-disabled .ct-land-count,.ct-land-card.is-disabled .ct-land-ico{color:#b0b8c4}
+
+/* ── Landing panels: what the cards cannot say ────────────────────────────
+   The gate was four cards on an otherwise empty page - it asked a question and
+   offered nothing to read while you answered it. These two panels are the work
+   itself: what is stalled with a client, and where it all is. Both are built
+   from the same filter pass as the cards, and every row is a way into the
+   list rather than a dead statistic. */
+.ct-land-panels{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;margin-top:18px}
+@media(max-width:1180px){.ct-land-panels{grid-template-columns:minmax(0,1fr)}}
+.ct-land-panel{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:16px 18px 12px}
+.ct-land-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.ct-land-panel-title{font-size:var(--ds-title);font-weight:700;color:var(--navy)}
+.ct-land-panel-sub{font-size:var(--ds-caption);color:var(--gray);margin-top:3px;line-height:1.45}
+.ct-land-panel-pill{flex-shrink:0;padding:4px 10px;border-radius:var(--r-status);background:var(--st-wait-bg);
+  border:1px solid var(--st-wait-bd);font-size:var(--ds-micro);font-weight:700;color:var(--st-wait-fg);white-space:nowrap}
+.ct-land-panel-more{margin-top:10px;padding-top:10px;border-top:1px solid var(--ol);
+  font-size:var(--ds-caption);color:var(--gray)}
+.ct-land-panel-link{background:none;border:none;font-family:inherit;font-size:var(--ds-caption);font-weight:600;
+  color:var(--gray);cursor:pointer;padding:2px 0;white-space:nowrap;text-decoration:underline}
+.ct-land-panel-link:hover{color:var(--navy)}
+.ct-land-panel-empty{padding:26px 4px;text-align:center;font-size:var(--ds-body);color:var(--gray)}
+/* Rows follow the app-wide line-item feedback (--row-hover), so a list row on
+   the landing behaves like a table row anywhere else. */
+.ct-att-row{display:flex;align-items:center;gap:11px;padding:9px 8px;margin:0 -8px;border-radius:var(--r-control);
+  cursor:pointer;transition:var(--row-fade)}
+.ct-att-row:hover{background:var(--row-hover)}
+.ct-att-row+.ct-att-row{border-top:1px solid var(--ol)}
+.ct-att-ico{display:flex;align-items:center;justify-content:center;width:30px;height:30px;flex-shrink:0;
+  border-radius:var(--r-control);background:var(--light);border:1px solid var(--border);color:var(--gray)}
+.ct-att-ico svg{width:15px;height:15px}
+.ct-att-main{flex:1;min-width:0}
+.ct-att-name{display:block;font-size:var(--ds-body);font-weight:600;color:var(--navy);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-att-meta{display:block;margin-top:2px;font-size:var(--ds-caption);color:var(--gray);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The badge keeps its ladder colour from the table - Proposal Sent is the same
+   blue here as it is there - and never compresses to fit a long name. */
+.ct-att-row .ct-sb-badge{flex-shrink:0}
+/* Age is the point of the queue, so it is the last thing on the row and never
+   wraps or shrinks. */
+.ct-att-age{flex-shrink:0;min-width:34px;text-align:right;font-size:var(--ds-caption);
+  font-weight:600;color:var(--gray);font-variant-numeric:tabular-nums}
+.ct-geo-row{display:grid;grid-template-columns:minmax(0,1fr) 92px 26px;align-items:center;gap:10px;
+  padding:8px;margin:0 -8px;border-radius:var(--r-control);cursor:pointer;transition:var(--row-fade)}
+.ct-geo-row:hover{background:var(--row-hover)}
+.ct-geo-name{font-size:var(--ds-body);color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ct-geo-track{height:6px;border-radius:999px;background:var(--ol);overflow:hidden}
+.ct-geo-fill{display:block;height:100%;border-radius:999px;background:var(--navy);opacity:.75}
+.ct-geo-n{font-size:var(--ds-body);font-weight:700;color:var(--navy);text-align:right;font-variant-numeric:tabular-nums}
 
 /* ── Add Contract: four-card type chooser ─────────────────────────────────
    Replaces a block that was built entirely from inline style="" attributes and

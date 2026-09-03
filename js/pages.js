@@ -4197,8 +4197,40 @@ function ctFilteredRows(typeSel,statusSel){
    "Ready for Filing" has no meaning for EOR - so counting with it would show
    zeroes and read as "there is no EOR work", which is false. */
 function ctTileCount(typeKey){
+  return ctTileSplit(typeKey).total;
+}
+
+/* The same rows, split by phase. A bare total answers "how many records exist
+   under this type", which is not the question anyone opens Contracts with -
+   "how much of this is still moving" is. Two contract types can both read 6
+   and mean completely different days' work: six live placements is a payroll
+   run, six mid-flight ones is six things waiting on somebody.
+
+   Derived from ctFilteredRows and ctPhaseOf, not from a second status list, so
+   the split cannot drift from the table or from the summary cards. Everything
+   that is neither Active nor Closed counts as in progress - that keeps the two
+   numbers plus closed adding to the total no matter what stages a future type
+   adds. */
+function ctTileSplit(typeKey){
   const statusIsShared=ctTypeFilter===CT_TYPE_ALL?ctQuickStatusFilter:'';
-  return ctFilteredRows(typeKey,statusIsShared).length;
+  const rows=ctFilteredRows(typeKey,statusIsShared);
+  let active=0,closed=0;
+  rows.forEach(function(c){
+    const ph=ctPhaseOf(c.status);
+    if(ph==='Active')active++;
+    else if(ph==='Closed')closed++;
+  });
+  return {total:rows.length,active:active,closed:closed,progress:rows.length-active-closed};
+}
+
+/* Whether anything is narrowing the counts the landing is about to print.
+   The gate has no filter bar of its own, but Country and Search SURVIVE
+   ctBackToTypes() - so a card can legitimately read 2 when the type holds 11,
+   with nothing on screen to say why. Either clear them on the way back (loses
+   the filter the moment you check another type - the exact thing someone
+   comparing countries is doing) or say so. This says so. */
+function ctLandingFiltersActive(){
+  return !!(ctCountryFilter||ctSearchQuery||(ctTypeFilter===CT_TYPE_ALL&&ctQuickStatusFilter));
 }
 function ctSetType(key){
   if(ctTypeFilter===key)return;
@@ -4262,40 +4294,255 @@ function ctEmptyStateHTML(){
    different type, and there would be no way at all to see an Immigration case
    and an EOR placement in one view - which is the thing an account manager
    holding both actually needs. The gate decides where you START; the band
-   decides where you go next. */
+   decides where you go next.
+
+   WHAT ELSE IS ON THIS SCREEN, AND WHY.
+   As four cards and a heading it was a question with nothing to read while you
+   answered it - a page of white space asking someone who already knows they
+   want EOR to click once before anything at all appears. Everything added
+   since is either the same counts made honest or a route the cards could not
+   offer, and nothing here is decoration:
+
+     pipeline strip   the four buckets the All view's summary cards already
+                      use, so "where is everything" has one vocabulary on both
+                      screens; each cell drills into the mixed list
+     view-all button  the one door four type cards cannot open
+     phase bar        shape, not just size - 11 in Quote is not 11 live
+     waiting panel    the queue this page exists to shorten, oldest first
+     country panel    the one cut that runs across all four types
+
+   Every number on the screen comes from ctFilteredRows, so a card, a strip
+   cell and a panel row cannot disagree with each other or with the table. */
+/* The phase mix inside one type, as a single bar.
+   Four cards reading 11 / 3 / 6 / 6 say how big each book of work is and
+   nothing at all about its shape - and eleven contracts still sitting in Quote
+   is a completely different week from eleven that are live. Segments are the
+   six shared phases in flow order, so the bar reads left to right as progress,
+   and the colours are the pipeline ladder the status badges already use rather
+   than a fifth palette invented for this screen. */
+function ctPhaseBarHTML(rows){
+  if(!rows.length)return '<span class="ct-land-bar is-empty"></span>';
+  const counts={};
+  rows.forEach(function(c){const p=ctPhaseOf(c.status);counts[p]=(counts[p]||0)+1;});
+  return '<span class="ct-land-bar">'+CT_PHASES.filter(function(p){return counts[p];}).map(function(p){
+    return '<span class="ct-land-seg ph-'+p.toLowerCase()+'" style="flex:'+counts[p]+'" title="'+counts[p]+' in '+p+'"></span>';
+  }).join('')+'</span>';
+}
+
+/* Age of a record in whole days. The attention list is ordered by it and
+   prints it, because "waiting" without "since when" is not a queue - it is a
+   pile. Dates arrive as 'YYYY-MM-DD HH:MM:SS'; Safari will not parse that with
+   the space, hence the swap to a T. */
+function ctDaysSince(d){
+  const t=Date.parse(String(d||'').replace(' ','T'));
+  if(isNaN(t))return null;
+  return Math.max(0,Math.floor((Date.now()-t)/86400000));
+}
+
+/* ── The landing's own panels ───────────────────────────────────────────────
+   Everything below the cards is built from ctFilteredRows, so it obeys the
+   same Country/Search filters the cards do and can never show a row the list
+   underneath would hide. */
+
+/* Contracts parked with the other side.
+   NOT "phase is Quote or Agreement" - those phases also contain Proposal
+   Approved and Contract Approved, which are the client having already
+   answered. The waiting states are the SENT ones, so this matches on the verb
+   rather than on the phase, and does it across every flow at once: a fifth
+   type that adds "Quote Sent" joins this list without touching it.
+   Oldest first - the queue is ordered by how long it has gone unanswered. */
+function ctAwaitingClient(c){return /\sSent$/.test(c.status);}
+function ctAttentionRows(base){
+  return base.filter(ctAwaitingClient)
+    .slice().sort(function(a,b){return String(a.date).localeCompare(String(b.date));});
+}
+
+function ctAttentionPanelHTML(base){
+  const rows=ctAttentionRows(base);
+  const shown=rows.slice(0,5);
+  const body=shown.length?shown.map(function(c){
+    const cfg=ctTypeCfg(c.type);
+    const age=ctDaysSince(c.date);
+    return '<div class="ct-att-row" onclick="ctOpenRecord('+c.id+')">'
+      +'<span class="ct-att-ico">'+sbIco[cfg.icon]+'</span>'
+      +'<span class="ct-att-main">'
+      +'<span class="ct-att-name">'+c.empName+'</span>'
+      +'<span class="ct-att-meta">'+cfg.short+' · '+c.country+' · '+c.contractId+'</span>'
+      +'</span>'
+      +ctStatusBadge(c.status)
+      +'<span class="ct-att-age">'+(age===null?'--':age+'d')+'</span>'
+      +'</div>';
+  }).join('')
+   :'<div class="ct-land-panel-empty">Nothing is waiting on a client right now.</div>';
+  return '<div class="ct-land-panel">'
+    +'<div class="ct-land-panel-head">'
+    +'<div><div class="ct-land-panel-title">Waiting on the client</div>'
+    +'<div class="ct-land-panel-sub">Proposals and contracts sent, no response yet · longest waiting first</div></div>'
+    /* Read-only count, so a pill (--r-status) and not a link. There is no
+       single filter on the list that reproduces this set - it is two statuses
+       across four types - and a link that lands on an approximation of what
+       the panel showed is worse than no link. */
+    +(rows.length?'<span class="ct-land-panel-pill">'+rows.length+' waiting</span>':'')
+    +'</div>'+body
+    +(rows.length>shown.length
+      ? '<div class="ct-land-panel-more">'+(rows.length-shown.length)+' more waiting · '
+        +'<button type="button" class="ct-land-panel-link" onclick="ctOpenPhase(\'\')">open the full list</button></div>'
+      : '')
+    +'</div>';
+}
+
+/* Where the work is. Country is the one dimension the type cards cannot show
+   and the one a delivery lead sorts by; clicking a row opens the mixed list
+   already filtered to it, which is otherwise a two-control detour. */
+function ctGeoPanelHTML(base){
+  const byCountry={};
+  base.forEach(function(c){byCountry[c.country]=(byCountry[c.country]||0)+1;});
+  const list=Object.keys(byCountry).sort(function(a,b){return byCountry[b]-byCountry[a]||a.localeCompare(b);}).slice(0,6);
+  const max=list.length?byCountry[list[0]]:0;
+  const body=list.length?list.map(function(k){
+    return '<div class="ct-geo-row" onclick="ctOpenCountry(\''+k.replace(/'/g,"\\'")+'\')">'
+      +'<span class="ct-geo-name">'+k+'</span>'
+      +'<span class="ct-geo-track"><span class="ct-geo-fill" style="width:'+Math.round(byCountry[k]/max*100)+'%"></span></span>'
+      +'<span class="ct-geo-n">'+byCountry[k]+'</span>'
+      +'</div>';
+  }).join('')
+   :'<div class="ct-land-panel-empty">No contracts to break down yet.</div>';
+  return '<div class="ct-land-panel">'
+    +'<div class="ct-land-panel-head">'
+    +'<div><div class="ct-land-panel-title">By country</div>'
+    +'<div class="ct-land-panel-sub">Across every contract type</div></div></div>'
+    +body+'</div>';
+}
+
 function buildContractsLandingHTML(){
+  /* One base set for the whole screen. The cards, the strip and both panels
+     count the same rows, so a total can never disagree with a breakdown. */
+  const base=ctFilteredRows(CT_TYPE_ALL,'');
+  const total=base.length;
   const card=function(key){
     const cfg=CT_TYPES[key];
     const on=ctTypeEnabled(key);
-    const n=ctTileCount(key);
-    /* Icon and count on the top line, then the type name, then one line of
-       plain English. No footer link - the whole card is the button, and "View
-       EOR contracts" under an EOR card only restated what clicking it
-       obviously does. The long copy stays on the Add Contract chooser, where
-       someone is choosing a service rather than opening a list whose name they
-       already know. */
+    const split=ctTileSplit(key);
+    /* A disabled type prints no number. The count would be 0 whatever the
+       account actually holds - ctFilteredRows returns nothing for a type the
+       tenant has not bought - and a 0 next to a real 11 reads as "you have
+       none of these", which is a different sentence from "you have not bought
+       this". The chip says which. */
+    const metric=on
+      ? '<span class="ct-land-metric"><span class="ct-land-count">'+split.total+'</span>'
+        +'<span class="ct-land-unit">'+(split.total===1?'contract':'contracts')+'</span></span>'
+      : '<span class="ct-land-chip">Not enabled</span>';
+    /* Footer is the one line the count cannot say: how much of this is live
+       versus still moving. On an empty type it says so plainly instead of
+       printing "0 active · 0 in progress", which is three facts to read for
+       one meaning. */
+    const foot=!on?''
+      :'<span class="ct-land-foot">'
+        +(split.total
+          ? ctPhaseBarHTML(ctFilteredRows(key,''))
+            +'<span class="ct-land-foot-txt"><b>'+split.active+'</b> active · <b>'+split.progress+'</b> in progress</span>'
+          : '<span class="ct-land-foot-txt is-quiet">No contracts yet</span>')
+        +'</span>';
     return '<button type="button" class="ct-land-card'+(on?'':' is-disabled')+'"'
       +(on?' onclick="ctOpenType(\''+key+'\')"'
           :' aria-disabled="true" title="'+cfg.label+' is not enabled for this account. Talk to your account manager to add it."')+'>'
       +'<span class="ct-land-top">'
       +'<span class="ct-land-ico">'+sbIco[cfg.icon]+'</span>'
-      +'<span class="ct-land-count">'+n+'</span>'
+      +metric
       +'</span>'
-      +'<span class="ct-land-label">'+cfg.label+'</span>'
+      +'<span class="ct-land-label">'+cfg.label
+      +(on?'<span class="ct-land-go"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></span>':'')
+      +'</span>'
       +'<span class="ct-land-desc">'+(on?cfg.blurb:'Not enabled for this account.')+'</span>'
+      +foot
       +'</button>';
   };
+  /* Pipeline strip. The same four buckets the All view's summary cards use -
+     one vocabulary for "where is everything", whether you are looking at the
+     gate or at the list - and each one drills straight into the mixed list on
+     that phase. */
+  const kpi=function(label,n,onclick,strong){
+    return '<button type="button" class="ct-land-kpi'+(strong?' is-total':'')+'" onclick="'+onclick+'">'
+      +'<span class="ct-land-kpi-val">'+n+'</span>'
+      +'<span class="ct-land-kpi-lbl">'+label+'</span></button>';
+  };
+  const strip='<div class="ct-land-kpis">'
+    +kpi('Total contracts',total,'ctOpenPhase(\'\')',true)
+    +CT_SUMMARY_CARDS.ALL.map(function(c){
+      return kpi(c.label,ctFilteredRows(CT_TYPE_ALL,c.phase).length,'ctOpenPhase(\''+c.phase+'\')');
+    }).join('')
+    +'</div>';
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +'<div class="ct-land-head">'
+    +'<div class="ct-land-head-main">'
     +'<div class="ct-land-title">All Contracts</div>'
-    /* No "view all together" shortcut here - the mixed list is reached by
-       picking any type and switching the Contract Type filter to All Types,
-       which is the same control that does every other type change. */
-    +'<div class="ct-land-sub">Pick a contract type to see its contracts.</div>'
+    +'<div class="ct-land-sub">Pick a contract type to see its contracts, or open everything in one list.</div>'
     +'</div>'
+    /* This used to be deliberately absent, on the grounds that the mixed list
+       was reachable by opening any type and switching Contract Type to All
+       Types. That is three controls to answer "show me everything", and the
+       mixed view is what an account manager holding an EOR placement and an
+       Immigration case for the same person actually needs. The cards still
+       decide where you START; this is the one door they could not open. */
+    +'<button type="button" class="ct-land-all" onclick="ctOpenType(\''+CT_TYPE_ALL+'\')">'
+    +'<span class="ct-land-all-ico">'+sbIco.ctAll+'</span>View all '+total+' contracts'
+    +'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>'
+    +'</div>'
+    /* Filters survive the trip back from the list, so the numbers on this
+       screen can legitimately be a subset with nothing on screen to say why.
+       One line, and a way out of it. */
+    +(ctLandingFiltersActive()
+      ? '<div class="ct-land-note">Counts are narrowed by the filters still applied on the list.'
+        +'<button type="button" class="ct-land-note-btn" onclick="resetCtFilters()">Clear filters</button></div>'
+      : '')
+    +strip
     +'<div class="ct-land-grid">'+CT_TYPE_ORDER.map(card).join('')+'</div>'
+    +'<div class="ct-land-panels">'+ctAttentionPanelHTML(base)+ctGeoPanelHTML(base)+'</div>'
     +'</div>';
+}
+/* Strip and panel entry points. All three land on the mixed list rather than a
+   type, because none of them is a statement about type - a phase, a country
+   and a single record are all things that cut across the four. */
+function ctOpenPhase(phase){
+  ctTypeFilter=CT_TYPE_ALL;
+  ctQuickStatusFilter=phase||'';
+  ctSelectedId=null;
+  ctLandingOpen=false;
+  renderADTPage();
+}
+function ctOpenCountry(country){
+  ctTypeFilter=CT_TYPE_ALL;
+  ctCountryFilter=country;
+  ctQuickStatusFilter='';
+  ctSelectedId=null;
+  ctLandingOpen=false;
+  renderADTPage();
+}
+/* Opening one record from the attention list. Lands on the mixed list with the
+   row selected and its panel open - selecting into a type-scoped list instead
+   would mean picking a type on the user's behalf for a row they identified by
+   name. The rows came from the same filter pass as the list, so the selected
+   row is guaranteed to be in it. */
+function ctOpenRecord(id){
+  ctTypeFilter=CT_TYPE_ALL;
+  ctQuickStatusFilter='';
+  ctSelectedId=id;
+  ctTab='basic-details';
+  ctLandingOpen=false;
+  renderADTPage();
+  /* The list pages at ten, and the oldest waiting contracts are exactly the
+     ones sitting on page 2 or 3 - so without this the panel opens the right
+     record's sidebar next to a table that does not contain it. Has to run
+     AFTER the first render: listPage resets to page 1 whenever the filter
+     signature changes, which it just did. */
+  const idx=ctFilteredRows().map(function(c){return c.id;}).indexOf(id);
+  const pg=idx<0?1:Math.floor(idx/LIST_PAGE_SIZE)+1;
+  if(idx>=0&&listPageNo.contracts!==pg)goListPage('contracts',pg);
+  setTimeout(function(){
+    const row=document.getElementById('ct-row-'+id);
+    if(row&&row.scrollIntoView)row.scrollIntoView({block:'center',behavior:'smooth'});
+  },60);
 }
 /* Entering the list from a card. Clears the status filter for the same reason
    ctSetType does - the vocabulary the old value belonged to is being
