@@ -14,6 +14,65 @@
    Teams and every other listing. An .emp-life-badge override here would only
    make this one column a different size from all of them. */
 
+/* ── The per-status fields in the log form ─────────────────────────────────
+   They sit between the Status dropdown and the Comment box and swap with the
+   selected status. THEY ARE NOT A PANEL. This was a grey sub-card with the
+   status as a heading, the owning team as a chip and a dashed footnote about
+   what the move unlocks - a small second form embedded in the middle of the
+   first, which no other module's log form has. It is now nothing but the
+   fields themselves, wearing .lp-logs-form-label like the two controls they
+   sit between, so the whole panel is one form. The wrapper is a plain block
+   and exists only so the dropdown has something to show and hide. */
+/* No `display` here on purpose. The wrapper is shown and hidden with the
+   `hidden` ATTRIBUTE, and a class rule setting display:block outranks the
+   browser's [hidden]{display:none} - which silently showed all twelve blocks
+   at once. A div is display:block already; say nothing and hidden works. */
+.emp-log-input{margin-bottom:12px}
+.emp-log-input:empty{margin:0}
+/* The tick-lists: which documents failed (Verification Failed), and the two
+   "Done" lists at Onboarding Setup Completed and Exit Clearance Completed. */
+.emp-log-list{display:flex;flex-direction:column}
+.emp-log-check{display:flex;align-items:flex-start;gap:8px;padding:4px 2px;cursor:pointer;
+  font-size:12px;color:#374151;line-height:1.4;user-select:none}
+.emp-log-check:hover{color:#1e293b}
+.emp-log-check input{position:absolute;opacity:0;width:0;height:0}
+.emp-log-box{width:15px;height:15px;border-radius:4px;border:1.5px solid #cbd5e1;background:#fff;
+  display:flex;align-items:center;justify-content:center;color:transparent;flex-shrink:0;
+  margin-top:1px;transition:.15s}
+.emp-log-check input:checked+.emp-log-box{background:var(--st-ok-fg);border-color:var(--st-ok-fg);color:#fff}
+.emp-log-check input:focus-visible+.emp-log-box{box-shadow:0 0 0 3px rgba(148,163,184,.35)}
+/* Mandatory marker matches .lp-logs-form-req above it. */
+.emp-log-check b{color:#ef4444;font-weight:700;margin-left:3px}
+/* A labelled list (the failed-documents one) needs air under its heading and
+   above whatever field follows it. */
+.emp-log-list+.emp-log-fields{margin-top:11px}
+
+/* Typed / picked values — the Offboarding block, and the rejection reason */
+.emp-log-fields{display:flex;flex-direction:column;gap:10px}
+.emp-log-text,.emp-log-textarea{width:100%;box-sizing:border-box;border:1.5px solid #e2e8f0;
+  border-radius:var(--r-control);background:#fff;font-family:inherit;font-size:12.5px;color:#1e293b;
+  padding:8px 10px;outline:none;transition:.15s}
+.emp-log-textarea{height:62px;resize:none;line-height:1.45}
+.emp-log-text:focus,.emp-log-textarea:focus{border-color:#94a3b8}
+/* The shared select and date controls run full width in here and shrink to the
+   panel's type scale — the log form is half a sidebar, not a page form. */
+.emp-log-field .cs-trigger,.emp-log-field .cd-trigger{height:36px;font-size:12.5px}
+/* "Date & Time" is one value in two controls, so they sit on one row and the
+   date takes the space the time does not need. */
+.emp-log-dt{display:flex;gap:8px;align-items:center}
+.emp-log-dt .cd-wrap{flex:1;min-width:0}
+.emp-log-time{width:112px;flex-shrink:0;height:36px;padding:0 8px}
+
+/* The standing notice: the record holds documents that have not come back. */
+.emp-log-alert{display:flex;align-items:flex-start;gap:7px;
+  border-radius:8px;padding:9px 11px;font-size:11.5px;line-height:1.45;margin-bottom:12px;
+  background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
+.emp-log-alert svg{flex-shrink:0;margin-top:1px}
+/* A timeline row that lists what has to come back. Same shape as the comment
+   row it sits under, tinted so it is not read as more prose. */
+.lp-log-comment-row.is-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);margin-top:5px}
+.lp-log-comment-row.is-bad .lp-log-comment-label{color:var(--st-bad-fg);opacity:.75}
+
 /* The filter pill still carries the FULL status, because the option value is
    what gets matched against the row. .lp-filter-bar-row sizes a pill to its label,
    so cap the trigger and let the dropdown — which is where you actually read

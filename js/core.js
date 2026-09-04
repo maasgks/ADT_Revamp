@@ -418,10 +418,13 @@ function seedLogs(rec,fixture){
 // Every log form in the app is "pick the new status, say why". This renders the
 // status half; the comment box and buttons stay with the caller because the
 // panels differ on Save vs Cancel/Submit.
-function lpLogStatusField(id,current,opts){
+/* `onchange` is optional inline JS for panels where picking a status changes
+   what else the form shows — the employee lifecycle swaps in that status's
+   checklist. Panels that do not pass it get exactly the markup they had. */
+function lpLogStatusField(id,current,opts,onchange){
   const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
   return '<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="'+id+'">'
+    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="'+id+'"'+(onchange?' onchange="'+onchange+'"':'')+'>'
     +'<option value="">Select Status</option>'
     +(opts||[]).map(function(o){return '<option value="'+o+'"'+(o===current?' selected':'')+'>'+o+'</option>';}).join('')
     +'</select>'+chev+'</div>';
@@ -2505,16 +2508,16 @@ const contractsData=[
    complianceItems:[{item:'Classification questionnaire',note:'Mandatory',status:'Approved',doc:null}]}
 ];
 const ctLogsData={
-  1:[{date:'2026-06-11',time:'15:17:26',user:'Admin',status:'Submitted',action:'Contract submitted for review and quotation.'}],
-  2:[{date:'2026-06-06',time:'15:05:48',user:'Admin',status:'Proposal Sent',action:'EOR proposal sent to employee for review.'},{date:'2026-06-06',time:'14:00:00',user:'Manager',status:'Quotation Approved',action:'Quotation approved by manager. Proceeding to proposal.'},{date:'2026-06-06',time:'13:00:00',user:'Admin',status:'Submitted',action:'Contract submitted for review.'}],
-  3:[{date:'2026-06-06',time:'14:07:35',user:'Admin',status:'Inactive',action:'Contract set to Inactive.'}],
-  4:[{date:'2026-06-06',time:'12:34:17',user:'Admin',status:'Proposal Sent',action:'EOR proposal sent to employee.'},{date:'2026-06-06',time:'11:00:00',user:'Admin',status:'Submitted',action:'Contract submitted for review.'}]
+  1:[{date:'11 Jun 2026',time:'03:17:26 PM',user:'Admin',status:'Submitted',action:'Contract submitted for review and quotation.'}],
+  2:[{date:'6 Jun 2026',time:'03:05:48 PM',user:'Admin',status:'Proposal Sent',action:'EOR proposal sent to employee for review.'},{date:'6 Jun 2026',time:'02:00:00 PM',user:'Manager',status:'Quotation Approved',action:'Quotation approved by manager. Proceeding to proposal.'},{date:'6 Jun 2026',time:'01:00:00 PM',user:'Admin',status:'Submitted',action:'Contract submitted for review.'}],
+  3:[{date:'6 Jun 2026',time:'02:07:35 PM',user:'Admin',status:'Inactive',action:'Contract set to Inactive.'}],
+  4:[{date:'6 Jun 2026',time:'12:34:17 PM',user:'Admin',status:'Proposal Sent',action:'EOR proposal sent to employee.'},{date:'6 Jun 2026',time:'11:00:00 AM',user:'Admin',status:'Submitted',action:'Contract submitted for review.'}]
 };
 const ctWorkflowData={
-  1:[{title:'Contract Submitted',user:'Admin',date:'2026-06-11',time:'15:17:26',description:'EOR contract for TestEmp Antar submitted for quotation and review.'}],
-  2:[{title:'Proposal Sent',user:'Admin',date:'2026-06-06',time:'15:05:48',description:'EOR proposal dispatched to Rashi Singh for review and acceptance.'},{title:'Quotation Approved',user:'Manager',date:'2026-06-06',time:'14:00:00',description:'Quotation approved. Proposal stage initiated.'},{title:'Contract Submitted',user:'Admin',date:'2026-06-06',time:'13:00:00',description:'EOR contract submitted for review.'}],
-  3:[{title:'Contract Inactive',user:'Admin',date:'2026-06-06',time:'14:07:35',description:'Contract for Deepak Singh set to Inactive.'}],
-  4:[{title:'Proposal Sent',user:'Admin',date:'2026-06-06',time:'12:34:17',description:'EOR proposal sent to Rajdeep Singh.'},{title:'Contract Submitted',user:'Admin',date:'2026-06-06',time:'11:00:00',description:'EOR contract submitted for review.'}]
+  1:[{title:'Contract Submitted',user:'Admin',date:'11 Jun 2026',time:'03:17:26 PM',description:'EOR contract for TestEmp Antar submitted for quotation and review.'}],
+  2:[{title:'Proposal Sent',user:'Admin',date:'6 Jun 2026',time:'03:05:48 PM',description:'EOR proposal dispatched to Rashi Singh for review and acceptance.'},{title:'Quotation Approved',user:'Manager',date:'6 Jun 2026',time:'02:00:00 PM',description:'Quotation approved. Proposal stage initiated.'},{title:'Contract Submitted',user:'Admin',date:'6 Jun 2026',time:'01:00:00 PM',description:'EOR contract submitted for review.'}],
+  3:[{title:'Contract Inactive',user:'Admin',date:'6 Jun 2026',time:'02:07:35 PM',description:'Contract for Deepak Singh set to Inactive.'}],
+  4:[{title:'Proposal Sent',user:'Admin',date:'6 Jun 2026',time:'12:34:17 PM',description:'EOR proposal sent to Rajdeep Singh.'},{title:'Contract Submitted',user:'Admin',date:'6 Jun 2026',time:'11:00:00 AM',description:'EOR contract submitted for review.'}]
 };
 let ctSelectedId=null,ctTab='basic-details';
 

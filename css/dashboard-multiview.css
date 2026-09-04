@@ -595,11 +595,16 @@
 .oca-att-acts{display:flex;gap:8px}
 .oca-att-acts .oca-act{flex:1}
 @media (max-width:720px){.oca-att-grid{grid-template-columns:1fr}}
-
 /* ── The step that has not happened yet ── */
 /* Dashed and muted throughout: it is the only row on the timeline that records
    nothing, and it must not read as an event that occurred. No author, no
-   timestamp, no comment - the three things every real entry has. */
+   timestamp, no comment - the three things every real entry has.
+
+   THIS ROW IS THE COMPLIANCE PANEL'S ALONE. It was briefly promoted to a
+   shared .lp-next-* and drawn on the contracts Logs tab too; that made
+   Contracts the one Logs tab in the system carrying a kind of row none of the
+   others have, so it was taken back out. Do not generalise it again without
+   adding it everywhere. */
 .oca-next-card{background:var(--light);border-style:dashed;box-shadow:none}
 .oca-next-avatar{background:var(--light);border:1.5px dashed #cbd5e1;color:#9aa3b0}
 .oca-next-dot{background:transparent;border:1.5px dashed #b6bec9;box-sizing:border-box}

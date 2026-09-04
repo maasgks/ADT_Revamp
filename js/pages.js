@@ -1654,11 +1654,22 @@ function openCtModal(id){
 }
 function closeCtModal(){document.getElementById('ct-modal-overlay').style.display='none';}
 /* ══ CONTRACT LOGS TAB ══════════════════════════════════════════════════════
-   PRD section 7. Reverse-chronological, grouped by day, one row per event:
-   family icon, the registry's type-correct label, actor, time, and a
-   prev -> new status chip pair where the event moved the record.
+   PRD section 7, drawn in the SHARED logs design — the same .lp-logs-* two
+   column panel Compliance, Leave Policies, Payheads, Teams, Payroll and the
+   employee lifecycle all use: avatar timeline on the left, the form that moves
+   the record on the right.
 
-   Two rules from the PRD that shape this more than they look:
+   It used to have a timeline of its own — day headers, a family icon and tag
+   per row, a prev -> new chip pair — and an action panel of its own, with a
+   button named after the next stage and a separate "revert" disclosure. That
+   made Contracts the one module whose history looked like a different
+   product. All of it is gone: this tab is now the same two columns, the same
+   cards and the same Status + Comment + Cancel/Submit form as everywhere
+   else. Nothing about the EVENTS changed in the move; only the shell they are
+   drawn in, and where the forward/backward decision is taken (see ctSaveLog).
+
+   Two rules from the PRD survive the move, because they are about the content
+   of a row rather than its chrome:
 
    1. LABELS COME FROM THE REGISTRY, ALREADY TYPE-CORRECT. Nothing here builds
       a label by pasting a type onto a stage name at render time. An
@@ -1667,18 +1678,24 @@ function closeCtModal(){document.getElementById('ct-modal-overlay').style.displa
       "Immigration Quote sent", which is a phrase this product does not use.
 
    2. A COMMENT IS CONTENT, NOT A HEADING. Rejections in ADT carry no reason
-      CODE - only free text. Rendering that text as the row's title would make
+      CODE — only free text. Rendering that text as the row's title would make
       one person's sentence look like a categorical reason the system
-      assigned. So the label is the heading, and the comment sits below it as
-      quoted content with a small attribution line. */
+      assigned. So the label is the heading, and the comment sits below it in
+      the shared Comment: row.
 
-const CT_EV_ICON={
-  Intake:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-  Quote:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-  Agreement:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg>',
-  Delivery:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/><path d="M9 7V5h6v2"/></svg>',
-  Billing:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>',
-  Overrides:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M10.3 3.6l-8 13.9A2 2 0 0 0 4 20.5h16a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+   NOTHING IS ADDED TO THE SHARED DESIGN HERE. A row for the step that has
+   not happened yet — dashed, pending/complete, borrowed from the compliance
+   panel — was tried at the top of this timeline and removed again: no other
+   Logs tab in the system has such a row, so drawing it here made Contracts
+   the odd one out, which is the opposite of what this rewrite was for. If a
+   Logs tab genuinely needs a new kind of row, it goes into the shared design
+   and every module gets it; it does not get added to one tab. */
+
+const CT_LOG_ICO={
+  person:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  cal:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  clk:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M10.3 3.6l-8 13.9A2 2 0 0 0 4 20.5h16a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
 };
 
 /* An override or a revert is a danger-tinted row for the life of the record,
@@ -1686,138 +1703,137 @@ const CT_EV_ICON={
    six months has to see that a stage was walked back without hunting for it. */
 function ctIsOverrideRow(r){return r.family==='Overrides';}
 
+/* Did this entry MOVE the record, or only add to it? The shared timeline
+   colours the ring and the headline on a real move and greys them otherwise,
+   and logIsChange() decides that by comparing a row's status with the one
+   before it. Registry rows can answer it outright — they carry prev and new —
+   so they do; the fixture rows that predate the registry fall back to the
+   shared comparison. Note that the HEADLINE is always the event's own label
+   either way: unlike the other modules, an entry here can be real content
+   without moving anything ("Quote viewed"), and calling that "Updated" would
+   throw away the only thing the row says. */
+function ctLogMoved(rows,i){
+  const r=rows[i];
+  if(r.prevStatus&&r.newStatus)return r.prevStatus!==r.newStatus;
+  return logIsChange(rows,i);
+}
+
 function ctLogsTabHTML(c){
   const raw=ctLogsData[c.id]||[];
   const rows=raw.map(function(l){return ctLogRow(l,c.type);});
 
-  /* Grouped by day. The dates in this data are display strings ("06 Jun
-     2026"), so grouping is by that string rather than by parsing it back into
-     a Date - the fixtures and stampNow() both produce the same format, and a
-     parse here would be a second source of truth about what a day is. */
-  const order=[];const byDay={};
-  rows.forEach(function(r){
-    const d=r.date||'—';
-    if(!byDay[d]){byDay[d]=[];order.push(d);}
-    byDay[d].push(r);
-  });
-  const today=stampNow().date;
-  const dayLabel=function(d){return d===today?'Today':d;};
-
-  const timeline=rows.length
-    ? order.map(function(d){
-        return '<div class="ct-log-day">'+dayLabel(d)+'</div>'
-          +byDay[d].map(ctLogRowHTML).join('');
-      }).join('')
-    : '<div class="ct-log-empty">No activity yet. Every status change on this contract will be recorded here.</div>';
+  /* Entries only, newest first, and the shared empty state when there are
+     none - exactly what every other module's timeline is. A row for the step
+     that has NOT happened yet was tried here and taken out again: it is a
+     kind of row no other Logs tab has, so it made this one different from
+     the rest of the system, which is the opposite of the point. */
+  const timelineHTML=rows.length
+    ? '<div class="lp-logs-timeline">'+rows.map(function(r,i){return ctLogRowHTML(rows,i);}).join('')+'</div>'
+    : '<div class="lp-logs-empty">No activity logs yet.</div>';
 
   const overrides=rows.filter(ctIsOverrideRow);
   const banner=overrides.length
     ? '<div class="ct-log-banner">'
-      +'<span class="ct-log-banner-ico">'+CT_EV_ICON.Overrides+'</span>'
+      +'<span class="ct-log-banner-ico">'+CT_LOG_ICO.warn+'</span>'
       +'<span><b>'+overrides.length+' override'+(overrides.length>1?'s':'')+' on this record.</b> '
       +'Most recent: '+overrides[0].label+' by '+overrides[0].user+' on '+overrides[0].date+'.</span></div>'
     : '';
 
-  return '<div class="ct-log-wrap">'
-    +banner
-    +ctLogActionHTML(c)
-    +'<div class="ct-log-timeline">'+timeline+'</div>'
+  /* .lp-logs-wrap is a TWO-COLUMN grid and every module gives it exactly two
+     children. The banner and the revert panel belong WITH the form, not
+     beside it, so all three go in one column wrapper. */
+  return '<div class="lp-logs-wrap">'+timelineHTML
+    +'<div class="lp-logs-side">'+banner+ctLogFormHTML(c)+'</div>'
     +'</div>';
 }
 
-function ctLogRowHTML(r){
-  const ico=CT_EV_ICON[r.family]||CT_EV_ICON.Intake;
-  const over=ctIsOverrideRow(r);
-  /* prev -> new only when the event actually moved the record. An event that
-     changed nothing showing "Submitted -> Submitted" is noise that makes the
-     rows that DID move harder to pick out. */
-  const chips=(r.prevStatus&&r.newStatus&&r.prevStatus!==r.newStatus)
-    ? '<div class="ct-log-chips">'+ctStatusBadge(r.prevStatus)
-      +'<span class="ct-log-arrow">&rarr;</span>'+ctStatusBadge(r.newStatus)+'</div>'
-    : (r.newStatus&&!r.prevStatus?'<div class="ct-log-chips">'+ctStatusBadge(r.newStatus)+'</div>':'');
-  /* The comment is quoted content with an attribution line under it - never
-     the row's heading. See rule 2 at the top of this section. */
-  const comment=r.comment
-    ? '<div class="ct-log-comment">'+r.comment
-      +'<span class="ct-log-comment-by">&mdash; '+r.user+'</span></div>'
-    : '';
-  return '<div class="ct-log-row'+(over?' is-override':'')+'">'
-    +'<div class="ct-log-ico">'+ico+'</div>'
-    +'<div class="ct-log-body">'
-    +'<div class="ct-log-head">'
-    +'<span class="ct-log-label">'+r.label+'</span>'
-    +'<span class="ct-log-family">'+r.family+'</span>'
-    +'<span class="ct-log-time" title="'+r.date+' at '+r.time+'">'+r.time+'</span>'
+/* One card, in the exact shape every other module's log card has: dot +
+   headline, a person/date/time meta row, and the comment. No family tag and no
+   prev -> new badge pair - those were contracts-only ornaments, and a Logs tab
+   that carries chrome nothing else has is not the same tab twice. */
+function ctLogRowHTML(rows,i){
+  const r=rows[i];
+  /* An override keeps the bad tone whatever stage it landed on - it is the
+     move that is exceptional, not the destination. */
+  const k=ctIsOverrideRow(r)?'bad':(ctLogMoved(rows,i)?statusTone(r.status):'event');
+  const meta=function(ico,txt){return '<span class="lp-log-meta-item">'+ico+'<span>'+txt+'</span></span>';};
+  return '<div class="lp-log-row">'
+    +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+k+'">'+CT_LOG_ICO.person+'</div>'
+      +(i<rows.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+    +'<div class="lp-log-card">'
+    +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+k+'"></span>'
+      +'<span class="lp-log-status-text lp-log-status-text--'+k+'">'+r.label+'</span></div>'
+    +'<div class="lp-log-meta-row">'
+      +meta(CT_LOG_ICO.person,r.user+(r.actorType==='SYSTEM'?' · system':''))
+      +(r.date?meta(CT_LOG_ICO.cal,r.date):'')
+      +(r.time?meta(CT_LOG_ICO.clk,r.time):'')
     +'</div>'
-    +'<div class="ct-log-actor">'+r.user+(r.actorType==='SYSTEM'?' &middot; system':'')+'</div>'
-    +chips
-    +comment
+    +(r.comment?'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+r.comment+'</div>':'')
     +'</div></div>';
 }
 
-/* ── The action panel ──────────────────────────────────────────────────────
-   Advance, or revert. Both write an event, both take a mandatory comment.
+/* ── The form ──────────────────────────────────────────────────────────────
+   The SAME form every other module's Logs tab has, and nothing else: current
+   status as the header, one line of instruction, a mandatory Status select, a
+   mandatory Comment, Cancel and Submit.
 
-   The comment is mandatory on BOTH because these rows are the only account of
-   why a contract is where it is - a stage that moved with no explanation is
-   the thing this tab exists to prevent. A revert additionally asks for more:
-   moving a record backwards is the kind of thing someone has to justify to an
-   auditor later, so it is styled as a secondary, deliberately-opened control
-   rather than sitting next to the primary action as an equal choice. */
-function ctLogActionHTML(c){
+   Advancing and reverting used to be two separate controls here - a primary
+   button named after the next stage, and a "revert to an earlier stage"
+   disclosure that opened a second panel with its own select and its own
+   reason box. Both are just "pick where this record goes and say why", which
+   is what the Status select already is, so they are one control now. The
+   distinction that MATTERS - that going backwards is an override - is not
+   lost: it is decided from the stages themselves in ctSaveLog(), which is a
+   more reliable place for it than which of two buttons someone pressed.
+
+   The comment is mandatory because these rows are the only account of why a
+   contract is where it is; a stage that moved with no explanation is the
+   thing this tab exists to prevent. */
+
+/* The moves this contract can actually make from where it is: stay put, step
+   ONE stage forward, or go back to any stage behind it. Nothing further
+   forward is offered, so a record cannot skip a stage through this control.
+   Same shape as the compliance panel's ocaMoveOptions(). */
+function ctMoveOptions(c){
+  const flow=ctFlowFor(c.type);
+  const idx=flow.indexOf(c.status);
+  /* Off the flow entirely (Inactive) - there is nowhere legal to go, so the
+     select offers only the status it already has and the form is a note pad. */
+  if(idx<0)return [c.status];
+  return [c.status]
+    .concat(idx<flow.length-1?[flow[idx+1]]:[])
+    .concat(flow.slice(0,idx).reverse());   // nearest stage back first
+}
+
+function ctLogFormHTML(c){
   const flow=ctFlowFor(c.type);
   const idx=flow.indexOf(c.status);
   const next=idx>=0&&idx<flow.length-1?flow[idx+1]:null;
-  const cfg=ctTypeCfg(c.type);
-
-  /* Everything before the current stage is a legal revert target. Nothing
-     after it is - that is what the advance action is for, one stage at a
-     time, so a record cannot skip a stage by way of the revert control. */
-  const back=idx>0?flow.slice(0,idx):[];
-
-  let advance='';
-  if(next){
-    const evLabel=ctEventLabel(ctEventKeyFor(c.type,next),c.type,next);
-    advance='<div class="ct-log-act">'
-      +'<div class="ct-log-act-head"><span class="ct-log-act-dot"></span>Next: '+next+'</div>'
-      +'<p class="ct-log-act-sub">Moves this '+cfg.label+' contract to <b>'+next+'</b> and records &ldquo;'+evLabel+'&rdquo; in the log.</p>'
-      +'<label class="ct-log-act-label" for="ct-log-note-'+c.id+'">Comment <span class="ct-log-req">*</span></label>'
-      +'<textarea class="ct-log-textarea" id="ct-log-note-'+c.id+'" placeholder="What happened, and why? This is the only record of it."></textarea>'
-      +'<button class="ct-log-btn" onclick="ctAdvanceStatus('+c.id+')">'+next+'</button>'
-      +'</div>';
-  }else{
-    advance='<div class="ct-log-act is-done">'
-      +'<div class="ct-log-act-head"><span class="ct-log-act-dot is-done"></span>'+c.status+'</div>'
-      +'<p class="ct-log-act-sub">This contract has reached the end of the '+cfg.label+' flow.</p>'
-      +'</div>';
-  }
-
-  if(!back.length)return advance;
-
-  const opts=back.map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
-  const revert=ctRevertOpen
-    ? '<div class="ct-log-revert is-open">'
-      +'<div class="ct-log-revert-head">Revert this contract'
-      +'<button class="ct-log-revert-x" onclick="ctToggleRevert()" aria-label="Cancel revert">&times;</button></div>'
-      +'<p class="ct-log-act-sub">Moves the contract back to an earlier stage. The move is logged as an override and stays visible at the top of this tab.</p>'
-      +'<label class="ct-log-act-label" for="ct-revert-to-'+c.id+'">Revert to</label>'
-      +'<select class="ct-log-select" id="ct-revert-to-'+c.id+'">'+opts+'</select>'
-      +'<label class="ct-log-act-label" for="ct-revert-why-'+c.id+'">Reason <span class="ct-log-req">*</span></label>'
-      +'<textarea class="ct-log-textarea" id="ct-revert-why-'+c.id+'" placeholder="Why is this being moved back?"></textarea>'
-      +'<button class="ct-log-btn is-revert" onclick="ctRevertStatus('+c.id+')">Revert status</button>'
-      +'</div>'
-    : '<button class="ct-log-revert-open" onclick="ctToggleRevert()">'
-      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>'
-      +'Revert to an earlier stage</button>';
-
-  return advance+revert;
+  const back=idx>0;
+  const sub=next
+    ? (back?'Move this contract to '+next+', or back to an earlier stage'
+           :'Move this contract to '+next+', and say why')
+    : (back?'Add a comment, or move this contract back to an earlier stage'
+           :'Add a comment against this contract');
+  return '<div class="lp-logs-form">'
+    +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(c.status)+'"></span>'+c.status+'</div>'
+    +'<p class="lp-logs-form-sub">'+sub+'</p>'
+    +lpLogStatusField('ct-log-status-sel',c.status,ctMoveOptions(c))
+    +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+    +'<textarea class="lp-logs-form-textarea" id="ct-log-comment-inp" placeholder="Enter comment"></textarea>'
+    +'<div style="display:flex;gap:10px;margin-top:12px">'
+    +'<button class="ep-cancel-btn" style="flex:1" onclick="ctCancelLog()">Cancel</button>'
+    +'<button class="lp-logs-save-btn" style="flex:1" onclick="ctSaveLog('+c.id+')">Submit</button>'
+    +'</div></div>';
 }
 
-let ctRevertOpen=false;
-function ctToggleRevert(){ctRevertOpen=!ctRevertOpen;isbTab('ct',renderCtSidebar);}
+function ctCancelLog(){
+  const inp=document.getElementById('ct-log-comment-inp');if(inp)inp.value='';
+  isbTab('ct',renderCtSidebar);
+}
 
-/* Shared by both actions: flag the field red rather than firing an alert, the
-   same way the Chats module already handles a missing comment. */
+/* Flag the field red rather than firing an alert, the same correction the
+   Chats module and lpCommitLog() already use. */
 function ctFlashField(el){
   if(!el)return;
   el.classList.add('is-invalid');
@@ -1825,49 +1841,39 @@ function ctFlashField(el){
   setTimeout(function(){el.classList.remove('is-invalid');},1600);
 }
 
-function ctAdvanceStatus(id){
+/* The one commit path. lpCommitLog() is not used here on purpose: it writes a
+   bare {status, comment} row, and every row in this module has to be stamped
+   with a registry event so an export stays faithful to the PRD. So this does
+   lpCommitLog's job - validate, move, record - through emitContractEvent(). */
+function ctSaveLog(id){
   const c=contractsData.find(function(x){return x.id===id;});
   if(!c)return;
+  const sel=document.getElementById('ct-log-status-sel');
+  const inp=document.getElementById('ct-log-comment-inp');
+  const to=sel?sel.value:'';
+  const comment=inp?inp.value.trim():'';
+  if(!to){ctFlashField(sel);return;}
+  if(!comment){ctFlashField(inp);return;}
+
   const flow=ctFlowFor(c.type);
-  const i=flow.indexOf(c.status);
-  const next=i>=0&&i<flow.length-1?flow[i+1]:null;
-  if(!next)return;
-  const box=document.getElementById('ct-log-note-'+id);
-  const comment=box?box.value.trim():'';
-  if(!comment){ctFlashField(box);return;}
-  const prev=c.status;
-  c.status=next;
-  /* The event is written in the same breath as the status change, from the
-     one registry key for this type and stage - which is what makes "no status
-     moved without an event" true by construction rather than by discipline. */
-  emitContractEvent(c,ctEventKeyFor(c.type,next),{
-    prevStatus:prev,newStatus:next,comment:comment,visibility:'CLIENT'});
+  const from=c.status;
+  const back=flow.indexOf(to)>=0&&flow.indexOf(from)>=0&&flow.indexOf(to)<flow.indexOf(from);
+
+  /* Three outcomes, and the DIRECTION picks between them - not the button:
+     no move is a note, backwards is an override, forwards is the stage event
+     the registry holds for the stage being entered. */
+  let key,visibility;
+  if(to===from){key='COMMENT_ADDED';visibility='INTERNAL';}
+  else if(back){key='STATUS_REVERTED';visibility='INTERNAL';}
+  else{key=ctEventKeyFor(c.type,to);visibility='CLIENT';}
+
+  c.status=to;
+  emitContractEvent(c,key,{prevStatus:from,newStatus:to,comment:comment,visibility:visibility});
   delete window._ctPendingStatus;
   renderADTPage();
-  showToast('Contract updated','success',c.contractId+' &rarr; '+next+'.');
-}
-
-function ctRevertStatus(id){
-  const c=contractsData.find(function(x){return x.id===id;});
-  if(!c)return;
-  const sel=document.getElementById('ct-revert-to-'+id);
-  const why=document.getElementById('ct-revert-why-'+id);
-  const to=sel?sel.value:'';
-  const reason=why?why.value.trim():'';
-  if(!reason){ctFlashField(why);return;}
-  if(!to)return;
-  const flow=ctFlowFor(c.type);
-  /* Guard the direction as well as the field. The select only offers earlier
-     stages, but a revert that moved a record FORWARD would bypass the comment
-     and gate rules the advance path enforces. */
-  if(flow.indexOf(to)>=flow.indexOf(c.status))return;
-  const prev=c.status;
-  c.status=to;
-  emitContractEvent(c,'STATUS_REVERTED',{
-    prevStatus:prev,newStatus:to,comment:reason,visibility:'INTERNAL'});
-  ctRevertOpen=false;
-  renderADTPage();
-  showToast('Contract reverted','info',c.contractId+' moved back to '+to+'.');
+  if(to===from)showToast('Comment saved','success','Added to '+c.contractId+'.');
+  else if(back)showToast('Contract reverted','info',c.contractId+' moved back to '+to+'.');
+  else showToast('Contract updated','success',c.contractId+' &rarr; '+to+'.');
 }
 
 function renderCtSidebar(){

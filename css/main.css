@@ -877,10 +877,19 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .filter-search{height:32px;padding:0 16px;border-radius:var(--r-control);font-size:11.5px;font-weight:600;font-family:inherit;cursor:pointer;background:#1e2530;border:1.5px solid #1e2530;color:#fff;transition:.15s}
 /* (.filter-search hover was here too - same note as the line above.) */
 /* ══ CONTRACT LOGS TAB ══════════════════════════════════════════════════════
-   Timeline of events, grouped by day, with the action panel above it. The
-   panel is first in the DOM because taking the next action is what most
-   visits are for; the history is what you scroll to. */
-.ct-log-wrap{display:flex;flex-direction:column;gap:16px;padding:2px}
+   The tab is drawn ENTIRELY in the shared logs design - .lp-logs-wrap, the
+   .lp-log-* timeline and the .lp-logs-form panel, all in leaves.css, and
+   nothing else - so that Contracts reads as the
+   same product as Compliance, Leave Policies, Teams and the employee
+   lifecycle. What used to live here was a whole second design: a
+   contracts-only timeline (.ct-log-day, .ct-log-row, .ct-log-comment, a
+   .ct-log-family tag, prev -> new chips) and a bespoke action card with its
+   own textarea, its own button and a .ct-log-revert disclosure panel. All of
+   it is gone and none of it should come back - if this tab needs something,
+   the shared design is where it goes, so every module gets it.
+
+   The banner below is the single exception, and only because no other module
+   has the thing it reports. */
 
 /* An override or a revert pins this for the life of the record. It is the one
    place on these screens that uses the bad tone as a background rather than a
@@ -890,69 +899,6 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
   font-size:var(--ds-caption);color:var(--st-bad-fg);line-height:1.5}
 .ct-log-banner-ico{flex-shrink:0;width:15px;height:15px;margin-top:1px}
 .ct-log-banner-ico svg{width:15px;height:15px}
-
-/* ── Action panel ──────────────────────────────────────────────────────── */
-.ct-log-act{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:15px}
-.ct-log-act-head{display:flex;align-items:center;gap:7px;font-size:var(--ds-title);font-weight:700;color:var(--navy)}
-.ct-log-act-dot{width:8px;height:8px;border-radius:50%;background:var(--st-wait-fg);flex-shrink:0}
-.ct-log-act-dot.is-done{background:var(--st-ok-fg)}
-.ct-log-act-sub{font-size:var(--ds-caption);color:var(--gray);margin:5px 0 13px;line-height:1.5}
-.ct-log-act.is-done .ct-log-act-sub{margin-bottom:0}
-.ct-log-act-label{display:block;font-size:var(--ds-caption);font-weight:600;color:var(--navy);margin-bottom:5px}
-.ct-log-req{color:var(--st-bad-fg)}
-.ct-log-textarea,.ct-log-select{width:100%;font-family:inherit;font-size:var(--ds-body);color:var(--navy);
-  background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-control);padding:9px 11px;
-  margin-bottom:12px;transition:border-color .15s}
-.ct-log-textarea{min-height:66px;resize:vertical;line-height:1.5}
-.ct-log-textarea:focus,.ct-log-select:focus{outline:none;border-color:var(--navy)}
-/* A missing mandatory comment flags the field rather than firing an alert -
-   the same correction the Chats module already uses. */
-.ct-log-textarea.is-invalid,.ct-log-select.is-invalid{border-color:var(--st-bad-fg);background:var(--st-bad-bg)}
-.ct-log-btn{width:100%;padding:10px;border:1.5px solid var(--navy);border-radius:var(--r-control);
-  background:var(--navy);color:#fff;font-family:inherit;font-size:var(--ds-body);font-weight:600;cursor:pointer;transition:.15s}
-.ct-log-btn:hover{opacity:.88}
-.ct-log-btn.is-revert{background:var(--st-bad-fg);border-color:var(--st-bad-fg)}
-
-/* Revert is deliberately secondary: a link until opened, then a bordered
-   panel. Moving a record backwards should take an extra decision, not sit
-   beside the forward action as an equal choice. */
-.ct-log-revert-open{display:flex;align-items:center;gap:6px;background:none;border:none;padding:0;
-  font-family:inherit;font-size:var(--ds-caption);font-weight:600;color:var(--gray);cursor:pointer;align-self:flex-start}
-.ct-log-revert-open:hover{color:var(--navy)}
-.ct-log-revert{background:var(--card);border:1.5px dashed var(--st-bad-bd);border-radius:var(--r-card);padding:15px}
-.ct-log-revert-head{display:flex;align-items:center;justify-content:space-between;
-  font-size:var(--ds-title);font-weight:700;color:var(--st-bad-fg);margin-bottom:2px}
-.ct-log-revert-x{background:none;border:none;font-size:17px;line-height:1;color:var(--gray);cursor:pointer;padding:0 2px}
-.ct-log-revert-x:hover{color:var(--navy)}
-
-/* ── Timeline ──────────────────────────────────────────────────────────── */
-.ct-log-day{font-size:var(--ds-label);font-weight:700;text-transform:uppercase;letter-spacing:.5px;
-  color:var(--gray);margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-.ct-log-day:first-child{margin-top:0}
-.ct-log-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--ol)}
-.ct-log-row:last-child{border-bottom:none}
-.ct-log-ico{flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border-radius:50%;background:var(--light);border:1px solid var(--border);color:var(--gray)}
-.ct-log-ico svg{width:14px;height:14px}
-.ct-log-row.is-override .ct-log-ico{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
-.ct-log-body{flex:1;min-width:0}
-.ct-log-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.ct-log-label{font-size:var(--ds-body);font-weight:600;color:var(--navy)}
-.ct-log-row.is-override .ct-log-label{color:var(--st-bad-fg)}
-.ct-log-family{font-size:var(--ds-micro);font-weight:600;color:var(--gray);background:var(--light);
-  border:1px solid var(--border);border-radius:var(--r-status);padding:1px 7px}
-.ct-log-time{margin-left:auto;font-size:var(--ds-caption);color:var(--gray);cursor:default}
-.ct-log-actor{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
-.ct-log-chips{display:flex;align-items:center;gap:6px;margin-top:7px;flex-wrap:wrap}
-.ct-log-arrow{color:var(--gray);font-size:var(--ds-body)}
-/* The comment is CONTENT, not a heading. Rejections here carry no reason code
-   - only free text - so it is set as a quoted body with the author credited
-   beneath, never promoted to the row's title where it would read as a
-   category the system assigned. */
-.ct-log-comment{margin-top:8px;padding:9px 11px;background:var(--light);border-left:2px solid var(--border);
-  border-radius:0 var(--r-control) var(--r-control) 0;font-size:var(--ds-body);color:var(--navy);line-height:1.55}
-.ct-log-comment-by{display:block;margin-top:5px;font-size:var(--ds-caption);color:var(--gray);font-style:normal}
-.ct-log-empty{padding:34px 20px;text-align:center;font-size:var(--ds-body);color:var(--gray);line-height:1.55}
 
 /* ── Contracts landing: pick a type before the table ──────────────────────
    The whole screen is four cards. It used to carry a pipeline strip, a

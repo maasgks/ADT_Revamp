@@ -16,7 +16,7 @@
    contract's type decides which pair applies. Exports stay faithful to the
    PRD; the UI stays readable; queries stay possible. */
 
-const CT_EVENT_FAMILIES=['Intake','Quote','Agreement','Delivery','Billing','Overrides'];
+const CT_EVENT_FAMILIES=['Intake','Quote','Agreement','Delivery','Billing','Overrides','Note'];
 
 /* Shorthand: e(family, {TYPE:[legacy, label], ...}). DEFAULT covers every type
    not named, which is most of the delivery and billing events. */
@@ -163,12 +163,22 @@ const CT_EVENTS={
     IMMIGRATION:['STATUS_REVERTED','Status reverted'],CONTRACTOR:['STATUS_REVERTED','Status reverted']}),
   CONTRACT_DEACTIVATED:ctEv('Intake',{
     EOR:['CONTRACT_DEACTIVATED','Contract set inactive'],PEO:['CONTRACT_DEACTIVATED','Contract set inactive'],
-    IMMIGRATION:['CONTRACT_DEACTIVATED','Contract set inactive'],CONTRACTOR:['CONTRACT_DEACTIVATED','Contract set inactive']})
+    IMMIGRATION:['CONTRACT_DEACTIVATED','Contract set inactive'],CONTRACTOR:['CONTRACT_DEACTIVATED','Contract set inactive']}),
+
+  /* COMMENT_ADDED - a log entry that says something without moving the record.
+     The log form in every other module lets you save a comment against the
+     status the record is already in, and section 6 has no key for it. Its own
+     family, 'Note', because it is not a stage event: rolling it into Intake
+     would put ordinary chatter in the same bucket as "requirement submitted"
+     and quietly corrupt any count of intake activity. */
+  COMMENT_ADDED:ctEv('Note',{
+    EOR:['COMMENT_ADDED','Comment added'],PEO:['COMMENT_ADDED','Comment added'],
+    IMMIGRATION:['COMMENT_ADDED','Comment added'],CONTRACTOR:['COMMENT_ADDED','Comment added']})
 };
 
 /* Keys that are not from the PRD, listed once so a test can assert the spec'd
    set stayed clean and an export can decide what to do with them. */
-const CT_EVENTS_NON_SPEC=['STATUS_REVERTED','CONTRACT_DEACTIVATED'];
+const CT_EVENTS_NON_SPEC=['STATUS_REVERTED','CONTRACT_DEACTIVATED','COMMENT_ADDED'];
 
 /* ── Which event a status change emits ─────────────────────────────────────
    Keyed by type, then by the status being ENTERED.
