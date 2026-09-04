@@ -230,11 +230,16 @@ function renderADTPage(){
   }
   /* The Cost Calculator prices an employment cost - gross to total employer
      burden - which is an EOR/PEO question. An immigration case is priced on
-     government fees and professional time, and a contractor on a rate, so the
-     button is hidden rather than left to return a number that means nothing
-     for the type on screen. costCalc lives on the type config. */
+     government fees and professional time, and a contractor on a rate, so
+     once a type is on screen the button is hidden rather than left to return
+     a number that means nothing for it. costCalc lives on the type config.
+
+     The type-picker landing shows it, like the All band does: no type has
+     been chosen there, so there is no type it could be wrong for - and
+     "what would this cost" is a question people arrive at that screen with,
+     before they have decided which book of work they are in. */
   const ccBtn=document.getElementById('tb-cost-calc-btn');
-  const ccOK=page==='contracts'&&!ctLandingOpen&&(ctTypeFilter===CT_TYPE_ALL||(CT_TYPES[ctTypeFilter]||{}).costCalc);
+  const ccOK=page==='contracts'&&(ctLandingOpen||ctTypeFilter===CT_TYPE_ALL||(CT_TYPES[ctTypeFilter]||{}).costCalc);
   if(ccBtn)ccBtn.style.display=ccOK?'':'none';
   const ohBtn=document.getElementById('tb-opt-hol-btn');
   if(ohBtn)ohBtn.style.display=page==='holidays'?'':'none';
