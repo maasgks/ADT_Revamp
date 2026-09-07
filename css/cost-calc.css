@@ -82,7 +82,11 @@
 .ccp-select{width:100%;height:40px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 34px 0 13px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--navy);background:#fff url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a7282' stroke-width='2.2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center/14px;-webkit-appearance:none;appearance:none;cursor:pointer;outline:none;transition:border-color .15s}
 .ccp-select:hover{border-color:#cbd2da}
 .ccp-select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
-.ccp-money{display:flex;align-items:center;height:40px;border:1px solid var(--border);border-radius:var(--r-input);background:#fff;overflow:hidden;transition:border-color .15s,box-shadow .15s}
+/* --r-control, NOT --r-input. The two fields sit side by side in one row, so
+   the pill radius the token gives a lone text input read as a different kind
+   of control next to the country select's 8px corners. Matching the neighbour
+   wins over matching the token here. */
+.ccp-money{display:flex;align-items:center;height:40px;border:1px solid var(--border);border-radius:var(--r-control);background:#fff;overflow:hidden;transition:border-color .15s,box-shadow .15s}
 .ccp-money:focus-within{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
 .ccp-money-sym{display:flex;align-items:center;justify-content:center;min-width:38px;height:100%;padding-left:6px;font-size:13.5px;font-weight:600;color:var(--gray)}
 .ccp-money-inp{flex:1;min-width:0;height:100%;border:none;outline:none;background:none;padding:0 16px 0 2px;font-family:inherit;font-size:15px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
