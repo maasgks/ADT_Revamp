@@ -1020,7 +1020,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ct-empty-sub{font-size:var(--ds-body);color:var(--gray);max-width:420px;line-height:1.55}
 .ct-empty .lp-pill-search{margin-top:6px}
 
-.listing-stats{display:flex;align-items:stretch;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;flex-shrink:0;align-self:flex-start}
+.listing-stats{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;align-items:stretch;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden;flex-shrink:0;align-self:flex-start}
 .listing-stat{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px 22px;min-width:88px;gap:3px;border-right:1px solid var(--border);cursor:pointer;user-select:none;transition:background .12s}
 .listing-stat:last-child{border-right:none}
 .listing-stat:hover{background:#f8fafc}
@@ -1030,6 +1030,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .listing-stat.active .listing-stat-count,.listing-stat.approved .listing-stat-count{color:var(--st-ok-fg)}
 .listing-stat.inactive .listing-stat-count,.listing-stat.unapproved .listing-stat-count{color:var(--st-bad-fg)}
 .listing-stat.pending .listing-stat-count{color:var(--st-wait-fg)}
+/* Contracts: the strip sits beside the filter bar, so every card takes the
+   same fixed column and the row stays on one line. */
+.ct-stats{grid-auto-columns:minmax(100px,1fr)}
+.ct-stats .listing-stat{padding:10px 10px;min-width:0}
 .listing-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow-x:auto;overflow-y:visible;box-shadow:0 1px 2px rgba(15,23,42,.03);min-width:0;width:100%}
 .listing-table{width:100%;min-width:700px;border-collapse:collapse;font-size:12.5px}
 .listing-table th{height:42px;text-align:left;padding:0 16px;color:#111827;font-weight:600;font-size:11px;background:#fafbfc;border-bottom:1px solid var(--border);letter-spacing:.2px;white-space:nowrap}
@@ -1131,7 +1135,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-filter-bar-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lp-filter-bar-row .cs-wrap{width:auto;min-width:120px}
 .lp-filter-bar-row .cs-trigger{height:34px;border-radius:var(--r-control);padding:0 14px;font-size:13px;white-space:nowrap}
-.lp-filter-bar-row .cs-dropdown{border-radius:12px;min-width:160px;top:calc(100% + 5px)}
+.lp-filter-bar-row .cs-dropdown{border-radius:12px;min-width:160px}
 .lp-pill-select{height:34px;box-sizing:border-box;max-width:180px;text-overflow:ellipsis;border:1.5px solid var(--border);border-radius:var(--r-control);padding:0 28px 0 14px;font-size:13px;color:var(--navy);background:#fff;appearance:none;cursor:pointer;font-family:inherit;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;outline:none;min-width:110px;transition:.15s}
 .lp-pill-select:focus{border-color:var(--orange)}
 .lp-pill-clear{display:inline-flex;align-items:center;gap:6px;height:34px;box-sizing:border-box;padding:0 12px 0 11px;border:1.5px solid var(--border);border-radius:var(--r-control);font-size:13px;font-weight:600;color:var(--navy);background:#fff;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}

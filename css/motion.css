@@ -236,8 +236,16 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
    and gets revealed by a wipe, which reads as a rendering glitch. Delaying
    the body by 90ms lets the panel open first, then the content lands in it. */
 .lp-split-sb{transition:width var(--t-slow) var(--e-in-out),opacity var(--t-base) var(--e-out),box-shadow var(--t-slow) var(--e-out)}
+/* fill-mode BACKWARDS, not both. The `to` frame equals the natural styles, so
+   filling forwards changes nothing visible - but it keeps an animated
+   transform applied, which Chrome reports as an identity matrix rather than
+   none, and any transform makes this scroller the containing block for the
+   fixed popups inside it (.cs-dropdown, .cd-panel, .ms-dropdown). They were
+   positioned in the scrolled content and clipped by the overflow, which is
+   what fixed was chosen to escape. Backwards still shows the `from` frame
+   through the 90ms delay, so the entrance looks the same. */
 @keyframes m-panel-body-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
-.lp-split-sb.open .lp-isb-body,.lp-split-sb.open .lp-isb-tabbar{animation:m-panel-body-in var(--t-base) var(--e-out) 90ms both}
+.lp-split-sb.open .lp-isb-body,.lp-split-sb.open .lp-isb-tabbar{animation:m-panel-body-in var(--t-base) var(--e-out) 90ms backwards}
 
 /* Detail-panel tabs. No border-color here any more - the outline moved off the
    tab and onto the travelling .tab-ind marker - but transform must be listed

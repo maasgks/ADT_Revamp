@@ -705,6 +705,10 @@ function closeAnchoredMenus(e){
   document.querySelectorAll('.ct-action-menu.open').forEach(function(m){m.classList.remove('open');});
   if(typeof closeCustomSelects==='function')closeCustomSelects();
   if(typeof cdCloseAll==='function')cdCloseAll();
+  document.querySelectorAll('.cs-dropdown.cs-open').forEach(function(d){
+    d.classList.remove('cs-open');
+    var t=d.previousElementSibling;if(t)t.classList.remove('cs-open');
+  });
 }
 window.addEventListener('scroll',closeAnchoredMenus,true);
 window.addEventListener('resize',closeAnchoredMenus);
@@ -2091,6 +2095,11 @@ function csToggle(btn){
   });
   const drop=document.getElementById(mine);if(!drop)return;
   const open=drop.classList.toggle('cs-open');btn.classList.toggle('cs-open',open);
+  // Fixed, so the list is placed here rather than by CSS: left-aligned and
+  // trigger-width, the same call the custom select makes. Placement runs
+  // after the class flip because the helper measures the open menu.
+  if(open)placeAnchoredMenu(drop,btn.getBoundingClientRect(),
+    {alignLeft:true,width:btn.getBoundingClientRect().width});
 }
 function csSelect(opt,val,csid){
   const drop=document.getElementById('csd-'+csid);if(!drop)return;

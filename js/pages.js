@@ -4178,7 +4178,7 @@ function ctSetType(key){
    rather than opening a separate report. */
 function ctSummaryCardsHTML(){
   const cards=ctSummaryCardsFor(ctTypeFilter);
-  return '<div class="listing-stats">'+cards.map(function(card){
+  return '<div class="listing-stats ct-stats">'+cards.map(function(card){
     const val=card.phase||card.status;
     const n=ctFilteredRows(ctTypeFilter,val).length;
     const on=ctQuickStatusFilter===val;

@@ -149,26 +149,26 @@ function ctStatusOptionsFor(typeSel){
 const CT_SUMMARY_CARDS={
   EOR:[
     {label:'Quote Ready',status:'Proposal Sent'},
-    {label:'Agreement Pending',status:'Contract Sent'},
+    {label:'Agreement Sent',status:'Contract Sent'},
     {label:'Onboarding',status:'Onboarding'},
     {label:'Ready for Payroll',status:'Ready for Payroll'}
   ],
   IMMIGRATION:[
-    {label:'Proposals Pending',status:'Proposal Sent'},
-    {label:'Contracts Pending',status:'Contract Sent'},
+    {label:'Proposals Sent',status:'Proposal Sent'},
+    {label:'Contracts Sent',status:'Contract Sent'},
     {label:'Pending Kickoff',status:'Pending Kickoff'},
     {label:'Ready for Filing',status:'Ready for Filing'}
   ],
   CONTRACTOR:[
-    {label:'Proposals Pending',status:'Proposal Sent'},
-    {label:'Contracts Pending',status:'Contract Sent'},
-    {label:'Pending Onboarding',status:'Pending Onboarding'},
+    {label:'Proposals Sent',status:'Proposal Sent'},
+    {label:'Contracts Sent',status:'Contract Sent'},
+    {label:'To Onboard',status:'Pending Onboarding'},
     {label:'Active',status:'Active'}
   ],
   /* The All view speaks phases, for the same reason the Status filter does. */
   ALL:[
-    {label:'Awaiting Client Action',phase:'Quote'},
-    {label:'Pending Signature',phase:'Agreement'},
+    {label:'Awaiting Client',phase:'Quote'},
+    {label:'For Signature',phase:'Agreement'},
     {label:'In Delivery',phase:'Delivery'},
     {label:'Active',phase:'Active'}
   ]
