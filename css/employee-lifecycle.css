@@ -57,11 +57,6 @@
 /* The shared select and date controls run full width in here and shrink to the
    panel's type scale — the log form is half a sidebar, not a page form. */
 .emp-log-field .cs-trigger,.emp-log-field .cd-trigger{height:36px;font-size:12.5px}
-/* "Date & Time" is one value in two controls, so they sit on one row and the
-   date takes the space the time does not need. */
-.emp-log-dt{display:flex;gap:8px;align-items:center}
-.emp-log-dt .cd-wrap{flex:1;min-width:0}
-.emp-log-time{width:112px;flex-shrink:0;height:36px;padding:0 8px}
 
 /* The standing notice: the record holds documents that have not come back. */
 .emp-log-alert{display:flex;align-items:flex-start;gap:7px;

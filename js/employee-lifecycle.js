@@ -127,7 +127,7 @@ const EMP_LIFE_STAGES=[
    input:{fields:[
      {k:'septype',label:'Separation Type',type:'select',req:true,opts:EMP_SEPARATION_TYPES},
      {k:'lwd',label:'Last Working Date',type:'date',req:true},
-     {k:'revoke',label:'Access Revocation Effective Date/Time',type:'datetime',req:true}
+     {k:'revoke',label:'Access Revocation Effective Date',type:'date',req:true}
    ]}},
 
   {status:'Exit Clearance',short:'Exit Clearance',owner:'IT + Compliance + HR',type:'Offboarding',tone:'wait',
@@ -266,16 +266,12 @@ function empLogChecklist(kind,s,c){
 }
 
 /* Values someone types or picks. apCS and apCD, so the controls match the rest
-   of the app rather than being raw browser widgets in a panel - with one
-   exception: 'datetime' pairs apCD with a native <input type="time">, which is
-   the same pairing the attendance screens already use for a clock time. */
+   of the app rather than being raw browser widgets in a panel. */
 function empLogFields(kind,s,items){
   return '<div class="emp-log-fields">'+items.map(function(f){
     var id=empFid(kind,s.status,f.k);
     var ctl;
     if(f.type==='date')ctl=apCD(id,'','Select date');
-    else if(f.type==='datetime')ctl='<div class="emp-log-dt">'+apCD(id,'','Select date')
-      +'<input class="emp-log-text emp-log-time" id="'+id+'-t" type="time"></div>';
     else if(f.type==='select')ctl=apCS(id,f.opts,'','Select');
     else if(f.type==='textarea')ctl='<textarea class="emp-log-textarea" id="'+id+'" data-label="'+empLifeHtml(f.label)+'" placeholder="'+empLifeHtml(f.ph||'')+'"></textarea>';
     else ctl='<input class="emp-log-text" id="'+id+'" type="text" data-label="'+empLifeHtml(f.label)+'" placeholder="'+empLifeHtml(f.ph||'')+'">';
@@ -284,15 +280,6 @@ function empLogFields(kind,s,items){
       +'<div class="lp-logs-form-label">'+empLifeHtml(f.label)
       +(f.req?' <span class="lp-logs-form-req">*</span>':'')+'</div>'+ctl+'</div>';
   }).join('')+'</div>';
-}
-
-/* Native <input type="time"> speaks 24h; this panel prints a clock time the
-   way the rest of the app does. */
-function empTime12(t){
-  var m=/^(\d{1,2}):(\d{2})$/.exec(String(t||'').trim());
-  if(!m)return '';
-  var h=+m[1],ap=h>=12?'PM':'AM';
-  return (h%12||12)+':'+m[2]+' '+ap;
 }
 
 /* Called by the status dropdown's onchange. Every status's block is in the DOM
@@ -337,13 +324,6 @@ function empLogCollect(kind,emp,status){
     var id=f.getAttribute('data-fid'),type=f.getAttribute('data-ftype'),label=f.getAttribute('data-label');
     var v='';
     if(type==='date'){var h=document.getElementById(id);v=h&&h.value?cdLabel(h.value):'';}
-    else if(type==='datetime'){
-      var hd=document.getElementById(id),ht=document.getElementById(id+'-t');
-      var d=hd&&hd.value?cdLabel(hd.value):'',t=ht?empTime12(ht.value):'';
-      /* Both halves or neither - a revocation date with no time is not an
-         effective date/time, it is half of one. */
-      v=(d&&t)?d+', '+t:'';
-    }
     else if(type==='select')v=getCSValue(id);
     else{var el=document.getElementById(id);v=el?el.value.trim():'';}
     if(v)out.details.push({label:label,value:v});
