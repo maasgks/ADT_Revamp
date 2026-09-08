@@ -323,7 +323,13 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
    a marker behind them would simply be invisible. Different pattern, and
    giving it this one would mean redesigning the row rather than animating it.
    ──────────────────────────────────────────────────────────────────────── */
-.lp-isb-tabs,.mod-tabs,.segmented,.cs-tab-strip,.cs-sub-tabs,.prof-tab-bar,.pm-user-subtabs{position:relative}
+/* isolation, so the layer the tabs take below (for the pill marker) stays a
+   private matter of the bar. Without it a tab at z-index:1 sits in the panel's
+   own stacking context and paints over anything that lives in a lower one -
+   which is exactly where the sticky .lp-logs-form puts its fixed date picker
+   (sticky makes a stacking context of its own), so the calendar opened
+   underneath the tab labels. */
+.lp-isb-tabs,.mod-tabs,.segmented,.cs-tab-strip,.cs-sub-tabs,.prof-tab-bar,.pm-user-subtabs{position:relative;isolation:isolate}
 
 .tab-ind{
   position:absolute;left:0;top:0;

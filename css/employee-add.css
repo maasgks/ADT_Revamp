@@ -68,12 +68,19 @@
 .ea-bad-wrap .cs-trigger,.ea-bad-wrap .cd-trigger,.ea-bad-wrap .ea-chip,
 .ea-bad-wrap .choice-card{border-color:#ef4444}
 .ea-phone{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:center}
-.ea-phone .cs-trigger{height:36px}
+/* One height for every control in the wizard. .cs-trigger stands 42px and
+   .cd-trigger 38px by default, so a select next to a text input (36px) read
+   as a step in the row; the phone code already took 36px for exactly this
+   reason, and the rest now agree with it. */
+.ea-page .cs-trigger,.ea-page .cd-trigger{height:36px}
 /* A value the form states rather than asks for. Reads as a field so the grid
-   still lines up, but is visibly not an input. */
-.ea-locked{display:flex;align-items:center;gap:7px;padding:9px 12px;border:1px dashed var(--border);
-  border-radius:var(--r-input);background:#f8fafc;font-size:13px;font-weight:600;color:var(--navy);
-  box-sizing:border-box;min-height:36px}
+   still lines up, but is visibly not an input. Control shape, not the pill
+   --r-input: main.css makes every control in a form card square-cornered, and
+   this one was the only pill in the grid. Fixed height, because min-height
+   left it at the mercy of the line box while its neighbours are sized. */
+.ea-locked{display:flex;align-items:center;gap:7px;padding:0 12px;border:1px dashed var(--border);
+  border-radius:var(--r-control);background:#f8fafc;font-size:13px;font-weight:600;color:var(--navy);
+  box-sizing:border-box;height:36px}
 .ea-locked svg{color:#9aa3af;flex-shrink:0}
 .ea-locked.is-muted{font-weight:400;color:#98a2b3;border-style:dashed}
 .ea-inline-link{display:inline-flex;align-items:center;gap:5px;background:none;border:none;padding:0;
