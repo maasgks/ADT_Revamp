@@ -3694,31 +3694,44 @@ function buildCtpSuccessModalHTML(){
 
 function buildEORContractHTML(){return buildContractFormHTML('EOR',ctFormStep);}
 function buildPEOContractHTML(){return buildContractFormHTML('PEO',ctFormStep);}
+/* ── Wizard radio groups ─────────────────────────────────────────────────────
+   Drawn as .ci-radio tiles - the control the Immigration and Contractor
+   intakes already use - rather than as bare dots with a label floating beside
+   them. The answers here run four and five words long, and a bare dot next to
+   "Yes - Employee has work permit" reads as a sentence someone forgot to style
+   rather than as a thing you click.
+
+   Selection is two classes on the chosen tile and nothing else: .is-on is what
+   the tile CSS paints, .selected is what ctFormCaptureInto reads back. The old
+   markup painted a nested dot with inline styles instead, so every builder had
+   to repeat the same six style strings to stay in step with these functions.
+
+   The dot is an <i>, deliberately: capture reads the answer as
+   '.selected span'.textContent, so the label has to stay the first span. */
+function peoRadioTile(groupClass,label,checked,onclick){
+  return '<label class="'+groupClass+' ci-radio'+(checked?' is-on selected':'')+'" onclick="'+onclick+'">'
+    +'<i class="ci-radio-dot"></i><span class="ci-radio-txt">'+label+'</span></label>';
+}
 function peoSelectRadio(groupClass,clickedEl){
-  document.querySelectorAll('.'+groupClass).forEach(function(r){
-    r.classList.remove('selected');
-    var inner=r.querySelector('.peo-radio-inner');var outer=r.querySelector('.peo-radio-outer');
-    if(inner)inner.style.background='transparent';
-    if(outer)outer.style.borderColor='#d1d5db';
-  });
-  clickedEl.classList.add('selected');
-  var inner=clickedEl.querySelector('.peo-radio-inner');var outer=clickedEl.querySelector('.peo-radio-outer');
-  if(inner)inner.style.background='var(--orange)';
-  if(outer)outer.style.borderColor='var(--orange)';
+  document.querySelectorAll('.'+groupClass).forEach(function(r){r.classList.remove('selected','is-on');});
+  clickedEl.classList.add('selected','is-on');
 }
 function peoSelectWorkPermit(el){
-  document.querySelectorAll('.peo-wp-radio').forEach(function(r){
-    r.classList.remove('selected');
-    var dot=r.querySelector('.peo-radio-inner');
-    if(dot){dot.style.background='transparent';}
-    var outer=r.querySelector('.peo-radio-outer');
-    if(outer){outer.style.borderColor='#d1d5db';}
-  });
-  el.classList.add('selected');
-  var dot=el.querySelector('.peo-radio-inner');
-  if(dot){dot.style.background='var(--orange)';}
-  var outer=el.querySelector('.peo-radio-outer');
-  if(outer){outer.style.borderColor='var(--orange)';}
+  peoSelectRadio('peo-wp-radio',el);
+  peoApplyVisaGate(el.textContent.indexOf('has work permit')!==-1);
+}
+/* Visa assistance is PRD-Conditional on the worker NOT being authorised, so
+   with a permit on file the question has nothing left to ask. It is dimmed and
+   sealed rather than removed - a question that vanishes on click makes the card
+   jump and leaves the reader unsure what they just did - and any answer already
+   picked is dropped, because an "Employee would like ADT to assist" left over
+   from before the switch would otherwise still reach the record's compliance
+   checklist. */
+function peoApplyVisaGate(hasPermit){
+  const block=document.getElementById('peo-visa-block');
+  if(!block)return;
+  block.classList.toggle('peo-gated',hasPermit);
+  if(hasPermit)block.querySelectorAll('.peo-radio-visa').forEach(function(r){r.classList.remove('selected','is-on');});
 }
 /* PRD 3.1 Step 2/3 type Job Title, Skill, Currency, Pay Frequency and Add New
    Leave Type as Dropdowns. This wizard used to draw its own native <select>;
@@ -3753,37 +3766,32 @@ function buildContractStepCards(includeStep,prefill){
          authorisation question (mandatory) and the visa-assistance question
          (Conditional on the answer being No). One control answering both meant
          "No, and we do not want help" could not be expressed at all. */
-      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Is the employee authorized to work? <span class="req">*</span></div>'
-      +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">'
       +(function(){
+        /* Both answers are tiles now, and the second question reads as
+           downstream of the first rather than as a second identical list
+           sitting under it: with a permit on file it is dimmed and sealed,
+           and the "(if not authorized)" that used to be stapled onto its
+           label is a hint line under it instead. */
         const hasPermit=prefill.workPermit===true;
         const wp=function(sel,label){
-          return '<label class="peo-wp-radio'+(sel?' selected':'')+'" onclick="peoSelectWorkPermit(this)" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:0">'
-            +'<div class="peo-radio-outer" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(sel?'var(--orange)':'#d1d5db')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'
-            +'<div class="peo-radio-inner" style="width:7px;height:7px;border-radius:50%;background:'+(sel?'var(--orange)':'transparent')+';transition:.15s"></div>'
-            +'</div>'
-            +'<span style="font-size:13px;color:var(--navy);font-weight:500">'+label+'</span>'
-            +'</label>';
+          return peoRadioTile('peo-wp-radio',label,sel,'peoSelectWorkPermit(this)');
         };
-        return wp(hasPermit,'Yes - Employee has work permit')+wp(!hasPermit,'No');
-      })()
-      +'</div>'
-      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Visa Assistance Required (if not authorized) <span class="ci-cond">Conditional</span></div>'
-      +'<div style="display:flex;flex-direction:column;gap:10px">'
-      +(function(){
-        const va=function(sel,label){
-          return '<label class="peo-radio-visa'+(sel?' selected':'')+'" onclick="peoSelectRadio(\'peo-radio-visa\',this)" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:0">'
-            +'<div class="peo-radio-outer" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(sel?'var(--orange)':'#d1d5db')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'
-            +'<div class="peo-radio-inner" style="width:7px;height:7px;border-radius:50%;background:'+(sel?'var(--orange)':'transparent')+';transition:.15s"></div>'
-            +'</div>'
-            +'<span style="font-size:13px;color:var(--navy);font-weight:500">'+label+'</span>'
-            +'</label>';
+        const asked=hasPermit?'':(prefill.visaAssistance||'');
+        const va=function(label){
+          return peoRadioTile('peo-radio-visa',label,asked===label,'peoSelectRadio(&quot;peo-radio-visa&quot;,this)');
         };
-        const asked=prefill.visaAssistance||'';
-        return va(asked==='Employee would like ADT to assist','Employee would like ADT to assist')
-          +va(asked==='Not required','Not required');
+        return '<div class="peo-elig-q">'
+          +'<div class="ep-form-label peo-elig-lbl">Is the employee authorized to work? <span class="req">*</span></div>'
+          +'<div class="ci-radio-set is-compact">'
+          +wp(hasPermit,'Yes - Employee has work permit')+wp(!hasPermit,'No')
+          +'</div></div>'
+          +'<div class="peo-elig-q'+(hasPermit?' peo-gated':'')+'" id="peo-visa-block">'
+          +'<div class="ep-form-label peo-elig-lbl">Visa Assistance Required <span class="ci-cond">Conditional</span></div>'
+          +'<div class="ci-hint peo-elig-hint">Asked only when the employee is not yet authorized to work in the destination country.</div>'
+          +'<div class="ci-radio-set is-compact">'
+          +va('Employee would like ADT to assist')+va('Not required')
+          +'</div></div>';
       })()
-      +'</div>'
       +'</div></div>'
 
       // Employee Information card
@@ -3816,13 +3824,10 @@ function buildContractStepCards(includeStep,prefill){
   }
 
   if(includeStep(1)){
+    /* Step 2's term/type answers use the same tile as Step 1, so the wizard
+       does not change radio style halfway through. */
     const radioItem=function(grpClass,label,checked){
-      return '<label class="peo-radio-'+grpClass+(checked?' selected':'')+'" onclick="peoSelectRadio(\'peo-radio-'+grpClass+'\',this)" style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px">'
-        +'<div class="peo-radio-outer" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(checked?'var(--orange)':'#d1d5db')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'
-        +'<div class="peo-radio-inner" style="width:7px;height:7px;border-radius:50%;background:'+(checked?'var(--orange)':'transparent')+';transition:.15s"></div>'
-        +'</div>'
-        +'<span style="font-size:13px;color:var(--navy);font-weight:500">'+label+'</span>'
-        +'</label>';
+      return peoRadioTile('peo-radio-'+grpClass,label,checked,'peoSelectRadio(&quot;peo-radio-'+grpClass+'&quot;,this)');
     };
     const today=new Date().toISOString().split('T')[0];
     content+=
@@ -3865,13 +3870,17 @@ function buildContractStepCards(includeStep,prefill){
       +'<div class="ep-form-grid" style="margin-bottom:20px">'
       +'<div>'
       +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Employment Term <span class="req">*</span></div>'
+      +'<div class="ci-radio-set is-compact">'
       +radioItem('term','Permanent',prefill.employmentTerm?prefill.employmentTerm==='Permanent':true)
       +radioItem('term','Fixed Term',prefill.employmentTerm==='Fixed Term')
       +'</div>'
+      +'</div>'
       +'<div>'
       +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Employee Type <span class="req">*</span></div>'
+      +'<div class="ci-radio-set is-compact">'
       +radioItem('emptype','Full Time',prefill.employeeType?prefill.employeeType==='Full Time':true)
       +radioItem('emptype','Part Time',prefill.employeeType==='Part Time')
+      +'</div>'
       +'</div>'
       +'</div>'
 
