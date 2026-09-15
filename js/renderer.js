@@ -51,6 +51,11 @@ function renderPageContent(target){
   if(page==='global'){el.innerHTML=buildGlobalListingHTML();return;}
   if(page==='teams'){el.innerHTML=buildTeamsListingHTML();return;}
   if(page==='contracts'){el.innerHTML=ctLandingOpen?buildContractsLandingHTML():buildContractsListingHTML();return;}
+  /* The two type-specific intakes. They sit OUTSIDE the AI contract wizard
+     dispatch above: that block paints the AI journey bar, and these are
+     reached from the chooser, not from a journey. */
+  if(page==='contract-immigration'){el.innerHTML=buildImmigrationIntakeHTML();return;}
+  if(page==='contract-contractor'){el.innerHTML=buildContractorIntakeHTML();return;}
   if(page==='all-leaves'){el.innerHTML=buildAllLeavesHTML();return;}
   if(page==='leave-policy-edit'){el.innerHTML=buildEditLeavePolicyHTML();return;}
   if(page==='payheads'){el.innerHTML=buildPayheadsPageHTML();return;}
@@ -220,7 +225,7 @@ function renderADTPage(){
   // Show/hide + button in topbar based on current page
   const addBtn=document.getElementById('tb-page-add-btn');
   if(addBtn){
-    const noAddPages=['dashboard','cost-calculator','leave-policy-edit','team-add','employee-add','contract-type-select','contract-eor','contract-peo','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
+    const noAddPages=['dashboard','cost-calculator','leave-policy-edit','team-add','employee-add','contract-type-select','contract-eor','contract-peo','contract-immigration','contract-contractor','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){

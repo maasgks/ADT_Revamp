@@ -1962,94 +1962,104 @@ function renderCtSidebar(){
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
-var peoStep=0;
-var peoData={};
-var contractModalOpen=false;
-var contractModalType='';
-var manualContractFormData={};
-var contractSuccessName='';
-function peoGoStep(s){peoStep=s;page='contract-peo';renderADTPage();}
-function peoNext(){peoStep=Math.min(2,peoStep+1);page='contract-peo';renderADTPage();}
-function peoBack(){if(peoStep===0){peoStep=0;page='contract-type-select';renderADTPage();}else{peoStep--;page='contract-peo';renderADTPage();}}
-var eorStep=0;
-function eorGoStep(s){eorStep=s;page='contract-eor';renderADTPage();}
+/* ══ EOR/PEO: ONE FORM, TWO TYPES ═══════════════════════════════════════════
+   EOR and PEO ask for exactly the same thing - the PRD writes them as
+   "EOR/PEO" throughout and gives PEO no field, stage or gate that EOR does not
+   have - so they share ONE wizard, one step counter and one set of nav
+   functions. The type is a parameter, not a fork: it decides the page id (so
+   the AI journey can route to either) and the pill in the header, nothing
+   else. Immigration and Contractor do NOT share it; they ask different
+   questions and live in contract-intake.js.
+
+   Two step variables used to exist, eorStep and peoStep, which meant the
+   stepper had to pick a nav function by string-comparing the type at render
+   time and a half-finished EOR draft could be abandoned by switching to PEO
+   and back. One variable cannot drift from itself. */
+var ctFormStep=0;
+var ctFormType='EOR';
+/* What has been typed so far. The wizard rebuilds the current step from
+   scratch on every repaint, so a step that is navigated away from is gone
+   unless it has been read out first - which is what ctFormCapture does, on
+   every move in either direction. */
+var ctFormData={};
+function ctFormOpen(type){ctFormType=type;ctFormStep=0;ctFormData={};page=type==='PEO'?'contract-peo':'contract-eor';renderADTPage();}
+/* Nav never re-assigns `page`: it is already contract-eor or contract-peo,
+   because these only ever run from inside the form. Assigning it again from a
+   remembered type is how a PEO draft ends up on the EOR route. */
+function ctFormGoStep(s){ctFormCapture();ctFormStep=s;renderADTPage();}
+function ctFormNext(){ctFormCapture();ctFormStep=Math.min(2,ctFormStep+1);if(aiAssistedFlow)aiCtPushStepMessage(ctFormStep);renderADTPage();}
+function ctFormBack(){ctFormCapture();if(ctFormStep===0){page='contract-type-select';renderADTPage();return;}ctFormStep--;renderADTPage();}
+/* Manual and AI-assisted runs fill different buckets - the assistant's bucket
+   is also written by the chat - but they read the same DOM, so there is one
+   reader and the caller says where it lands. */
+function ctFormCapture(){ctFormCaptureInto(aiAssistedFlow?aiWizardFormData:ctFormData);}
 function aiCaptureCurrentStep(){
   if(!aiAssistedFlow)return;
+  ctFormCaptureInto(aiWizardFormData);
+}
+function ctFormCaptureInto(into){
   const gv=function(id){const el=document.getElementById(id);return el?el.value:undefined;};
-  const merge=function(k,v){if(v!==undefined&&v!=='')aiWizardFormData[k]=v;};
+  const merge=function(k,v){if(v!==undefined&&v!=='')into[k]=v;};
   merge('fname',gv('peo-fname'));merge('lname',gv('peo-lname'));merge('gender',gv('peo-gender'));
-  merge('email',gv('peo-email'));merge('mobile',gv('peo-mobile'));merge('dob',gv('peo-dob'));
-  merge('address',gv('peo-address'));merge('country',gv('peo-work-country'));
+  merge('email',gv('peo-email'));merge('dial',gv('peo-dial'));merge('mobile',gv('peo-mobile'));merge('dob',gv('peo-dob'));
+  merge('address',gv('peo-address'));merge('nationality',gv('peo-nationality'));merge('country',gv('peo-work-country'));
   const wpEl=document.querySelector('.peo-wp-radio.selected span');
-  if(wpEl)aiWizardFormData.workPermit=wpEl.textContent.indexOf('has work permit')!==-1;
+  if(wpEl)into.workPermit=wpEl.textContent.indexOf('has work permit')!==-1;
+  const vaEl=document.querySelector('.peo-radio-visa.selected span');
+  if(vaEl)into.visaAssistance=vaEl.textContent;
   merge('jobTitle',gv('peo-jobtitle'));merge('skill',gv('peo-skill'));merge('jobDesc',gv('peo-jobdesc'));
-  merge('fromDate',gv('peo-from'));merge('toDate',gv('peo-to'));merge('hours',gv('peo-hours'));merge('pay',gv('peo-pay'));
+  merge('fromDate',gv('peo-from'));merge('toDate',gv('peo-to'));merge('hours',gv('peo-hours'));
+  merge('currency',gv('peo-currency'));merge('pay',gv('peo-pay'));merge('payFrequency',gv('peo-payfreq'));
   const termEl=document.querySelector('.peo-radio-term.selected span');
-  if(termEl)aiWizardFormData.employmentTerm=termEl.textContent;
+  if(termEl)into.employmentTerm=termEl.textContent;
   const typeEl=document.querySelector('.peo-radio-emptype.selected span');
-  if(typeEl)aiWizardFormData.employeeType=typeEl.textContent;
+  if(typeEl)into.employeeType=typeEl.textContent;
+  merge('leaveAnnual',gv('peo-leave-annual'));merge('leaveSick',gv('peo-leave-sick'));
+  merge('leaveMaternity',gv('peo-leave-maternity'));
+  merge('leaveNewType',gv('peo-leave-newtype'));merge('leaveNewDays',gv('peo-leave-newdays'));
   merge('probation',gv('peo-prob'));merge('notice',gv('peo-notice'));
 }
-function eorNext(){aiCaptureCurrentStep();eorStep=Math.min(2,eorStep+1);if(aiAssistedFlow)aiCtPushStepMessage(eorStep);page='contract-eor';renderADTPage();}
-function eorBack(){aiCaptureCurrentStep();if(eorStep===0){eorStep=0;page='contract-type-select';renderADTPage();}else{eorStep--;page='contract-eor';renderADTPage();}}
-// ── MANUAL CONTRACT CREATION MODAL (mirrors the Rates & Rules / Compliance modal pattern) ──
-function openContractModal(type){contractModalType=type;manualContractFormData={};if(type==='PEO')peoStep=0;else eorStep=0;contractModalOpen=true;renderADTPage();}
-function closeContractModal(){contractModalOpen=false;contractModalType='';manualContractFormData={};renderADTPage();}
-function captureManualContractStep(){
-  const gv=function(id){const el=document.getElementById(id);return el?el.value:undefined;};
-  const merge=function(k,v){if(v!==undefined&&v!=='')manualContractFormData[k]=v;};
-  merge('fname',gv('peo-fname'));merge('lname',gv('peo-lname'));merge('gender',gv('peo-gender'));
-  merge('email',gv('peo-email'));merge('mobile',gv('peo-mobile'));merge('dob',gv('peo-dob'));
-  merge('address',gv('peo-address'));merge('country',gv('peo-work-country'));
-  const wpEl=document.querySelector('.peo-wp-radio.selected span');
-  if(wpEl)manualContractFormData.workPermit=wpEl.textContent.indexOf('has work permit')!==-1;
-  merge('jobTitle',gv('peo-jobtitle'));merge('skill',gv('peo-skill'));merge('jobDesc',gv('peo-jobdesc'));
-  merge('fromDate',gv('peo-from'));merge('toDate',gv('peo-to'));merge('hours',gv('peo-hours'));merge('pay',gv('peo-pay'));
-  const termEl=document.querySelector('.peo-radio-term.selected span');
-  if(termEl)manualContractFormData.employmentTerm=termEl.textContent;
-  const typeEl=document.querySelector('.peo-radio-emptype.selected span');
-  if(typeEl)manualContractFormData.employeeType=typeEl.textContent;
-  merge('probation',gv('peo-prob'));merge('notice',gv('peo-notice'));
+/* Submitting a manual EOR/PEO run. It commits through the same writer the
+   Immigration and Contractor forms use, so all three land a record with the
+   same shape, the same first log line and the same landing behaviour. Before
+   this, Submit on an EOR wizard navigated to the list and wrote nothing. */
+function ctFormSubmit(){
+  ctFormCapture();
+  const p=ctFormData;
+  const type=page==='contract-peo'?'PEO':'EOR';
+  const name=((p.fname||'')+' '+(p.lname||'')).trim();
+  if(!name){
+    ctFormStep=0;renderADTPage();
+    showToast('Name is required','error','Add a first and last name before submitting.');
+    return;
+  }
+  /* serviceType has to be one of CT_TYPES[type].svcTypes verbatim, because the
+     listing filters on it. Part time wins over the term radio: a part-time
+     fixed-term placement is filed as Part time, which is the distinction the
+     service list actually draws. */
+  const svcType=p.employeeType==='Part Time'?'Part time'
+    :p.employmentTerm==='Fixed Term'?'Fixed term':'Permanent';
+  /* The intake's own answers become the requirement's checklist, the same way
+     they do on the other two types. Visa assistance and an extra leave type
+     are both work somebody has to pick up. */
+  const docs=[{item:type+' '+(p.country||'')+' Quote',note:'Mandatory',status:'Pending',doc:null}];
+  if(p.workPermit!==true)docs.push({item:'Right to work evidence - worker not yet authorised',note:'Mandatory',status:'Pending',doc:null});
+  if(p.visaAssistance==='Employee would like ADT to assist')docs.push({item:'Visa assistance requested - refer to Mobility',note:'Mandatory',status:'Pending',doc:null});
+  if(p.leaveNewType)docs.push({item:'Additional leave type: '+p.leaveNewType+(p.leaveNewDays?' ('+p.leaveNewDays+' days)':''),note:'Optional',status:'Pending',doc:null});
+  ciCommitContract({
+    type:type,serviceType:svcType,name:name,
+    country:p.country||'—',nationality:p.nationality||p.country||'—',
+    workPermit:p.workPermit===true,gender:p.gender,
+    email:p.email,contact:((p.dial||'+91')+' '+(p.mobile||'')).trim(),dob:p.dob,
+    jobTitle:p.jobTitle,skill:p.skill,jobDesc:p.jobDesc,
+    fromDate:p.fromDate,toDate:p.toDate,
+    hours:p.hours,pay:p.pay,
+    currency:p.currency||'EUR',payFrequency:p.payFrequency||'Monthly',
+    complianceItems:docs,
+    logLine:'Requirement submitted for review and quotation.',
+    workflowLine:type+' requirement for '+name+' submitted for quotation and review.'
+  });
 }
-function contractModalNext(){captureManualContractStep();if(contractModalType==='PEO')peoStep=Math.min(2,peoStep+1);else eorStep=Math.min(2,eorStep+1);renderADTPage();}
-function contractModalBack(){captureManualContractStep();const step=contractModalType==='PEO'?peoStep:eorStep;if(step===0){closeContractModal();return;}if(contractModalType==='PEO')peoStep--;else eorStep--;renderADTPage();}
-function contractModalGoStep(s){captureManualContractStep();if(contractModalType==='PEO')peoStep=s;else eorStep=s;renderADTPage();}
-function saveManualContract(){
-  captureManualContractStep();
-  const p=manualContractFormData;
-  const fullName=((p.fname||'')+' '+(p.lname||'')).trim();
-  if(!fullName)return;
-  const type=contractModalType;
-  const now=aiFormatNow();
-  const newId=contractsData.reduce(function(m,c){return Math.max(m,c.id);},0)+1;
-  const contractId=String(90000+Math.floor(Math.random()*9999));
-  const from=p.fromDate||now.date;
-  /* The type column reads serviceType for all four types; only its LABEL
-     differs (Employment Type for EOR/PEO, Service Type for the other two).
-     EOR/PEO can take it from the wizard's Permanent / Fixed term control;
-     Immigration and Contractor have no such control, so they take their
-     type's first service type until those intake forms are specced. */
-  const tcfg=ctTypeCfg(type);
-  const svcType=(tcfg.key==='EOR'||tcfg.key==='PEO')
-    ? (p.employmentTerm||tcfg.svcTypes[0])
-    : tcfg.svcTypes[0];
-  const record={id:newId,contractId:contractId,empName:fullName,empDesig:p.jobTitle||'—',country:p.country||'—',type:type,serviceType:svcType,date:now.date+' '+now.time,status:'Submitted',
-    nationality:p.country||'—',countryOfOp:p.country||'—',workPermit:p.workPermit===true,gender:(p.gender||'').toUpperCase()||'—',
-    email:p.email||'—',contact:p.mobile||'—',dob:p.dob||'—',jobTitle:p.jobTitle||'—',skill:p.skill||'—',
-    empDuration:from+(p.toDate?' – '+p.toDate:''),empType:type,workSchedule:p.hours||'—',payAmount:p.pay||'—',currency:'INR',
-    jobDesc:p.jobDesc||'—',payFrequency:'Monthly',commercial:aiGenCommercial(p.pay),
-    complianceItems:[{item:type+' '+(p.country||'')+' Proposal',note:'Optional',status:'Pending',doc:null}]};
-  contractsData.unshift(record);
-  ctLogsData[newId]=[{date:now.date,time:now.time,user:'Shaun Test1',status:'Submitted',action:'Contract submitted for review and quotation.'}];
-  ctWorkflowData[newId]=[{title:'Contract Submitted',user:'Shaun Test1',date:now.date,time:now.time,description:type+' contract for '+fullName+' submitted for quotation and review.'}];
-  contractModalOpen=false;contractModalType='';manualContractFormData={};
-  contractSuccessName=fullName;
-  renderADTPage();
-  setTimeout(function(){if(contractSuccessName===fullName){contractSuccessName='';ctLandingOpen=false;page='contracts';renderADTPage();}},2600);
-}
-/* Straight to the rows, not back to the type gate - the contract that was
-   just created is the thing the user is looking for. */
-function closeContractSuccess(){contractSuccessName='';ctLandingOpen=false;page='contracts';renderADTPage();}
 // ── COMPLIANCE ITEMS PAGE ──
 function applyComplianceFilters(){
   complianceCountryFilter=getCSValue('cmp-f-country');
@@ -2099,10 +2109,10 @@ function buildCreateComplianceModalHTML(){
     +'<div class="ct-modal" style="width:min(620px,92vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Compliance Item Name</label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="e.g. Right to Work Check"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model</label><div class="segmented" id="cmp-new-model-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('cmp-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Category</label><div class="segmented" id="cmp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Onboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Payroll</button><button type="button" class="seg-btn" onclick="selSeg(this)">Offboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Statutory</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Compliance Item Name <span class="req">*</span></label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="e.g. Right to Work Check"></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model <span class="req">*</span></label><div class="segmented" id="cmp-new-model-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Country <span class="req">*</span></label>'+customSelect('cmp-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Category <span class="req">*</span></label><div class="segmented" id="cmp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Onboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Payroll</button><button type="button" class="seg-btn" onclick="selSeg(this)">Offboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Statutory</button></div></div>'
     +'</div>'
     +'<div class="ep-form-card cmp-rules-card">'
     +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Mandatory</div><div class="cmp-rule-hint">Employees must complete this item</div></div><label class="cs-toggle"><input type="checkbox" id="cmp-new-mandatory" checked><span class="cs-toggle-slider"></span></label></div>'
@@ -3419,17 +3429,17 @@ function buildCreateRuleModalHTML(){
     +'<div class="ep-form-card" style="margin-bottom:16px">'
     +'<div class="ep-form-title">Rule Details</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Name</label><input type="text" class="ep-form-input" id="rr-new-name" placeholder="Enter name"></div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Type</label>'+seg('rr-new-type-seg',['Statutory','Tax','Contribution','Allowance','Benefit'])+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Rule Category</label>'+customSelect('rr-new-category','',['General','Income Tax','Social Security','Benefits','Health Ins.'],'Select Category')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label>'+seg('rr-new-emptype-seg',['EOR','PEO','Direct'])+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Name <span class="req">*</span></label><input type="text" class="ep-form-input" id="rr-new-name" placeholder="Enter name"></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Rule Type <span class="req">*</span></label>'+seg('rr-new-type-seg',['Statutory','Tax','Contribution','Allowance','Benefit'])+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Rule Category <span class="req">*</span></label>'+customSelect('rr-new-category','',['General','Income Tax','Social Security','Benefits','Health Ins.'],'Select Category')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type <span class="req">*</span></label>'+seg('rr-new-emptype-seg',['EOR','PEO','Direct'])+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country</label>'+customSelect('rr-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Applicable on</label>'+customSelect('rr-new-applicable','',['EOR','PEO','EOR / PEO','Direct'],'Select')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Applicable on <span class="req">*</span></label>'+customSelect('rr-new-applicable','',['EOR','PEO','EOR / PEO','Direct'],'Select')+'</div>'
     +'</div></div>'
     +'<div class="ep-form-card" style="margin-bottom:16px">'
     +'<div class="ep-form-title">Value &amp; Conditions</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Value Type</label><div class="segmented" id="rr-new-valuetype-seg"><button type="button" class="seg-btn active" onclick="toggleRuleValueField(this)">Fixed Amount</button><button type="button" class="seg-btn" onclick="toggleRuleValueField(this)">Percentage</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Value Type <span class="req">*</span></label><div class="segmented" id="rr-new-valuetype-seg"><button type="button" class="seg-btn active" onclick="toggleRuleValueField(this)">Fixed Amount</button><button type="button" class="seg-btn" onclick="toggleRuleValueField(this)">Percentage</button></div></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" id="rr-value-field-label">Currency &amp; Value</label><div id="rr-value-field-wrap"><div class="pay-group">'+ruleCurrencySelectHTML('')+'<input type="text" id="rr-new-value" placeholder="0.00"></div></div></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Operator</label>'+seg('rr-new-condop-seg',['Equals','Greater Than','Less Than','Between'])+'<span class="cmp-rule-hint">Optional &middot; narrows when this rule applies</span></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Value</label><input type="text" class="ep-form-input" id="rr-new-condval" placeholder="Enter value"></div>'
@@ -3439,7 +3449,7 @@ function buildCreateRuleModalHTML(){
     +'<div class="ep-form-card">'
     +'<div class="ep-form-title">Validity</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Effective From</label>'+apCD('rr-new-efffrom','','Select date')+'</div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Effective From <span class="req">*</span></label>'+apCD('rr-new-efffrom','','Select date')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Effective To</label>'+apCD('rr-new-effto','','Select date')+'</div>'
     +'</div>'
     +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Status</div><div class="cmp-rule-hint">Rule is applied to payroll calculations when active</div></div><label class="cs-toggle"><input type="checkbox" id="rr-new-status" checked><span class="cs-toggle-slider"></span></label></div>'
@@ -3650,7 +3660,7 @@ function saveTemplate(){
 function buildCreateTemplateModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  const req='<span style="color:#ef4444">*</span>';
+  const req='<span class="req">*</span>';
   return '<div class="ct-modal-overlay" onclick="closeCtpModal()">'
     +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
@@ -3682,8 +3692,8 @@ function buildCtpSuccessModalHTML(){
     +'</div></div>';
 }
 
-function buildEORContractHTML(){return buildContractFormHTML('EOR',eorStep);}
-function buildPEOContractHTML(){return buildContractFormHTML('PEO',peoStep);}
+function buildEORContractHTML(){return buildContractFormHTML('EOR',ctFormStep);}
+function buildPEOContractHTML(){return buildContractFormHTML('PEO',ctFormStep);}
 function peoSelectRadio(groupClass,clickedEl){
   document.querySelectorAll('.'+groupClass).forEach(function(r){
     r.classList.remove('selected');
@@ -3710,10 +3720,21 @@ function peoSelectWorkPermit(el){
   var outer=el.querySelector('.peo-radio-outer');
   if(outer){outer.style.borderColor='var(--orange)';}
 }
+/* PRD 3.1 Step 2/3 type Job Title, Skill, Currency, Pay Frequency and Add New
+   Leave Type as Dropdowns. This wizard used to draw its own native <select>;
+   it now renders ciSelect, the same anchored-menu control the Immigration and
+   Contractor forms use, so all three forms have ONE dropdown rather than three
+   that drift apart. A value already on the record that is not in the list is
+   prepended rather than silently dropped - an AI-prefilled job title has to
+   survive the round trip. */
+const CT_FORM_SKILLS=['ReactJS','Java','Python','Node.js','Kubernetes','SQL','Data Engineering','Machine Learning','Product Strategy','UX Research','Test Automation','Cloud Architecture','FP&A','Enterprise Sales'];
+const CT_FORM_LEAVE_TYPES=['Paternity Leave','Casual Leave','Paid Leave','Unpaid Leave','Bereavement Leave','Study Leave'];
+function ctFormDropdown(id,options,selected,placeholder){
+  const opts=(selected&&options.indexOf(selected)===-1)?[selected].concat(options):options;
+  return ciSelect(id,opts,selected||'',placeholder||'Select');
+}
 function buildContractStepCards(includeStep,prefill){
   const countries=['Afghanistan','Australia','Austria','Bangladesh','Belgium','Brazil','Canada','China','Denmark','Egypt','Finland','France','Germany','Ghana','Greece','India','Indonesia','Iran','Iraq','Ireland','Italy','Japan','Jordan','Kenya','Malaysia','Mexico','Morocco','Nepal','Netherlands','New Zealand','Nigeria','Norway','Pakistan','Philippines','Poland','Portugal','Qatar','Romania','Russia','Saudi Arabia','Singapore','South Africa','South Korea','Spain','Sri Lanka','Sweden','Switzerland','Thailand','Turkey','Ukraine','United Arab Emirates','United Kingdom','United States','Vietnam'];
-  const countryOpts='<option value="">Select Country</option>'+countries.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join('');
-  const countryOptsSel=function(sel){return '<option value="">Select Country</option>'+countries.map(function(c){return '<option value="'+c+'"'+(c===sel?' selected':'')+'>'+c+'</option>';}).join('');};
   let content='';
 
   if(includeStep(0)){
@@ -3724,12 +3745,16 @@ function buildContractStepCards(includeStep,prefill){
       +'<div style="padding:24px">'
       +'<div class="ep-form-grid" style="margin-bottom:20px">'
       +'<div class="ep-form-group"><label class="ep-form-label">Employee Nationality <span class="req">*</span></label>'
-      +'<select class="ep-form-select" id="peo-nationality" style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;outline:none;background:#fff;cursor:pointer;box-sizing:border-box;width:100%">'+countryOpts+'</select></div>'
+      +ctFormDropdown('peo-nationality',countries,prefill.nationality||'','Select country')+'</div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Country employee will be working from <span class="req">*</span></label>'
-      +'<select class="ep-form-select" id="peo-work-country" style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;outline:none;background:#fff;cursor:pointer;box-sizing:border-box;width:100%">'+countryOptsSel(prefill.country||'')+'</select></div>'
+      +ctFormDropdown('peo-work-country',countries,prefill.country||'','Select country')+'</div>'
       +'</div>'
-      +'<div style="font-size:13px;font-weight:600;color:#e07b00;margin-bottom:12px">Work Permit</div>'
-      +'<div style="display:flex;flex-direction:column;gap:10px">'
+      /* PRD 3.1 Step 1 Eligibility is TWO rows here, not one: the
+         authorisation question (mandatory) and the visa-assistance question
+         (Conditional on the answer being No). One control answering both meant
+         "No, and we do not want help" could not be expressed at all. */
+      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Is the employee authorized to work? <span class="req">*</span></div>'
+      +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">'
       +(function(){
         const hasPermit=prefill.workPermit===true;
         const wp=function(sel,label){
@@ -3737,10 +3762,26 @@ function buildContractStepCards(includeStep,prefill){
             +'<div class="peo-radio-outer" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(sel?'var(--orange)':'#d1d5db')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'
             +'<div class="peo-radio-inner" style="width:7px;height:7px;border-radius:50%;background:'+(sel?'var(--orange)':'transparent')+';transition:.15s"></div>'
             +'</div>'
-            +'<span style="font-size:13px;color:#e07b00;font-weight:500">'+label+'</span>'
+            +'<span style="font-size:13px;color:var(--navy);font-weight:500">'+label+'</span>'
             +'</label>';
         };
-        return wp(hasPermit,'Yes, Employee has work permit')+wp(!hasPermit,'Employee would like ADT to assist for work visa');
+        return wp(hasPermit,'Yes - Employee has work permit')+wp(!hasPermit,'No');
+      })()
+      +'</div>'
+      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Visa Assistance Required (if not authorized) <span class="ci-cond">Conditional</span></div>'
+      +'<div style="display:flex;flex-direction:column;gap:10px">'
+      +(function(){
+        const va=function(sel,label){
+          return '<label class="peo-radio-visa'+(sel?' selected':'')+'" onclick="peoSelectRadio(\'peo-radio-visa\',this)" style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:0">'
+            +'<div class="peo-radio-outer" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(sel?'var(--orange)':'#d1d5db')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'
+            +'<div class="peo-radio-inner" style="width:7px;height:7px;border-radius:50%;background:'+(sel?'var(--orange)':'transparent')+';transition:.15s"></div>'
+            +'</div>'
+            +'<span style="font-size:13px;color:var(--navy);font-weight:500">'+label+'</span>'
+            +'</label>';
+        };
+        const asked=prefill.visaAssistance||'';
+        return va(asked==='Employee would like ADT to assist','Employee would like ADT to assist')
+          +va(asked==='Not required','Not required');
       })()
       +'</div>'
       +'</div></div>'
@@ -3755,17 +3796,16 @@ function buildContractStepCards(includeStep,prefill){
       +'<div class="ep-form-group"><label class="ep-form-label">Last Name <span class="req">*</span></label>'
       +'<input id="peo-lname" class="ep-form-input" type="text" placeholder="Last Name" value="'+(prefill.lname||'')+'"></div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Gender</label>'
-      +'<select id="peo-gender" class="ep-form-select" style="height:42px;padding:0 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;outline:none;background:#fff;cursor:pointer;box-sizing:border-box;width:100%">'
-      +['','Male','Female','Non-binary','Prefer not to say'].map(function(g){return '<option'+(g===prefill.gender?' selected':'')+'>'+(g||'Select')+'</option>';}).join('')
-      +'</select></div>'
+      +ctFormDropdown('peo-gender',['Male','Female','Non-binary','Prefer not to say'],prefill.gender||'','Select')+'</div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Email <span class="req">*</span></label>'
       +'<input id="peo-email" class="ep-form-input" type="email" placeholder="email@example.com" value="'+(prefill.email||'')+'"></div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Mobile Number <span class="req">*</span></label>'
-      +'<div style="display:flex;gap:8px">'
-      +'<select style="height:42px;padding:0 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;outline:none;background:#fff;cursor:pointer;flex-shrink:0;min-width:80px">'
-      +'<option>+91</option><option>+1</option><option>+44</option><option>+49</option><option>+31</option><option>+33</option><option>+61</option><option>+971</option>'
-      +'</select>'
-      +'<input id="peo-mobile" class="ep-form-input" type="tel" placeholder="Mobile Number" style="flex:1" value="'+(prefill.mobile||'')+'"></div></div>'
+      /* PRD types this "Contact Number (Country Code + Mobile)". The dial code
+         used to be an id-less select, so nothing read it and the country code
+         never reached the record. */
+      +'<div class="ci-phone">'
+      +ctFormDropdown('peo-dial',CI_DIAL,prefill.dial||'+91','+91')
+      +'<input id="peo-mobile" class="ep-form-input" type="tel" placeholder="Mobile Number" value="'+(prefill.mobile||'')+'"></div></div>'
       +'<div class="ep-form-group"><label class="ep-form-label">Date of Birth <span class="req">*</span></label>'
       +apCD('peo-dob',prefill.dob||'','Select date')+'</div>'
       +'</div>'
@@ -3791,14 +3831,13 @@ function buildContractStepCards(includeStep,prefill){
 
       // Job Title + Primary Skill
       +'<div class="ep-form-grid" style="margin-bottom:16px">'
+      /* PRD 3.1 Step 2 types both of these Dropdown, not free text. The
+         skill control used to be a text input wearing a chevron, which looked
+         like a dropdown and behaved like neither. */
       +'<div class="ep-form-group"><label class="ep-form-label">Job Title <span class="req">*</span></label>'
-      +'<input id="peo-jobtitle" class="ep-form-input" placeholder="e.g. Software Engineer" value="'+(prefill.jobTitle||'')+'"></div>'
-      +'<div class="ep-form-group"><label class="ep-form-label">Primary Skill</label>'
-      +'<div style="position:relative">'
-      +'<input id="peo-skill" class="ep-form-input" placeholder="Search or type a skill..." style="padding-right:36px" value="'+(prefill.skill||'')+'">'
-      +'<span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca3af">'
-      +'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'
-      +'</span></div></div>'
+      +ctFormDropdown('peo-jobtitle',EA_DESIGNATIONS,prefill.jobTitle,'Select job title')+'</div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Skill</label>'
+      +ctFormDropdown('peo-skill',CT_FORM_SKILLS,prefill.skill,'Select skill')+'</div>'
       +'</div>'
 
       // Job Description
@@ -3815,9 +3854,11 @@ function buildContractStepCards(includeStep,prefill){
       +'<div style="flex:1">'+apCD('peo-from',prefill.fromDate||today,'Select date')+'</div>'
       +'<div style="flex:1">'+apCD('peo-to',prefill.toDate||'','Select date')+'</div>'
       +'</div>'
+      /* PRD 3.1 Step 2: From Date is mandatory, To Date is "Conditional
+         (Fixed Term)" - a permanent placement has no end date to give. */
       +'<div style="display:flex;gap:16px;margin-bottom:20px">'
-      +'<div style="flex:1;font-size:11.5px;color:#64748b">Start Date <span class="req">*</span></div>'
-      +'<div style="flex:1;font-size:11.5px;color:#64748b">End Date <span class="req">*</span></div>'
+      +'<div style="flex:1;font-size:11.5px;color:#64748b">From Date <span class="req">*</span></div>'
+      +'<div style="flex:1;font-size:11.5px;color:#64748b">To Date <span class="ci-cond">Conditional (Fixed Term)</span></div>'
       +'</div>'
 
       // Employment Term + Employee Type radios
@@ -3834,26 +3875,27 @@ function buildContractStepCards(includeStep,prefill){
       +'</div>'
       +'</div>'
 
-      // Work Schedule
-      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Work Schedule</div>'
-      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">'
-      +'<input id="peo-hours" class="ep-form-input" type="number" value="'+(prefill.hours||20)+'" min="1" style="width:80px;text-align:center">'
-      +'<span style="font-size:13px;color:#64748b">Hours</span>'
+      // Work Schedule (Hours) - PRD 3.1 Step 2, mandatory numeric
+      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Work Schedule (Hours) <span class="req">*</span></div>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:24px">'
+      +'<input id="peo-hours" class="ep-form-input" type="number" value="'+(prefill.hours||40)+'" min="1" style="width:80px;text-align:center">'
+      +'<span style="font-size:13px;color:#64748b">Hours per week</span>'
       +'</div>'
 
-      // Pay Amount
-      +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:4px">Pay Amount</div>'
-      +'<div style="font-size:12px;color:#64748b;margin-bottom:10px">Enter the salary of employee</div>'
-      +'<div style="display:flex;align-items:center;gap:8px">'
-      +'<div style="display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden;flex-shrink:0">'
-      +'<span style="padding:0 10px;height:42px;display:flex;align-items:center;background:#f8fafc;border-right:1px solid var(--border);font-size:11px;font-weight:700;color:#374151">IN</span>'
-      +'<span style="padding:0 10px;height:42px;display:flex;align-items:center;font-size:12px;font-weight:600;color:var(--navy)">INR</span>'
-      +'<input id="peo-pay" type="number" value="'+(prefill.pay||'0.00')+'" step="0.01" style="width:100px;height:42px;border:none;border-left:1px solid var(--border);padding:0 10px;font-size:13px;color:var(--navy);font-family:inherit;outline:none">'
-      +'</div>'
-      +'<span style="font-size:13px;color:#64748b">per</span>'
-      +'<select style="height:42px;padding:0 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--navy);font-family:inherit;outline:none;background:#fff;cursor:pointer">'
-      +'<option>Monthly</option><option>Bi-weekly</option><option>Weekly</option>'
-      +'</select>'
+      /* Section: Compensation - PRD 3.1 Step 2 lists Currency, Pay Amount and
+         Pay Frequency as three mandatory rows. The old control hard-coded
+         IN/INR and left the frequency select unlabelled and unread, so an
+         EUR placement could not be entered and the frequency never reached
+         the record. */
+      +'<div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px;padding-top:4px;border-top:1px solid var(--border);padding-top:20px">Compensation</div>'
+      +'<div style="font-size:12px;color:#64748b;margin-bottom:14px">Enter the salary of the employee.</div>'
+      +'<div class="ep-form-grid">'
+      +'<div class="ep-form-group"><label class="ep-form-label">Currency <span class="req">*</span></label>'
+      +ctFormDropdown('peo-currency',CI_CURRENCIES,prefill.currency||'EUR','Select currency')+'</div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Pay Amount <span class="req">*</span></label>'
+      +'<input id="peo-pay" class="ep-form-input" type="number" min="0" step="0.01" placeholder="e.g. 6250" value="'+(prefill.pay||'')+'"></div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label>'
+      +ctFormDropdown('peo-payfreq',CI_PAY_FREQ,prefill.payFrequency||'Monthly','Select frequency')+'</div>'
       +'</div>'
 
       +'</div>';
@@ -3862,7 +3904,14 @@ function buildContractStepCards(includeStep,prefill){
   if(includeStep(2)){
     const thS='padding:10px 14px;font-size:12px;font-weight:600;color:#6b7280;border-bottom:1px solid var(--border);text-align:left';
     const tdS='padding:14px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9;vertical-align:middle';
-    const inputNum=function(val){return '<input type="number" value="'+val+'" min="0" style="width:60px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r-input);font-size:13px;text-align:center;font-family:inherit;outline:none;color:var(--navy)">';};
+    /* The Additional cells are real PRD fields - "Annual Leave - Additional
+       Days", "Sick Leave - Additional Days", "Maternity Leave - Additional
+       Weeks" - so they carry ids and are read back on Next. Without ids they
+       were three inputs that could be typed into and never reached anything. */
+    /* --r-control, not --r-input: these three sit in a table beside square
+       dropdowns and square number fields, and main.css's rule for a form card
+       is that a control agrees with the field next to it. */
+    const inputNum=function(id,val){return '<input id="'+id+'" type="number" value="'+(val||0)+'" min="0" style="width:60px;height:34px;padding:0 8px;border:1px solid var(--border);border-radius:var(--r-control);font-size:13px;text-align:center;font-family:inherit;outline:none;color:var(--navy)">';};
     content+=
       // Leave Entitlement card
       '<div class="ep-form-card" style="margin-bottom:16px;padding:0;overflow:hidden">'
@@ -3884,22 +3933,32 @@ function buildContractStepCards(includeStep,prefill){
       +'<div style="font-size:11.5px;color:#3b82f6;margin-top:3px;line-height:1.4">Additional leaves will result in an additional deposit amount.</div>'
       +'</td>'
       +'<td style="'+tdS+';font-weight:600">18 Days</td>'
-      +'<td style="'+tdS+'">'+inputNum(0)+'</td>'
-      +'<td style="'+tdS+';font-weight:600">18 Days</td>'
+      +'<td style="'+tdS+'">'+inputNum('peo-leave-annual',prefill.leaveAnnual)+'</td>'
+      +'<td style="'+tdS+';font-weight:600">'+(18+(parseInt(prefill.leaveAnnual,10)||0))+' Days</td>'
       +'</tr>'
       +'<tr>'
       +'<td style="'+tdS+';font-weight:600">Sick Leaves</td>'
       +'<td style="'+tdS+';font-weight:600">12 Days</td>'
-      +'<td style="'+tdS+'">'+inputNum(0)+'</td>'
-      +'<td style="'+tdS+';font-weight:600">12 Days</td>'
+      +'<td style="'+tdS+'">'+inputNum('peo-leave-sick',prefill.leaveSick)+'</td>'
+      +'<td style="'+tdS+';font-weight:600">'+(12+(parseInt(prefill.leaveSick,10)||0))+' Days</td>'
       +'</tr>'
       +'<tr>'
       +'<td style="'+tdS+';font-weight:600;border-bottom:none">Maternity Leaves</td>'
       +'<td style="'+tdS+';font-weight:600;border-bottom:none">36 Weeks</td>'
-      +'<td style="'+tdS+';border-bottom:none">'+inputNum(0)+'</td>'
-      +'<td style="'+tdS+';font-weight:600;border-bottom:none">36 Weeks</td>'
+      +'<td style="'+tdS+';border-bottom:none">'+inputNum('peo-leave-maternity',prefill.leaveMaternity)+'</td>'
+      +'<td style="'+tdS+';font-weight:600;border-bottom:none">'+(36+(parseInt(prefill.leaveMaternity,10)||0))+' Weeks</td>'
       +'</tr>'
       +'</tbody></table>'
+      /* PRD 3.1 Step 3 rows "Add New Leave Type" and "Leave Days (New Type)":
+         a country or a client can carry a leave the three statutory rows above
+         do not, and the intake is where that is declared. */
+      +'<div style="padding:18px 20px;border-top:1px solid var(--border)">'
+      +'<div class="ep-form-grid">'
+      +'<div class="ep-form-group"><label class="ep-form-label">Add New Leave Type</label>'
+      +ctFormDropdown('peo-leave-newtype',CT_FORM_LEAVE_TYPES,prefill.leaveNewType,'Select leave type')+'</div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Leave Days (New Type)</label>'
+      +'<input id="peo-leave-newdays" class="ep-form-input" type="number" min="0" placeholder="e.g. 10" value="'+(prefill.leaveNewDays||'')+'"></div>'
+      +'</div></div>'
       +'</div>'
 
       // Probation Period
@@ -3927,7 +3986,9 @@ function buildContractStepCards(includeStep,prefill){
   return content;
 }
 function buildContractFormHTML(type,step,splitMode){
-  const prefill=aiAssistedFlow?Object.assign({},aiContractPrefill||{},aiWizardFormData||{}):{};
+  /* A manual run reads back what it captured, so stepping Back and Next again
+     shows what was typed rather than an empty form. */
+  const prefill=aiAssistedFlow?Object.assign({},aiContractPrefill||{},aiWizardFormData||{}):Object.assign({},ctFormData);
   const isAssistedReview=aiAssistedFlow&&splitMode;
   const includeStep=function(s){return isAssistedReview||step===s;};
   const steps=['Basic Details','Job Details','Other Details'];
@@ -3941,7 +4002,7 @@ function buildContractFormHTML(type,step,splitMode){
         +(done?'background:var(--orange);color:#fff;':active?'background:transparent;color:var(--orange);border:2px solid var(--orange);':'background:transparent;color:#d1d5db;border:2px solid #d1d5db;');
       const labelColor=active?'var(--orange)':done?'var(--navy)':'#9ca3af';
       const circleContent=done?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
-      let html='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="'+(type==='PEO'?'peoGoStep':'eorGoStep')+'('+i+')">'
+      let html='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="ctFormGoStep('+i+')">'
         +'<div style="'+circleStyle+'">'+circleContent+'</div>'
         +'<span style="font-size:13px;font-weight:600;color:'+labelColor+'">'+s+'</span>'
         +'</div>';
@@ -3955,10 +4016,9 @@ function buildContractFormHTML(type,step,splitMode){
   const content=buildContractStepCards(includeStep,prefill);
 
   const isLast=isAssistedReview||step===2;
-  const goBack=type==='PEO'?'peoBack()':'eorBack()';
-  const goNext=type==='PEO'?'peoNext()':'eorNext()';
-  const resetNav=type==='PEO'?'peoStep=0;page=\'contracts\';renderADTPage()':'eorStep=0;page=\'contracts\';renderADTPage()';
-  const finalAction=aiAssistedFlow?'aiSubmitAssistedContract(\''+type+'\')':resetNav;
+  const goBack='ctFormBack()';
+  const goNext='ctFormNext()';
+  const finalAction=aiAssistedFlow?'aiSubmitAssistedContract(\''+type+'\')':'ctFormSubmit()';
   const footer='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:24px">'
     +'<button class="ep-cancel-btn" style="border-radius:99px;display:inline-flex;align-items:center;gap:6px" onclick="'+goBack+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Back</button>'
     +'<button class="ep-save-btn" style="padding:9px 28px;border-radius:99px" onclick="'+(isLast?finalAction:goNext)+'">'+( isLast?(aiAssistedFlow?'Create Proposal':'Submit Contract'):'Next')+'</button>'
@@ -3970,7 +4030,10 @@ function buildContractFormHTML(type,step,splitMode){
     +'</div>'):'';
   const pageStyle=splitMode?'width:100%;padding:26px 30px;box-sizing:border-box':'max-width:820px;margin:0 auto';
 
-  return '<div class="ep-page" style="'+pageStyle+'">'
+  /* ct-form-page is a hook for the field-shape rules in contract-intake.css:
+     this wizard runs on main.css's .ep-form-* system, which has no say over
+     the date trigger's border weight. */
+  return '<div class="ep-page ct-form-page" style="'+pageStyle+'">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
     +'<button class="ep-back" onclick="'+goBack+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> '+(step===0?'Back to Create Contract':'Back')+'</button>'
     +'<span style="font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid var(--border);padding:4px 12px;border-radius:999px;letter-spacing:.5px">'+type+'</span>'
@@ -3986,9 +4049,15 @@ function buildContractFormHTML(type,step,splitMode){
 }
 /* ══ ADD CONTRACT: THE FOUR-CARD CHOOSER ════════════════════════════════════
    This is where a full-page type chooser earns its place, and the reason the
-   listing does NOT have one: the four intake forms genuinely diverge, so the
-   choice has to be made before the form can be drawn. On the listing the same
-   choice is just a filter, and a filter does not need a whole screen.
+   listing does NOT have one: the intake forms genuinely diverge, so the choice
+   has to be made before the form can be drawn. On the listing the same choice
+   is just a filter, and a filter does not need a whole screen.
+
+   Four cards, three forms. EOR and PEO are still two cards because they are
+   two products a client buys separately - the card is where that decision is
+   made - and they then land on one shared wizard carrying the type. Collapsing
+   them into a single "EOR/PEO" card would ask the user to know which one they
+   are on before the product has told them.
 
    Same icons as the type band, deliberately - the tile you filter by and the
    card you create from are the same object seen twice, and using two icon sets
@@ -4002,13 +4071,15 @@ function ctStartIntake(key){
      already knows the type - a deep link, the AI assistant's routing, a
      "Create Immigration request" button on an empty state - so none of them
      has to walk the user through a chooser they have already answered. */
-  if(key==='EOR'){eorStep=0;page='contract-eor';renderADTPage();return;}
-  if(key==='PEO'){peoStep=0;page='contract-peo';renderADTPage();return;}
-  /* Immigration and Contractor reuse the generic three-step intake modal.
-     The PRD names their service types but never lists their form fields, so
-     rather than invent an Immigration form, these collect the same details the
-     EOR/PEO wizard collects and carry the right contract_type through. */
-  openContractModal(cfg.label);
+  /* EOR and PEO are ONE form. Immigration and Contractor each have their own,
+     because they ask different questions: an Immigration case turns on a
+     passport, a permit category and a filing date, and a Contractor engagement
+     turns on a rate, an invoicing cycle and a classification test. Neither has
+     a probation period or a leave entitlement, which is most of what the
+     EOR/PEO wizard's third step is. */
+  if(key==='EOR'||key==='PEO'){ctFormOpen(key);return;}
+  if(key==='IMMIGRATION'){imgOpenIntake();return;}
+  if(key==='CONTRACTOR'){cnrOpenIntake();return;}
 }
 function buildContractTypeSelectHTML(){
   const card=function(key){
@@ -4035,54 +4106,6 @@ function buildContractTypeSelectHTML(){
     +'<div class="ct-choose-sub">Pick the type of engagement. Each one has its own intake, its own statuses and its own compliance checks.</div>'
     +'<div class="ct-choose-grid">'+CT_TYPE_ORDER.map(card).join('')+'</div>'
     +'</div>';
-}
-function buildContractModalHTML(){
-  const type=contractModalType;
-  const step=type==='PEO'?peoStep:eorStep;
-  const steps=['Basic Details','Job Details','Other Details'];
-  const includeStep=function(s){return step===s;};
-  const content=buildContractStepCards(includeStep,manualContractFormData);
-  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  const stepper='<div style="display:flex;align-items:center;gap:0;margin-bottom:20px;background:#fafbfc;border:1px solid var(--border);border-radius:10px;overflow:hidden;padding:14px 18px">'
-    +steps.map(function(s,i){
-      const active=i===step;
-      const done=i<step;
-      const circleStyle='width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;'
-        +(done?'background:var(--orange);color:#fff;':active?'background:transparent;color:var(--orange);border:2px solid var(--orange);':'background:transparent;color:#d1d5db;border:2px solid #d1d5db;');
-      const labelColor=active?'var(--orange)':done?'var(--navy)':'#9ca3af';
-      const circleContent=done?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(i+1);
-      let html='<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="contractModalGoStep('+i+')">'
-        +'<div style="'+circleStyle+'">'+circleContent+'</div>'
-        +'<span style="font-size:12px;font-weight:600;color:'+labelColor+'">'+s+'</span>'
-        +'</div>';
-      if(i<steps.length-1){
-        html+='<div style="flex:1;height:1px;background:'+(done?'var(--orange)':'#e5e7eb')+';margin:0 14px;min-width:20px"></div>';
-      }
-      return html;
-    }).join('')
-    +'</div>';
-  const isLast=step===2;
-  const footer='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px">'
-    +'<button class="ep-cancel-btn" style="border-radius:99px;display:inline-flex;align-items:center;gap:6px" onclick="contractModalBack()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>Back</button>'
-    +'<button class="ep-save-btn" style="padding:9px 28px;border-radius:99px" onclick="'+(isLast?'saveManualContract()':'contractModalNext()')+'">'+(isLast?'Submit Contract':'Next')+'</button>'
-    +'</div>';
-  return '<div class="ct-modal-overlay" onclick="closeContractModal()">'
-    +'<div class="ct-modal" style="width:min(760px,94vw)" onclick="event.stopPropagation()">'
-    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create '+type+' Contract</span><button class="ct-modal-close" onclick="closeContractModal()">'+xSvg+'</button></div>'
-    +stepper
-    +content
-    +footer
-    +'</div></div>';
-}
-function buildContractSuccessModalHTML(){
-  const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeContractSuccess()">'
-    +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
-    +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeContractSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
-    +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
-    +'<div class="rr-success-title">Contract Created</div>'
-    +'<div class="rr-success-sub">&ldquo;'+contractSuccessName+'&rdquo; contract has been submitted.</div>'
-    +'</div></div>';
 }
 /* ══ ALL CONTRACTS: ONE LISTING, FOUR TYPES ═════════════════════════════════
    The type band is a FILTER above the table, not a gate in front of it. An
@@ -5697,9 +5720,10 @@ function buildLeavePoliciesHTML(){
 }
 function buildEditLeavePolicyHTML(){
   const p=leavePoliciesData.find(function(x){return x.id===leaveEditId;})||leavePoliciesData[0];
-  const cfSel=(v)=>'<option'+(v?'':' selected')+'>No</option><option'+(v?' selected':'')+'>Yes</option>';
-  const ynSel=(v)=>'<option'+(v?' selected':'')+'>Yes</option><option'+(!v?' selected':'')+'>No</option>';
-  const stSel=(v)=>'<option'+(v==='Active'?' selected':'')+'>Active</option><option'+(v==='Inactive'?' selected':'')+'>Inactive</option>';
+  /* These were native <select>s, so their lists were drawn by the operating
+     system - the one screen in the product still doing that. customSelect is
+     what the eight modals and the rest of the page forms already use. */
+  const ynDd=(id,v)=>customSelect(id,v?'Yes':'No',['Yes','No']);
   return '<div class="ep-page">'
     +'<div>'
       +'<button class="ep-back" onclick="navigatePage(\'leave-policies\')">'
@@ -5738,13 +5762,13 @@ function buildEditLeavePolicyHTML(){
       +'<div class="ep-form-title">Leave Policy Details</div>'
       +'<div class="ep-form-grid">'
         +'<div class="ep-form-group"><label class="ep-form-label">Leave Type Name <span class="req">*</span></label><input class="ep-form-input" type="text" value="'+p.type+'"></div>'
-        +'<div class="ep-form-group"><label class="ep-form-label">Carry Forward Allowed <span class="req">*</span></label><select class="ep-form-select">'+cfSel(p.carryForward)+'</select></div>'
+        +'<div class="ep-form-group"><label class="ep-form-label">Carry Forward Allowed <span class="req">*</span></label>'+ynDd('lpe-carryforward',!!p.carryForward)+'</div>'
         +'<div class="ep-form-group"><label class="ep-form-label">Yearly Count <span class="req">*</span></label><input class="ep-form-input" type="number" value="'+p.yearly+'"></div>'
-        +'<div class="ep-form-group"><label class="ep-form-label">Applicable During Probation <span class="req">*</span></label><select class="ep-form-select">'+ynSel(p.probation)+'</select></div>'
+        +'<div class="ep-form-group"><label class="ep-form-label">Applicable During Probation <span class="req">*</span></label>'+ynDd('lpe-probation',!!p.probation)+'</div>'
         +'<div class="ep-form-group"><label class="ep-form-label">Monthly Limit</label><input class="ep-form-input" type="number" value="'+(p.monthly||'')+'"></div>'
         +'<div class="ep-form-group"><label class="ep-form-label">Carry Forward Limit</label><input class="ep-form-input" type="number" value="'+(p.carryForward||'')+'"></div>'
-        +'<div class="ep-form-group"><label class="ep-form-label">Prorate Allocation</label><select class="ep-form-select"><option'+(p.prorate?'':' selected')+'>No</option><option'+(p.prorate?' selected':'')+'>Yes</option></select></div>'
-        +'<div class="ep-form-group"><label class="ep-form-label">Status <span class="req">*</span></label><select class="ep-form-select">'+stSel(p.status)+'</select></div>'
+        +'<div class="ep-form-group"><label class="ep-form-label">Prorate Allocation</label>'+ynDd('lpe-prorate',!!p.prorate)+'</div>'
+        +'<div class="ep-form-group"><label class="ep-form-label">Status <span class="req">*</span></label>'+customSelect('lpe-status',p.status==='Inactive'?'Inactive':'Active',['Active','Inactive'])+'</div>'
         +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Applicable Employees</label>'
           +'<div class="ep-emp-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search employees..."></div>'
           +'<div class="ep-emp-tags">'
@@ -10334,8 +10358,7 @@ function aiCtLiveParse(){
   if(et&&parsed.empType)et.value=parsed.empType;
 }
 function aiCtRouteToContractType(empType){
-  if(empType==='PEO'){peoStep=0;page='contract-peo';}
-  else if(empType==='EOR'){eorStep=0;page='contract-eor';}
+  if(empType==='PEO'||empType==='EOR'){ctFormType=empType;ctFormStep=0;page=ctFormPage(empType);}
   else{page='contract-type-select';}
   renderADTPage();
 }
@@ -10398,8 +10421,7 @@ function buildAIEmployeeCreatedHTML(){
     +'</div></div>';
 }
 function buildAIAssistedContractSplitHTML(type){
-  const step=type==='PEO'?peoStep:eorStep;
-  const formHtml=buildContractFormHTML(type,step,true);
+  const formHtml=buildContractFormHTML(type,ctFormStep,true);
   return '<div class="ai-ct-split">'
     +'<div class="ai-ct-split-chat">'
     +'<div class="chat-area" id="ai-ct-chat"></div>'

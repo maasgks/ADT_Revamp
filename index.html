@@ -40,7 +40,13 @@
 <link rel="stylesheet" href="css/employee-lifecycle.css">
 <!-- The four-step Create New Employee wizard. Builds on the form system in
      main.css; adds only the stepper, chips, checklist and access preview. -->
-<link rel="stylesheet" href="css/employee-add.css"></head>
+<link rel="stylesheet" href="css/employee-add.css">
+<!-- The Immigration and Contractor intake forms. Reuses main.css's colour, shape
+     and toggle tokens; owns its own field and checklist chrome. -->
+<link rel="stylesheet" href="css/contract-intake.css">
+<!-- LAST: settles control height and button shape across every creation form,
+     popup and page alike. Must win over the per-screen sheets above. -->
+<link rel="stylesheet" href="css/form-system.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <div id="v-adt" class="view active">
@@ -2021,6 +2027,10 @@
 <!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
 <script src="js/day-status.js"></script>
 <script src="js/pages.js"></script>
+<!-- After pages.js (it calls apCD, showToast and aiGenCommercial) and before
+     renderer.js, which dispatches contract-immigration and contract-contractor
+     to the two builders in here. -->
+<script src="js/contract-intake.js"></script>
 <script src="js/renderer.js"></script>
 <!-- After renderer.js: it enhances what the renderer paints, and needs the
      page data arrays and open*Sidebar handlers to already exist. -->
