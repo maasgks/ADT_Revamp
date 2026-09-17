@@ -164,8 +164,10 @@ function ohSetTab(t){
      new tab and re-seeded when it does not. */
   if(!ohMonthRows().length)ohSeedMonth();
   const host=document.getElementById('oh-host');
-  if(host)host.querySelectorAll('.cc-tab').forEach(function(el){
-    el.classList.toggle('active',el.dataset.ohtab===t);
+  if(host)host.querySelectorAll('.mod-tab').forEach(function(el){
+    const on=el.dataset.ohtab===t;
+    el.classList.toggle('active',on);
+    el.setAttribute('aria-selected',on?'true':'false');
   });
   ohPaint();
 }
@@ -235,13 +237,19 @@ const OH_ICO={
   next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>',
   chev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>',
   back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
-  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+  star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><polygon points="12 2.6 15 9 22 9.9 17 14.7 18.2 21.6 12 18.3 5.8 21.6 7 14.7 2 9.9 9 9"/></svg>'
 };
 function ohOverlayHTML(){
   const entity=(typeof hdCurrentEntityName==='function'?hdCurrentEntityName():'')||'This entity';
-  const tab=function(id,label){
-    return '<button class="cc-tab'+(ohTab===id?' active':'')+'" data-ohtab="'+id+'" '
-      +'onclick="ohSetTab(\''+id+'\')">'+label+'</button>';
+  /* The same segmented control the Employees and Timesheet module tabs use -
+     .mod-tabs on a tinted track, and the sliding marker js/tab-slide.js plants
+     in any .mod-tabs it finds. Two views of one calendar is what that control
+     is for; the pair of chips this replaced read as two filters. */
+  const tab=function(id,label,ico){
+    return '<button type="button" role="tab" aria-selected="'+(ohTab===id)+'" '
+      +'class="mod-tab'+(ohTab===id?' active':'')+'" data-ohtab="'+id+'" '
+      +'onclick="ohSetTab(\''+id+'\')">'+ico+'<span>'+label+'</span></button>';
   };
   return '<div class="oh-overlay" onclick="if(event.target===this)closeOptionalHolidays()">'
     +'<div class="oh-panel" role="dialog" aria-modal="true" aria-labelledby="oh-title">'
@@ -250,7 +258,9 @@ function ohOverlayHTML(){
           +'<div class="oh-sub">'+tsxHtmlSafe(entity)+' &middot; Your calendar and balance for the year</div></div>'
         +'<button class="oh-close" onclick="closeOptionalHolidays()" title="Close" aria-label="Close">&times;</button>'
       +'</div>'
-      +'<div class="oh-tabs">'+tab('regular','Regular Holidays')+tab('optional','Optional Holidays')+'</div>'
+      +'<div class="oh-tabs"><div class="mod-tabs" role="tablist">'
+        +tab('regular','Regular Holidays',OH_ICO.cal)+tab('optional','Optional Holidays',OH_ICO.star)
+      +'</div></div>'
       +'<div class="oh-body" id="oh-body">'+ohBodyHTML()+'</div>'
     +'</div>'
   +'</div>';

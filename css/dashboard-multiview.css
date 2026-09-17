@@ -120,7 +120,15 @@
    js/core.js. A card is a door if, and only if, a listing exists that holds
    the records it is counting. ═══════════════════════════════════════════ */
 
-.hr-stat-card.is-link{
+/* A quick action is a door by definition - every one of them leaves the
+   dashboard - so it takes the same treatment rather than a second, quieter one
+   of its own. It used to answer a hover by darkening its border and tinting its
+   fill, which is the hover of a BUTTON; beside a stat tile that lifts, two cards
+   doing the same job looked like two different kinds of thing. Only the chip's
+   placement differs, below - a stat tile is read top to bottom and has a free
+   corner, an action card is read left to right and has a free right-hand edge. */
+.hr-stat-card.is-link,
+.hr-action-card{
   position:relative;
   cursor:pointer;
   box-shadow:0 1px 2px rgba(15,23,42,.05),0 2px 6px rgba(15,23,42,.045);
@@ -131,7 +139,8 @@
 
 /* Bottom-right, not top-right: the finance tiles already own their top-right
    corner with a 40px icon, and this is the one corner every card has free. */
-.hr-stat-card.is-link::after{
+.hr-stat-card.is-link::after,
+.hr-action-card::after{
   content:'';
   /* right:20px, not 16px — the card's padding is 18px 20px, so at 16px the chip
      sat 4px nearer the edge than every piece of text beside it and a row of
@@ -150,21 +159,23 @@
 /* Keep a long caption clear of the chip: 26px chip + 14px of air. */
 .hr-stat-card.is-link .hr-stat-sub{padding-right:40px}
 
-.hr-stat-card.is-link:hover{
+.hr-stat-card.is-link:hover,
+.hr-action-card:hover{
   border-color:#cbd5e1;
   box-shadow:0 10px 26px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05);
   transform:translateY(-2px);
 }
 /* The chip answers to the CARD's hover, never its own - the tile is the
    target, the chip is only the sign that says so. */
-.hr-stat-card.is-link:hover::after{
+.hr-stat-card.is-link:hover::after,
+.hr-action-card:hover::after{
   border-color:#0f172a;
   background-color:#0f172a;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
   transform:translateX(2px);
 }
-.hr-stat-card.is-link:active{transform:translateY(0) scale(.995)}
-.hr-stat-card.is-link:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
+.hr-stat-card.is-link:active,.hr-action-card:active{transform:translateY(0) scale(.995)}
+.hr-stat-card.is-link:focus-visible,.hr-action-card:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
 
 /* Read-only: an ordinary card. It is not styled here because there is nothing
    to add - it keeps the base .hr-stat-card exactly. The one thing it must not
@@ -172,9 +183,10 @@
 .hr-stat-card.is-static{cursor:default}
 
 @media (prefers-reduced-motion:reduce){
-  .hr-stat-card.is-link,.hr-stat-card.is-link::after{transition:none}
-  .hr-stat-card.is-link:hover{transform:none}
-  .hr-stat-card.is-link:hover::after{transform:none}
+  .hr-stat-card.is-link,.hr-stat-card.is-link::after,
+  .hr-action-card,.hr-action-card::after{transition:none}
+  .hr-stat-card.is-link:hover,.hr-action-card:hover{transform:none}
+  .hr-stat-card.is-link:hover::after,.hr-action-card:hover::after{transform:none}
 }
 .hr-stat-label{font-size:var(--ds-label);color:var(--gray);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
 /* Every widget value renders at the same size so metric baselines line up across a row.
@@ -221,8 +233,16 @@
    rather than as the grid's own row gap, which is 14px. */
 .hr-stat-grid+.hr-band,.hr-actions+.hr-band,.hr-section+.hr-band,.hr-grid-2+.hr-band{margin-top:26px}
 .hr-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.hr-action-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s}
-.hr-action-card:hover{border-color:#94a3b8;background:#fafbfc;transform:translateY(-1px);box-shadow:0 3px 10px rgba(15,23,42,.08)}
+/* padding-right, not a margin on the text: the chip is positioned against the
+   card, so only the card's own padding can guarantee a long description never
+   runs underneath it. 16px edge + 26px chip + 16px of air. */
+.hr-action-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 58px 16px 16px;display:flex;align-items:center;gap:12px}
+/* Centred on the right edge rather than tucked in a corner: this card is a single
+   row, so its free space is a column down the right-hand side. top + a half-chip
+   margin does the centring, NOT a transform - the hover nudge is a transform and
+   the two would overwrite each other. */
+.hr-action-card::after{right:16px;top:50%;bottom:auto;margin-top:-13px}
 .hr-action-icon{width:40px;height:40px;border-radius:10px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;color:var(--navy);flex-shrink:0}
 .hr-action-icon svg{width:18px;height:18px;stroke-width:1.5}
 .hr-action-text{flex:1}
@@ -815,7 +835,13 @@
 /* The table spans the full card so its row tint and the pager's divider reach
    the edges; the first column and the pager are re-padded to the card's own
    20px so the columns are not flush against the card border. */
-.oca-split-wrap{margin:0 -20px}
+/* width:auto, and it is doing the work here. .lp-split-wrap sets width:100%,
+   which pins the used width to the card's CONTENT box - so the negative margins
+   below could only shift the table 20px left, never widen it. The table ended up
+   overhanging the left edge with a 40px white gutter down the right, and the
+   header band and row rules stopped short of the border they were meant to
+   reach. With width:auto the margins widen it, as they were always meant to. */
+.oca-split-wrap{margin:0 -20px;width:auto}
 .oca-list .lp-split-main{border:none;border-radius:0}   /* the card is the border */
 .oca-list .lp-table th:first-child,.oca-list .lp-table td:first-child{padding-left:20px}
 .oca-list .lp-table th:last-child,.oca-list .lp-table td:last-child{padding-right:20px}

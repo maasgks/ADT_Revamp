@@ -293,6 +293,21 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
    or the whole sidebar would flicker each time a filter changes. Transitions
    only - they fire on state change, not on being re-created. */
 .sb-item span,.sb-parent span{transition:opacity var(--t-fast) var(--e-out)}
+/* COLLAPSING AND EXPANDING IS THE ONE REBUILD WORTH ANIMATING. The rule above
+   still holds for every other rebuild - a filter change must not flicker the
+   nav - so the entrance is not declared on .sidebar at all. toggleSidebar()
+   stamps .sb-toggling for the length of the move and takes it off again, which
+   means only a rebuild the user ASKED for animates. Opacity only: the width is
+   already travelling and a transform on top of it would read as two separate
+   movements. The stagger is capped well inside rule 4's ten items. */
+@keyframes m-sb-item-in{from{opacity:0}to{opacity:1}}
+.sidebar.sb-toggling .sb-menu-label,.sidebar.sb-toggling .sb-section,
+.sidebar.sb-toggling .sb-item,.sidebar.sb-toggling .sb-parent{
+  animation:m-sb-item-in var(--t-base) var(--e-out) both;
+}
+.sidebar.sb-toggling .sb-item:nth-child(n+4){animation-delay:20ms}
+.sidebar.sb-toggling .sb-item:nth-child(n+8){animation-delay:40ms}
+.sidebar.sb-toggling .sb-item:nth-child(n+12){animation-delay:60ms}
 
 /* Page pagination. */
 .lp-pg-btn{transition:background var(--t-micro) ease,color var(--t-micro) ease,border-color var(--t-micro) ease,transform var(--t-fast) var(--e-out)}

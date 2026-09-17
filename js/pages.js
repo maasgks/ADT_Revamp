@@ -167,6 +167,10 @@ function closeDeSidebar(){
 }
 function navDeTab(tab){deTab=tab;deEditMode=false;isbTab('de',renderDeSidebar);}
 function scrollTabRow(dir,id){const el=document.getElementById(id);if(!el)return;const t=el.querySelector('.lp-isb-tab');const w=t?t.offsetWidth*2+32:160;el.scrollBy({left:dir==='right'?w:-w,behavior:'smooth'});}
+function deToggleStatFilter(v){
+  deStatusFilter=deStatusFilter===v?'':v;
+  deSelectedId=null;renderADTPage();
+}
 function applyDeFilters(){
   const dept=getCSValue('de-f-dept'),branch=getCSValue('de-f-branch'),status=getCSValue('de-f-status');
   deDeptFilter=dept&&dept!=='Department'?dept:'';
@@ -324,12 +328,36 @@ function renderDeSidebar(){
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
+/* ── EMPLOYEE QUICK FILTERS ───────────────────────────────────────────────
+   A team or a holiday has two or three statuses and a tile per status is the
+   whole story. An employee has twelve, and eleven of them are stages of two
+   journeys - so a tile per status would be a second filter bar, and one per
+   JOURNEY is what the listing is actually asked: who is joining, who is here,
+   who is leaving, who has gone.
+
+   The two group values ride on the same variable as a real status, the way the
+   Tickets listing rides __unassigned__ on tkQuickStatusFilter. They are marked
+   with __ so nothing mistakes one for a status a record could carry, and the
+   Status dropdown shows its placeholder while a group is selected - it has no
+   option that means 'any of these five'. */
+const EMP_STAT_GROUPS={__onboarding__:'Onboarding',__offboarding__:'Offboarding'};
+function empStatIsGroup(v){return !!EMP_STAT_GROUPS[v];}
+function empStatMatch(e,v){
+  if(!v)return true;
+  const g=EMP_STAT_GROUPS[v];
+  if(!g)return e.status===v;
+  const st=empLifeStage(e.status);
+  return !!st&&st.type===g;
+}
+function empStatCount(list,v){
+  return list.filter(function(e){return empStatMatch(e,v);}).length;
+}
 function buildDirectListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   let deRows=directEmpData;
   if(deDeptFilter)deRows=deRows.filter(e=>e.dept===deDeptFilter);
   if(deBranchFilter)deRows=deRows.filter(e=>e.branch===deBranchFilter);
-  if(deStatusFilter)deRows=deRows.filter(e=>e.status===deStatusFilter);
+  if(deStatusFilter)deRows=deRows.filter(e=>empStatMatch(e,deStatusFilter));
   if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
   const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter].join('|'),deRows.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
@@ -343,18 +371,26 @@ function buildDirectListingHTML(){
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=deSelectedId?renderDeSidebar():'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('de-f-dept',['Engineering','HR','Product','Design','Sales'],deDeptFilter,'Department')
     +apCS('de-f-branch',['Hyderabad','Mumbai','Delhi','Punjab','Bangalore'],deBranchFilter,'Branch')
     /* All eight rungs, not just the two that mean "employed" - filtering on
        Active/Inactive alone cannot find a record stuck in verification, which
        is the search HR actually runs. */
-    +apCS('de-f-status',EMP_LIFE_STATUSES,deStatusFilter,'Status')
+    +apCS('de-f-status',EMP_LIFE_STATUSES,empStatIsGroup(deStatusFilter)?'':deStatusFilter,'Status')
     +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter],'resetDeFilters()')
     +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(deStatusFilter==='__onboarding__'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'__onboarding__\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+empStatCount(directEmpData,'__onboarding__')+'</div><div class="listing-stat-label">Onboarding</div></div>'
+    +'<div class="listing-stat'+(deStatusFilter==='Active'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+empStatCount(directEmpData,'Active')+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(deStatusFilter==='__offboarding__'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'__offboarding__\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+empStatCount(directEmpData,'__offboarding__')+'</div><div class="listing-stat-label">Offboarding</div></div>'
+    +'<div class="listing-stat'+(deStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+empStatCount(directEmpData,'Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>BRANCH</th><th>JOB TITLE</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
@@ -491,7 +527,7 @@ function renderGeSidebar(){
 }
 function buildGlobalListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  const filtered=geStatusFilter?globalEmpData.filter(e=>e.status===geStatusFilter):globalEmpData;
+  const filtered=geStatusFilter?globalEmpData.filter(e=>empStatMatch(e,geStatusFilter)):globalEmpData;
   if(geSelectedId&&!filtered.some(e=>e.id===geSelectedId))geSelectedId=null;
   const pgn=listPage('global-employees',geStatusFilter,filtered.map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
@@ -506,16 +542,24 @@ function buildGlobalListingHTML(){
     +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('ge-f-country',['Germany','France','Italy','United Kingdom','Netherlands'],'','Country')
     +apCS('ge-f-dept',['Engineering','Finance','HR','Operations','Product'],'','Department')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
-    +apCS('ge-f-status',EMP_LIFE_STATUSES,geStatusFilter,'Status')
+    +apCS('ge-f-status',EMP_LIFE_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
     +clearFiltersBtn([geStatusFilter],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(geStatusFilter==='__onboarding__'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'__onboarding__\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+empStatCount(globalEmpData,'__onboarding__')+'</div><div class="listing-stat-label">Onboarding</div></div>'
+    +'<div class="listing-stat'+(geStatusFilter==='Active'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+empStatCount(globalEmpData,'Active')+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(geStatusFilter==='__offboarding__'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'__offboarding__\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+empStatCount(globalEmpData,'__offboarding__')+'</div><div class="listing-stat-label">Offboarding</div></div>'
+    +'<div class="listing-stat'+(geStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+empStatCount(globalEmpData,'Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
@@ -523,6 +567,10 @@ function buildGlobalListingHTML(){
     +'</div></div>'
     +'<div class="lp-split-sb'+(geSelectedId?' open':'')+'" id="ge-split-sb"><div class="lp-isb" id="ge-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>';
+}
+function geToggleStatFilter(v){
+  geStatusFilter=geStatusFilter===v?'':v;
+  geSelectedId=null;renderADTPage();
 }
 function applyGeFilters(){
   const status=getCSValue('ge-f-status');
@@ -647,6 +695,13 @@ function renderTmSidebar(){
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
+/* The tiles are a second way into the status filter, not a filter of their own -
+   clicking one sets what the Status dropdown would have set, and clicking it
+   again clears it. */
+function tmToggleStatFilter(v){
+  tmStatusFilter=tmStatusFilter===v?'':v;
+  tmSelectedId=null;renderADTPage();
+}
 function applyTmFilters(){
   const team=getCSValue('tm-f-team'),status=getCSValue('tm-f-status');
   tmTeamFilter=team&&team!=='Select Team'?team:'';
@@ -656,6 +711,10 @@ function applyTmFilters(){
 function resetTmFilters(){tmTeamFilter='';tmStatusFilter='';tmSelectedId=null;renderADTPage();}
 function buildTeamsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
+  /* Counted over the whole set, not the filtered one: a tile that only counts
+     what is already on screen reads 0 the moment you filter it away, and the
+     number a quick filter offers has to survive being used. */
+  const tmCount=function(st){return teamsData.filter(function(t){return t.status===st;}).length;};
   let tmRows=teamsData;
   if(tmTeamFilter)tmRows=tmRows.filter(t=>t.name===tmTeamFilter);
   if(tmStatusFilter)tmRows=tmRows.filter(t=>t.status===tmStatusFilter);
@@ -671,14 +730,21 @@ function buildTeamsListingHTML(){
     +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No teams match this filter.</td></tr>');
   const sbInner=tmSelectedId?renderTmSidebar():'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar"><div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('tm-f-team',teamsData.map(t=>t.name),tmTeamFilter,'Select Team')
     +apCS('tm-f-status',['Active','Inactive','Pending'],tmStatusFilter,'Status')
     +clearFiltersBtn([tmTeamFilter,tmStatusFilter],'resetTmFilters()')
     +'<button class="lp-pill-search" onclick="applyTmFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="lp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(tmStatusFilter==='Active'?' stat-selected':'')+'" onclick="tmToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+tmCount('Active')+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(tmStatusFilter==='Pending'?' stat-selected':'')+'" onclick="tmToggleStatFilter(\'Pending\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+tmCount('Pending')+'</div><div class="listing-stat-label">Pending</div></div>'
+    +'<div class="listing-stat'+(tmStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="tmToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+tmCount('Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>TEAM NAME</th><th>DEPARTMENT</th><th>COUNTRY</th><th>MEMBERS</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
@@ -3317,6 +3383,11 @@ function buildRatesRulesHTML(){
   const countryOpts=['Netherlands'];
   const categoryOpts=['General','Income Tax','Social Security','Benefits','Health Ins.'];
   const statusOpts=['Active','Inactive'];
+  /* Counted over the whole set, not the filtered one: a tile that only counts
+     what is already on screen reads 0 the moment you filter it away, and the
+     number a quick filter offers has to survive being used. */
+  const rrActive=ratesRulesData.filter(function(r){return r.status==='Active';}).length;
+  const rrInactive=ratesRulesData.filter(function(r){return r.status==='Inactive';}).length;
   let rows=ratesRulesData;
   if(ratesRuleCountryFilter)rows=rows.filter(r=>r.country===ratesRuleCountryFilter);
   if(ratesRuleCategoryFilter)rows=rows.filter(r=>r.category===ratesRuleCategoryFilter);
@@ -3336,7 +3407,8 @@ function buildRatesRulesHTML(){
     '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ratesRuleSelectedId?renderRatesRuleSidebar():'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar">'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('rr-f-country',countryOpts,ratesRuleCountryFilter,'Country')
@@ -3344,6 +3416,10 @@ function buildRatesRulesHTML(){
     +apCS('rr-f-status',statusOpts,ratesRuleStatusFilter,'Status')
     +clearFiltersBtn([ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter],'resetRatesRuleFilters()')
     +'<button class="lp-pill-search" onclick="applyRatesRuleFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(ratesRuleStatusFilter==='Active'?' stat-selected':'')+'" onclick="rrToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+rrActive+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(ratesRuleStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="rrToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+rrInactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -3355,6 +3431,13 @@ function buildRatesRulesHTML(){
     +'</div></div>'
     +(ratesRuleModalOpen?buildCreateRuleModalHTML():'')
     +(ratesRuleSuccessName?buildRuleSuccessModalHTML():'');
+}
+/* The tiles are a second way into the status filter, not a filter of their own -
+   clicking one sets what the Status dropdown would have set, and clicking it
+   again clears it. Same shape as the Payheads and Holidays tiles. */
+function rrToggleStatFilter(v){
+  ratesRuleStatusFilter=ratesRuleStatusFilter===v?'':v;
+  ratesRuleSelectedId=null;renderADTPage();
 }
 function applyRatesRuleFilters(){
   ratesRuleCountryFilter=getCSValue('rr-f-country');
@@ -3573,6 +3656,8 @@ function buildContractTemplatesHTML(){
   const countryOpts=['Netherlands','India','Germany'];
   const categoryOpts=['Proposal','Contract','Onboarding'];
   const statusOpts=['Active','Inactive'];
+  const ctpActive=contractTemplatesData.filter(function(r){return r.status==='Active';}).length;
+  const ctpInactive=contractTemplatesData.filter(function(r){return r.status==='Inactive';}).length;
   let rows=contractTemplatesData;
   if(ctpCountryFilter)rows=rows.filter(r=>r.country===ctpCountryFilter);
   if(ctpCategoryFilter)rows=rows.filter(r=>r.category===ctpCategoryFilter);
@@ -3592,7 +3677,8 @@ function buildContractTemplatesHTML(){
     '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ctpSelectedId?renderCtpSidebar():'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar">'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('ctp-f-country',countryOpts,ctpCountryFilter,'Country')
@@ -3600,6 +3686,10 @@ function buildContractTemplatesHTML(){
     +apCS('ctp-f-status',statusOpts,ctpStatusFilter,'Status')
     +clearFiltersBtn([ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter],'resetCtpFilters()')
     +'<button class="lp-pill-search" onclick="applyCtpFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(ctpStatusFilter==='Active'?' stat-selected':'')+'" onclick="ctpToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+ctpActive+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(ctpStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="ctpToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+ctpInactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -3611,6 +3701,10 @@ function buildContractTemplatesHTML(){
     +'</div></div>'
     +(ctpModalOpen?buildCreateTemplateModalHTML():'')
     +(ctpSuccessName?buildCtpSuccessModalHTML():'');
+}
+function ctpToggleStatFilter(v){
+  ctpStatusFilter=ctpStatusFilter===v?'':v;
+  ctpSelectedId=null;renderADTPage();
 }
 function applyCtpFilters(){
   ctpCountryFilter=getCSValue('ctp-f-country');
@@ -5682,10 +5776,30 @@ function submitEditLeavePolicy(){
   page='leave-policies';renderADTPage();
   showToast('Leave policy updated','success','Your changes have been saved.');
 }
+/* The tiles are a second way into the Status filter, not a filter of their own -
+   clicking one sets what the dropdown would have set, and clicking it again
+   clears it. Same shape as the Payheads and Holidays tiles. */
+function lpToggleStatFilter(v){
+  lpFilterStatus=lpFilterStatus===v?'':v;
+  lpSidebarPolicyId=null;renderADTPage();
+}
+function applyLpFilters(){lpSidebarPolicyId=null;renderADTPage();}
 function buildLeavePoliciesHTML(){
   const numVal=(v)=>v!==null&&v!==undefined?'<span style="color:var(--black);font-weight:600">'+v+'</span>':'<span style="color:#9ca3af">-</span>';
   const ynCell=(v)=>'<span style="color:'+(v?'#16a34a':'#374151')+';font-weight:500">'+(v?'Yes':'No')+'</span>';
-  const pgn=listPage('leave-policies',[lpFilterField,lpFilterStatus].join('|'),leavePoliciesData.map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
+  /* The Status filter was stored and never used: csSelect() wrote lpFilterStatus,
+     the value rode along in the cache key, and the table still listed every
+     policy. The rows are filtered here now, which is also what gives the tiles
+     below something to do. lpFilterField is left alone - it names which column a
+     search would look in, and there is no search box to give it a term. */
+  const lpCount=function(st){
+    return leavePoliciesData.filter(function(x){return x.status===st;}).length;
+  };
+  let lpRows=leavePoliciesData;
+  if(lpFilterStatus)lpRows=lpRows.filter(function(x){return x.status===lpFilterStatus;});
+  // A panel must always belong to a row you can see.
+  if(lpSidebarPolicyId&&!lpRows.some(function(x){return x.id===lpSidebarPolicyId;}))lpSidebarPolicyId=null;
+  const pgn=listPage('leave-policies',[lpFilterField,lpFilterStatus].join('|'),lpRows.map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+p.type+'</td>'
     +'<td>'+numVal(p.yearly)+'</td>'
@@ -5700,15 +5814,21 @@ function buildLeavePoliciesHTML(){
     +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No leave policies match this filter.</td></tr>');
   const sbInner=lpSidebarPolicyId?sbRender(renderLPSidebar,'leave-policy'):'';
   return '<div class="lp-page">'
-    +'<div class="lp-filter-bar">'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +apCS('lp-filter-field',['Type Name','Yearly Count','Monthly Limit'],lpFilterField,'Select')
     +apCS('lp-filter-status',['Active','Inactive'],lpFilterStatus,'Status')
     +clearFiltersBtn([lpFilterField,lpFilterStatus],'resetLpFilters()')
-    +'<button class="lp-pill-search">Search</button>'
+    // csSelect() has already stored the pick; Search only has to repaint.
+    +'<button class="lp-pill-search" onclick="applyLpFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="lp-split-wrap">'
+    +'<div class="listing-stats">'
+    +'<div class="listing-stat'+(lpFilterStatus==='Active'?' stat-selected':'')+'" onclick="lpToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+lpCount('Active')+'</div><div class="listing-stat-label">Active</div></div>'
+    +'<div class="listing-stat'+(lpFilterStatus==='Inactive'?' stat-selected':'')+'" onclick="lpToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+lpCount('Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
+    +'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px">'
     +'<div class="lp-split-main">'
     +'<div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'

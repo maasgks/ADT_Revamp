@@ -111,11 +111,40 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .topbar-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .topbar-center{display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .topbar-right{display:flex;align-items:center;gap:14px;flex:1;min-width:0;justify-content:flex-end}
-.adt-logo{display:flex;align-items:center;gap:6px}
+/* The logo is the app's mark, not the first item in the page's own row: it is
+   centred over the rail, and the page title, the + button and page actions like
+   Cost Calculator line up with the CONTENT - they start exactly where the rail
+   ends. The logo is therefore given the rail's own strip to sit in. --sb-w is
+   stamped on the view by buildSidebar, so both follow the rail when it collapses.
+   min-width, not width: collapsed the strip is narrower than the logo itself,
+   and the logo keeps its natural size rather than being overflowed. */
+.adt-logo{display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;
+  /* The strip is the rail itself - its width plus its 1px border - measured from
+     the window edge, so the two negative margins undo the frame around it: the
+     topbar's own 20px padding on the left, and .topbar-left's 12px gap on the
+     right, which the next item immediately adds back. The logo is then centred
+     on the rail below it, and the page title still begins exactly where the rail
+     ends. */
+  margin-left:-20px;margin-right:-12px;
+  min-width:calc(var(--sb-w, 224px) + 1px);
+  /* THE MARGINS ARE PART OF THE MOVE. Collapsing swaps this whole block -
+     min-width AND both margins - so leaving the margins out of the transition
+     made the logo jump 20px while its strip was still gliding shut. Same
+     duration and curve as .sidebar, so the rail and the header travel as one
+     movement rather than two that nearly agree. */
+  transition:min-width var(--t-base,260ms) var(--e-in-out,cubic-bezier(.65,0,.35,1)),
+             margin-left var(--t-base,260ms) var(--e-in-out,cubic-bezier(.65,0,.35,1)),
+             margin-right var(--t-base,260ms) var(--e-in-out,cubic-bezier(.65,0,.35,1))}
+/* COLLAPSED RAIL. 63px is narrower than the logo itself, so there is no strip to
+   centre it in and nothing for the title to line up with. The negative margins
+   have to go with it - left, the logo was sitting flush against the window edge;
+   right, the -12px was eating the row gap and the page title was touching the
+   logo. Back to ordinary topbar spacing: the 20px gutter and one 12px gap. */
+.view.sb-collapsed .adt-logo{margin-left:0;margin-right:0;min-width:0}
 .adt-logo img{height:26px;width:auto;display:block}
 .adt-logo svg{width:28px;height:28px}
 .adt-logo-text{font-weight:800;font-size:18px;color:var(--navy);letter-spacing:-.5px}
-.topbar-page{font-size:14px;font-weight:600;color:var(--navy);margin-left:4px;white-space:nowrap}
+.topbar-page{font-size:14px;font-weight:600;color:var(--navy);white-space:nowrap}
 .sidebar-toggle{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:0;background:transparent;color:var(--navy);border-radius:8px;cursor:pointer;transition:.2s;flex-shrink:0}
 .sidebar-toggle:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .sidebar-toggle svg{width:18px;height:18px}
@@ -159,7 +188,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .hdr-dd-item-danger svg{color:#dc2626}
 .hdr-dd-item-danger:hover{background:#fef2f2}
 /* SIDEBAR */
-.sidebar{width:224px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 56px);padding:8px 0;transition:width .22s cubic-bezier(.4,0,.2,1);scrollbar-width:thin;scrollbar-color:#e5e7eb transparent}
+.sidebar{width:var(--sb-w,224px);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 56px);padding:8px 0;transition:width var(--t-base,260ms) var(--e-in-out,cubic-bezier(.65,0,.35,1));scrollbar-width:thin;scrollbar-color:#e5e7eb transparent}
 .sidebar::-webkit-scrollbar{width:3px}
 .sidebar::-webkit-scrollbar-track{background:transparent}
 .sidebar::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:99px}
@@ -933,8 +962,26 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    importance. */
 .ct-land-card{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:250px;
   background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-card);padding:24px;
-  font-family:inherit;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .18s}
-.ct-land-card:not(.is-disabled):hover{border-color:var(--navy);box-shadow:0 6px 22px rgba(15,23,42,.09);transform:translateY(-2px)}
+  font-family:inherit;cursor:pointer;
+  transition:border-color var(--t-fast,170ms) var(--e-out,ease),
+             box-shadow var(--t-fast,170ms) var(--e-out,ease),
+             transform var(--t-fast,170ms) var(--e-out,ease)}
+/* THE SAME DOOR AS A DASHBOARD TILE. These cards open a listing, which is what
+   .hr-stat-card.is-link means, so they answer the pointer the same way: a
+   resting shadow that says the card sits proud of the page, and a deeper one
+   under a 2px lift on hover. The border stays where it is - it used to snap to
+   --navy, a hard outline that read as a selection rather than a hover, and no
+   other card in the app draws one. See the note in dashboard-multiview.css. */
+.ct-land-card:not(.is-disabled){box-shadow:0 1px 2px rgba(15,23,42,.05),0 2px 6px rgba(15,23,42,.045)}
+.ct-land-card:not(.is-disabled):hover{
+  border-color:#cbd5e1;
+  box-shadow:0 10px 26px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05);
+  transform:translateY(-2px)}
+.ct-land-card:not(.is-disabled):active{transform:translateY(0) scale(.995)}
+@media (prefers-reduced-motion:reduce){
+  .ct-land-card{transition:none}
+  .ct-land-card:not(.is-disabled):hover{transform:none}
+}
 .ct-land-card:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 /* Icon left, count right. margin-left:auto rather than space-between so the
    count is flush to the card edge whatever the icon does. */

@@ -35,7 +35,10 @@
   color:var(--gray);font-family:inherit;flex-shrink:0;transition:.14s}
 .oh-close:hover{background:var(--btn-tint-bg);color:var(--btn-accent)}
 .oh-close:focus-visible{outline:2px solid var(--btn-accent);outline-offset:2px}
-.oh-tabs{display:flex;gap:8px;padding:13px 26px;border-bottom:1px solid var(--border);
+/* Only the strip the control sits in now: .mod-tabs carries its own track,
+   spacing and sliding marker, so the gap that used to separate two loose chips
+   would push its tinted track apart. */
+.oh-tabs{display:flex;padding:13px 26px;border-bottom:1px solid var(--border);
   background:#fafbfc;flex-shrink:0}
 .oh-body{flex:1;overflow-y:auto;padding:20px 26px 24px;scrollbar-width:thin}
 

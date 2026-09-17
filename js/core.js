@@ -816,6 +816,18 @@ function buildSidebar(id,collapsed,activePg){
      signature describing what is really on screen. */
   if(id==='adt-sidebar')lastSidebarSig=sidebarSig(id,collapsed,activePg);
   el.className='sidebar'+(collapsed?' collapsed':'');el.innerHTML='';
+  /* The topbar is a sibling of the rail, not an ancestor, so CSS alone cannot
+     tell the page title how wide the rail currently is. Stamped on the view
+     that owns this sidebar - never on :root - or the agent view's collapsed
+     rail and the dashboard's open one would fight over one value. */
+  const view=el.closest('.view');
+  if(view){
+    view.style.setProperty('--sb-w',collapsed?'62px':'224px');
+    /* The var alone is not enough: collapsed, the rail is narrower than the logo,
+       so the topbar cannot line up with it at all and has to fall back to plain
+       header spacing. That is a different layout, not a different width. */
+    view.classList.toggle('sb-collapsed',!!collapsed);
+  }
   const scope=id==='adt-sidebar'?'adt':'agent';
   const top=document.createElement('div');top.className='sb-top';
   top.innerHTML=(collapsed?'':'<span class="sb-menu-label">Menu</span>')+'<button class="sidebar-toggle" onclick="toggleSidebar(\''+scope+'\')" title="Toggle sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/><line x1="15" y1="5" x2="15" y2="19"/></svg></button>';
@@ -841,7 +853,7 @@ function buildSidebar(id,collapsed,activePg){
           childrenDiv.appendChild(cd);
         });
         parentBtn.onclick=()=>{
-          if(collapsed){if(scope==='adt'){adtSidebarCollapsed=false;openDropdowns.clear();openDropdowns.add(item.dropdown);buildSidebar(id,false,activeSidebarItem);}return;}
+          if(collapsed){if(scope==='adt'){adtSidebarCollapsed=false;openDropdowns.clear();openDropdowns.add(item.dropdown);buildSidebar(id,false,activeSidebarItem);sbMarkToggling(id);}return;}
           if(openDropdowns.has(item.dropdown)){openDropdowns.delete(item.dropdown);childrenDiv.style.maxHeight='0';parentBtn.classList.remove('open');}
           else{el.querySelectorAll('.sb-parent.open').forEach(b=>b.classList.remove('open'));el.querySelectorAll('.sb-children').forEach(c=>c.style.maxHeight='0');openDropdowns.clear();openDropdowns.add(item.dropdown);childrenDiv.style.maxHeight='600px';parentBtn.classList.add('open');}
         };
@@ -850,7 +862,9 @@ function buildSidebar(id,collapsed,activePg){
         const d=document.createElement('button');d.type='button';d.className='sb-parent'+(hasActiveChild?' has-active':'');
         d.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div>';
         d.title=item.dropdown;
-        d.onclick=()=>{adtSidebarCollapsed=false;openDropdowns.clear();openDropdowns.add(item.dropdown);buildSidebar(id,false,activeSidebarItem);};
+        // Opening a group from the collapsed rail expands the rail too, so it is
+        // the same move as the toggle button and animates the same way.
+        d.onclick=()=>{adtSidebarCollapsed=false;openDropdowns.clear();openDropdowns.add(item.dropdown);buildSidebar(id,false,activeSidebarItem);sbMarkToggling(id);};
         el.appendChild(d);
       }
       return;
@@ -1269,9 +1283,23 @@ function prevStep(){if(formStep>0){formStep--;buildForm(formStep);}}
 // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ NAVIGATION ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('v-'+v).classList.add('active');view=v;}
 
+/* buildSidebar() replaces the rail's contents, so the new nav simply appeared
+   while the width was still animating - the width glided and everything inside
+   it popped. This marks the rail for the length of the move; motion.css fades
+   the new items in behind that class, and ONLY behind that class, so the
+   rebuilds that happen on every filter change stay as still as they are now.
+   The timer is cleared per rail, or a fast second click would strip the class
+   off the move that is still running. */
+var sbToggleTimers={};
+function sbMarkToggling(id){
+  const el=document.getElementById(id);if(!el)return;
+  clearTimeout(sbToggleTimers[id]);
+  el.classList.add('sb-toggling');
+  sbToggleTimers[id]=setTimeout(function(){el.classList.remove('sb-toggling');},420);
+}
 function toggleSidebar(scope){
-  if(scope==='adt'){adtSidebarCollapsed=!adtSidebarCollapsed;buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));return;}
-  agentSidebarCollapsed=!agentSidebarCollapsed;buildSidebar('agent-sb',agentSidebarCollapsed,page);buildTopbar('agent-topbar-active','agent');
+  if(scope==='adt'){adtSidebarCollapsed=!adtSidebarCollapsed;buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));sbMarkToggling('adt-sidebar');return;}
+  agentSidebarCollapsed=!agentSidebarCollapsed;buildSidebar('agent-sb',agentSidebarCollapsed,page);buildTopbar('agent-topbar-active','agent');sbMarkToggling('agent-sb');
 }
 
 function openAgent(){hideAgentWorkspaceButton();showView('agent-empty');mode='agent';buildTopbar('agent-topbar-empty','agent');buildInput('inp-empty');buildQuickActions();setTimeout(initAmThreeJS,80);}
