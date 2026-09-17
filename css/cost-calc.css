@@ -79,9 +79,13 @@
 .ccp-fld-country{width:300px}
 .ccp-fld-salary{width:210px}
 .ccp-lbl{display:block;font-size:11px;font-weight:600;color:var(--gray);letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
-.ccp-select{width:100%;height:40px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 34px 0 13px;font-size:13.5px;font-weight:600;font-family:inherit;color:var(--navy);background:#fff url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a7282' stroke-width='2.2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center/14px;-webkit-appearance:none;appearance:none;cursor:pointer;outline:none;transition:border-color .15s}
-.ccp-select:hover{border-color:#cbd2da}
-.ccp-select:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
+/* The country picker is the app's own select (apCS), not a native one - a
+   browser-drawn option list cannot be styled, so next to every other dropdown
+   in the product it arrived as a piece of stray Chrome UI: its own type, its own
+   blue highlight, its own idea of a row. Only the field's height and weight are
+   set here; everything else the control brings with it. */
+.ccp-fld-country .cs-trigger{height:40px;font-size:13.5px;font-weight:600}
+.ccp-fld-country .cs-trigger.cs-placeholder .cs-value{font-weight:500}
 /* --r-control, NOT --r-input. The two fields sit side by side in one row, so
    the pill radius the token gives a lone text input read as a different kind
    of control next to the country select's 8px corners. Matching the neighbour
@@ -195,8 +199,18 @@
 .ccp-r-total td{background:var(--navy);color:#fff;font-size:13.5px;font-weight:700;border-bottom:none;padding-top:15px;padding-bottom:15px}
 .ccp-r-total td.num{font-size:15px;font-weight:800}
 
-.ccp-foot{display:flex;align-items:center;gap:8px;padding:12px 22px;font-size:11.5px;color:var(--gray);background:#fafbfc;border-top:1px solid var(--border)}
-.ccp-foot svg{width:13px;height:13px;flex-shrink:0}
+/* The app's standing-note shape - .ar-note and .tsx-note are the same three
+   rules. flex-start, not center: this note wraps to two lines at most widths,
+   and a centred icon then floats in the gap between them instead of marking
+   where the sentence starts. The 1px nudge sits the glyph on the first line's
+   cap height rather than its box. */
+.ccp-foot{display:flex;align-items:flex-start;gap:9px;padding:13px 22px;
+  font-size:11.5px;line-height:1.5;color:var(--gray);
+  background:#fafbfc;border-top:1px solid var(--border)}
+.ccp-foot svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;color:#9ca3af;fill:none;stroke:currentColor}
+/* A card-wide line of 11.5px text is a very long measure to track back from.
+   Capped at a readable one; the strip still runs the full width of the card. */
+.ccp-foot span{min-width:0;max-width:96ch}
 
 /* ── Respect a reduced-motion preference ────────────────────────────── */
 @media (prefers-reduced-motion:reduce){
@@ -215,6 +229,8 @@
   .ccp-stats{gap:24px}
   .ccp-result-val{font-size:34px}
   .ccp-tbl th,.ccp-tbl td{padding-left:14px;padding-right:14px}
+  /* The note is part of the same card and has to keep its gutters. */
+  .ccp-foot{padding-left:14px;padding-right:14px}
   .ccp-w-num{width:96px}
   .ccp-w-rate{width:64px}
   .ccp-r-item td.line{padding-left:24px}

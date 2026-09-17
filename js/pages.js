@@ -703,23 +703,26 @@ function tmToggleStatFilter(v){
   tmSelectedId=null;renderADTPage();
 }
 function applyTmFilters(){
-  const team=getCSValue('tm-f-team'),status=getCSValue('tm-f-status');
-  tmTeamFilter=team&&team!=='Select Team'?team:'';
+  const dept=getCSValue('tm-f-dept'),status=getCSValue('tm-f-status');
+  tmDeptFilter=dept&&dept!=='Select Department'?dept:'';
   tmStatusFilter=status&&status!=='Status'?status:'';
   tmSelectedId=null;renderADTPage();
 }
-function resetTmFilters(){tmTeamFilter='';tmStatusFilter='';tmSelectedId=null;renderADTPage();}
+function resetTmFilters(){tmDeptFilter='';tmStatusFilter='';tmSelectedId=null;renderADTPage();}
 function buildTeamsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   /* Counted over the whole set, not the filtered one: a tile that only counts
      what is already on screen reads 0 the moment you filter it away, and the
      number a quick filter offers has to survive being used. */
   const tmCount=function(st){return teamsData.filter(function(t){return t.status===st;}).length;};
+  const tmDepts=teamsData.map(function(t){return t.dept;})
+    .filter(function(v,i,a){return v&&a.indexOf(v)===i;})
+    .sort();
   let tmRows=teamsData;
-  if(tmTeamFilter)tmRows=tmRows.filter(t=>t.name===tmTeamFilter);
+  if(tmDeptFilter)tmRows=tmRows.filter(t=>t.dept===tmDeptFilter);
   if(tmStatusFilter)tmRows=tmRows.filter(t=>t.status===tmStatusFilter);
   if(tmSelectedId&&!tmRows.some(t=>t.id===tmSelectedId))tmSelectedId=null;
-  const pgn=listPage('teams',[tmTeamFilter,tmStatusFilter].join('|'),tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
+  const pgn=listPage('teams',[tmDeptFilter,tmStatusFilter].join('|'),tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.name+'</td>'
     +'<td>'+(t.dept||d)+'</td>'
@@ -734,9 +737,14 @@ function buildTeamsListingHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +apCS('tm-f-team',teamsData.map(t=>t.name),tmTeamFilter,'Select Team')
+    /* Department, not team name. A list of every team on a page that already
+       lists every team filters nothing a reader cannot do by looking - and the
+       column this listing actually groups by is Department, which is also what
+       the module's own filter set has always named (see getPageMeta). Built off
+       the data so a new team's department is offered without a second edit. */
+    +apCS('tm-f-dept',tmDepts,tmDeptFilter,'Select Department')
     +apCS('tm-f-status',['Active','Inactive','Pending'],tmStatusFilter,'Status')
-    +clearFiltersBtn([tmTeamFilter,tmStatusFilter],'resetTmFilters()')
+    +clearFiltersBtn([tmDeptFilter,tmStatusFilter],'resetTmFilters()')
     +'<button class="lp-pill-search" onclick="applyTmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'

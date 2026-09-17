@@ -2429,7 +2429,7 @@ const tmWorkflowData={
   6:[{title:'Team Deactivated',user:'Admin',date:'15 Jul 2025',time:'04:00:00 PM',description:'Local Admin team deactivated. Members reassigned.'},{title:'Team Activated',user:'Admin',date:'01 Jun 2025',time:'09:00:00 AM',description:'Local Admin team created for Netherlands entity.'}]
 };
 let tmSelectedId=null,tmTab='basic-details';
-let tmTeamFilter='',tmStatusFilter='';
+let tmDeptFilter='',tmStatusFilter='';
 const ctFlow=['Submitted','Quotation Approved','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Onboarding','Ready for Payroll'];
 const contractsData=[
   {id:1,contractId:'94135',empName:'TestEmp Antar',empDesig:'Business Analyst',country:'Netherlands',type:'EOR',serviceType:'Permanent',date:'2026-06-11 15:17:26',status:'Submitted',

@@ -401,8 +401,21 @@ let ccSalary=0;
 let ccState='empty';         // 'empty' | 'loading' | 'ready'
 let ccTimers=[];
 
+/* apCS deals in labels, the data is keyed by id, so the two are mapped here
+   rather than inside the picker. The placeholder is also a real OPTION and not
+   only the empty state: picking a country is how this page starts, and without
+   it there is no way back to having picked none - the same reason the Contracts
+   type filter carries its own 'All Types' row. */
+const CC_ANY_COUNTRY='Select a country…';
+function ccCountryIdByName(name){
+  const keys=Object.keys(ccPageData);
+  for(var i=0;i<keys.length;i++)if(ccPageData[keys[i]].name===name)return keys[i];
+  return '';
+}
+function ccPickCountry(val){ccChangeCountry(val===CC_ANY_COUNTRY?'':ccCountryIdByName(val));}
 function buildCostCalculatorPageHTML(){
-  const opts=Object.keys(ccPageData).map(k=>`<option value="${k}">${ccPageData[k].name}</option>`).join('');
+  const ccCountryOpts=[CC_ANY_COUNTRY].concat(Object.keys(ccPageData).map(k=>ccPageData[k].name));
+  const ccPicked=ccActiveCountry&&ccPageData[ccActiveCountry]?ccPageData[ccActiveCountry].name:'';
   return `<div class="ccp">
   <div class="ccp-topbar">
     <div class="ccp-topbar-l">
@@ -420,10 +433,8 @@ function buildCostCalculatorPageHTML(){
     <section class="ccp-card ccp-inputs">
       <div class="ccp-inputs-row">
         <div class="ccp-fld ccp-fld-country">
-          <label class="ccp-lbl" for="cc-country">Country of employment</label>
-          <select class="ccp-select" id="cc-country" onchange="ccChangeCountry(this.value)">
-            <option value="" selected>Select a country&hellip;</option>${opts}
-          </select>
+          <label class="ccp-lbl">Country of employment</label>
+          ${apCS('cc-country',ccCountryOpts,ccPicked,CC_ANY_COUNTRY,'ccPickCountry')}
         </div>
         <div class="ccp-fld ccp-fld-salary off" id="cc-salary-fld">
           <label class="ccp-lbl" for="cc-salary">Gross monthly salary</label>
@@ -501,12 +512,29 @@ function ccClamp(v){const d=ccPageData[ccActiveCountry];if(!d)return v;return Ma
 function ccClearTimers(){ccTimers.forEach(clearTimeout);ccTimers=[];}
 function ccAfter(ms,fn){ccTimers.push(setTimeout(fn,ms));}
 
+/* apCS builds its trigger from state at build time, and this page resets in
+   place rather than re-rendering - so the label has to be put back by hand, the
+   same three things csSelect() writes when a pick is made. */
+function ccResetCountrySelect(){
+  const trigger=document.querySelector('[data-csid="cc-country"]');
+  if(trigger){
+    const v=trigger.querySelector('.cs-value');
+    if(v)v.textContent=CC_ANY_COUNTRY;
+    trigger.classList.add('cs-placeholder');
+    trigger.classList.remove('cs-open');
+  }
+  const drop=document.getElementById('csd-cc-country');
+  if(drop){
+    drop.classList.remove('cs-open');
+    drop.querySelectorAll('.cs-option').forEach(function(o){o.classList.remove('cs-selected');});
+  }
+}
 /* ── lifecycle ─────────────────────────────────────────────────────────── */
 // The page always opens cold: no country, no salary, no numbers.
 function initCostCalcPage(){
   ccClearTimers();
   ccState='empty';
-  const sel=ccEl('cc-country');if(sel)sel.value='';
+  ccResetCountrySelect();
   ccChangeCountry('');   // single reset path: disables the fields, shows the empty state
 }
 
