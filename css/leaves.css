@@ -720,11 +720,15 @@ tr.lp-row-selected>td:first-child,
 
 .hd-rows-head{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:14px 20px;background:#fafbfc;border-bottom:1px solid var(--border)}
+  padding:14px 20px;background:#fafbfc;border-bottom:1px solid var(--border);
+  /* The card it sits in is overflow:visible, so the branch popover can leave it -
+     which also means this strip is not clipped to the rounded corners of the card,
+     and it squared them off. It carries the radius itself. */
+  border-radius:11px 11px 0 0}
+/* The strip already ends in a rule of its own; the title's .ep-form-title
+   underline drew a second one a few pixels above it. */
+.hd-rows-head .ep-form-title{margin:0;padding-bottom:0;border-bottom:0}
 .hd-rows-head-right{display:flex;align-items:center;gap:10px}
-.hd-count-chip{
-  padding:3px 10px;border-radius:var(--r-status);background:var(--ol);
-  color:var(--gray);font-size:11px;font-weight:600;white-space:nowrap}
 .hd-add-row{
   display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 14px;
   border-radius:var(--r-control);background:#fff;border:1.5px solid var(--orange);color:var(--orange);

@@ -5464,8 +5464,6 @@ function hdSubmitLabel(){
    the user has already watched climb rather than a number to trust on faith. */
 function hdPaintSummary(){
   const sum=document.getElementById('hd-summary');if(sum)sum.textContent=hdSummaryText();
-  const chip=document.getElementById('hd-count-chip');
-  if(chip)chip.textContent=hdDraftRows.length+' row'+(hdDraftRows.length===1?'':'s');
   const btn=document.getElementById('hd-submit-btn');if(btn)btn.textContent=hdSubmitLabel();
 }
 function hdUpdateSummary(){hdSyncRows();hdPaintSummary();}
@@ -5497,9 +5495,8 @@ function buildAddHolidaysModalHTML(){
 
     +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
     +'<div class="hd-rows-head">'
-      +'<span class="ep-form-title" style="margin:0">Holidays</span>'
+      +'<span class="ep-form-title">Holidays</span>'
       +'<div class="hd-rows-head-right">'
-        +'<span class="hd-count-chip" id="hd-count-chip">'+hdDraftRows.length+' row'+(hdDraftRows.length===1?'':'s')+'</span>'
         +'<button class="hd-add-row" onclick="hdAddRow()">'+plusSvg+'Add Holiday</button>'
       +'</div>'
     +'</div>'

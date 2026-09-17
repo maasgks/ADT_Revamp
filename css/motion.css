@@ -271,12 +271,14 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 /* Menus and dropdowns grow from the edge they are anchored to, so the menu
    visibly belongs to the button that opened it. */
 @keyframes m-menu-in{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
-.ct-action-menu.open,.hdr-dd-panel.open,.plus-dd.open,.agent-dd.open,.cs-dropdown.open{
+.ct-action-menu.open,.hdr-dd-panel.open,.plus-dd.open,.agent-dd.open,.cs-dropdown.cs-open,
+.custom-select.open .custom-select-menu{
   animation:m-menu-in var(--t-fast) var(--e-out) both;
   transform-origin:top right;
 }
-.custom-select.open .custom-select-menu{transform-origin:top left}
-.ct-act-item,.hdr-dd-item,.plus-dd-item,.agent-dd-item,.custom-select-option{transition:background var(--t-micro) ease,color var(--t-micro) ease,padding-left var(--t-fast) var(--e-out)}
+.cs-dropdown.cs-open,.custom-select.open .custom-select-menu{transform-origin:top left}
+.ct-act-item,.hdr-dd-item,.plus-dd-item,.agent-dd-item{transition:background var(--t-micro) ease,color var(--t-micro) ease,padding-left var(--t-fast) var(--e-out)}
+.custom-select-option,.cs-option{transition:background var(--t-micro) ease,color var(--t-micro) ease}
 .ct-act-item:hover,.hdr-dd-item:hover{padding-left:18px}
 
 /* Notification popover and search overlay. */
