@@ -266,26 +266,41 @@ function ciMoney(id,curId,val,curVal){
     +'<input id="'+id+'" class="ci-input" type="number" step="0.01" min="0" placeholder="0.00" value="'+ciEsc(val)+'"></div>';
 }
 
-/* Radio group. Selection lives in the DOM - a class on the chosen tile -
-   because the step is re-rendered from scratch on every repaint and a variable
-   would have to be written back on every click anyway. */
-function ciRadio(group,options,selected,compact){
-  return '<div class="ci-radio-set'+(compact?' is-compact':'')+'" data-cigroup="'+group+'">'
+/* THE RADIO GROUP, AND THERE IS ONLY ONE OF IT. Every one-of-N answer in the
+   app — this wizard's questions, the PEO wizard's, the leave form's duration,
+   and every creation modal's — draws this same .segmented strip, the control
+   the forms already used. It was briefly a set of bordered .ci-radio tiles;
+   the strip is what the product wants, so the tile is gone rather than
+   sitting in the CSS waiting to be picked up again by mistake.
+
+   Selection lives in the DOM — a class on the chosen button — because the
+   step is re-rendered from scratch on every repaint and a variable would have
+   to be written back on every click anyway.
+
+   `compact` sizes the strip to its buttons instead of the row, for the Yes/No
+   pairs that would otherwise stretch the width of a card. `onpick` is a JS
+   expression run after the selection lands, for a group that changes the form
+   around it (the rule builder's Value Type swaps the field under it). */
+/* `onpick` is a JS expression run after the selection lands, for a group that
+   changes the form around it — the rule builder's Value Type swaps the field
+   under it for a percentage one. Everything else leaves it off. */
+function ciRadio(group,options,selected,compact,onpick){
+  return '<div class="segmented'+(compact?' is-compact':'')+'" data-cigroup="'+group+'">'
     +options.map(function(o){
       const on=o===selected;
-      return '<button type="button" class="ci-radio'+(on?' is-on':'')+'" data-civalue="'+ciEsc(o)+'" onclick="ciPick(this)">'
-        +'<span class="ci-radio-dot"></span><span class="ci-radio-txt">'+ciEsc(o)+'</span></button>';
+      return '<button type="button" class="seg-btn'+(on?' active':'')+'" data-civalue="'+ciEsc(o)+'" onclick="ciPick(this)'+(onpick?';'+onpick:'')+'">'
+        +ciEsc(o)+'</button>';
     }).join('')
     +'</div>';
 }
 function ciPick(el){
-  const set=el.closest('.ci-radio-set');if(!set)return;
-  set.querySelectorAll('.ci-radio').forEach(function(b){b.classList.remove('is-on');});
-  el.classList.add('is-on');
+  const set=el.closest('.segmented');if(!set)return;
+  set.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
+  el.classList.add('active');
   set.classList.remove('ci-bad');
 }
 function ciPicked(group,fallback){
-  const on=document.querySelector('.ci-radio-set[data-cigroup="'+group+'"] .ci-radio.is-on');
+  const on=document.querySelector('.segmented[data-cigroup="'+group+'"] .seg-btn.active');
   return on?on.dataset.civalue:(fallback||'');
 }
 
@@ -334,7 +349,7 @@ function ciRequire(pairs){
   pairs.forEach(function(p){
     if(p.when===false)return;
     const target=p.group
-      ? document.querySelector('.ci-radio-set[data-cigroup="'+p.group+'"]')
+      ? document.querySelector('.segmented[data-cigroup="'+p.group+'"]')
       : document.getElementById(p.id);
     if(!target)return;
     const bad=p.group?!ciPicked(p.group):!String(target.value||'').trim();

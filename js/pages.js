@@ -1034,17 +1034,12 @@ function setAlDurationType(type){
   const fromGroup=document.getElementById('al-add-from-group');
   const toGroup=document.getElementById('al-add-to-group');
   const halfNote=document.getElementById('al-half-note');
-  form.querySelectorAll('.al-dur-radio').forEach(function(r){
-    r.classList.remove('selected');
-    const circle=r.querySelector('.al-radio-circle');
-    if(circle){circle.style.background='#fff';circle.style.borderColor='#d1d5db';circle.innerHTML='';}
-  });
+  /* Two classes on the chosen button and nothing else, the same pair
+     peoSelectRadio() sets: .active is what the strip CSS paints, .selected is
+     the marker the form's own readers look for. */
+  form.querySelectorAll('.al-dur-radio').forEach(function(r){r.classList.remove('selected','active');});
   const sel=form.querySelector('.al-dur-radio[data-type="'+type+'"]');
-  if(sel){
-    sel.classList.add('selected');
-    const circle=sel.querySelector('.al-radio-circle');
-    if(circle){circle.style.background='var(--orange)';circle.style.borderColor='var(--orange)';circle.innerHTML='<span style="width:6px;height:6px;border-radius:50%;background:#fff;display:block"></span>';}
-  }
+  if(sel)sel.classList.add('selected','active');
   if(type==='half'){
     if(dateRow)dateRow.style.display='grid';
     if(fromGroup)fromGroup.style.display='';
@@ -1117,11 +1112,12 @@ function startAddLeave(){
 function cancelAddLeave(){alAddModalOpen=false;renderADTPage();}
 function buildAddLeaveModalHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
+  /* THE SAME STRIP THE REST OF THE APP USES. These three were bare dots drawn
+     with inline styles, which made them a third control on a screen that
+     already had one. peoRadioSeg() draws them now, so they cannot drift. */
   const radioItem=function(type,label,checked){
-    return '<label class="al-dur-radio'+(checked?' selected':'')+'" data-type="'+type+'" onclick="setAlDurationType(\''+type+'\')" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:0;font-size:13px;color:var(--navy);font-weight:500">'
-      +'<span class="al-radio-circle" style="width:16px;height:16px;border-radius:50%;border:2px solid '+(checked?'var(--orange)':'#d1d5db')+';display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;background:'+(checked?'var(--orange)':'#fff')+';">'
-      +(checked?'<span style="width:6px;height:6px;border-radius:50%;background:#fff;display:block"></span>':'')
-      +'</span>'+label+'</label>';
+    return peoRadioSeg('al-dur-radio',label,checked,
+      "setAlDurationType('"+type+"')",'data-type="'+type+'"');
   };
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddLeave()">'
@@ -1143,7 +1139,8 @@ function buildAddLeaveModalHTML(){
 
     // Row 2: Duration type radio
     +'<div class="policy-form-section" style="border-top:1px dashed #e5e7eb">'
-    +'<div style="display:flex;align-items:center;gap:32px;flex-wrap:wrap">'
+    +'<div class="ep-form-label peo-elig-lbl">Duration <span class="req">*</span></div>'
+    +'<div class="segmented">'
     +radioItem('half','Half day',false)
     +radioItem('one','One day',false)
     +radioItem('multiple','Multiple Day',true)
@@ -2155,11 +2152,9 @@ function saveComplianceItem(){
   const nameEl=document.getElementById('cmp-new-name');
   const name=nameEl?nameEl.value.trim():'';
   if(!name)return;
-  const modelSeg=document.querySelector('#cmp-new-model-seg .seg-btn.active');
-  const model=modelSeg?modelSeg.textContent:'EOR';
+  const model=ciPicked('cmp-new-model','EOR');
   const country=getCustomSelectValue('cmp-new-country')||'Netherlands';
-  const categorySeg=document.querySelector('#cmp-new-category-seg .seg-btn.active');
-  const category=categorySeg?categorySeg.textContent:'Onboarding';
+  const category=ciPicked('cmp-new-category','Onboarding');
   const mandatoryEl=document.getElementById('cmp-new-mandatory');
   const blockingEl=document.getElementById('cmp-new-blocking');
   const evidenceEl=document.getElementById('cmp-new-evidence');
@@ -2184,9 +2179,11 @@ function buildCreateComplianceModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Compliance Item Name <span class="req">*</span></label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="e.g. Right to Work Check"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model <span class="req">*</span></label><div class="segmented" id="cmp-new-model-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Model <span class="req">*</span></label>'
+      +ciRadio('cmp-new-model',['EOR','PEO','Direct'],'EOR')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country <span class="req">*</span></label>'+customSelect('cmp-new-country','',['Netherlands','Belgium','India','Germany','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Category <span class="req">*</span></label><div class="segmented" id="cmp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Onboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Payroll</button><button type="button" class="seg-btn" onclick="selSeg(this)">Offboarding</button><button type="button" class="seg-btn" onclick="selSeg(this)">Statutory</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Category <span class="req">*</span></label>'
+      +ciRadio('cmp-new-category',['Onboarding','Payroll','Offboarding','Statutory'],'Onboarding')+'</div>'
     +'</div>'
     +'<div class="ep-form-card cmp-rules-card">'
     +'<div class="cs-toggle-row"><div><div class="cs-toggle-label">Mandatory</div><div class="cmp-rule-hint">Employees must complete this item</div></div><label class="cs-toggle"><input type="checkbox" id="cmp-new-mandatory" checked><span class="cs-toggle-slider"></span></label></div>'
@@ -3459,10 +3456,14 @@ function resetRatesRuleFilters(){
 }
 function closeRatesRuleModal(){ratesRuleModalOpen=false;renderADTPage();}
 function closeRuleSuccess(){ratesRuleSuccessName='';renderADTPage();}
-function segActive(id,fallback){const el=document.querySelector('#'+id+' .seg-btn.active');return el?el.textContent:fallback;}
+/* segActive() lived here and read '.seg-btn.active' out of a .segmented strip.
+   Every creation form's group is built by ciRadio() now — the same strip,
+   drawn in one place — so the reader is its ciPicked() and the group keeps
+   the old seg id as its name. */
 function ruleCurrencySelectHTML(selected){return customSelect('rr-new-currency',selected||'','EUR,USD,INR,GBP'.split(','),'');}
+/* Runs as ciRadio's onpick, so the segment is already selected by the time
+   this is called — it only has to swap the field underneath. */
 function toggleRuleValueField(btn){
-  selSeg(btn);
   const wrap=document.getElementById('rr-value-field-wrap');if(!wrap)return;
   const isPercentage=btn.textContent.trim()==='Percentage';
   const valEl=document.getElementById('rr-new-value');
@@ -3483,13 +3484,13 @@ function saveRule(){
   const name=gv('rr-new-name');
   if(!name)return;
   const category=getCustomSelectValue('rr-new-category')||'General';
-  const employmentType=segActive('rr-new-emptype-seg','EOR');
+  const employmentType=ciPicked('rr-new-emptype-seg','EOR');
   const country=getCustomSelectValue('rr-new-country')||'Netherlands';
   const applicableTo=getCustomSelectValue('rr-new-applicable')||employmentType;
   const currency=getCustomSelectValue('rr-new-currency')||'EUR';
-  const valueType=segActive('rr-new-valuetype-seg','Fixed Amount');
-  const ruleType=segActive('rr-new-type-seg','Statutory');
-  const conditionOperator=segActive('rr-new-condop-seg','');
+  const valueType=ciPicked('rr-new-valuetype-seg','Fixed Amount');
+  const ruleType=ciPicked('rr-new-type-seg','Statutory');
+  const conditionOperator=ciPicked('rr-new-condop-seg','');
   const conditionValue=gv('rr-new-condval');
   const value=gv('rr-new-value');
   const minLimit=gv('rr-new-minlimit');
@@ -3513,7 +3514,10 @@ function saveRule(){
 }
 function buildCreateRuleModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  const seg=(id,options,activeIdx)=>'<div class="segmented" id="'+id+'">'+options.map((o,i)=>'<button type="button" class="seg-btn'+(i===(activeIdx||0)?' active':'')+'" onclick="selSeg(this)">'+o+'</button>').join('')+'</div>';
+  /* THE SAME RADIO TILE EVERY OTHER CREATION FORM USES. These were .segmented
+   strips — a tab bar — for questions that are one-of-N answers, which is
+   what a radio is. Read back with ciPicked(<group>). */
+  const seg=(group,options,activeIdx)=>ciRadio(group,options,options[activeIdx||0]);
   return '<div class="ct-modal-overlay" onclick="closeRatesRuleModal()">'
     +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Rule</span><button class="ct-modal-close" onclick="closeRatesRuleModal()">'+xSvg+'</button></div>'
@@ -3530,7 +3534,8 @@ function buildCreateRuleModalHTML(){
     +'<div class="ep-form-card" style="margin-bottom:16px">'
     +'<div class="ep-form-title">Value &amp; Conditions</div>'
     +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Value Type <span class="req">*</span></label><div class="segmented" id="rr-new-valuetype-seg"><button type="button" class="seg-btn active" onclick="toggleRuleValueField(this)">Fixed Amount</button><button type="button" class="seg-btn" onclick="toggleRuleValueField(this)">Percentage</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Value Type <span class="req">*</span></label>'
+      +ciRadio('rr-new-valuetype-seg',['Fixed Amount','Percentage'],'Fixed Amount',false,'toggleRuleValueField(this)')+'</div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" id="rr-value-field-label">Currency &amp; Value</label><div id="rr-value-field-wrap"><div class="pay-group">'+ruleCurrencySelectHTML('')+'<input type="text" id="rr-new-value" placeholder="0.00"></div></div></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Operator</label>'+seg('rr-new-condop-seg',['Equals','Greater Than','Less Than','Between'])+'<span class="cmp-rule-hint">Optional &middot; narrows when this rule applies</span></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Condition Value</label><input type="text" class="ep-form-input" id="rr-new-condval" placeholder="Enter value"></div>'
@@ -3736,8 +3741,8 @@ function saveTemplate(){
   const nameEl=document.getElementById('ctp-new-name');
   const name=nameEl?nameEl.value.trim():'';
   const country=getCustomSelectValue('ctp-new-country');
-  const employmentType=segActive('ctp-new-emptype-seg','EOR');
-  const category=segActive('ctp-new-category-seg','Proposal');
+  const employmentType=ciPicked('ctp-new-emptype-seg','EOR');
+  const category=ciPicked('ctp-new-category-seg','Proposal');
   const status=document.getElementById('ctp-new-status')&&document.getElementById('ctp-new-status').checked?'Active':'Inactive';
   let ok=true;
   if(!name){flashFieldError(nameEl);ok=false;}
@@ -3768,9 +3773,11 @@ function buildCreateTemplateModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template Name '+req+'</label><input type="text" class="ep-form-input" id="ctp-new-name" placeholder="e.g. NL EOR Proposal"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label><div class="segmented" id="ctp-new-emptype-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">EOR</button><button type="button" class="seg-btn" onclick="selSeg(this)">PEO</button><button type="button" class="seg-btn" onclick="selSeg(this)">Direct</button></div></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Employment Type '+req+'</label>'
+      +ciRadio('ctp-new-emptype-seg',['EOR','PEO','Direct'],'EOR')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Country '+req+'</label>'+customSelect('ctp-new-country','',['Netherlands','India','Germany','Belgium','Spain'],'Select Country')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label><div class="segmented" id="ctp-new-category-seg"><button type="button" class="seg-btn active" onclick="selSeg(this)">Proposal</button><button type="button" class="seg-btn" onclick="selSeg(this)">Contract</button><button type="button" class="seg-btn" onclick="selSeg(this)">Onboarding</button></div></div>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Category '+req+'</label>'
+      +ciRadio('ctp-new-category-seg',['Proposal','Contract','Onboarding'],'Proposal')+'</div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template File (PDF only)</label>'
     +'<label class="ep-file-input" for="ctp-new-file"><span class="ep-file-btn">'+uploadIco+'Choose PDF</span><span class="ep-file-name" id="ctp-new-file-name">No file chosen</span></label>'
     +'<input type="file" id="ctp-new-file" accept=".pdf" style="display:none" onchange="updateFileLabel(this,\'ctp-new-file-name\')">'
@@ -3797,26 +3804,25 @@ function buildCtpSuccessModalHTML(){
 function buildEORContractHTML(){return buildContractFormHTML('EOR',ctFormStep);}
 function buildPEOContractHTML(){return buildContractFormHTML('PEO',ctFormStep);}
 /* ── Wizard radio groups ─────────────────────────────────────────────────────
-   Drawn as .ci-radio tiles - the control the Immigration and Contractor
-   intakes already use - rather than as bare dots with a label floating beside
-   them. The answers here run four and five words long, and a bare dot next to
-   "Yes - Employee has work permit" reads as a sentence someone forgot to style
-   rather than as a thing you click.
+   One segment of a .segmented strip — ciRadio's control, built one button at a
+   time for the callers that need per-option handlers (the work-permit answer
+   opens or seals the visa question under it) or a key on each button.
 
-   Selection is two classes on the chosen tile and nothing else: .is-on is what
-   the tile CSS paints, .selected is what ctFormCaptureInto reads back. The old
-   markup painted a nested dot with inline styles instead, so every builder had
-   to repeat the same six style strings to stay in step with these functions.
+   Selection is two classes and nothing else: .active is what the strip CSS
+   paints, .selected is what ctFormCaptureInto reads back. The label stays
+   wrapped in a span, because capture reads '.selected span'.textContent.
 
-   The dot is an <i>, deliberately: capture reads the answer as
-   '.selected span'.textContent, so the label has to stay the first span. */
-function peoRadioTile(groupClass,label,checked,onclick){
-  return '<label class="'+groupClass+' ci-radio'+(checked?' is-on selected':'')+'" onclick="'+onclick+'">'
-    +'<i class="ci-radio-dot"></i><span class="ci-radio-txt">'+label+'</span></label>';
+   `attrs` is for a caller that has to find one option again later — the leave
+   modal keys its duration buttons by data-type, because setAlDurationType() is
+   called with a type rather than with the element that was clicked. */
+function peoRadioSeg(groupClass,label,checked,onclick,attrs){
+  return '<button type="button" class="'+groupClass+' seg-btn'+(checked?' active selected':'')+'"'
+    +(attrs?' '+attrs:'')+' onclick="'+onclick+'">'
+    +'<span>'+label+'</span></button>';
 }
 function peoSelectRadio(groupClass,clickedEl){
-  document.querySelectorAll('.'+groupClass).forEach(function(r){r.classList.remove('selected','is-on');});
-  clickedEl.classList.add('selected','is-on');
+  document.querySelectorAll('.'+groupClass).forEach(function(r){r.classList.remove('selected','active');});
+  clickedEl.classList.add('selected','active');
 }
 function peoSelectWorkPermit(el){
   peoSelectRadio('peo-wp-radio',el);
@@ -3876,21 +3882,21 @@ function buildContractStepCards(includeStep,prefill){
            label is a hint line under it instead. */
         const hasPermit=prefill.workPermit===true;
         const wp=function(sel,label){
-          return peoRadioTile('peo-wp-radio',label,sel,'peoSelectWorkPermit(this)');
+          return peoRadioSeg('peo-wp-radio',label,sel,'peoSelectWorkPermit(this)');
         };
         const asked=hasPermit?'':(prefill.visaAssistance||'');
         const va=function(label){
-          return peoRadioTile('peo-radio-visa',label,asked===label,'peoSelectRadio(&quot;peo-radio-visa&quot;,this)');
+          return peoRadioSeg('peo-radio-visa',label,asked===label,'peoSelectRadio(&quot;peo-radio-visa&quot;,this)');
         };
         return '<div class="peo-elig-q">'
           +'<div class="ep-form-label peo-elig-lbl">Is the employee authorized to work? <span class="req">*</span></div>'
-          +'<div class="ci-radio-set is-compact">'
+          +'<div class="segmented">'
           +wp(hasPermit,'Yes - Employee has work permit')+wp(!hasPermit,'No')
           +'</div></div>'
           +'<div class="peo-elig-q'+(hasPermit?' peo-gated':'')+'" id="peo-visa-block">'
           +'<div class="ep-form-label peo-elig-lbl">Visa Assistance Required <span class="ci-cond">Conditional</span></div>'
           +'<div class="ci-hint peo-elig-hint">Asked only when the employee is not yet authorized to work in the destination country.</div>'
-          +'<div class="ci-radio-set is-compact">'
+          +'<div class="segmented">'
           +va('Employee would like ADT to assist')+va('Not required')
           +'</div></div>';
       })()
@@ -3929,7 +3935,7 @@ function buildContractStepCards(includeStep,prefill){
     /* Step 2's term/type answers use the same tile as Step 1, so the wizard
        does not change radio style halfway through. */
     const radioItem=function(grpClass,label,checked){
-      return peoRadioTile('peo-radio-'+grpClass,label,checked,'peoSelectRadio(&quot;peo-radio-'+grpClass+'&quot;,this)');
+      return peoRadioSeg('peo-radio-'+grpClass,label,checked,'peoSelectRadio(&quot;peo-radio-'+grpClass+'&quot;,this)');
     };
     const today=new Date().toISOString().split('T')[0];
     content+=
@@ -3972,14 +3978,14 @@ function buildContractStepCards(includeStep,prefill){
       +'<div class="ep-form-grid" style="margin-bottom:20px">'
       +'<div>'
       +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Employment Term <span class="req">*</span></div>'
-      +'<div class="ci-radio-set is-compact">'
+      +'<div class="segmented">'
       +radioItem('term','Permanent',prefill.employmentTerm?prefill.employmentTerm==='Permanent':true)
       +radioItem('term','Fixed Term',prefill.employmentTerm==='Fixed Term')
       +'</div>'
       +'</div>'
       +'<div>'
       +'<div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">Employee Type <span class="req">*</span></div>'
-      +'<div class="ci-radio-set is-compact">'
+      +'<div class="segmented">'
       +radioItem('emptype','Full Time',prefill.employeeType?prefill.employeeType==='Full Time':true)
       +radioItem('emptype','Part Time',prefill.employeeType==='Part Time')
       +'</div>'
@@ -8285,13 +8291,9 @@ function buildCreateTicketModalHTML(){
     +'<div class="ep-form-group"><label class="ep-form-label">Assign To</label>'
       +customSelect('tk-new-agent','',TK_AGENTS,'Select Team Member')+'</div>'
 
-    // Segmented, not a select: four fixed choices where seeing the scale is the
-    // point — Urgent only means something next to Low.
+    // All four on screen, not a select: Urgent only means something next to Low.
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Priority</label>'
-      +'<div class="segmented" id="tk-new-prio-seg">'
-      +TK_PRIORITIES.map(function(p){
-        return '<button type="button" class="seg-btn'+(p==='Medium'?' active':'')+'" onclick="selSeg(this)">'+p+'</button>';
-      }).join('')+'</div></div>'
+      +ciRadio('tk-new-prio',TK_PRIORITIES,'Medium')+'</div>'
 
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Description</label>'
       +'<textarea class="ep-form-input tk-ta tk-ta-lg" id="tk-new-desc" placeholder="Describe the support issue"></textarea></div>'
@@ -8328,8 +8330,7 @@ function saveNewTicket(){
   if(!cat){showToast('Please select a Category','error');return;}
 
   const agent=getCustomSelectValue('tk-new-agent');
-  const prioBtn=document.querySelector('#tk-new-prio-seg .seg-btn.active');
-  const priority=prioBtn?prioBtn.textContent.trim():'Medium';
+  const priority=ciPicked('tk-new-prio','Medium');
   const trigEl=document.getElementById('tk-new-trigger');
   const descEl=document.getElementById('tk-new-desc');
   const notifyEl=document.getElementById('tk-new-notify');
@@ -9704,7 +9705,8 @@ function aiWizardBasicDetailsHTML(j){
     +'<div class="ep-form-group"><label class="ep-form-label">Country</label><select class="ep-form-select" id="ai-auto-country">'+aiOptsHTML(aiCountryOptions,d.country)+'</select></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Employment Type</label><select class="ep-form-select" id="ai-auto-emp-type">'+aiOptsHTML(aiEmploymentTypeOptions,d.empType)+'</select></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Effective From Date</label>'+apCD('ai-auto-effective',d.effective||'','Select date')+'</div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status</label><div class="segmented" id="ai-auto-status-seg" style="max-width:240px"><button type="button" class="seg-btn'+(!activeStatus?' active':'')+'" onclick="selSeg(this)">Draft</button><button type="button" class="seg-btn'+(activeStatus?' active':'')+'" onclick="selSeg(this)">Active</button></div></div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status</label>'
+      +ciRadio('ai-auto-status',['Draft','Active'],activeStatus?'Active':'Draft')+'</div>'
     +'</div></div>';
 }
 function aiWizardTriggerHTML(){
@@ -9833,8 +9835,7 @@ function aiAutomateCaptureStep(){
     aiAutomateFormData.country=gv('ai-auto-country');
     aiAutomateFormData.empType=gv('ai-auto-emp-type');
     aiAutomateFormData.effective=gv('ai-auto-effective');
-    const seg=document.querySelector('#ai-auto-status-seg .seg-btn.active');
-    aiAutomateFormData.statusActive=!!(seg&&seg.textContent==='Active');
+    aiAutomateFormData.statusActive=ciPicked('ai-auto-status','Draft')==='Active';
   }else if(aiAutomateStep===2){
     const sel=document.querySelector('#ai-trigger-grid .choice-card.selected .choice-title');
     if(sel)aiAutomateFormData.trigger=sel.textContent;

@@ -177,32 +177,18 @@
 /* A field that failed validation. The class goes on the control itself, so a
    radio SET and an input can both wear it. */
 .ci-bad.ci-input{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.09)}
-.ci-radio-set.ci-bad{outline:1px solid #ef4444;outline-offset:4px;border-radius:var(--r-control)}
+.segmented.ci-bad{outline:1px solid #ef4444;outline-offset:4px;border-radius:var(--r-control)}
 /* The date picker is core.js's, so the mark lands on its wrapper - the id
    ciRequire is given belongs to a hidden input that can show nothing. */
 .cd-wrap.ci-bad .cd-trigger{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.09)}
 
 /* ── Radio sets ─────────────────────────────────────────────────────────────
-   Tiles, not bare dots, because most of these answers are three or four words
-   long and a bare radio list of four-word options is a wall. The default set
-   wraps into as many columns as fit; .is-compact keeps a short yes/no pair on
-   one line at its natural width. */
-.ci-radio-set{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
-.ci-radio-set.is-compact{display:flex;flex-wrap:wrap;gap:10px}
-.ci-radio{display:inline-flex;align-items:center;gap:9px;min-width:0;
-  padding:11px 15px;background:var(--card);border:1px solid var(--border);
-  border-radius:var(--r-control);font-family:inherit;font-size:12.5px;font-weight:500;
-  color:var(--navy);cursor:pointer;text-align:left;transition:.15s}
-.ci-radio:hover{border-color:#c9ced6;background:#fcfcfd}
-.ci-radio-dot{width:15px;height:15px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0;
-  position:relative;transition:.15s}
-.ci-radio-dot::after{content:"";position:absolute;inset:3px;border-radius:50%;
-  background:transparent;transition:.15s}
-.ci-radio-txt{min-width:0;line-height:1.4}
-.ci-radio.is-on{border-color:var(--orange);background:var(--ol);font-weight:600}
-.ci-radio.is-on .ci-radio-dot{border-color:var(--orange)}
-.ci-radio.is-on .ci-radio-dot::after{background:var(--orange)}
-.ci-radio:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+   THE SET IS .segmented NOW, from css/main.css — the strip this app's forms
+   have always used. What stood here was a .ci-radio tile: a bordered box with
+   a dot in it, one per option. It looked like a different product beside the
+   strips in the same modal, so it was withdrawn rather than left in the
+   stylesheet to be picked up again by mistake. ciRadio() in
+   js/contract-intake.js builds the strip; .ci-bad above still marks it. */
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .ci-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px}

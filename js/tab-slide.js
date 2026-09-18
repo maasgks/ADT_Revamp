@@ -8,7 +8,8 @@
 
    THE PART THAT NEEDS EXPLAINING is that not every bar survives a tab click.
    The detail panels do, since isbTab() in js/core.js swaps only the panel
-   body; the form segmenteds do, since selSeg() just moves a class; and the
+   body; the segmenteds do, since ciPick(), peoSelectRadio() and
+   aiScopeModeApply() all just move a class; and the
    profile bar does, since setProfTab() swaps only .prof-tab-body. The rest -
    module tabs, both Company Settings bars - answer a click with
    renderADTPage() or an innerHTML swap that rebuilds the whole page. Their

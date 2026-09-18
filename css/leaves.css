@@ -302,7 +302,10 @@ tr.lp-row-selected>td:first-child,
 .cd-dow{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;text-align:center;padding:4px 0 6px}
 .cd-day{height:32px;border:none;background:none;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--navy);cursor:pointer;transition:background .12s,color .12s;padding:0}
 .cd-day:hover:not(.cd-sel){background:#f1f5f9}
-.cd-day.cd-mute{color:#cbd5e1}          /* leading/trailing days of the neighbouring months */
+/* The cells either end of the month are empty now rather than greyed numbers
+   from the months on each side — see cdPaint. pointer-events, or the hover
+   above would light up a blank square. */
+.cd-day.cd-blank{pointer-events:none}
 .cd-day.cd-today{font-weight:700;color:var(--orange);box-shadow:inset 0 0 0 1.5px var(--border)}
 .cd-day.cd-sel{background:var(--orange);color:#fff;font-weight:700}
 .cd-foot{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;flex-shrink:0}

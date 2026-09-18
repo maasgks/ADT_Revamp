@@ -144,18 +144,18 @@
    work-authorisation and visa-assistance answers, its employment term and
    type - still has to sit on the same rhythm as the fields above it: one
    label, one optional hint, one row of answers, then the same 20px gap the
-   grid rows use. The tiles themselves are .ci-radio from contract-intake.css;
-   only the block around them is new. */
+   grid rows use. The answers themselves are a .segmented strip; only the block
+   around them is new. */
 .peo-elig-q{margin-bottom:20px}
 .peo-elig-q:last-child{margin-bottom:0}
 .peo-elig-lbl{display:block;margin-bottom:9px}
 .peo-elig-hint{display:block;margin:-3px 0 10px}
-/* An answer tile is a control on the same row rhythm as the fields above it,
+/* An answer strip is a control on the same row rhythm as the fields above it,
    so it stands the same 42px they do rather than its own 40. */
-.ep-form-card .ci-radio{min-height:42px}
+.ep-form-card .segmented .seg-btn{min-height:36px}
 /* A Conditional question whose trigger has not fired. Dimmed and sealed
    rather than hidden: the reader can still see what they would be asked if
    they answered the question above differently, and the card does not resize
    under the cursor on every click. */
 .peo-gated{opacity:.45;pointer-events:none;transition:opacity .18s ease}
-.peo-gated .ci-radio{background:#f7f8fa}
+.peo-gated .segmented{background:#eceef1}
