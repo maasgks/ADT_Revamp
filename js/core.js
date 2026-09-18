@@ -1963,11 +1963,11 @@ let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,
 let lpFilterField='',lpFilterStatus='';
 let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='',pmDateFilter='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
-/* ctQuickStatusFilter holds a STATUS when one type is selected and a PHASE
-   when the band is on All - the two vocabularies are never mixed in one
-   control, so one variable can carry whichever is currently meaningful. It is
-   cleared by ctSetType() on every type change for exactly that reason.
-   Country and Search survive a type change; both apply to all four types. */
+/* ctQuickStatusFilter holds a status, in both views: the selected type's own
+   flow, or any flow's status when the band is on All. ctSetType() still
+   clears it on a type change, because a status from the type you just left is
+   not one this type can be in. Country and Search survive a type change; both
+   apply to all four types. */
 let ctTypeFilter=CT_TYPE_ALL,ctCountryFilter='',ctSearchQuery='';
 /* Contracts opens on a four-card type chooser rather than straight into the
    table, and returns to it every time the section is entered afresh. The type

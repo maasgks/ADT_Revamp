@@ -1654,7 +1654,7 @@ function applyCtFilters(){
   const inp=document.getElementById('ct-search-inp');
   /* The placeholder is not one of the options, so an untouched control reads
      back empty - but guard the label anyway in case one is ever added. */
-  ctQuickStatusFilter=status&&status!=='All Statuses'&&status!=='All Phases'?status:'';
+  ctQuickStatusFilter=status&&status!=='All Statuses'?status:'';
   ctCountryFilter=country&&country!=='All Countries'?country:'';
   ctSearchQuery=inp?inp.value:'';
   ctSelectedId=null;
@@ -4246,23 +4246,12 @@ function ctFilteredRows(typeSel,statusSel){
     if(t&&t!==CT_TYPE_ALL&&ctTypeKey(c.type)!==t)return false;
     if(ctCountryFilter&&c.country!==ctCountryFilter)return false;
     if(q&&(c.empName+' '+c.contractId+' '+(c.empDesig||'')).toLowerCase().indexOf(q)===-1)return false;
-    if(s){
-      /* Inside a type, the filter is that type's own status. In the All view
-         it is normally a PHASE - that is all the dropdown offers there.
-
-         But the dashboard drills straight into this list with an exact status
-         ("Onboarding Pending", "Ready for Payroll" - see qaTargets), and it
-         arrives with the band still on All. So All accepts either: a known
-         phase filters by phase, anything else falls through to an exact status
-         match. Without this the dashboard tiles would all land on an empty
-         table. ("Active" is both a phase and a Contractor status; taking it as
-         the phase is the superset, which contains the exact match anyway.) */
-      if(t===CT_TYPE_ALL){
-        if(CT_PHASES.indexOf(s)!==-1){if(ctPhaseOf(c.status)!==s)return false;}
-        else if(c.status!==s)return false;
-      }
-      else if(c.status!==s)return false;
-    }
+    /* One rule in both views: the filter is an exact status. It used to fork
+       - a phase name on All, a status inside a type - and the dashboard had to
+       be special-cased around the fork, because its tiles link in with an
+       exact status ("Onboarding", "Ready for Payroll" - see DASH_CARD_FILTER)
+       and the band still on All. That is just the normal path now. */
+    if(s&&c.status!==s)return false;
     return true;
   });
 }
@@ -4313,7 +4302,7 @@ function ctSetType(key){
 function ctSummaryCardsHTML(){
   const cards=ctSummaryCardsFor(ctTypeFilter);
   return '<div class="listing-stats ct-stats">'+cards.map(function(card){
-    const val=card.phase||card.status;
+    const val=card.status;
     const n=ctFilteredRows(ctTypeFilter,val).length;
     const on=ctQuickStatusFilter===val;
     return '<div class="listing-stat'+(on?' stat-selected':'')+'" onclick="ctToggleStatFilter(\''+val+'\')">'
@@ -4528,9 +4517,10 @@ function buildContractsListingHTML(){
        the same way ap-filter-type and lp-filter-field are handled). */
     +apCS('ct-f-type',[CT_TYPE_LABEL_ALL].concat(CT_TYPE_ORDER.map(k=>CT_TYPES[k].label)),ctTypeFilterLabel(),'All Types')
     +apCS('ct-f-country',countries,ctCountryFilter,'All Countries')
-    /* Options come from the selected type - never a merged list. On All Types
-       this offers the six shared phases and nothing else. */
-    +apCS('ct-f-status',ctStatusOptionsFor(ctTypeFilter),ctQuickStatusFilter,isAll?'All Phases':'All Statuses')
+    /* Options follow the selected type: that type's own flow, or - on All
+       Types - every status any flow can produce, so the list only ever names
+       states a row in view can be in. */
+    +apCS('ct-f-status',ctStatusOptionsFor(ctTypeFilter),ctQuickStatusFilter,'All Statuses')
     +'<input class="ct-search-input" id="ct-search-inp" placeholder="Search name, ID" type="text" value="'+ctSearchQuery.replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')applyCtFilters()">'
     /* Contract Type counts as an applied filter now that it is one of the
        controls in this bar - Reset clears it back to All Types along with the

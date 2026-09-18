@@ -39,12 +39,17 @@ const CT_FLOWS={
   CONTRACTOR:['Submitted','Proposal Sent','Proposal Approved','Contract Sent','Contract Approved','Pending Onboarding','Onboarding','Active']
 };
 
-/* ── Shared phase ──────────────────────────────────────────────────────────
-   The ONLY status field safe to filter on when the band is set to All.
-   Merging four status vocabularies into one dropdown would offer "Ready for
-   Filing" on a list showing EOR rows, which is a lie about what the filter can
-   do. Six coarse phases that every type maps onto instead. */
-const CT_PHASES=['Request','Quote','Agreement','Delivery','Active','Closed'];
+/* ── Lifecycle grouping ──────────────────────────────────────────────────────────
+   NOT a vocabulary anything on screen speaks. It is the sort key that orders
+   the All-Types status list below, and the classifier behind the landing
+   tiles' in-progress / active / closed split.
+
+   IT USED TO BE A FILTER. The All view offered six coarse buckets of its own
+   — Request, Quote, Agreement, Delivery — under an "All Phases" dropdown,
+   words that appear nowhere else in the product: not on a row, not in a badge,
+   not in the PRD. The All view lists real statuses now, so there is no second
+   set of words to learn before you can filter. */
+const CT_PHASE_ORDER=['Request','Quote','Agreement','Delivery','Active','Closed'];
 
 const CT_STATUS_PHASE={
   'Submitted':'Request',
@@ -135,8 +140,24 @@ function ctFlowFor(type){return CT_FLOWS[ctTypeKey(type)]||CT_FLOWS.EOR;}
    "Inactive" and omitted "Onboarding" and "Ready for Payroll", so rows sitting
    in those two states could not be filtered to at all. Deriving it means that
    class of bug cannot come back. */
+/* Every status a row in the mixed list can actually be sitting in: the four
+   flows merged, each stage once. Ordered along the lifecycle rather than by
+   whichever type declared it first — straight CT_FLOWS order would file
+   Immigration's "Pending Kickoff" after EOR's "Ready for Payroll". Derived,
+   so a fifth type's stages turn up here the moment CT_FLOWS gains them. */
+function ctAllStatuses(){
+  const seen=[];
+  CT_TYPE_ORDER.forEach(function(k){
+    ctFlowFor(k).forEach(function(s){if(seen.indexOf(s)===-1)seen.push(s);});
+  });
+  seen.push('Inactive');
+  /* Stable within a phase, so each flow's own running order survives. */
+  return CT_PHASE_ORDER.reduce(function(out,ph){
+    return out.concat(seen.filter(function(s){return ctPhaseOf(s)===ph;}));
+  },[]);
+}
 function ctStatusOptionsFor(typeSel){
-  if(!typeSel||typeSel===CT_TYPE_ALL)return CT_PHASES.slice();
+  if(!typeSel||typeSel===CT_TYPE_ALL)return ctAllStatuses();
   return ctFlowFor(typeSel).concat(['Inactive']);
 }
 
@@ -144,8 +165,9 @@ function ctStatusOptionsFor(typeSel){
    Type-scoped, because "Ready for Payroll" is meaningless on an Immigration
    case and "Ready for Filing" is meaningless on an EOR placement. Each card is
    a filter, so clicking one drills into the list rather than opening a
-   separate report. A card matches on `status` within a type, or on `phase` in
-   the All view where statuses are not comparable. */
+   separate report. Every card matches on a real `status`, the All view
+   included — it uses the stages all four flows share, so a card and the
+   Status dropdown above it can never mean two different things. */
 const CT_SUMMARY_CARDS={
   EOR:[
     {label:'Quote Ready',status:'Proposal Sent'},
@@ -165,12 +187,13 @@ const CT_SUMMARY_CARDS={
     {label:'To Onboard',status:'Pending Onboarding'},
     {label:'Active',status:'Active'}
   ],
-  /* The All view speaks phases, for the same reason the Status filter does. */
+  /* The All view can only count what every type has in common, so these are
+     the four stages that appear in all four flows. */
   ALL:[
-    {label:'Awaiting Client',phase:'Quote'},
-    {label:'For Signature',phase:'Agreement'},
-    {label:'In Delivery',phase:'Delivery'},
-    {label:'Active',phase:'Active'}
+    {label:'Submitted',status:'Submitted'},
+    {label:'Proposals Sent',status:'Proposal Sent'},
+    {label:'Contracts Sent',status:'Contract Sent'},
+    {label:'Contracts Approved',status:'Contract Approved'}
   ]
 };
 function ctSummaryCardsFor(typeSel){
