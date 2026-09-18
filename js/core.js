@@ -292,7 +292,7 @@ function navPrTab(tab){prTab=tab;isbTab('pr',renderPrSidebar);}
    say why - so this is the same form on the same helpers, not a new mechanism.
    Clearing the two fields is all Cancel means here: the panel stays open. */
 function prCancelLog(){
-  const sel=document.getElementById('pr-log-status-sel');if(sel)sel.value='';
+  csClear('pr-log-status-sel');
   const inp=document.getElementById('pr-log-comment-inp');if(inp)inp.value='';
 }
 function prSaveLog(id){
@@ -376,10 +376,10 @@ function getLstLogs(){
   return lstLogsStore[key];
 }
 function lstSaveLog(){
-  const sel=document.getElementById('lst-log-status-sel');
+  const sel=csTrigger('lst-log-status-sel');
   const inp=document.getElementById('lst-log-comment-inp');
   if(!sel||!inp)return;
-  const status=sel.value,comment=inp.value.trim();
+  const status=getCSValue('lst-log-status-sel'),comment=inp.value.trim();
   if(!status){sel.style.borderColor='#ef4444';setTimeout(function(){sel.style.borderColor='';},1500);return;}
   if(!comment){inp.style.borderColor='#ef4444';setTimeout(function(){inp.style.borderColor='';},1500);return;}
   const now=new Date();
@@ -418,23 +418,26 @@ function seedLogs(rec,fixture){
 // Every log form in the app is "pick the new status, say why". This renders the
 // status half; the comment box and buttons stay with the caller because the
 // panels differ on Save vs Cancel/Submit.
-/* `onchange` is optional inline JS for panels where picking a status changes
-   what else the form shows — the employee lifecycle swaps in that status's
-   checklist. Panels that do not pass it get exactly the markup they had. */
-function lpLogStatusField(id,current,opts,onchange){
-  const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+/* THE APP'S OWN DROPDOWN, not a native <select>. Every one of these panels
+   used to render a real <select>, which meant the operating system drew the
+   option list: a blue highlight bar and system fonts inside a modal that
+   styles everything else itself. apCS() is the control the filter bars and
+   the creation forms use, so the log forms now look like the rest of the app.
+   Callers read it with getCSValue(id) and flash csTrigger(id).
+
+   `hook` is the name of a global function for panels where picking a status
+   changes what else the form shows — the employee lifecycle swaps in that
+   status's checklist. apCS calls it with (value, id). */
+function lpLogStatusField(id,current,opts,hook){
   return '<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="'+id+'"'+(onchange?' onchange="'+onchange+'"':'')+'>'
-    +'<option value="">Select Status</option>'
-    +(opts||[]).map(function(o){return '<option value="'+o+'"'+(o===current?' selected':'')+'>'+o+'</option>';}).join('')
-    +'</select>'+chev+'</div>';
+    +apCS(id,opts||[],current||'','Select Status',hook);
 }
 // Validate, stamp, record, and move the record onto the status that was chosen.
 // Returns false when the form is incomplete so the caller can stop.
 function lpCommitLog(rec,statusSelId,commentInpId,fixture){
-  const sel=document.getElementById(statusSelId);
+  const sel=csTrigger(statusSelId);
   const inp=document.getElementById(commentInpId);
-  const status=sel?sel.value:'';
+  const status=getCSValue(statusSelId);
   const comment=inp?inp.value.trim():'';
   const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!status){flash(sel);return false;}
@@ -1858,7 +1861,10 @@ function buildListingHTML(pg){
   const s2Count=statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()===s2Key).length:0;
   const s3Count=statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()==='pending').length:0;
   const pgSlug=pg.replace(/[^a-z0-9]/g,'-');
-  const filters=meta.filters.map((f,i)=>apCS(`lst-${pgSlug}-f${i}`,getFilterOptions(f).slice(1),f==='Status'?statusFilter:'',f)).join('');
+  const q=listSearchQueries[pg]||'';
+  /* Search first, then the page's own dropdowns. */
+  const filters=lpSearchField('lst-'+pgSlug+'-q',q,'Search',"applyListingFilters('"+pg+"')")
+    +meta.filters.map((f,i)=>apCS(`lst-${pgSlug}-f${i}`,getFilterOptions(f).slice(1),f==='Status'?statusFilter:'',f)).join('');
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>`<th>${c}</th>`).join('')+'<th>ACTION</th>';
   // Payroll keeps its own detail panel; every other listing shares the generic
@@ -1866,7 +1872,7 @@ function buildListingHTML(pg){
   const isPr=pg==='payroll';
   const openCall=row=>isPr?`openPrSidebar(${row[0]})`:`openLstSidebar('${pg}',${row[0]})`;
   const selId=isPr?prSelectedId:(lstSelectedPg===pg?lstSelectedId:null);
-  const pgn=listPage(pg,statusFilter,rows.map(row=>
+  const pgn=listPage(pg,statusFilter+'|'+q,lpSearchRows(rows,q).map(row=>
     `<tr class="lp-row${selId!=null&&String(selId)===String(row[0])?' lp-row-selected':''}" data-row-id="${row[0]}" style="cursor:pointer" onclick="${openCall(row)}">`
       +row.map((cell,ci)=>buildListingCell(cell,cols[ci])).join('')
       +`<td><button class="lp-action-btn" title="View details" onclick="event.stopPropagation();${openCall(row)}">${hamburger}</button></td>`
@@ -1904,15 +1910,55 @@ function applyListingFilters(pg){
   const idx=(meta.filters||[]).findIndex(f=>f==='Status'||f==='status');
   const status=idx>=0?getCSValue('lst-'+slug+'-f'+idx):'';
   if(status&&status!=='Status')listStatusFilters[pg]=status;else delete listStatusFilters[pg];
+  const q=lpSearchValue('lst-'+slug+'-q');
+  if(q)listSearchQueries[pg]=q;else delete listSearchQueries[pg];
   renderADTPage();
 }
 function resetListingFilters(pg){
   delete listStatusFilters[pg];
+  delete listSearchQueries[pg];
   renderADTPage();
 }
 // Renders a "Clear Filters" pill only when at least one filter is actually
 // applied. `applied` is the list of a page's filter-state values; `call` is the
 // page's own clear handler.
+/* THE SEARCH BOX, FIRST IN EVERY FILTER BAR. One builder, so the control, its
+   place in the row and its Enter-to-search are the same on all sixteen
+   listings rather than each page's own input. It is deliberately the first
+   thing in the bar: typing a name is what people reach for before they reach
+   for a dropdown, and a box that moves from page to page has to be hunted for.
+
+   Enter runs the page's own apply, the same function the Search button calls,
+   so there is one path in and no second definition of what searching means. */
+function lpSearchField(id,value,placeholder,applyCall){
+  return '<input class="lp-search-input" id="'+id+'" type="text" placeholder="'+(placeholder||'Search')+'"'
+    +' value="'+attrSafe(value||'')+'" onkeydown="if(event.key===\'Enter\')'+applyCall+'">';
+}
+function lpSearchValue(id){
+  const el=document.getElementById(id);
+  return el?el.value.trim():'';
+}
+/* WHAT THE QUERY IS MATCHED AGAINST: every string and number the record
+   carries, not a hand-picked list of fields per listing. A curated list is a
+   second place to remember when a column is added — and it is the column
+   nobody updated that the search then silently cannot find. The cost is that a
+   query can match something not on screen (an id, an email); for a search box
+   that is usually the answer somebody wanted anyway. */
+function lpSearchMatch(q,rec){
+  if(!q)return true;
+  const needle=String(q).trim().toLowerCase();
+  if(!needle)return true;
+  if(rec==null)return false;
+  return Object.keys(rec).some(function(k){
+    const v=rec[k];
+    return (typeof v==='string'||typeof v==='number')
+      &&String(v).toLowerCase().indexOf(needle)!==-1;
+  });
+}
+function lpSearchRows(rows,q){
+  if(!q)return rows;
+  return rows.filter(function(r){return lpSearchMatch(q,r);});
+}
 function clearFiltersBtn(applied,call){
   const n=(applied||[]).filter(Boolean).length;
   if(!n)return '';
@@ -1974,6 +2020,13 @@ let apFilterType='',apFilterValue='';
 let lpSidebarPolicyId=null,lpSidebarTab='basic-details',lpSidebarEditMode=false,lpEmpEditMode=false;
 let lpFilterField='',lpFilterStatus='';
 let listStatusFilters={},alStatusFilter='',pmInvoiceStatusFilter='',pmDateFilter='';
+/* One query per listing, held the same way the dropdown filters are: the bar
+   is rebuilt on every repaint, so what was typed has to live outside it.
+   listSearchQueries is keyed by page for the listings that share one builder. */
+let listSearchQueries={};
+let deSearchQuery='',geSearchQuery='',tmSearchQuery='',alSearchQuery='',pmSearchQuery='',
+    complianceSearchQuery='',ratesRuleSearchQuery='',ctpSearchQuery='',phSearchQuery='',
+    hdSearchQuery='',lpFilterQuery='',atSearchQuery='',tkSearchQuery='',chatSearchQuery='';
 let ctQuickStatusFilter='',atTsQuickFilter='',tkQuickStatusFilter='',chatQuickStatusFilter='';
 /* ctQuickStatusFilter holds a status, in both views: the selected type's own
    flow, or any flow's status when the band is on All. ctSetType() still
@@ -2113,7 +2166,7 @@ function apCS(id,opts,defVal,placeholder,hook){
   const sel=opts.find(o=>o===defVal)||'';
   const isEmpty=!sel;
   const optStr=opts.map(o=>`<div class="cs-option${sel===o?' cs-selected':''}" onclick="csSelect(this,'${o}','${id}')"><span>${o}</span><svg class="cs-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>`).join('');
-  return `<div class="cs-wrap" id="csw-${id}"${hook?` data-cshook="${hook}"`:''}><button type="button" class="cs-trigger${isEmpty?' cs-placeholder':''}" onclick="csToggle(this)" data-csid="${id}"><span class="cs-value">${sel||placeholder}</span><svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="cs-dropdown" id="csd-${id}">${optStr}</div></div>`;
+  return `<div class="cs-wrap" id="csw-${id}"${hook?` data-cshook="${hook}"`:''}><button type="button" class="cs-trigger${isEmpty?' cs-placeholder':''}" onclick="csToggle(this)" data-csid="${id}" data-csph="${placeholder||''}"><span class="cs-value">${sel||placeholder}</span><svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button><div class="cs-dropdown" id="csd-${id}">${optStr}</div></div>`;
 }
 /* CLICKING AN OPEN FILTER'S OWN TRIGGER HAD TO CLOSE IT, AND DIDN'T.
    The "close the others" sweep excluded the current dropdown by comparing its
@@ -2312,7 +2365,7 @@ window.addEventListener('resize',cdCloseAll);
 
 function markApFormDirty(){}
 function cancelAddPolicy(){selectedEmps=new Set();apFilterType='';apFilterValue='';lpAddModalOpen=false;renderADTPage();}
-function resetLpFilters(){lpFilterField='';lpFilterStatus='';renderADTPage();}
+function resetLpFilters(){lpFilterField='';lpFilterStatus='';lpFilterQuery='';renderADTPage();}
 function addListingItem(pg){if(pg==='contracts'){const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
@@ -4447,10 +4500,10 @@ function csSetTab(tab){csTab=tab;isbTab('cs',renderCsSidebar);}
 /* The structure sub-tab lives inside the body, so the body swap covers it. */
 function csSetStructureTab(tab){csStructureTab=tab;isbTab('cs',renderCsSidebar);}
 function csSaveLog(){
-  const sel=document.getElementById('cs-log-status-sel');
+  const sel=csTrigger('cs-log-status-sel');
   const inp=document.getElementById('cs-log-comment-inp');
   if(!sel||!inp)return;
-  const status=sel.value;
+  const status=getCSValue('cs-log-status-sel');
   const comment=inp.value.trim();
   if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
   if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}

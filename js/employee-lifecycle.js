@@ -334,8 +334,11 @@ function empLogCollect(kind,emp,status){
   return out;
 }
 
+/* apCS calls its hook with (value, id); the panel's kind is the id's prefix,
+   'de-log-status-sel' or 'ge-log-status-sel'. */
+function empLogStatusHook(val,csid){empLogSwapInput(String(csid).split('-')[0],val);}
 function empCancelLog(kind){
-  var sel=document.getElementById(kind+'-log-status-sel');if(sel)sel.value='';
+  csClear(kind+'-log-status-sel');
   var inp=document.getElementById(kind+'-log-comment-inp');if(inp)inp.value='';
   /* Setting .value in code does not fire onchange, so the block has to be
      cleared by hand — otherwise Cancel leaves "Select Status" sitting above a
@@ -347,8 +350,7 @@ function empCancelLog(kind){
 
 function empSaveLog(kind){
   var emp=empLifeRec(kind);if(!emp)return;
-  var sel=document.getElementById(kind+'-log-status-sel');
-  var picked=sel?sel.value:'';
+  var picked=getCSValue(kind+'-log-status-sel');
   var was=emp.status;
   var got=picked?empLogCollect(kind,emp,picked):{missing:[],details:[],failed:[],reason:''};
 
@@ -424,8 +426,7 @@ function renderEmpLogsTab(kind,emp,fixture){
        only inside the one status that lists them. */
     +(bad.length?'<div class="emp-log-alert">'+EMP_LOG_ICONS.warn+'<span><b>'+bad.length+' document'
       +(bad.length===1?'':'s')+'</b> awaiting re-submission: '+bad.map(function(d){return empLifeHtml(d.name);}).join(', ')+'</span></div>':'')
-    +lpLogStatusField(kind+'-log-status-sel',emp.status,EMP_LIFE_STATUSES,
-       'empLogSwapInput(\''+kind+'\',this.value)')
+    +lpLogStatusField(kind+'-log-status-sel',emp.status,EMP_LIFE_STATUSES,'empLogStatusHook')
     +empLogInputs(kind,emp,emp.status)
     +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
     +'<textarea class="lp-logs-form-textarea" id="'+kind+'-log-comment-inp" placeholder="Enter comment"></textarea>'

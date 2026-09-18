@@ -1,7 +1,12 @@
 ﻿
 /* LP INLINE SPLIT SIDEBAR */
 .lp-split-wrap{position:relative;min-width:0;width:100%}
-.lp-split-main{width:100%;min-width:0;overflow-x:auto;border:1px solid var(--border);border-radius:12px;background:#fff}
+/* overflow:clip, not auto: as `auto` this was a scroll container wrapped around
+   the table, and a sticky <th> binds to the nearest one — which would be this
+   box, which never scrolls. clip keeps the table's corners inside the frame
+   without standing between the head and the page. */
+.lp-split-main{width:100%;min-width:0;overflow:clip;
+  border:1px solid var(--border);border-radius:12px;background:#fff}
 .lp-split-sb{position:absolute;top:0;right:0;width:0;overflow:hidden;background:#fff;display:flex;flex-direction:column;border-radius:12px;z-index:10;opacity:0;transition:width .28s cubic-bezier(.4,0,.2,1),opacity .2s;min-height:0}
 .lp-split-sb.open{width:68%;bottom:0;min-height:500px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(15,23,42,.12);opacity:1}
 .lp-isb{display:flex;flex-direction:column;flex:1;min-height:0}
@@ -432,19 +437,19 @@ tr.lp-row-selected>td:first-child,
 .lp-logs-form-sub{font-size:11.5px;color:#9ca3af;margin:0 0 14px;line-height:1.4}
 .lp-logs-form-label{font-size:11.5px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:3px;margin-bottom:5px}
 .lp-logs-form-req{color:#ef4444;font-size:12px}
-.lp-logs-form-sel-wrap{position:relative;margin-bottom:12px}
-.lp-logs-form-sel-wrap svg{position:absolute;right:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca3af}
-.lp-logs-form-select{width:100%;height:40px;padding:0 34px 0 12px;border:1.5px solid #e2e8f0;border-radius:var(--r-control);font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none;appearance:none;cursor:pointer;transition:.15s;box-sizing:border-box}
-/* One quiet ring: the border darkens, nothing glows. Orange is the accent for
-   things you PRESS (the Save button below is orange); a field you are typing
-   in only needs to say "focus is here", which a darker border already does. */
-.lp-logs-form-select:focus{border-color:#94a3b8;box-shadow:none}
+/* THE STATUS FIELD IS apCS NOW, the dropdown the rest of the app uses. What
+   stood here dressed a native <select>: a wrapper to hang a chevron on and an
+   appearance:none to hide the browser's. It could never style the OPTION LIST,
+   though — that is drawn by the operating system, blue highlight bar and all,
+   which is what gave these panels a dropdown that belonged to no design. Only
+   the spacing the wrapper used to provide is still needed. */
+.lp-logs-form .cs-wrap{margin-bottom:12px}
 .lp-logs-form-textarea{width:100%;height:88px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:var(--r-control);font-family:inherit;font-size:13px;color:#1e293b;background:#fff;outline:none;resize:none;line-height:1.5;transition:.15s;box-sizing:border-box;margin-bottom:12px}
 .lp-logs-form-textarea:focus{border-color:#94a3b8;box-shadow:none}
 .lp-logs-form-textarea::placeholder{color:#b0b8c4}
 /* A missing mandatory value flags the field rather than firing an alert - the
    same correction the Chats and Contracts panels already use. */
-.lp-logs-form-textarea.is-invalid,.lp-logs-form-select.is-invalid{border-color:var(--st-bad-fg);background:var(--st-bad-bg)}
+.lp-logs-form-textarea.is-invalid,.lp-logs-form .cs-trigger.is-invalid{border-color:var(--st-bad-fg);background:var(--st-bad-bg)}
 .lp-logs-save-btn{width:100%;height:40px;background:var(--orange);color:#fff;border:none;border-radius:var(--r-control);font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;transition:.15s;letter-spacing:.01em}
 /* hover handled by the button system (colour only) - no lift, no shadow */
 .lp-logs-save-btn:active{transform:none}
@@ -513,9 +518,12 @@ tr.lp-row-selected>td:first-child,
 .ct-modal-field{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:10px 14px}
 .ct-modal-flabel{font-size:11px;color:#9ca3af;font-weight:500;margin-bottom:3px}
 .ct-modal-fval{font-size:13px;font-weight:600;color:var(--navy)}
-.ct-search-input{width:150px;min-width:0;height:34px;box-sizing:border-box;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-control);font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;transition:.15s}
-.ct-search-input:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.1)}
-.ct-search-input::placeholder{color:#9ca3af}
+/* The listing search box. .ct-search-input is the same control under the name
+   Contracts gave it before every listing had one; both are kept on the rule so
+   the two cannot drift apart. */
+.lp-search-input,.ct-search-input{width:150px;min-width:0;height:34px;box-sizing:border-box;padding:0 14px;border:1px solid var(--border);border-radius:var(--r-control);font-family:inherit;font-size:13px;color:var(--navy);outline:none;background:#fff;transition:.15s}
+.lp-search-input:focus,.ct-search-input:focus{border-color:var(--orange);box-shadow:0 0 0 2px rgba(26,26,26,.1)}
+.lp-search-input::placeholder,.ct-search-input::placeholder{color:#9ca3af}
 /* LP PAGINATION */
 .lp-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);background:#fff}
 .lp-pagination-info{font-size:12.5px;color:#6b7280}

@@ -125,7 +125,11 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
      right, which the next item immediately adds back. The logo is then centred
      on the rail below it, and the page title still begins exactly where the rail
      ends. */
-  margin-left:-20px;margin-right:-12px;
+  margin-left:-20px;
+  /* -12px cancels .topbar-left's gap so the next item would begin exactly at
+     the rail's edge; the gutter then carries it the rest of the way, to the
+     column the content is actually in. */
+  margin-right:calc(var(--pg-gutter, 32px) - 12px);
   min-width:calc(var(--sb-w, 224px) + 1px);
   /* THE MARGINS ARE PART OF THE MOVE. Collapsing swaps this whole block -
      min-width AND both margins - so leaving the margins out of the transition
@@ -140,7 +144,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    have to go with it - left, the logo was sitting flush against the window edge;
    right, the -12px was eating the row gap and the page title was touching the
    logo. Back to ordinary topbar spacing: the 20px gutter and one 12px gap. */
-.view.sb-collapsed .adt-logo{margin-left:0;margin-right:0;min-width:0}
+.view.sb-collapsed .adt-logo{margin-left:0;margin-right:var(--pg-gutter, 32px);min-width:0}
 .adt-logo img{height:26px;width:auto;display:block}
 .adt-logo svg{width:28px;height:28px}
 .adt-logo-text{font-weight:800;font-size:18px;color:var(--navy);letter-spacing:-.5px}
@@ -336,7 +340,17 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .np-pending{padding:2px 8px;border-radius:4px;background:#fef3c7;color:#92400e;font-size:10px;font-weight:600}
 /* CONTENT */
 .content-area{flex:1;display:flex;overflow:hidden;min-width:0}
-.page-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:28px 32px;min-width:0;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent}
+/* --pg-gutter is the page's left margin, and the topbar reads it too: the page
+   title lines up with the first thing in the content rather than with the edge
+   of the rail, which left it a gutter-width out from everything under it. */
+/* The 28px above the page is a MARGIN, not padding, so the scrollport starts
+   below it. As padding it was inside the scroller, and a sticky head pins to
+   the content edge in Chrome — leaving a 28px band above the pinned head with
+   rows still scrolling visibly through it. Outside the scroller nothing can
+   paint there, and body's own --light shows instead, which is what that strip
+   looked like all along. */
+.page-content{flex:1;overflow-y:auto;overflow-x:hidden;
+  margin-top:28px;padding:0 var(--pg-gutter,32px) 28px;min-width:0;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent}
 .page-content::-webkit-scrollbar{width:3px}
 .page-content::-webkit-scrollbar-track{background:transparent}
 .page-content::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:99px}
@@ -1202,7 +1216,36 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .lp-select:focus{border-color:var(--orange)}
 .lp-clear-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--gray);background:var(--card);cursor:pointer;font-family:inherit;transition:.15s}
 /* .lp-clear-btn hover: buttons.css owns it (outline). */
-.lp-table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow-x:auto;overflow-y:visible;min-width:0;width:100%}
+/* THE COLUMN HEADS STAY WHILE THE ROWS MOVE UNDER THEM — and the PAGE is what
+   scrolls, exactly as it did before. That is the whole constraint, and it
+   decides the overflow below.
+
+   A sticky <th> pins against the nearest SCROLL CONTAINER. This card used to be
+   one without meaning to be: overflow-x:auto forces overflow-y to compute to
+   auto, whatever is written beside it. The card never had a height, so nothing
+   scrolled inside it — and a head pinned to a box that does not scroll is a
+   head that leaves with the page. overflow:clip is the one value that keeps the
+   table's corners inside the card's radius WITHOUT making it a scroll
+   container, so the nearest one becomes .page-content and the head pins under
+   the topbar where it was asked to.
+
+   THE COST, on purpose: a table wider than its card is now cut off rather than
+   scrolled sideways. Below roughly 950px of window that can hide a middle
+   column (the ACTION column is pinned right, so it stays). Horizontal scroll
+   and a page-level sticky head cannot both live on this element; the head is
+   what was asked for. */
+.lp-table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  overflow:clip;min-width:0;width:100%}
+/* z-index 4, not 3: the pinned ACTION column (quick-actions.css) is already at 3,
+   and a later sibling at the same level wins on equal z-index — the row's own
+   action button was painting over the head it had just scrolled under. */
+.lp-table thead th,.at-table thead th{position:sticky;top:0;z-index:4}
+/* The pinned ACTION column is set by quick-actions.css with a :last-child
+   selector, which outweighs the rule above — so the head's own last cell has
+   to say it again, or the row sliding under it paints its action button over
+   the head. */
+.lp-table thead th:last-child,.listing-table thead th:last-child,
+.at-table thead th:last-child,.att-table thead th:last-child{z-index:4}
 .lp-table{width:100%;min-width:680px;border-collapse:collapse}
 .lp-table th{padding:11px 16px;text-align:left;font-size:10.5px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);background:#fafbfc;white-space:nowrap}
 .lp-table td{padding:13px 16px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f3f5;vertical-align:middle}
@@ -1791,7 +1834,9 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .at-stat-lbl{font-size:10.5px;font-weight:500;color:var(--gray);white-space:nowrap}
 /* overflow-x:auto, not hidden: hidden clipped the last columns away with no
    way to reach them. The card still clips to its radius on both axes. */
-.at-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow-x:auto;overflow-y:hidden}
+/* clip, not auto-x, for the reason .lp-table-card gives above: it is what lets
+   the Timesheet head pin against the page. */
+.at-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:clip}
 .at-table{width:100%;border-collapse:collapse}
 .at-th{padding:11px 16px;font-size:11px;font-weight:700;color:var(--gray);text-align:left;letter-spacing:.3px;background:var(--light);border-bottom:1px solid var(--border)}
 .at-td{padding:14px 16px;font-size:13px;color:var(--navy);border-bottom:1px solid var(--border);vertical-align:middle}

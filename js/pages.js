@@ -176,9 +176,10 @@ function applyDeFilters(){
   deDeptFilter=dept&&dept!=='Department'?dept:'';
   deBranchFilter=branch&&branch!=='Branch'?branch:'';
   deStatusFilter=status&&status!=='Status'?status:'';
+  deSearchQuery=lpSearchValue('de-f-q');
   deSelectedId=null;renderADTPage();
 }
-function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';deSelectedId=null;renderADTPage();}
+function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';deSearchQuery='';deSelectedId=null;renderADTPage();}
 function renderDeSidebar(){
   const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
@@ -256,9 +257,9 @@ function renderDeSidebar(){
         +'<div class="ep-form-title">Core Details</div>'
         +'<div class="ep-form-grid">'
           +'<div class="ep-form-group"><label class="ep-form-label">Base Salary <span class="req">*</span></label><input class="ep-form-input" type="number" placeholder="Enter base salary"></div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label><select class="ep-form-select"><option value="">Select frequency</option><option>Monthly</option><option>Biweekly</option><option>Weekly</option></select></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label>'+apCS('de-sal-payfreq',['Monthly','Biweekly','Weekly'],'','Select frequency')+'</div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label>'+apCD('ph-eff-date-1','','Select date')+'</div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Currency</label><select class="ep-form-select"><option>INR (₹)</option><option>USD ($)</option><option>EUR (€)</option><option>GBP (£)</option></select></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Currency</label>'+apCS('de-sal-currency',['INR (₹)','USD ($)','EUR (€)','GBP (£)'],'INR (₹)','INR (₹)')+'</div>'
         +'</div>'
       +'</div>'
       // 2. Earnings | Deductions side by side
@@ -359,7 +360,7 @@ function buildDirectListingHTML(){
   if(deBranchFilter)deRows=deRows.filter(e=>e.branch===deBranchFilter);
   if(deStatusFilter)deRows=deRows.filter(e=>empStatMatch(e,deStatusFilter));
   if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
-  const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter].join('|'),deRows.map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
+  const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery].join('|'),lpSearchRows(deRows,deSearchQuery).map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
@@ -375,13 +376,14 @@ function buildDirectListingHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('de-f-q',deSearchQuery,'Search name, ID','applyDeFilters()')
     +apCS('de-f-dept',['Engineering','HR','Product','Design','Sales'],deDeptFilter,'Department')
     +apCS('de-f-branch',['Hyderabad','Mumbai','Delhi','Punjab','Bangalore'],deBranchFilter,'Branch')
     /* All eight rungs, not just the two that mean "employed" - filtering on
        Active/Inactive alone cannot find a record stuck in verification, which
        is the search HR actually runs. */
     +apCS('de-f-status',EMP_LIFE_STATUSES,empStatIsGroup(deStatusFilter)?'':deStatusFilter,'Status')
-    +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter],'resetDeFilters()')
+    +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery],'resetDeFilters()')
     +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -481,9 +483,9 @@ function renderGeSidebar(){
         +'<div class="ep-form-title">Core Details</div>'
         +'<div class="ep-form-grid">'
           +'<div class="ep-form-group"><label class="ep-form-label">Base Salary <span class="req">*</span></label><input class="ep-form-input" type="number" placeholder="Enter base salary"></div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label><select class="ep-form-select"><option value="">Select frequency</option><option>Monthly</option><option>Biweekly</option><option>Weekly</option></select></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Pay Frequency <span class="req">*</span></label>'+apCS('ge-sal-payfreq',['Monthly','Biweekly','Weekly'],'','Select frequency')+'</div>'
           +'<div class="ep-form-group"><label class="ep-form-label">Effective Date</label>'+apCD('ph-eff-date-2','','Select date')+'</div>'
-          +'<div class="ep-form-group"><label class="ep-form-label">Currency</label><select class="ep-form-select"><option>EUR (€)</option><option>GBP (£)</option><option>INR (₹)</option><option>USD ($)</option></select></div>'
+          +'<div class="ep-form-group"><label class="ep-form-label">Currency</label>'+apCS('ge-sal-currency',['EUR (€)','GBP (£)','INR (₹)','USD ($)'],'EUR (€)','EUR (€)')+'</div>'
         +'</div>'
       +'</div>'
       +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'
@@ -529,7 +531,7 @@ function buildGlobalListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   const filtered=geStatusFilter?globalEmpData.filter(e=>empStatMatch(e,geStatusFilter)):globalEmpData;
   if(geSelectedId&&!filtered.some(e=>e.id===geSelectedId))geSelectedId=null;
-  const pgn=listPage('global-employees',geStatusFilter,filtered.map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
+  const pgn=listPage('global-employees',geStatusFilter+'|'+geSearchQuery,lpSearchRows(filtered,geSearchQuery).map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
@@ -546,11 +548,12 @@ function buildGlobalListingHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('ge-f-q',geSearchQuery,'Search name, ID','applyGeFilters()')
     +apCS('ge-f-country',['Germany','France','Italy','United Kingdom','Netherlands'],'','Country')
     +apCS('ge-f-dept',['Engineering','Finance','HR','Operations','Product'],'','Department')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
     +apCS('ge-f-status',EMP_LIFE_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
-    +clearFiltersBtn([geStatusFilter],'resetGeFilters()')
+    +clearFiltersBtn([geStatusFilter,geSearchQuery],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -575,11 +578,12 @@ function geToggleStatFilter(v){
 function applyGeFilters(){
   const status=getCSValue('ge-f-status');
   geStatusFilter=status&&status!=='Status'?status:'';
+  geSearchQuery=lpSearchValue('ge-f-q');
   geSelectedId=null;
   renderADTPage();
 }
 function resetGeFilters(){
-  geStatusFilter='';
+  geStatusFilter='';geSearchQuery='';
   geSelectedId=null;
   renderADTPage();
 }
@@ -654,7 +658,6 @@ function renderTmSidebar(){
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
           const sk=tmLogKey(l.status);
@@ -672,10 +675,7 @@ function renderTmSidebar(){
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+team.status+'</div>'
       +'<p class="lp-logs-form-sub">Update team status and add a comment</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select"><option value="">Select Status</option>'
-      +'<option value="Active"'+(team.status==='Active'?' selected':'')+'>Active</option>'
-      +'<option value="Inactive"'+(team.status==='Inactive'?' selected':'')+'>Inactive</option>'
-      +'</select>'+chevSvg+'</div>'
+      +apCS('tm-log-status-sel',['Active','Inactive'],team.status||'','Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn">Save</button></div>';
@@ -706,9 +706,10 @@ function applyTmFilters(){
   const dept=getCSValue('tm-f-dept'),status=getCSValue('tm-f-status');
   tmDeptFilter=dept&&dept!=='Select Department'?dept:'';
   tmStatusFilter=status&&status!=='Status'?status:'';
+  tmSearchQuery=lpSearchValue('tm-f-q');
   tmSelectedId=null;renderADTPage();
 }
-function resetTmFilters(){tmDeptFilter='';tmStatusFilter='';tmSelectedId=null;renderADTPage();}
+function resetTmFilters(){tmDeptFilter='';tmStatusFilter='';tmSearchQuery='';tmSelectedId=null;renderADTPage();}
 function buildTeamsListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   /* Counted over the whole set, not the filtered one: a tile that only counts
@@ -722,7 +723,7 @@ function buildTeamsListingHTML(){
   if(tmDeptFilter)tmRows=tmRows.filter(t=>t.dept===tmDeptFilter);
   if(tmStatusFilter)tmRows=tmRows.filter(t=>t.status===tmStatusFilter);
   if(tmSelectedId&&!tmRows.some(t=>t.id===tmSelectedId))tmSelectedId=null;
-  const pgn=listPage('teams',[tmDeptFilter,tmStatusFilter].join('|'),tmRows.map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
+  const pgn=listPage('teams',[tmDeptFilter,tmStatusFilter,tmSearchQuery].join('|'),lpSearchRows(tmRows,tmSearchQuery).map((t,i)=>'<tr class="tm-row'+(tmSelectedId===t.id?' lp-row-selected':'')+'" id="tm-row-'+t.id+'" style="cursor:pointer" onclick="openTmSidebar('+t.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.name+'</td>'
     +'<td>'+(t.dept||d)+'</td>'
@@ -742,9 +743,10 @@ function buildTeamsListingHTML(){
        column this listing actually groups by is Department, which is also what
        the module's own filter set has always named (see getPageMeta). Built off
        the data so a new team's department is offered without a second edit. */
+    +lpSearchField('tm-f-q',tmSearchQuery,'Search team','applyTmFilters()')
     +apCS('tm-f-dept',tmDepts,tmDeptFilter,'Select Department')
     +apCS('tm-f-status',['Active','Inactive','Pending'],tmStatusFilter,'Status')
-    +clearFiltersBtn([tmDeptFilter,tmStatusFilter],'resetTmFilters()')
+    +clearFiltersBtn([tmDeptFilter,tmStatusFilter,tmSearchQuery],'resetTmFilters()')
     +'<button class="lp-pill-search" onclick="applyTmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -768,9 +770,9 @@ let alPendingStatus='';
 function alCancelLog(){alPendingStatus='';isbTab('al',renderAlSidebar);}
 function alSaveLog(id){
   const l=allLeavesData.find(function(x){return x.id===id;});if(!l)return;
-  const sel=document.getElementById('al-log-status-sel');
+  const sel=csTrigger('al-log-status-sel');
   const inp=document.getElementById('al-log-comment-inp');
-  const to=sel?sel.value:'',comment=inp?inp.value.trim():'';
+  const to=getCSValue('al-log-status-sel'),comment=inp?inp.value.trim():'';
   const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!to){flash(sel);return;}
   if(!comment){flash(inp);return;}
@@ -987,22 +989,16 @@ function renderAlSidebar(){
             +'</div></div>';
         }).join('')+'</div>'
       :'<div class="lp-logs-empty">No activity logs yet.</div>';
-    /* This select used to wear .lp-logs-form-textarea, the class for the
-       COMMENT box below it. That class has no appearance:none and no wrapper,
-       so the browser drew its own control here - native arrow, native focus
-       ring, its own idea of the height - and this was the one dropdown in the
-       app that did not look like the app. Same markup as every other logs
-       form now: .lp-logs-form-select inside .lp-logs-form-sel-wrap, with the
-       chevron the wrapper positions. */
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     /* Arriving from the dashboard's Approve / Reject the decision is already
        made, so the form opens on it and asks only for the reason. The buttons
        there cannot collect one, which is why they hand off here rather than
        committing on the spot — a leave decision with no note is one nobody can
        explain to the employee later. */
     const preset=alPendingStatus||l.status;
-    const statusOpsOpts=['Approved','Unapproved','Pending']
-      .map(s=>'<option'+(preset===s?' selected':'')+'>'+s+'</option>').join('');
+    /* A preset arrives when the form was opened from a row's Approve/Reject;
+       opened from the tab it starts empty, where the native control used to
+       default to whatever was first in the list. */
+    const statusOps=['Approved','Unapproved','Pending'];
     const decided=alPendingStatus&&alPendingStatus!==l.status;
     const actionPanel='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+String(preset||'').toLowerCase()+'"></span>'+(decided?preset:'Update Status')+'</div>'
@@ -1010,7 +1006,7 @@ function renderAlSidebar(){
         ? 'Say why &mdash; '+l.name+' will see this on their request.'
         : 'Change the leave status and add a note.')+'</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="al-log-status-sel">'+statusOpsOpts+'</select>'+chevSvg+'</div>'
+      +apCS('al-log-status-sel',statusOps,preset||'','Select Status')
       +'<div class="lp-logs-form-label">'+(decided?'Reason':'Comment')+' <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="al-log-comment-inp" placeholder="'+(decided?'e.g. Approved — cover arranged with the team':'Add a note...')+'"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
@@ -1195,7 +1191,7 @@ function buildAllLeavesHTML(){
   const stClass={Approved:'approved',Pending:'pending',Unapproved:'inactive',Rejected:'inactive'};
   const filtered=alStatusFilter?allLeavesData.filter(l=>l.status===alStatusFilter):allLeavesData;
   if(alSelectedId&&!filtered.some(l=>l.id===alSelectedId))alSelectedId=null;
-  const pgn=listPage('all-leaves',alStatusFilter,filtered.map((l,i)=>'<tr class="al-row'+(alSelectedId===l.id?' lp-row-selected':'')+'" id="al-row-'+l.id+'" style="cursor:pointer" onclick="openAlSidebar('+l.id+')">'
+  const pgn=listPage('all-leaves',alStatusFilter+'|'+alSearchQuery,lpSearchRows(filtered,alSearchQuery).map((l,i)=>'<tr class="al-row'+(alSelectedId===l.id?' lp-row-selected':'')+'" id="al-row-'+l.id+'" style="cursor:pointer" onclick="openAlSidebar('+l.id+')">'
     +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+l.leaveId+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+l.name+'</td>'
@@ -1213,9 +1209,10 @@ function buildAllLeavesHTML(){
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('al-f-q',alSearchQuery,'Search name, ID','applyAlFilters()')
     +apCS('al-f-type',['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave'],'','Leave Type')
     +apCS('al-f-status',['Approved','Pending','Unapproved'],alStatusFilter,'Status')
-    +clearFiltersBtn([alStatusFilter],'resetAlFilters()')+'<button class="lp-pill-search" onclick="applyAlFilters()">Search</button>'
+    +clearFiltersBtn([alStatusFilter,alSearchQuery],'resetAlFilters()')+'<button class="lp-pill-search" onclick="applyAlFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat approved'+(alStatusFilter==='Approved'?' stat-selected':'')+'" onclick="alToggleStatFilter(\'Approved\')"><div class="listing-stat-count">'+approvedCount+'</div><div class="listing-stat-label">Approved</div></div>'
@@ -1251,11 +1248,12 @@ function alToggleStatFilter(v){
 function applyAlFilters(){
   const status=getCSValue('al-f-status');
   alStatusFilter=status&&status!=='Status'?status:'';
+  alSearchQuery=lpSearchValue('al-f-q');
   alSelectedId=null;
   renderADTPage();
 }
 function resetAlFilters(){
-  alStatusFilter='';
+  alStatusFilter='';alSearchQuery='';
   alSelectedId=null;
   renderADTPage();
 }
@@ -1324,15 +1322,15 @@ function pmSetUserSubTab(tab){
 // Cancel drops the pending step too, so the form falls back to the plain
 // "add a log" state rather than still claiming a move the user backed out of.
 function pmCancelLog(){
-  const sel=document.getElementById('pm-log-status-sel');const inp=document.getElementById('pm-log-comment-inp');
-  if(sel)sel.value='';if(inp)inp.value='';
+  csClear('pm-log-status-sel');
+  const inp=document.getElementById('pm-log-comment-inp');if(inp)inp.value='';
   if(pmPendingStatus){pmPendingStatus='';isbTab('pm',renderPmSidebar);}
 }
 function pmSaveLog(orderId){
-  const sel=document.getElementById('pm-log-status-sel');
+  const sel=csTrigger('pm-log-status-sel');
   const inp=document.getElementById('pm-log-comment-inp');
   if(!sel||!inp)return;
-  const status=sel.value;
+  const status=getCSValue('pm-log-status-sel');
   const comment=inp.value.trim();
   if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
   if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
@@ -1465,7 +1463,6 @@ function renderPmSidebar(){
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>'<div class="lp-log-row">'
           +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,pmLogKey(l.status))+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
@@ -1480,8 +1477,7 @@ function renderPmSidebar(){
        select has to offer both or the pre-selection would match nothing. The
        flow leads, since that is the move being recorded. */
     const seen={};
-    const statusOpts=pmInvoiceFlow.concat(pmLogStatusOptions).filter(s=>seen[s]?false:(seen[s]=true))
-      .map(s=>'<option value="'+s+'"'+(s===pmPendingStatus?' selected':'')+'>'+s+'</option>').join('');
+    const statusOpts=pmInvoiceFlow.concat(pmLogStatusOptions).filter(s=>seen[s]?false:(seen[s]=true));
     // Opened from the row menu the form states the move it is about; opened from
     // the tab it is the plain "add a log" form it has always been.
     const headHTML=pmPendingStatus
@@ -1492,7 +1488,7 @@ function renderPmSidebar(){
     const formHTML='<div class="lp-logs-form">'
       +headHTML
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="pm-log-status-sel"><option value="">None - Please Select Status</option>'+statusOpts+'</select>'+chevSvg+'</div>'
+      +apCS('pm-log-status-sel',statusOpts,pmPendingStatus||'','None - Please Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="pm-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">'
@@ -1524,7 +1520,7 @@ function buildPaymentsHTML(){
   const closedCount=paymentsData.filter(p=>p.invoiceStatus==='Closed').length;
   const filtered=pmInvoiceStatusFilter?(pmInvoiceStatusFilter==='__pending_group__'?paymentsData.filter(p=>p.invoiceStatus==='Unpaid'||p.invoiceStatus==='Pending'):paymentsData.filter(p=>p.invoiceStatus===pmInvoiceStatusFilter)):paymentsData;
   if(pmSelectedId&&!filtered.some(p=>p.id===pmSelectedId))pmSelectedId=null;
-  const pgn=listPage('payments',pmInvoiceStatusFilter,filtered.map((p,i)=>{
+  const pgn=listPage('payments',pmInvoiceStatusFilter+'|'+pmSearchQuery,lpSearchRows(filtered,pmSearchQuery).map((p,i)=>{
     const menuItems=pmInvoiceFlow.map(s=>{
       const isCurrent=p.invoiceStatus===s;
       return '<div class="ct-act-item'+(isCurrent?' current':'')+'" '+(isCurrent?'':'onclick="event.stopPropagation();pmPickStatus('+p.id+',\''+s+'\')"')+'>'
@@ -1551,11 +1547,11 @@ function buildPaymentsHTML(){
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0"><div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +'<input class="ct-search-input" placeholder="Search ID" type="text">'
+    +lpSearchField('pm-f-q',pmSearchQuery,'Search invoice, client','applyPmFilters()')
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
     +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
     +apCD('pm-f-date',pmDateFilter,'Select date')
-    +clearFiltersBtn([pmInvoiceStatusFilter],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
+    +clearFiltersBtn([pmInvoiceStatusFilter,pmSearchQuery],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat active'+(pmInvoiceStatusFilter==='Paid'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'Paid\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
@@ -1617,11 +1613,16 @@ function chatCancelLog(){isbTab('chat',renderChatSidebar);}
    KEY ('waiting_csm') shown under a LABEL ('Waiting for CSM'). lpCommitLog
    assigns the option text straight onto the record, which would have stored
    the label and broken every status lookup on the listing. */
+/* Written once and read back once: the dropdown carries a move's label, the
+   record carries its target status. */
+function chatMoveLabel(m){return m.label+' → '+chatStatusLabel(m.to);}
 function chatSaveLog(id){
   const c=chatsData.find(function(x){return x.id===id;});if(!c)return;
-  const sel=document.getElementById('chat-log-status-sel');
+  const sel=csTrigger('chat-log-status-sel');
   const inp=document.getElementById('chat-log-comment-inp');
-  const to=sel?sel.value:'',comment=inp?inp.value.trim():'';
+  const picked=getCSValue('chat-log-status-sel');
+  const mv=chatMoves(c).find(function(m){return chatMoveLabel(m)===picked;});
+  const to=mv?mv.to:'',comment=inp?inp.value.trim():'';
   const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!to){flash(sel);return;}
   if(!comment){flash(inp);return;}
@@ -1692,11 +1693,12 @@ function applyPmFilters(){
   // Held so the picked date survives the repaint. It does not narrow the rows
   // yet — the control was decorative before this and still is; only its UI changed.
   pmDateFilter=getCDValue('pm-f-date')||'';
+  pmSearchQuery=lpSearchValue('pm-f-q');
   pmSelectedId=null;
   renderADTPage();
 }
 function resetPmFilters(){
-  pmInvoiceStatusFilter='';pmDateFilter='';
+  pmInvoiceStatusFilter='';pmDateFilter='';pmSearchQuery='';
   pmSelectedId=null;
   renderADTPage();
 }
@@ -1919,9 +1921,9 @@ function ctFlashField(el){
 function ctSaveLog(id){
   const c=contractsData.find(function(x){return x.id===id;});
   if(!c)return;
-  const sel=document.getElementById('ct-log-status-sel');
+  const sel=csTrigger('ct-log-status-sel');
   const inp=document.getElementById('ct-log-comment-inp');
-  const to=sel?sel.value:'';
+  const to=getCSValue('ct-log-status-sel');
   const comment=inp?inp.value.trim():'';
   if(!to){ctFlashField(sel);return;}
   if(!comment){ctFlashField(inp);return;}
@@ -2136,10 +2138,11 @@ function applyComplianceFilters(){
   complianceCountryFilter=getCSValue('cmp-f-country');
   complianceModelFilter=getCSValue('cmp-f-model');
   complianceStatusFilter=getCSValue('cmp-f-status');
+  complianceSearchQuery=lpSearchValue('cmp-f-q');
   renderADTPage();
 }
 function resetComplianceFilters(){
-  complianceCountryFilter='';complianceModelFilter='';complianceStatusFilter='';
+  complianceCountryFilter='';complianceModelFilter='';complianceStatusFilter='';complianceSearchQuery='';
   renderADTPage();
 }
 function cmpToggleStatFilter(v){
@@ -2245,7 +2248,7 @@ function closeComplianceSidebar(){
 function navComplianceTab(tab){complianceTab=tab;isbTab('cmp',renderComplianceSidebar);}
 function complianceCancelLog(){
   const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';
-  const sel=document.getElementById('cmp-log-status-sel');if(sel)sel.value='';
+  csClear('cmp-log-status-sel');
 }
 function complianceSaveLog(id){
   const item=complianceItemsData.find(x=>x.id===id);if(!item)return;
@@ -2342,7 +2345,7 @@ function buildComplianceItemsHTML(){
   const totalActive=complianceItemsData.filter(r=>r.status==='Active').length;
   const totalInactive=complianceItemsData.filter(r=>r.status==='Inactive').length;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const pgn=listPage('compliance',[complianceCountryFilter,complianceModelFilter,complianceStatusFilter].join('|'),rows.map((r,i)=>'<tr class="cmp-row'+(complianceSelectedId===r.id?' lp-row-selected':'')+'" id="cmp-row-'+r.id+'" style="cursor:pointer" onclick="openComplianceSidebar('+r.id+')">'
+  const pgn=listPage('compliance',[complianceCountryFilter,complianceModelFilter,complianceStatusFilter,complianceSearchQuery].join('|'),rows.map((r,i)=>'<tr class="cmp-row'+(complianceSelectedId===r.id?' lp-row-selected':'')+'" id="cmp-row-'+r.id+'" style="cursor:pointer" onclick="openComplianceSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
@@ -2358,10 +2361,11 @@ function buildComplianceItemsHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('cmp-f-q',complianceSearchQuery,'Search item','applyComplianceFilters()')
     +apCS('cmp-f-country',countryOpts,complianceCountryFilter,'Country')
     +apCS('cmp-f-model',modelOpts,complianceModelFilter,'Model')
     +apCS('cmp-f-status',statusOpts,complianceStatusFilter,'Status')
-    +clearFiltersBtn([complianceCountryFilter,complianceModelFilter,complianceStatusFilter],'resetComplianceFilters()')
+    +clearFiltersBtn([complianceCountryFilter,complianceModelFilter,complianceStatusFilter,complianceSearchQuery],'resetComplianceFilters()')
     +'<button class="lp-pill-search" onclick="applyComplianceFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
@@ -3303,7 +3307,7 @@ function closeRatesRuleSidebar(){
 function navRatesRuleTab(tab){ratesRuleTab=tab;isbTab('rr',renderRatesRuleSidebar);}
 function ratesRuleCancelLog(){
   const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';
-  const sel=document.getElementById('rr-log-status-sel');if(sel)sel.value='';
+  csClear('rr-log-status-sel');
 }
 function ratesRuleSaveLog(id){
   const item=ratesRulesData.find(x=>x.id===id);if(!item)return;
@@ -3399,7 +3403,7 @@ function buildRatesRulesHTML(){
   if(ratesRuleStatusFilter)rows=rows.filter(r=>r.status===ratesRuleStatusFilter);
   if(ratesRuleSelectedId&&!rows.some(r=>r.id===ratesRuleSelectedId))ratesRuleSelectedId=null;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const pgn=listPage('rates-rules',[ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter].join('|'),rows.map((r,i)=>'<tr class="rr-row'+(ratesRuleSelectedId===r.id?' lp-row-selected':'')+'" id="rr-row-'+r.id+'" style="cursor:pointer" onclick="openRatesRuleSidebar('+r.id+')">'
+  const pgn=listPage('rates-rules',[ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter,ratesRuleSearchQuery].join('|'),lpSearchRows(rows,ratesRuleSearchQuery).map((r,i)=>'<tr class="rr-row'+(ratesRuleSelectedId===r.id?' lp-row-selected':'')+'" id="rr-row-'+r.id+'" style="cursor:pointer" onclick="openRatesRuleSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+r.country+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.ruleName+'</span></td>'
@@ -3416,10 +3420,11 @@ function buildRatesRulesHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('rr-f-q',ratesRuleSearchQuery,'Search rule','applyRatesRuleFilters()')
     +apCS('rr-f-country',countryOpts,ratesRuleCountryFilter,'Country')
     +apCS('rr-f-category',categoryOpts,ratesRuleCategoryFilter,'Category')
     +apCS('rr-f-status',statusOpts,ratesRuleStatusFilter,'Status')
-    +clearFiltersBtn([ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter],'resetRatesRuleFilters()')
+    +clearFiltersBtn([ratesRuleCountryFilter,ratesRuleCategoryFilter,ratesRuleStatusFilter,ratesRuleSearchQuery],'resetRatesRuleFilters()')
     +'<button class="lp-pill-search" onclick="applyRatesRuleFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -3448,10 +3453,11 @@ function applyRatesRuleFilters(){
   ratesRuleCountryFilter=getCSValue('rr-f-country');
   ratesRuleCategoryFilter=getCSValue('rr-f-category');
   ratesRuleStatusFilter=getCSValue('rr-f-status');
+  ratesRuleSearchQuery=lpSearchValue('rr-f-q');
   renderADTPage();
 }
 function resetRatesRuleFilters(){
-  ratesRuleCountryFilter='';ratesRuleCategoryFilter='';ratesRuleStatusFilter='';
+  ratesRuleCountryFilter='';ratesRuleCategoryFilter='';ratesRuleStatusFilter='';ratesRuleSearchQuery='';
   renderADTPage();
 }
 function closeRatesRuleModal(){ratesRuleModalOpen=false;renderADTPage();}
@@ -3582,7 +3588,7 @@ function closeCtpSidebar(){
 function navCtpTab(tab){ctpTab=tab;isbTab('ctp',renderCtpSidebar);}
 function ctpCancelLog(){
   const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';
-  const sel=document.getElementById('ctp-log-status-sel');if(sel)sel.value='';
+  csClear('ctp-log-status-sel');
 }
 function ctpSaveLog(id){
   const item=contractTemplatesData.find(x=>x.id===id);if(!item)return;
@@ -3677,7 +3683,7 @@ function buildContractTemplatesHTML(){
   if(ctpStatusFilter)rows=rows.filter(r=>r.status===ctpStatusFilter);
   if(ctpSelectedId&&!rows.some(r=>r.id===ctpSelectedId))ctpSelectedId=null;
   const hamburgerIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const pgn=listPage('contract-templates',[ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter].join('|'),rows.map((r,i)=>'<tr class="ctp-row'+(ctpSelectedId===r.id?' lp-row-selected':'')+'" id="ctp-row-'+r.id+'" style="cursor:pointer" onclick="openCtpSidebar('+r.id+')">'
+  const pgn=listPage('contract-templates',[ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter,ctpSearchQuery].join('|'),lpSearchRows(rows,ctpSearchQuery).map((r,i)=>'<tr class="ctp-row'+(ctpSelectedId===r.id?' lp-row-selected':'')+'" id="ctp-row-'+r.id+'" style="cursor:pointer" onclick="openCtpSidebar('+r.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td><span style="color:var(--orange);font-weight:500">'+r.templateName+'</span></td>'
     +'<td>'+r.employmentType+'</td>'
@@ -3694,10 +3700,11 @@ function buildContractTemplatesHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('ctp-f-q',ctpSearchQuery,'Search template','applyCtpFilters()')
     +apCS('ctp-f-country',countryOpts,ctpCountryFilter,'Country')
     +apCS('ctp-f-category',categoryOpts,ctpCategoryFilter,'Category')
     +apCS('ctp-f-status',statusOpts,ctpStatusFilter,'Status')
-    +clearFiltersBtn([ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter],'resetCtpFilters()')
+    +clearFiltersBtn([ctpCountryFilter,ctpCategoryFilter,ctpStatusFilter,ctpSearchQuery],'resetCtpFilters()')
     +'<button class="lp-pill-search" onclick="applyCtpFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -3723,10 +3730,11 @@ function applyCtpFilters(){
   ctpCountryFilter=getCSValue('ctp-f-country');
   ctpCategoryFilter=getCSValue('ctp-f-category');
   ctpStatusFilter=getCSValue('ctp-f-status');
+  ctpSearchQuery=lpSearchValue('ctp-f-q');
   renderADTPage();
 }
 function resetCtpFilters(){
-  ctpCountryFilter='';ctpCategoryFilter='';ctpStatusFilter='';
+  ctpCountryFilter='';ctpCategoryFilter='';ctpStatusFilter='';ctpSearchQuery='';
   renderADTPage();
 }
 function closeCtpModal(){ctpModalOpen=false;renderADTPage();}
@@ -4521,13 +4529,14 @@ function buildContractsListingHTML(){
        dropdown offering the previous type's vocabulary, and picking from it
        would return nothing. csSelect() routes the change (see its csid chain,
        the same way ap-filter-type and lp-filter-field are handled). */
+    /* Search leads here too, in front of the type band. */
+    +lpSearchField('ct-search-inp',ctSearchQuery,'Search name, ID','applyCtFilters()')
     +apCS('ct-f-type',[CT_TYPE_LABEL_ALL].concat(CT_TYPE_ORDER.map(k=>CT_TYPES[k].label)),ctTypeFilterLabel(),'All Types')
     +apCS('ct-f-country',countries,ctCountryFilter,'All Countries')
     /* Options follow the selected type: that type's own flow, or - on All
        Types - every status any flow can produce, so the list only ever names
        states a row in view can be in. */
     +apCS('ct-f-status',ctStatusOptionsFor(ctTypeFilter),ctQuickStatusFilter,'All Statuses')
-    +'<input class="ct-search-input" id="ct-search-inp" placeholder="Search name, ID" type="text" value="'+ctSearchQuery.replace(/"/g,'&quot;')+'" onkeydown="if(event.key===\'Enter\')applyCtFilters()">'
     /* Contract Type counts as an applied filter now that it is one of the
        controls in this bar - Reset clears it back to All Types along with the
        rest. */
@@ -4642,6 +4651,24 @@ function buildAddTeamHTML(){
 }
 // An untouched select still shows its placeholder as .cs-value text, so return
 // '' unless the user actually picked an option (mirrors getCustomSelectValue).
+/* WHAT A NATIVE <select id=x> GAVE ITS CALLERS, for the forms that used to
+   hold one: read it, flash it, clear it. apCS renders a wrapper with the id
+   on #csw-<id> rather than an element carrying the value, so
+   document.getElementById(id) finds nothing — these three are what the log
+   forms call instead. csTrigger() returns the button, which is what the
+   existing red-border flashes and .focus() calls want. */
+function csTrigger(id){
+  const w=document.getElementById('csw-'+id);
+  return w?w.querySelector('.cs-trigger'):null;
+}
+function csClear(id){
+  const t=csTrigger(id);if(!t)return;
+  const v=t.querySelector('.cs-value');
+  if(v)v.textContent=t.dataset.csph||'';
+  t.classList.add('cs-placeholder');
+  const d=document.getElementById('csd-'+id);
+  if(d)d.querySelectorAll('.cs-option').forEach(function(o){o.classList.remove('cs-selected');});
+}
 function getCSValue(id){
   const wrap=document.getElementById('csw-'+id);
   if(!wrap)return '';
@@ -4683,9 +4710,10 @@ function applyPhFilters(){
   const cat=getCSValue('ph-f-cat'),st=getCSValue('ph-f-status');
   phCategoryFilter=cat&&cat!=='All Categories'?cat:'';
   phStatusFilter=st&&st!=='All Statuses'?st:'';
+  phSearchQuery=lpSearchValue('ph-f-q');
   phSelectedId=null;renderADTPage();
 }
-function resetPhFilters(){phCategoryFilter='';phStatusFilter='';phSelectedId=null;renderADTPage();}
+function resetPhFilters(){phCategoryFilter='';phStatusFilter='';phSearchQuery='';phSelectedId=null;renderADTPage();}
 
 // ── Detail panel ──
 function openPhSidebar(id,tab){
@@ -4834,7 +4862,7 @@ function buildPayheadsPageHTML(){
   const inactive=payheadsData.filter(function(p){return p.status==='Inactive';}).length;
   const rows=phRows();
   if(phSelectedId&&!rows.some(function(p){return p.id===phSelectedId;}))phSelectedId=null;
-  const pgn=listPage('payheads',phCategoryFilter+'|'+phStatusFilter,rows.map(function(p,i){
+  const pgn=listPage('payheads',phCategoryFilter+'|'+phStatusFilter+'|'+phSearchQuery,lpSearchRows(rows,phSearchQuery).map(function(p,i){
     return '<tr class="ph-row'+(phSelectedId===p.id?' lp-row-selected':'')+'" id="ph-row-'+p.id+'" style="cursor:pointer" onclick="openPhSidebar('+p.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
       +'<td><span style="color:var(--orange);font-weight:500">'+p.name+'</span></td>'
@@ -4851,9 +4879,10 @@ function buildPayheadsPageHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('ph-f-q',phSearchQuery,'Search payhead','applyPhFilters()')
     +apCS('ph-f-cat',PH_CATEGORIES,phCategoryFilter,'All Categories')
     +apCS('ph-f-status',['Active','Inactive'],phStatusFilter,'All Statuses')
-    +clearFiltersBtn([phCategoryFilter,phStatusFilter],'resetPhFilters()')
+    +clearFiltersBtn([phCategoryFilter,phStatusFilter,phSearchQuery],'resetPhFilters()')
     +'<button class="lp-pill-search" onclick="applyPhFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -5077,10 +5106,11 @@ function applyHdFilters(){
   hdYearFilter=y&&y!=='All Years'?y:'';
   hdTypeFilter=t&&t!=='All Types'?t:'';
   hdBranchFilter=b&&b!=='Every Branch'?b:'';
+  hdSearchQuery=lpSearchValue('hd-f-q');
   hdSelectedId=null;renderADTPage();
 }
 function resetHdFilters(){
-  hdYearFilter='';hdTypeFilter='';hdBranchFilter='';hdStatusFilter='';hdUpcomingOnly=false;
+  hdYearFilter='';hdTypeFilter='';hdBranchFilter='';hdStatusFilter='';hdSearchQuery='';hdUpcomingOnly=false;
   hdSelectedId=null;renderADTPage();
 }
 
@@ -5328,8 +5358,8 @@ function buildHolidaysPageHTML(){
   const nextId=hdNextUpId();
   const rows=hdRows();
   if(hdSelectedId&&!rows.some(function(h){return h.id===hdSelectedId;}))hdSelectedId=null;
-  const pgn=listPage('holidays',[hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdUpcomingOnly?'up':'',hdCurrentEntityName()].join('|'),
-    rows.map(function(h,i){
+  const pgn=listPage('holidays',[hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdUpcomingOnly?'up':'',hdCurrentEntityName(),hdSearchQuery].join('|'),
+    lpSearchRows(rows,hdSearchQuery).map(function(h,i){
       return '<tr class="hd-row'+(hdSelectedId===h.id?' lp-row-selected':'')+'" id="hd-row-'+h.id+'" style="cursor:pointer" onclick="openHdSidebar('+h.id+')">'
         +'<td class="lp-c-n">'+(i+1)+'</td>'
         +'<td><span style="color:var(--orange);font-weight:500">'+h.name+'</span>'
@@ -5352,10 +5382,11 @@ function buildHolidaysPageHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('hd-f-q',hdSearchQuery,'Search holiday','applyHdFilters()')
     +apCS('hd-f-year',hdYearOptions(),hdYearFilter,'All Years')
     +apCS('hd-f-type',HD_TYPES,hdTypeFilter,'All Types')
     +apCS('hd-f-branch',hdBranchOptions(),hdBranchFilter,'Every Branch')
-    +clearFiltersBtn([hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdUpcomingOnly?'Upcoming':''],'resetHdFilters()')
+    +clearFiltersBtn([hdYearFilter,hdTypeFilter,hdBranchFilter,hdStatusFilter,hdSearchQuery,hdUpcomingOnly?'Upcoming':''],'resetHdFilters()')
     +'<button class="lp-pill-search" onclick="applyHdFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -5787,7 +5818,7 @@ function lpToggleStatFilter(v){
   lpFilterStatus=lpFilterStatus===v?'':v;
   lpSidebarPolicyId=null;renderADTPage();
 }
-function applyLpFilters(){lpSidebarPolicyId=null;renderADTPage();}
+function applyLpFilters(){lpFilterQuery=lpSearchValue('lp-f-q');lpSidebarPolicyId=null;renderADTPage();}
 function buildLeavePoliciesHTML(){
   const numVal=(v)=>v!==null&&v!==undefined?'<span style="color:var(--black);font-weight:600">'+v+'</span>':'<span style="color:#9ca3af">-</span>';
   const ynCell=(v)=>'<span style="color:'+(v?'#16a34a':'#374151')+';font-weight:500">'+(v?'Yes':'No')+'</span>';
@@ -5803,7 +5834,7 @@ function buildLeavePoliciesHTML(){
   if(lpFilterStatus)lpRows=lpRows.filter(function(x){return x.status===lpFilterStatus;});
   // A panel must always belong to a row you can see.
   if(lpSidebarPolicyId&&!lpRows.some(function(x){return x.id===lpSidebarPolicyId;}))lpSidebarPolicyId=null;
-  const pgn=listPage('leave-policies',[lpFilterField,lpFilterStatus].join('|'),lpRows.map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
+  const pgn=listPage('leave-policies',[lpFilterField,lpFilterStatus,lpFilterQuery].join('|'),lpSearchRows(lpRows,lpFilterQuery).map((p,i)=>'<tr class="lp-row'+(lpSidebarPolicyId===p.id?' lp-row-selected':'')+'" id="lp-row-'+p.id+'" onclick="openLPSidebar('+p.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+p.type+'</td>'
     +'<td>'+numVal(p.yearly)+'</td>'
@@ -5822,9 +5853,10 @@ function buildLeavePoliciesHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('lp-f-q',lpFilterQuery,'Search policy','applyLpFilters()')
     +apCS('lp-filter-field',['Type Name','Yearly Count','Monthly Limit'],lpFilterField,'Select')
     +apCS('lp-filter-status',['Active','Inactive'],lpFilterStatus,'Status')
-    +clearFiltersBtn([lpFilterField,lpFilterStatus],'resetLpFilters()')
+    +clearFiltersBtn([lpFilterField,lpFilterStatus,lpFilterQuery],'resetLpFilters()')
     // csSelect() has already stored the pick; Search only has to repaint.
     +'<button class="lp-pill-search" onclick="applyLpFilters()">Search</button>'
     +'</div></div>'
@@ -6010,7 +6042,6 @@ function renderLPSidebar(){
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timelineHTML=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
         const sk=logStatusKey(l.status||'Updated');
@@ -6036,11 +6067,7 @@ function renderLPSidebar(){
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+(p.status||'Active')+'</div>'
       +'<p class="lp-logs-form-sub">Update policy status and add a comment</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap">'
-      +'<select class="lp-logs-form-select" id="lp-log-status-sel"><option value="">Select Status</option>'
-      +'<option value="Active"'+(p.status==='Active'?' selected':'')+'>Active</option>'
-      +'<option value="Inactive"'+(p.status==='Inactive'?' selected':'')+'>Inactive</option></select>'
-      +chevSvg+'</div>'
+      +apCS('lp-log-status-sel',['Active','Inactive'],p.status||'','Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="lp-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="lpSaveLog('+p.id+')">Save</button>'
@@ -6098,10 +6125,10 @@ function lpAddEmpToPolicy(empId){
   refreshLPSidebar();
 }
 function lpSaveLog(policyId){
-  const sel=document.getElementById('lp-log-status-sel');
+  const sel=csTrigger('lp-log-status-sel');
   const inp=document.getElementById('lp-log-comment-inp');
   if(!sel||!inp)return;
-  const status=sel.value;
+  const status=getCSValue('lp-log-status-sel');
   const comment=inp.value.trim();
   if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
   if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
@@ -6801,10 +6828,11 @@ function atToggleTsFilter(v){
 function applyAtFilters(){
   const ts=getCSValue('at-f-ts');
   atTsQuickFilter=ts&&ts!=='Timesheet Status'&&ts!=='All'?ts:'';
+  atSearchQuery=lpSearchValue('at-f-q');
   renderADTPage();
 }
 function resetAtFilters(){
-  atTsQuickFilter='';
+  atTsQuickFilter='';atSearchQuery='';
   renderADTPage();
 }
 function buildAllTimesheetHTML(){
@@ -6822,11 +6850,12 @@ function buildAllTimesheetHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('at-f-q',atSearchQuery,'Search employee','applyAtFilters()')
     +apCS('at-f-status',['Active','Inactive','All'],'','Status')
     +apCS('at-f-admin',['Admin Name'],'','Admin Name')
     +apCS('at-f-ts',['Unfilled','Filled','All'],atTsQuickFilter,'Timesheet Status')
     +apCS('at-f-month',months,'Jun','Month')
-    +clearFiltersBtn([atTsQuickFilter],'resetAtFilters()')
+    +clearFiltersBtn([atTsQuickFilter,atSearchQuery],'resetAtFilters()')
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
     // The listing is a set to begin with, so its export opens on the roster.
     +tsxExportBtn('all')
@@ -6840,7 +6869,7 @@ function buildAllTimesheetHTML(){
 
   // Table rows
   const filteredTs=atTsQuickFilter?data.filter(function(d){return d.tsStatus===atTsQuickFilter;}):data;
-  const pgn=listPage('all-timesheet',atTsQuickFilter,filteredTs.map(function(emp){
+  const pgn=listPage('all-timesheet',atTsQuickFilter+'|'+atSearchQuery,lpSearchRows(filteredTs,atSearchQuery).map(function(emp){
     const empBadge=emp.empStatus==='Active'
       ?'<span class="at-badge-active">Active</span>'
       :'<span class="at-badge-inactive">Inactive</span>';
@@ -7534,20 +7563,22 @@ function buildCompanySettingsHTML(){
   const inactiveCount=statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()==='inactive').length:0;
   const pendingCount=statusIdx>=0?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()==='pending').length:0;
   const csStatFilter=listStatusFilters['settings']||'';
+  const csQuery=listSearchQueries['settings']||'';
   const rows=(csStatFilter&&statusIdx>=0)?allRows.filter(r=>String(r[statusIdx]||'').toLowerCase()===csStatFilter.toLowerCase()):allRows;
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
   const headers=cols.map(c=>'<th>'+c+'</th>').join('')+'<th>ACTION</th>';
   // data-row-id is what markCsSelectedRow() moves the highlight by, without a repaint.
-  const pgn=listPage('settings',csStatFilter,rows.map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" data-row-id="'+row[0]+'" onclick="openCsSidebar('+row[0]+')">'
+  const pgn=listPage('settings',csStatFilter+'|'+csQuery,lpSearchRows(rows,csQuery).map(row=>'<tr class="lp-row'+(csSelectedItem===row[0]?' lp-row-selected':'')+'" data-row-id="'+row[0]+'" onclick="openCsSidebar('+row[0]+')">'
     +row.map((cell,i)=>buildListingCell(cell,cols[i])).join('')
     +'<td><button class="lp-action-btn" title="More actions" onclick="event.stopPropagation();openCsSidebar('+row[0]+')">'+hamburger+'</button></td>'
     +'</tr>'),'<tr><td colspan="'+(cols.length+1)+'" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>');
-  const filters=(meta.filters||[]).map((f,i)=>apCS('lst-settings-f'+i,getFilterOptions(f).slice(1),f==='Status'?csStatFilter:'',f)).join('');
+  const filters=lpSearchField('lst-settings-q',csQuery,'Search',"applyListingFilters('settings')")
+    +(meta.filters||[]).map((f,i)=>apCS('lst-settings-f'+i,getFilterOptions(f).slice(1),f==='Status'?csStatFilter:'',f)).join('');
   const sbInner=csSelectedItem?renderCsSidebar():'';
   return '<div class="listing-page">'
     +'<div class="listing-top">'
       +'<div class="lp-filter-bar" style="flex:1;min-width:0"><div class="lp-filter-bar-label">Select Filter</div>'
-      +'<div class="lp-filter-bar-row">'+filters+clearFiltersBtn([csStatFilter],'resetListingFilters(\'settings\')')+'<button class="lp-pill-search" onclick="applyListingFilters(\'settings\')">Search</button></div></div>'
+      +'<div class="lp-filter-bar-row">'+filters+clearFiltersBtn([csStatFilter,listSearchQueries['settings']||''],'resetListingFilters(\'settings\')')+'<button class="lp-pill-search" onclick="applyListingFilters(\'settings\')">Search</button></div></div>'
       +'<div class="listing-stats">'
         +'<div class="listing-stat active'+(csStatFilter==='Active'?' stat-selected':'')+'" onclick="toggleListingStatFilter(\'settings\',\'Active\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
         +'<div class="listing-stat inactive'+(csStatFilter==='Inactive'?' stat-selected':'')+'" onclick="toggleListingStatFilter(\'settings\',\'Inactive\')"><div class="listing-stat-count">'+inactiveCount+'</div><div class="listing-stat-label">Inactive</div></div>'
@@ -7728,7 +7759,6 @@ function renderCsSidebar(){
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timeline='<div class="lp-logs-timeline">'+csLogsData.map((l,i,_all)=>{
       const sk=lsk(l.status||'Active');
       return '<div class="lp-log-row">'
@@ -7746,7 +7776,7 @@ function renderCsSidebar(){
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--active"></span>Active</div>'
       +'<p class="lp-logs-form-sub">Update entity status and add a comment</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="cs-log-status-sel"><option value="">Select Status</option><option value="Active">Active</option><option value="Inactive">Inactive</option></select>'+chevSvg+'</div>'
+      +apCS('cs-log-status-sel',['Active','Inactive'],'','Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="cs-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="csSaveLog()">Save</button>'
@@ -7842,7 +7872,6 @@ function renderLstSidebar(){
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chevSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const timeline='<div class="lp-logs-timeline">'+logs.map(function(l,n,_all){
       const sk=lsk(l.status);
       return '<div class="lp-log-row">'
@@ -7866,9 +7895,7 @@ function renderLstSidebar(){
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+lsk(cur)+'"></span>'+cur+'</div>'
       +'<p class="lp-logs-form-sub">Update '+noun.toLowerCase()+' status and add a comment</p>'
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="lst-log-status-sel"><option value="">Select Status</option>'
-      +opts.map(function(o){return '<option value="'+o+'">'+o+'</option>';}).join('')
-      +'</select>'+chevSvg+'</div>'
+      +apCS('lst-log-status-sel',opts,'','Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="lst-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="lstSaveLog()">Save</button>'
@@ -8031,28 +8058,19 @@ function tkLogsTabHTML(t){
 
   const moves=tkMoves(t);
   const csk=tkLogStatusKey(tkStatusLabel(t.status));
-  const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
   if(!moves.length)return '<div class="lp-logs-wrap">'+timeline+'</div>';
   const form='<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+tkStatusLabel(t.status)+'</div>'
     +'<p class="lp-logs-form-sub">Next action on <strong>'+tkOwner(t)+'</strong></p>'
     +'<div class="lp-logs-form-label">Move to <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-status-sel" onchange="tkLogFormSync('+t.id+')">'
-    +'<option value="">Select the next step</option>'
-    +moves.map(mv=>'<option value="'+mv.to+'">'+mv.label+' → '+tkStatusLabel(mv.to)+'</option>').join('')
-    +'</select>'+chev+'</div>'
+    +apCS('tk-log-status-sel',moves.map(tkMoveLabel),'','Select the next step','tkLogStatusHook')
     // Only rendered when the chosen move needs it; tkLogFormSync toggles these.
     +'<div id="tk-log-assignee-wrap" style="display:none">'
     +'<div class="lp-logs-form-label">Assign to <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-assignee-sel">'
-    +TK_AGENTS.map(a=>'<option'+(a===t.assignedTo?' selected':'')+'>'+a+'</option>').join('')
-    +'</select>'+chev+'</div></div>'
+    +apCS('tk-log-assignee-sel',TK_AGENTS,t.assignedTo||'','Select an agent')+'</div>'
     +'<div id="tk-log-waiting-wrap" style="display:none">'
     +'<div class="lp-logs-form-label">Waiting on <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="tk-log-waiting-sel">'
-    +'<option value="">Who are we blocked on?</option>'
-    +TK_BLOCKERS.map(b=>'<option'+(b===t.waitingOn?' selected':'')+'>'+b+'</option>').join('')
-    +'</select>'+chev+'</div></div>'
+    +apCS('tk-log-waiting-sel',TK_BLOCKERS,t.waitingOn||'','Who are we blocked on?')+'</div>'
     +'<div class="lp-logs-form-label" id="tk-log-comment-label">Comment <span class="lp-logs-form-req">*</span></div>'
     +'<textarea class="lp-logs-form-textarea" id="tk-log-comment-inp" placeholder="Pick a step above, then say what happened"></textarea>'
     +'<div style="display:flex;gap:10px;margin-top:12px">'
@@ -8061,12 +8079,20 @@ function tkLogsTabHTML(t){
     +'</div></div>';
   return '<div class="lp-logs-wrap">'+timeline+form+'</div>';
 }
+/* The dropdown shows a move's label; the record stores its target status, so
+   one builder writes the label and one lookup reads it back. */
+function tkMoveLabel(mv){return mv.label+' → '+tkStatusLabel(mv.to);}
+function tkPickedMove(t){
+  const picked=getCSValue('tk-log-status-sel');
+  return tkMoves(t).find(function(m){return tkMoveLabel(m)===picked;});
+}
+/* apCS's hook: it fires on selection, where the native control fired onchange. */
+function tkLogStatusHook(){if(tkSelectedId)tkLogFormSync(tkSelectedId);}
 // Show only the extra fields the chosen move actually needs, and ask that
 // move's own question in the comment label.
 function tkLogFormSync(id){
   const t=ticketsData.find(x=>x.id===id);if(!t)return;
-  const sel=document.getElementById('tk-log-status-sel');
-  const mv=tkMoves(t).find(m=>m.to===(sel?sel.value:''));
+  const mv=tkPickedMove(t);
   const show=(el,on)=>{const n=document.getElementById(el);if(n)n.style.display=on?'':'none';};
   show('tk-log-assignee-wrap',!!(mv&&mv.needs.indexOf('assignee')>=0));
   show('tk-log-waiting-wrap',!!(mv&&mv.needs.indexOf('waitingOn')>=0));
@@ -8076,9 +8102,8 @@ function tkLogFormSync(id){
   if(inp)inp.placeholder=mv?mv.ask:'Pick a step above, then say what happened';
 }
 function tkCancelLog(){
-  const sel=document.getElementById('tk-log-status-sel');
   const inp=document.getElementById('tk-log-comment-inp');
-  if(sel)sel.value='';
+  csClear('tk-log-status-sel');
   if(inp)inp.value='';
   if(typeof tkLogFormSync==='function'&&tkSelectedId)tkLogFormSync(tkSelectedId);
 }
@@ -8086,15 +8111,12 @@ function tkCancelLog(){
 // button all write the same history for the same move.
 function tkSaveLog(id){
   const t=ticketsData.find(x=>x.id===id);if(!t)return;
-  const sel=document.getElementById('tk-log-status-sel');
+  const sel=csTrigger('tk-log-status-sel');
   const inp=document.getElementById('tk-log-comment-inp');
-  const asg=document.getElementById('tk-log-assignee-sel');
-  const wait=document.getElementById('tk-log-waiting-sel');
   const flash=el=>{if(el){el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
-  const to=sel?sel.value:'';
-  if(!to){flash(sel);return;}
-  const mv=tkMoves(t).find(m=>m.to===to);
+  const mv=tkPickedMove(t);
   if(!mv){flash(sel);return;}
+  const to=mv.to;
   const vals={comment:inp?inp.value.trim():''};
   if(mv.needs.indexOf('assignee')>=0){
     vals.assignee=asg?asg.value:'';
@@ -8167,11 +8189,12 @@ function applyTkFilters(){
   const channel=getCSValue('tk-f-channel');
   tkQuickStatusFilter=status&&status!=='All Statuses'?status:'';
   tkChannelFilter=channel&&channel!=='All Channels'?channel:'';
+  tkSearchQuery=lpSearchValue('tk-f-q');
   tkSelectedId=null;
   renderADTPage();
 }
 function resetTkFilters(){
-  tkQuickStatusFilter='';tkChannelFilter='';
+  tkQuickStatusFilter='';tkChannelFilter='';tkSearchQuery='';
   tkSelectedId=null;
   renderADTPage();
 }
@@ -8389,12 +8412,12 @@ function buildTicketsPageHTML(){
   // A panel must belong to a row you can still see, so a filter that drops the
   // open ticket closes it rather than leaving a panel with no row behind it.
   if(tkSelectedId&&!rows.some(function(t){return t.id===tkSelectedId;}))tkSelectedId=null;
-  const sig=tkQuickStatusFilter+'|'+tkChannelFilter;
+  const sig=tkQuickStatusFilter+'|'+tkChannelFilter+'|'+tkSearchQuery;
   /* Eight columns, each value paired with its qualifier in the shared .lp-c-*
      two-line cell rather than the qualifier taking a column of its own: the
      reference carries the channel, the client carries who raised it, the title
      carries the category. */
-  const pgn=listPage('support-tickets',sig,rows.map(function(t,i){
+  const pgn=listPage('support-tickets',sig,lpSearchRows(rows,tkSearchQuery).map(function(t,i){
     const unassigned=tkIsUnassigned(t);
     // "via" only earns its line when somebody other than the client raised it —
     // repeating the name back under itself was pure noise on most rows.
@@ -8429,10 +8452,11 @@ function buildTicketsPageHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('tk-f-q',tkSearchQuery,'Search ticket','applyTkFilters()')
     +apCS('tk-f-channel',channels,tkChannelFilter,'All Channels')
     +apCS('tk-f-status',['open','in_progress','blocked','resolved','closed'],
         tkIsPseudoStatus(tkQuickStatusFilter)?'':tkQuickStatusFilter,'All Statuses')
-    +clearFiltersBtn([tkQuickStatusFilter,tkChannelFilter],'resetTkFilters()')
+    +clearFiltersBtn([tkQuickStatusFilter,tkChannelFilter,tkSearchQuery],'resetTkFilters()')
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -8560,7 +8584,6 @@ function renderChatSidebar(){
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
     const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
     const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const chev='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
     const logs=chatSeedLogs(c);
     const timeline=logs.length
       ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
@@ -8582,10 +8605,7 @@ function renderChatSidebar(){
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(chatStatusLabel(c.status))+'"></span>'+chatStatusLabel(c.status)+'</div>'
       +'<p class="lp-logs-form-sub">Next action on <strong>'+chatOwner(c)+'</strong></p>'
       +'<div class="lp-logs-form-label">Move to <span class="lp-logs-form-req">*</span></div>'
-      +'<div class="lp-logs-form-sel-wrap"><select class="lp-logs-form-select" id="chat-log-status-sel">'
-      +'<option value="">Select the next step</option>'
-      +moves.map(function(m){return '<option value="'+m.to+'">'+m.label+' &rarr; '+chatStatusLabel(m.to)+'</option>';}).join('')
-      +'</select>'+chev+'</div>'
+      +apCS('chat-log-status-sel',moves.map(chatMoveLabel),'','Select the next step')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
       +'<textarea class="lp-logs-form-textarea" id="chat-log-comment-inp" placeholder="Pick a step above, then say what happened"></textarea>'
       +'<div style="display:flex;gap:10px;margin-top:12px">'
@@ -8607,11 +8627,12 @@ function chatToggleStatFilter(v){
 function applyChatFilters(){
   const status=getCSValue('chat-f-status');
   chatQuickStatusFilter=status&&status!=='All Statuses'?status:'';
+  chatSearchQuery=lpSearchValue('chat-f-q');
   chatSelectedId=null;
   renderADTPage();
 }
 function resetChatFilters(){
-  chatQuickStatusFilter='';
+  chatQuickStatusFilter='';chatSearchQuery='';
   chatSelectedId=null;
   renderADTPage();
 }
@@ -8623,7 +8644,7 @@ function buildChatsPageHTML(){
   const waitingCount=chatsData.filter(c=>c.status==='waiting_client'||c.status==='waiting_csm').length;
   const inactiveCount=chatsData.filter(c=>c.status==='inactive').length;
   const filteredChats=chatQuickStatusFilter?(chatQuickStatusFilter==='__waiting_group__'?chatsData.filter(c=>c.status==='waiting_client'||c.status==='waiting_csm'):chatsData.filter(c=>c.status===chatQuickStatusFilter)):chatsData;
-  const pgn=listPage('chats',chatQuickStatusFilter,filteredChats.map((c,i)=>(
+  const pgn=listPage('chats',chatQuickStatusFilter+'|'+chatSearchQuery,lpSearchRows(filteredChats,chatSearchQuery).map((c,i)=>(
     '<tr class="chat-row'+(chatSelectedId===c.id?' lp-row-selected':'')+'" id="chat-row-'+c.id+'" style="cursor:pointer" onclick="openChatSidebar('+c.id+')">'
     +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+c.chatId+'</td>'
@@ -8641,10 +8662,11 @@ function buildChatsPageHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
+    +lpSearchField('chat-f-q',chatSearchQuery,'Search chat','applyChatFilters()')
     +apCS('chat-f-country',countries,'','All Countries')
     +apCS('chat-f-assignee',assignees,'','All Assignees')
     +apCS('chat-f-status',['active','waiting_client','waiting_csm','inactive'],chatQuickStatusFilter==='__waiting_group__'?'':chatQuickStatusFilter,'All Statuses')
-    +clearFiltersBtn([chatQuickStatusFilter],'resetChatFilters()')
+    +clearFiltersBtn([chatQuickStatusFilter,chatSearchQuery],'resetChatFilters()')
     +'<button class="lp-pill-search" onclick="applyChatFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
