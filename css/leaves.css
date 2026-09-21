@@ -509,6 +509,12 @@ tr.lp-row-selected>td:first-child,
 .ct-upload-area:hover{border-color:var(--orange);background:#f1f5f9}
 .ct-upload-area p{font-size:12px;color:#64748b;margin:4px 0 0;line-height:1.4}
 .ct-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:500;display:flex;align-items:center;justify-content:center}
+/* ONE width for every creation popup (.ct-modal--form): Create Leave, Leave
+   Policy, Holidays, Compliance, Rule, Template, Payhead, Ticket, Pay Run and
+   Invoice. They had drifted to seven widths between 620px and 1000px, so
+   moving between modules resized the same kind of window. Change it here. */
+:root{--form-modal-w:880px}
+.ct-modal.ct-modal--form{width:min(var(--form-modal-w),94vw)}
 .ct-modal{background:#fff;border-radius:16px;padding:28px;width:min(560px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(15,23,42,.22);scrollbar-width:thin}
 .ct-modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .ct-modal-title{font-size:16px;font-weight:700;color:var(--navy)}
@@ -541,9 +547,18 @@ tr.lp-row-selected>td:first-child,
    thirds: From and To hold short numbers, Value holds a short number, and Calc
    Method holds a select whose longest option is "Percentage", so giving them
    equal width would leave the numbers swimming and the select cramped. */
+/* The card follows the Name/Category grid, so it needs the grid's own 18px
+   rhythm above it; it carries no padding because the head and body pad
+   themselves; and overflow stays visible so a Calc Method menu can drop out
+   of it. */
+.ph-slab-card{padding:0;overflow:visible;margin:18px 0 22px}
 .ph-slab-head{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:16px 22px;background:#fafbfc;border-bottom:1px solid var(--border)}
+  padding:12px 20px;background:#fafbfc;border-bottom:1px solid var(--border);
+  border-radius:12px 12px 0 0}
+/* .ep-form-title is a section heading with its own rule under it; here the
+   head strip already ends in a rule, so the title's is dropped. */
+.ph-slab-head .ep-form-title{margin:0;padding-bottom:0;border-bottom:0}
 .ph-add-slab{
   display:inline-flex;align-items:center;gap:5px;height:32px;padding:0 14px;
   border-radius:var(--r-control);background:#fff;border:1.5px solid var(--orange);color:var(--orange);
@@ -559,7 +574,7 @@ tr.lp-row-selected>td:first-child,
 .ph-slab-row input[readonly]{background:var(--light);color:var(--gray);cursor:default}
 .ph-hint{color:#9ca3af;cursor:help}
 .ph-slab-del{
-  width:34px;height:38px;flex-shrink:0;border:1px solid var(--border);border-radius:var(--r-control);
+  width:42px;height:42px;flex-shrink:0;border:1px solid var(--border);border-radius:var(--r-control);
   background:#fff;color:#94a3b8;display:inline-flex;align-items:center;justify-content:center;
   cursor:pointer;padding:0;transition:border-color .15s ease,color .15s ease,background .15s ease}
 .ph-slab-del:hover:not(:disabled){border-color:var(--st-bad-fg);color:var(--st-bad-fg);background:var(--st-bad-bg)}

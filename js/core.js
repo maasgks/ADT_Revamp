@@ -1141,7 +1141,7 @@ document.addEventListener('click',function(e){
   // Downloads & uploads
   if(txt.indexOf('Download')>=0){showToast('Preparing download…','info');setTimeout(function(){showToast('Downloaded successfully');},900);return;}
   if(btn.title==='Upload'||txt==='Upload'){showToast('Document uploaded');return;}
-  if(txt.indexOf('Create Invoice')>=0){showToast('Invoice created','success','A draft invoice has been generated.');return;}
+  if(txt.indexOf('Create Invoice')>=0){startAddInvoice();return;}
   if(txt==='Refresh'){showToast('Refreshed','info');return;}
   if(btn.title==='Remove'){
     const row=btn.closest('[class*="row"], li')||btn.parentElement;
@@ -1347,6 +1347,7 @@ function navigatePage(pg,fromDashboard){
      what keeps the two in the right order. */
   if(pg==='contracts'&&!fromDashboard)ctLandingOpen=true;
   ctStatusModal=null;   // a half-made status move never follows you to another page
+  prCreateOpen=false;pmCreateOpen=false;
   page=pg;
   syncSidebarDropdown(pg);
   cameFromDashboard=!!fromDashboard;
@@ -1908,7 +1909,8 @@ function buildListingHTML(pg){
       +`</div>`
       +sidebar
     +`</div>`
-    +`</div>`;
+    +`</div>`
+    +(pg==='payroll'&&prCreateOpen?buildCreatePayRunModalHTML():'');
 }
 
 function applyListingFilters(pg){
@@ -2382,7 +2384,7 @@ function addListingItem(pg){if(pg==='contracts'){
   ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
-else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){showToast('Invoice created','success','A draft invoice has been generated for review.');}else{addDemoMetaRow(pg);}}
+else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else{addDemoMetaRow(pg);}}
 /* addDemoEmployee() and its name pool lived here: one button that invented a
    plausible record and inserted it. It is gone, not deprecated - the four-step
    intake in js/employee-add.js is the only way an employee is created now, so

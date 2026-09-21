@@ -1115,7 +1115,7 @@ function buildAddLeaveModalHTML(){
   };
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddLeave()">'
-    +'<div class="ct-modal" style="width:min(860px,96vw)" onclick="event.stopPropagation()" id="al-add-form">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()" id="al-add-form">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
       +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p>'
@@ -1452,7 +1452,7 @@ function renderPmSidebar(){
       +'<span style="font-size:13px;font-weight:600;color:var(--navy)">Select Year :</span>'
       +'<select style="border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-family:inherit;font-size:13px;color:var(--navy);cursor:pointer;outline:none">'+yrOpts+'</select>'
       +'</div>'
-      +'<button style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Create Invoice</button>'
+      +'<button onclick="startAddInvoice()" style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Create Invoice</button>'
       +'</div>'
       +'<p style="font-size:13px;color:#9ca3af">No receivables found.</p>';
   }else if(pmTab==='logs'){
@@ -1563,7 +1563,8 @@ function buildPaymentsHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(pmSelectedId?' open':'')+'" id="pm-split-sb"><div class="lp-isb" id="pm-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +(pmCreateOpen?buildCreateInvoiceModalHTML():'');
 }
 function closePmMenus(){document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));}
 function ctSlug(s){return(s||'').toLowerCase().replace(/\s+/g,'-');}
@@ -2236,7 +2237,7 @@ function saveComplianceItem(){
 function buildCreateComplianceModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   return '<div class="ct-modal-overlay" onclick="closeComplianceModal()">'
-    +'<div class="ct-modal" style="width:min(620px,92vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Compliance Item Name <span class="req">*</span></label><input type="text" class="ep-form-input" id="cmp-new-name" placeholder="e.g. Right to Work Check"></div>'
@@ -3583,7 +3584,7 @@ function buildCreateRuleModalHTML(){
    what a radio is. Read back with ciPicked(<group>). */
   const seg=(group,options,activeIdx)=>ciRadio(group,options,options[activeIdx||0]);
   return '<div class="ct-modal-overlay" onclick="closeRatesRuleModal()">'
-    +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Rule</span><button class="ct-modal-close" onclick="closeRatesRuleModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-card" style="margin-bottom:16px">'
     +'<div class="ep-form-title">Rule Details</div>'
@@ -3835,7 +3836,7 @@ function buildCreateTemplateModalHTML(){
   const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   const req='<span class="req">*</span>';
   return '<div class="ct-modal-overlay" onclick="closeCtpModal()">'
-    +'<div class="ct-modal" style="width:min(680px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template Name '+req+'</label><input type="text" class="ep-form-input" id="ctp-new-name" placeholder="e.g. NL EOR Proposal"></div>'
@@ -5064,7 +5065,7 @@ function buildCreatePayheadModalHTML(){
   phChainFrom();
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddPayhead()">'
-    +'<div class="ct-modal" style="width:min(760px,95vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Payhead</span>'
       +'<button class="ct-modal-close" onclick="cancelAddPayhead()">'+xSvg+'</button></div>'
 
@@ -5077,18 +5078,18 @@ function buildCreatePayheadModalHTML(){
       +customSelect('ph-new-calc','',PH_CALC_ON,'Select Calculation Type')+'</div>'
     +'</div>'
 
-    +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
+    +'<div class="ep-form-card ph-slab-card">'
     +'<div class="ph-slab-head">'
-      +'<span class="ep-form-title" style="margin:0">Slab Configuration</span>'
+      +'<span class="ep-form-title">Slab Configuration</span>'
       +'<button class="ph-add-slab" onclick="phAddSlab()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Slab</button>'
     +'</div>'
     +'<div class="ph-slab-body" id="ph-slab-list">'+phSlabRowsHTML()+'</div>'
     +'</div>'
 
-    +'<div style="display:flex;justify-content:flex-end;gap:10px">'
+    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
     +'<button class="ep-cancel-btn" onclick="cancelAddPayhead()">Cancel</button>'
     +'<button class="ep-save-btn" onclick="submitAddPayhead()">Create Payhead</button>'
-    +'</div>'
+    +'</div></div>'
     +'</div></div>';
 }
 function submitAddPayhead(){
@@ -5679,7 +5680,7 @@ function buildAddHolidaysModalHTML(){
   const bldSvg='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
   const lockSvg='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddHoliday()">'
-    +'<div class="ct-modal" style="width:min(940px,96vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
       +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">One row per holiday — its own name, its own date, and its own branches. A holiday can apply to the whole entity or to any set of its offices.</p>'
@@ -5807,7 +5808,7 @@ function buildAddLeavePolicyModalHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddPolicy()">'
-    +'<div class="ct-modal" style="width:min(1000px,96vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Leave Policy</span>'
       +'<button class="ct-modal-close" onclick="cancelAddPolicy()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">Set the entitlement and its rules, then choose who it applies to.</p>'
@@ -8362,7 +8363,7 @@ function buildCreateTicketModalHTML(){
   const clients=[...new Set(ticketsData.map(function(t){return t.clientName;}))].sort();
   const cats=[...new Set(ticketsData.map(function(t){return t.category;}))].sort();
   return '<div class="ct-modal-overlay" onclick="closeCreateTicket()">'
-    +'<div class="ct-modal" style="width:min(640px,94vw)" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Ticket</span>'
       +'<button class="ct-modal-close" onclick="closeCreateTicket()">'+xSvg+'</button></div>'
 
