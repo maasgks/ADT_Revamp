@@ -102,7 +102,7 @@ const sidebarItems=[
     {id:'holidays',label:'Holidays',color:'teal',icon:sbIco.calStar}
   ]},
   {dropdown:'Payroll Management',color:'green',icon:sbIco.dollar,children:[
-    {id:'payroll',label:'Pay Runs',color:'green',icon:sbIco.dollar},
+    {id:'payroll',label:'Payroll',color:'green',icon:sbIco.dollar},
     {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt}
   ]},
   {dropdown:'Finance',color:'green',icon:sbIco.wallet,children:[
@@ -1033,7 +1033,7 @@ function saveDeEdit(){
   showToast('Employee details updated','success',emp.name+' \u00b7 '+emp.empId);
 }
 
-function setEmpSubTab(t){if(empSubTab===t)return;empSubTab=t;deSelectedId=null;geSelectedId=null;renderADTPage();}
+function setEmpSubTab(t){if(empSubTab===t)return;empSubTab=t;deSelectedId=null;geSelectedId=null;empStatusModal=null;renderADTPage();}
 function setTsSubTab(t){if(tsSubTab===t)return;tsSubTab=t;renderADTPage();}
 function buildEmployeesHTML(){
   const tabs=[
@@ -1350,6 +1350,7 @@ function navigatePage(pg,fromDashboard){
      what keeps the two in the right order. */
   if(pg==='contracts'&&!fromDashboard)ctLandingOpen=true;
   ctStatusModal=null;   // a half-made status move never follows you to another page
+  empStatusModal=null;
   prCreateOpen=false;pmCreateOpen=false;
   page=pg;
   syncSidebarDropdown(pg);

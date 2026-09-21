@@ -195,7 +195,11 @@ function empLifeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replac
 /* Every control inside a status block is addressed by kind + status + key, so
    nine blocks can sit in the DOM at once without colliding. */
 function empFid(kind,status,k){return kind+'-f-'+statusClass(status)+'-'+k;}
-function empBlock(kind){return document.querySelector('#'+kind+'-isb-inner .emp-log-input:not([hidden])');}
+/* Where a form's controls live: the side panel for 'de'/'ge', the status
+   popup's body for its own prefix ('desm'/'gesm'). One lookup, so the input
+   block and the commit below serve both without knowing which they are in. */
+function empScopeSel(kind){return EMP_LIFE_SCOPES[kind]?'#'+kind+'-isb-inner':'#'+kind+'-body';}
+function empBlock(kind){return document.querySelector(empScopeSel(kind)+' .emp-log-input:not([hidden])');}
 
 /* ── The per-status input block ────────────────────────────────────────────
    Every status's block is rendered up front and all but one is `hidden`;
@@ -286,7 +290,7 @@ function empLogFields(kind,s,items){
    at once and all but one is hidden, so switching back to a status you had
    started filling in still has what you entered. */
 function empLogSwapInput(kind,status){
-  var wrap=document.querySelector('#'+kind+'-isb-inner .emp-log-input-wrap');
+  var wrap=document.querySelector(empScopeSel(kind)+' .emp-log-input-wrap');
   if(!wrap)return;
   wrap.querySelectorAll('.emp-log-input').forEach(function(b){
     b.hidden=b.getAttribute('data-status')!==status;
@@ -349,10 +353,15 @@ function empCancelLog(kind){
 }
 
 function empSaveLog(kind){
-  var emp=empLifeRec(kind);if(!emp)return;
-  var picked=getCSValue(kind+'-log-status-sel');
+  var emp=empLifeRec(kind);if(emp)empCommitLog(kind,emp,kind);
+}
+/* The one commit path, for the Logs tab and the status popup alike. `kind` is
+   the module ('de'/'ge') and picks the seeded history; `pk` is the prefix of
+   the form being read ('de' for the panel, 'desm' for the popup). */
+function empCommitLog(kind,emp,pk){
+  var picked=getCSValue(pk+'-log-status-sel');
   var was=emp.status;
-  var got=picked?empLogCollect(kind,emp,picked):{missing:[],details:[],failed:[],reason:''};
+  var got=picked?empLogCollect(pk,emp,picked):{missing:[],details:[],failed:[],reason:''};
 
   /* The spec's gate, checked BEFORE the entry is written: a status whose
      mandatory work is not done has not actually been reached. */
@@ -361,7 +370,7 @@ function empSaveLog(kind){
       +' outstanding — first: '+got.missing[0]+'.');
     return;
   }
-  if(!lpCommitLog(emp,kind+'-log-status-sel',kind+'-log-comment-inp',EMP_LIFE_SEED[kind][emp.id]))return;
+  if(!lpCommitLog(emp,pk+'-log-status-sel',pk+'-log-comment-inp',EMP_LIFE_SEED[kind][emp.id]))return;
 
   /* lpCommitLog writes the five fields every module shares and moves the
      record onto the status that was picked. Everything below is what THIS
@@ -377,6 +386,7 @@ function empSaveLog(kind){
   }
   if(emp.status==='Verification Completed')emp.failedDocs=[];
 
+  empStatusModal=null;
   renderADTPage();      // the listing row carries the status badge too
   showToast(got.failed.length?'Verification failed':'Log added',
     got.failed.length?'error':'success',
@@ -435,6 +445,170 @@ function renderEmpLogsTab(kind,emp,fixture){
     +'<button class="lp-logs-save-btn" style="flex:1" onclick="empSaveLog(\''+kind+'\')">Submit</button>'
     +'</div></div>';
   return '<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+}
+
+/* ── Status journey and popup ──────────────────────────────────────────────
+   The Contracts listing's pattern, on the employee lifecycle: the row's Action
+   cell carries a status button whose menu walks the ladder (done / current /
+   next), and picking a stage opens a small popup to make the move without
+   opening the five-tab panel. The popup is the Logs tab's form - status, the
+   per-status input block, a mandatory comment - and commits through the same
+   empCommitLog(), so both routes write identical entries.
+
+   Like Contracts, a record moves ONE stage forward at a time, or back to any
+   stage behind it. A later stage picked from the menu is offered as the next
+   legal one, with a line saying why. */
+
+/* The main ladder, without the rejection branch. */
+const EMP_LIFE_LADDER=EMP_LIFE_STAGES.filter(function(s){return !s.branch;}).map(function(s){return s.status;});
+
+/* Where a status sits on the ladder. A branch sits at the rung it returns to:
+   Verification Failed is not past Documents & Info Submitted, it is waiting
+   to become Verification Completed. */
+function empLadderIdx(status){
+  var i=EMP_LIFE_LADDER.indexOf(status);
+  if(i>=0)return i;
+  var st=empLifeStage(status);
+  return st&&st.branch?EMP_LIFE_LADDER.indexOf(st.next):-1;
+}
+/* A branch can be entered from the rung just before the one it returns to. */
+function empBranchesFrom(status){
+  return EMP_LIFE_STAGES.filter(function(b){
+    return b.branch&&EMP_LIFE_LADDER[EMP_LIFE_LADDER.indexOf(b.next)-1]===status;
+  });
+}
+
+/* Stay put, one stage forward (plus any branch opening here), or back to any
+   earlier rung, nearest first. Same shape as ctMoveOptions(). */
+function empMoveOptions(emp){
+  var st=empLifeStage(emp.status),idx=empLadderIdx(emp.status);
+  if(!st||idx<0)return [emp.status];
+  return [emp.status]
+    .concat(st.next?[st.next]:[])
+    .concat(empBranchesFrom(emp.status).map(function(b){return b.status;}))
+    .concat(EMP_LIFE_LADDER.slice(0,idx).reverse());
+}
+
+/* The rows of the Action menu. The branch only appears while it is the
+   current status or the next thing that could happen - a record that sailed
+   through verification never shows a "Verification Failed" step. */
+function empJourneySteps(emp){
+  var cur=emp.status,idx=empLadderIdx(cur),curSt=empLifeStage(cur);
+  var onBranch=!!(curSt&&curSt.branch);
+  var out=[];
+  EMP_LIFE_LADDER.forEach(function(s,i){
+    EMP_LIFE_STAGES.forEach(function(b){
+      if(b.branch&&b.next===s&&(cur===b.status||EMP_LIFE_LADDER[i-1]===cur))
+        out.push({status:b.status,state:cur===b.status?'current':'next',branch:true});
+    });
+    out.push({status:s,n:i+1,state:i<idx?'done':(i===idx&&!onBranch)?'current':'next'});
+  });
+  return out;
+}
+
+const EMP_ACT_ICO={
+  dots:'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>',
+  chev:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>',
+  tick:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
+  branch:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+};
+
+/* The Action cell for both employee listings: status button + journey menu,
+   and the panel button beside it - the Contracts row's cell, as is. */
+function empActionCellHTML(kind,emp){
+  var st=empLifeStage(emp.status),label=st?st.short:emp.status;
+  var btnLabel=label.length>12?label.slice(0,10)+'…':label;
+  var items=empJourneySteps(emp).map(function(x){
+    var cls=x.state+(x.branch?' branch':'');
+    var ico=x.state==='done'?EMP_ACT_ICO.tick:x.branch?EMP_ACT_ICO.branch:x.n;
+    var click=x.state==='next'?' onclick="empPickStatus(\''+kind+'\','+emp.id+',\''+empLifeHtml(x.status).replace(/'/g,"\\'")+'\')"':'';
+    return '<div class="ct-act-item '+cls+'"'+click+'><span class="ct-act-step '+cls+'">'+ico+'</span>'+empLifeHtml(x.status)+'</div>';
+  }).join('');
+  var open=kind==='de'?'openDeSidebar':'openGeSidebar';
+  return '<div class="ct-action-wrap">'
+    +'<button class="ct-action-btn" title="'+empLifeHtml(emp.status)+'" onclick="toggleEmpAction(\''+kind+'\','+emp.id+',event)"><span>'+empLifeHtml(btnLabel)+'</span>'+EMP_ACT_ICO.chev+'</button>'
+    +'<button class="ct-dots-btn" onclick="'+open+'('+emp.id+');event.stopPropagation()">'+EMP_ACT_ICO.dots+'</button>'
+    +'<div class="ct-action-menu emp-act-menu" id="empm-'+kind+'-'+emp.id+'">'+items+'</div>'
+    +'</div>';
+}
+function toggleEmpAction(kind,id,e){
+  if(e)e.stopPropagation();
+  var mid='empm-'+kind+'-'+id;
+  document.querySelectorAll('.ct-action-menu').forEach(function(m){if(m.id!==mid)m.classList.remove('open');});
+  var m=document.getElementById(mid);if(!m)return;
+  var willOpen=!m.classList.contains('open');
+  m.classList.toggle('open');
+  if(willOpen&&e){
+    var wrap=e.target.closest('.ct-action-wrap');
+    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
+  }
+}
+
+let empStatusModal=null;   // {kind, id, to} while the popup is open
+function empPickStatus(kind,id,status){
+  document.querySelectorAll('.ct-action-menu').forEach(function(m){m.classList.remove('open');});
+  empStatusModal={kind:kind,id:id,to:status};
+  renderADTPage();
+  var inp=document.getElementById(kind+'sm-log-comment-inp');if(inp)inp.focus();
+}
+function closeEmpStatusModal(){empStatusModal=null;renderADTPage();}
+function empStatusModalRec(){
+  var m=empStatusModal,sc=m&&EMP_LIFE_SCOPES[m.kind];
+  return sc?sc.list().find(function(e){return e.id===m.id;})||null:null;
+}
+function empSubmitStatusModal(){
+  var emp=empStatusModalRec();if(!emp)return;
+  empCommitLog(empStatusModal.kind,emp,empStatusModal.kind+'sm');
+}
+function empStatusModalToLog(){
+  var m=empStatusModal;
+  empStatusModal=null;
+  renderADTPage();
+  if(!m)return;
+  if(m.kind==='de'){openDeSidebar(m.id);navDeTab('logs');}
+  else{openGeSidebar(m.id);navGeTab('logs');}
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'&&empStatusModal&&page==='employees')closeEmpStatusModal();
+});
+
+function buildEmpStatusModalHTML(kind){
+  if(!empStatusModal||empStatusModal.kind!==kind)return '';
+  var emp=empStatusModalRec();
+  if(!emp){empStatusModal=null;return '';}
+  var pk=kind+'sm';
+  var opts=empMoveOptions(emp);
+  var asked=empStatusModal.to;
+  var allowed=opts.indexOf(asked)>=0;
+  var preset=allowed?asked:(opts[1]||emp.status);
+  var bad=empDocsRejected(emp);
+  var xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  var arrow='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeEmpStatusModal()">'
+    +'<div class="ct-modal ct-sm emp-sm" id="'+pk+'-body" style="width:min(540px,92vw)" role="dialog" aria-modal="true" aria-label="Update employee status" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Update Status</span><button class="ct-modal-close" onclick="closeEmpStatusModal()" aria-label="Close">'+xSvg+'</button></div>'
+    +'<p class="ct-modal-sub">'+empLifeHtml(emp.empId||'')+' &middot; '+empLifeHtml(emp.name)+' &middot; '+(kind==='de'?'Direct Employee':'Global Employee')+'</p>'
+    +'<div class="ct-sm-move">'+empLifeBadge(emp.status)+arrow+empLifeBadge(preset)+'</div>'
+    +(allowed?'':'<div class="ct-sm-note">Employees move one stage at a time. <b>'+empLifeHtml(asked)+'</b> opens up once this employee reaches <b>'+empLifeHtml(preset)+'</b>.</div>')
+    +(bad.length?'<div class="emp-log-alert">'+EMP_LOG_ICONS.warn+'<span><b>'+bad.length+' document'
+      +(bad.length===1?'':'s')+'</b> awaiting re-submission: '+bad.map(function(d){return empLifeHtml(d.name);}).join(', ')+'</span></div>':'')
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status <span class="req">*</span></label>'
+      +apCS(pk+'-log-status-sel',opts,preset,'Select Status','empLogStatusHook')+'</div>'
+    /* Whatever the picked status needs before the move is allowed - the same
+       blocks the Logs tab shows, swapped by the dropdown's hook. */
+    +'<div class="ep-form-group ep-form-full emp-sm-inputs">'+empLogInputs(pk,emp,preset)+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Comment <span class="req">*</span></label>'
+      +'<textarea id="'+pk+'-log-comment-inp" class="ep-form-input" rows="4" placeholder="Why is this employee moving?" style="resize:vertical;min-height:90px;height:auto;line-height:1.5"></textarea></div>'
+    +'</div>'
+    +'<div class="ct-modal-foot">'
+      +'<button class="add-link" onclick="empStatusModalToLog()">View full log</button>'
+      +'<div class="ct-modal-btns">'
+        +'<button class="ep-cancel-btn" onclick="closeEmpStatusModal()">Cancel</button>'
+        +'<button class="ep-save-btn" onclick="empSubmitStatusModal()">Submit</button>'
+      +'</div>'
+    +'</div>'
+    +'</div></div>';
 }
 
 /* ── Seeded histories ──────────────────────────────────────────────────────

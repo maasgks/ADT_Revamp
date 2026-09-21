@@ -75,3 +75,22 @@
 #csw-de-f-status .cs-trigger,#csw-ge-f-status .cs-trigger{max-width:210px}
 #csw-de-f-status .cs-value,#csw-ge-f-status .cs-value{min-width:0;overflow:hidden;text-overflow:ellipsis}
 #csw-de-f-status .cs-dropdown,#csw-ge-f-status .cs-dropdown{min-width:232px}
+
+/* ── Status journey menu + popup ───────────────────────────────────────────
+   The row menu and the popup are the Contracts listing's (.ct-action-*,
+   .ct-modal.ct-sm). The only thing employees add is the rejection branch: a
+   step that sits beside the ladder, not on it, so it wears the bad tone and a
+   cross instead of a number. */
+.ct-act-item.branch{padding-left:26px;font-size:12px}
+.ct-act-item.branch.next{color:var(--st-bad-fg)}
+.ct-act-item.branch.current{color:var(--st-bad-fg)}
+.ct-act-step.branch{background:var(--st-bad-bg);color:var(--st-bad-fg)}
+.emp-act-menu{min-width:240px}
+/* The per-status blocks carry the Logs tab's labels; inside the popup they
+   read at the popup's own label size. */
+.emp-sm .lp-logs-form-label{font-size:12px;color:var(--navy);margin-bottom:6px}
+.emp-sm .emp-log-input{margin-bottom:0}
+.emp-sm .emp-log-alert{margin-bottom:14px}
+/* Seven of the twelve statuses ask for nothing; their empty slot must not
+   leave a grid gap between Status and Comment. */
+.emp-sm .emp-sm-inputs:not(:has(.emp-log-input:not([hidden]):not(:empty))){display:none}

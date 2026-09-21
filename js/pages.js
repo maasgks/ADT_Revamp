@@ -368,7 +368,7 @@ function buildDirectListingHTML(){
     +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.branch||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openDeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
+    +'<td onclick="event.stopPropagation()">'+empActionCellHTML('de',e)+'</td>'
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=deSelectedId?renderDeSidebar():'';
   return '<div class="lp-page">'
@@ -399,7 +399,8 @@ function buildDirectListingHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(deSelectedId?' open':'')+'" id="de-split-sb"><div class="lp-isb" id="de-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +buildEmpStatusModalHTML('de');
 }
 function openGeSidebar(id){
   geSelectedId=id;geTab='basic-details';geEditMode=false;
@@ -539,7 +540,7 @@ function buildGlobalListingHTML(){
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+(e.workerType||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openGeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
+    +'<td onclick="event.stopPropagation()">'+empActionCellHTML('ge',e)+'</td>'
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
   return '<div class="lp-page">'
@@ -567,7 +568,8 @@ function buildGlobalListingHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(geSelectedId?' open':'')+'" id="ge-split-sb"><div class="lp-isb" id="ge-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +buildEmpStatusModalHTML('ge');
 }
 function geToggleStatFilter(v){
   geStatusFilter=geStatusFilter===v?'':v;
@@ -7734,7 +7736,7 @@ function renderCsSidebar(){
       +'</div>';
   }
   else if(csTab==='attachments'){
-    body=attachTabHTML('cs','entity');
+    body=csAttachmentsTabHTML();   // agreements + uploads, see cs-agreements.js
   }
   else if(csTab==='banking-details'){
     const dlIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
