@@ -986,3 +986,8 @@ tr.lp-row-selected>td:first-child,
 /* Delete is the one row action that cannot be undone, so it is the one that
    colours on hover — at rest it stays as quiet as its neighbour. */
 .att-row-btn.is-danger:hover{background:var(--st-bad-bg);border-color:var(--st-bad-fg);color:var(--st-bad-fg)}
+
+/* Contract status popup: the from -> to pair under the title, and the note
+   shown when a later stage was picked than the one-step rule allows. */
+.ct-sm-move{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.ct-sm-note{margin:0 0 16px;padding:10px 12px;border-radius:10px;background:var(--st-wait-bg);border:1px solid var(--st-wait-bd);color:var(--st-wait-fg);font-size:12.5px;line-height:1.5}

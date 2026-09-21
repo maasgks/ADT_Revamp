@@ -364,9 +364,9 @@ function buildDirectListingHTML(){
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
+    +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.branch||d)+'</td>'
-    +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openDeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
@@ -394,7 +394,7 @@ function buildDirectListingHTML(){
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
-    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>BRANCH</th><th>JOB TITLE</th><th>STATUS</th><th>ACTION</th>'
+    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>JOB TITLE</th><th>DEPARTMENT</th><th>BRANCH</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -535,13 +535,12 @@ function buildGlobalListingHTML(){
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
     +'<td>'+(e.empId||d)+'</td>'
-    +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.country||d)+'</td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
-    +'<td>'+(e.workerType?'<span class="lp-status-badge tone-info">'+e.workerType+'</span>':d)+'</td>'
+    +'<td>'+(e.workerType||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openGeSidebar('+e.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
-    +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
+    +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
   return '<div class="lp-page">'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -550,7 +549,6 @@ function buildGlobalListingHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('ge-f-q',geSearchQuery,'Search name, ID','applyGeFilters()')
     +apCS('ge-f-country',['Germany','France','Italy','United Kingdom','Netherlands'],'','Country')
-    +apCS('ge-f-dept',['Engineering','Finance','HR','Operations','Product'],'','Department')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
     +apCS('ge-f-status',EMP_LIFE_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
     +clearFiltersBtn([geStatusFilter,geSearchQuery],'resetGeFilters()')
@@ -564,7 +562,7 @@ function buildGlobalListingHTML(){
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
-    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>DEPARTMENT</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
+    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -1640,7 +1638,63 @@ function setChatFilter(f){chatStatusFilter=f;chatSelectedId=null;renderADTPage()
 const CHAT_STATUS_LABEL={active:'Active',waiting_client:'Waiting for Client',waiting_csm:'Waiting for CSM',inactive:'Inactive'};
 function chatStatusLabel(s){return CHAT_STATUS_LABEL[s]||s;}
 function chatStatusBadge(s){const m={active:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)'},waiting_client:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},waiting_csm:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},inactive:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+chatStatusLabel(s)+'</span>';}
-function ctPickStatus(contractId,status){document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));openCtSidebar(contractId,'logs',status);}
+/* ══ STATUS POPUP ════════════════════════════════════════════════════════════
+   Picking a stage from a row's status dropdown opens this popup over the
+   listing instead of the detail panel's Logs tab: the move is one decision,
+   and opening a five-tab panel to make it hid the list the user was working
+   through. It is the same form the Logs tab has (status + mandatory comment),
+   in the same .ct-modal shell as every other popup, and it commits through the
+   same ctSaveLog(), so both routes write identical registry events.
+
+   ctMoveOptions() only allows one stage forward. A later stage picked from the
+   menu is therefore offered as the next legal one, with a line saying why,
+   rather than letting the popup skip stages the Logs tab would refuse. */
+let ctStatusModal=null;   // {id, to} while the popup is open
+function ctPickStatus(contractId,status){
+  document.querySelectorAll('.ct-action-menu').forEach(m=>m.classList.remove('open'));
+  ctStatusModal={id:contractId,to:status};
+  renderADTPage();
+  const inp=document.getElementById('ct-sm-comment-inp');if(inp)inp.focus();
+}
+function closeCtStatusModal(){ctStatusModal=null;renderADTPage();}
+function ctStatusModalToLog(){
+  const id=ctStatusModal&&ctStatusModal.id;
+  ctStatusModal=null;
+  renderADTPage();
+  if(id)openCtSidebar(id,'logs');
+}
+function ctStatusModalKey(e){if(e.key==='Escape'&&ctStatusModal&&page==='contracts')closeCtStatusModal();}
+document.addEventListener('keydown',ctStatusModalKey);
+function buildCtStatusModalHTML(){
+  const c=ctStatusModal&&contractsData.find(function(x){return x.id===ctStatusModal.id;});
+  if(!c){ctStatusModal=null;return '';}
+  const opts=ctMoveOptions(c);
+  const asked=ctStatusModal.to;
+  const allowed=opts.indexOf(asked)>=0;
+  const preset=allowed?asked:(opts[1]||c.status);
+  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const arrow='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  return '<div class="ct-modal-overlay" onclick="closeCtStatusModal()">'
+    +'<div class="ct-modal ct-sm" style="width:min(540px,92vw)" role="dialog" aria-modal="true" aria-label="Update contract status" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Update Status</span><button class="ct-modal-close" onclick="closeCtStatusModal()" aria-label="Close">'+xSvg+'</button></div>'
+    +'<p class="ct-modal-sub">'+c.contractId+' &middot; '+c.empName+' &middot; '+ctTypeCfg(c.type).label+'</p>'
+    +'<div class="ct-sm-move">'+ctStatusBadge(c.status)+arrow+ctStatusBadge(preset)+'</div>'
+    +(allowed?'':'<div class="ct-sm-note">Contracts move one stage at a time. <b>'+asked+'</b> opens up once this contract reaches <b>'+preset+'</b>.</div>')
+    +'<div class="ep-form-grid">'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status <span class="req">*</span></label>'
+      +apCS('ct-sm-status-sel',opts,preset,'Select Status')+'</div>'
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Comment <span class="req">*</span></label>'
+      +'<textarea id="ct-sm-comment-inp" class="ep-form-input" rows="4" placeholder="Why is this contract moving?" style="resize:vertical;min-height:90px;height:auto;line-height:1.5"></textarea></div>'
+    +'</div>'
+    +'<div class="ct-modal-foot">'
+      +'<button class="add-link" onclick="ctStatusModalToLog()">View full log</button>'
+      +'<div class="ct-modal-btns">'
+        +'<button class="ep-cancel-btn" onclick="closeCtStatusModal()">Cancel</button>'
+        +'<button class="ep-save-btn" onclick="ctSaveLog('+c.id+',\'ct-sm-status-sel\',\'ct-sm-comment-inp\')">Submit</button>'
+      +'</div>'
+    +'</div>'
+    +'</div></div>';
+}
 function ctToggleStatFilter(v){
   ctQuickStatusFilter=ctQuickStatusFilter===v?'':v;
   ctSelectedId=null;
@@ -1918,12 +1972,15 @@ function ctFlashField(el){
    bare {status, comment} row, and every row in this module has to be stamped
    with a registry event so an export stays faithful to the PRD. So this does
    lpCommitLog's job - validate, move, record - through emitContractEvent(). */
-function ctSaveLog(id){
+/* selId/inpId default to the Logs tab's form; the status popup passes its own
+   so the two can be on screen together without reading each other's fields. */
+function ctSaveLog(id,selId,inpId){
   const c=contractsData.find(function(x){return x.id===id;});
   if(!c)return;
-  const sel=csTrigger('ct-log-status-sel');
-  const inp=document.getElementById('ct-log-comment-inp');
-  const to=getCSValue('ct-log-status-sel');
+  selId=selId||'ct-log-status-sel';inpId=inpId||'ct-log-comment-inp';
+  const sel=csTrigger(selId);
+  const inp=document.getElementById(inpId);
+  const to=getCSValue(selId);
   const comment=inp?inp.value.trim():'';
   if(!to){ctFlashField(sel);return;}
   if(!comment){ctFlashField(inp);return;}
@@ -1943,6 +2000,7 @@ function ctSaveLog(id){
   c.status=to;
   emitContractEvent(c,key,{prevStatus:from,newStatus:to,comment:comment,visibility:visibility});
   delete window._ctPendingStatus;
+  ctStatusModal=null;
   renderADTPage();
   if(to===from)showToast('Comment saved','success','Added to '+c.contractId+'.');
   else if(back)showToast('Contract reverted','info',c.contractId+' moved back to '+to+'.');
@@ -2061,7 +2119,7 @@ function ctFormOpen(type){ctFormType=type;ctFormStep=0;ctFormData={};page=type==
    remembered type is how a PEO draft ends up on the EOR route. */
 function ctFormGoStep(s){ctFormCapture();ctFormStep=s;renderADTPage();}
 function ctFormNext(){ctFormCapture();ctFormStep=Math.min(2,ctFormStep+1);if(aiAssistedFlow)aiCtPushStepMessage(ctFormStep);renderADTPage();}
-function ctFormBack(){ctFormCapture();if(ctFormStep===0){page='contract-type-select';renderADTPage();return;}ctFormStep--;renderADTPage();}
+function ctFormBack(){ctFormCapture();if(ctFormStep===0){ctIntakeExit();return;}ctFormStep--;renderADTPage();}
 /* Manual and AI-assisted runs fill different buckets - the assistant's bucket
    is also written by the chat - but they read the same DOM, so there is one
    reader and the caller says where it lands. */
@@ -4160,7 +4218,7 @@ function buildContractFormHTML(type,step,splitMode){
      the date trigger's border weight. */
   return '<div class="ep-page ct-form-page" style="'+pageStyle+'">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
-    +'<button class="ep-back" onclick="'+goBack+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> '+(step===0?'Back to Create Contract':'Back')+'</button>'
+    +'<button class="ep-back" onclick="'+goBack+'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> '+(step===0?ctIntakeExitLabel(type):'Back')+'</button>'
     +'<span style="font-size:12px;font-weight:700;color:#64748b;background:#f1f5f9;border:1px solid var(--border);padding:4px 12px;border-radius:999px;letter-spacing:.5px">'+type+'</span>'
     +'</div>'
     +'<div class="ep-header" style="margin-bottom:20px">'
@@ -4189,9 +4247,10 @@ function buildContractFormHTML(type,step,splitMode){
    for that makes them look like two different concepts.
 
    Cards are built from CT_TYPES, so a fifth type appears here automatically. */
-function ctStartIntake(key){
+function ctStartIntake(key,from){
   const cfg=CT_TYPES[key];
   if(!cfg||!ctTypeEnabled(key))return;
+  ctIntakeFrom=from==='listing'?'listing':'chooser';
   /* Single entry point. The chooser calls it, and so can anything else that
      already knows the type - a deep link, the AI assistant's routing, a
      "Create Immigration request" button on an empty state - so none of them
@@ -4231,6 +4290,18 @@ function buildContractTypeSelectHTML(){
     +'<div class="ct-choose-sub">Pick the type of engagement. Each one has its own intake, its own statuses and its own compliance checks.</div>'
     +'<div class="ct-choose-grid">'+CT_TYPE_ORDER.map(card).join('')+'</div>'
     +'</div>';
+}
+/* Where the open intake was started from, so step one's Back returns there.
+   From a type-filtered listing the type was already answered - sending Back
+   to the four-card chooser would ask the question again and drop the user's
+   place in the list. */
+var ctIntakeFrom='chooser';
+function ctIntakeExit(){
+  page=ctIntakeFrom==='listing'?'contracts':'contract-type-select';
+  renderADTPage();
+}
+function ctIntakeExitLabel(typeKey){
+  return ctIntakeFrom==='listing'?'Back to '+ctTypeCfg(typeKey).label+' contracts':'Back to Create Contract';
 }
 /* ══ ALL CONTRACTS: ONE LISTING, FOUR TYPES ═════════════════════════════════
    The type band is a FILTER above the table, not a gate in front of it. An
@@ -4552,7 +4623,8 @@ function buildContractsListingHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(ctSelectedId?' open':'')+'" id="ct-split-sb"><div class="lp-isb" id="ct-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +(ctStatusModal?buildCtStatusModalHTML():'');
 }
 function buildApplicableEmpSection(){
   const filterTypes=['Department','Designation','Branch'];

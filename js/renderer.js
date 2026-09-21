@@ -236,15 +236,12 @@ function renderADTPage(){
   /* The Cost Calculator prices an employment cost - gross to total employer
      burden - which is an EOR/PEO question. An immigration case is priced on
      government fees and professional time, and a contractor on a rate, so
-     once a type is on screen the button is hidden rather than left to return
-     a number that means nothing for it. costCalc lives on the type config.
-
-     The type-picker landing shows it, like the All band does: no type has
-     been chosen there, so there is no type it could be wrong for - and
-     "what would this cost" is a question people arrive at that screen with,
-     before they have decided which book of work they are in. */
+     the button shows ONLY inside the EOR and PEO listings. The type-card
+     landing and the All band are hidden too: no employment type has been
+     chosen there, so the button would be offering a number for work that may
+     not be employment at all. costCalc lives on the type config. */
   const ccBtn=document.getElementById('tb-cost-calc-btn');
-  const ccOK=page==='contracts'&&(ctLandingOpen||ctTypeFilter===CT_TYPE_ALL||(CT_TYPES[ctTypeFilter]||{}).costCalc);
+  const ccOK=page==='contracts'&&!ctLandingOpen&&ctTypeFilter!==CT_TYPE_ALL&&!!(CT_TYPES[ctTypeFilter]||{}).costCalc;
   if(ccBtn)ccBtn.style.display=ccOK?'':'none';
   const ohBtn=document.getElementById('tb-opt-hol-btn');
   if(ohBtn)ohBtn.style.display=page==='holidays'?'':'none';
@@ -357,7 +354,12 @@ function buildCCBody(id,el){
   const fmt=v=>c.symbol+v.toLocaleString();
   el.innerHTML=`<div class="cc-summary"><div><div class="cc-summary-label">Estimated Annual Employer Cost</div><div class="cc-summary-val">${fmt(total)}</div><div class="cc-summary-note">${c.currency} &bull; All figures are estimates</div></div><div style="text-align:right"><div class="cc-summary-label">Base Salary</div><div style="font-size:20px;font-weight:700">${fmt(c.salary)}</div><div class="cc-summary-note">Overhead: +${overheadPct}% above salary</div></div></div><div class="cc-breakdown"><div class="cc-breakdown-title">Cost Breakdown</div>${c.items.map(item=>`<div class="cc-row"><div><div class="cc-row-label">${item.label}</div><div class="cc-row-note">${item.note}</div></div><div style="text-align:right"><div class="cc-row-val">${fmt(item.val)}</div>${item.pct?`<div class="cc-row-pct">${item.pct}</div>`:''}</div></div>`).join('')}<div class="cc-total-row"><span class="cc-total-label">Total Annual Cost to Employer</span><span class="cc-total-val">${fmt(total)}</span></div></div><div class="cc-disclaimer">Estimates based on standard rates from ADT Compliance Hub. Actual costs vary by salary band, contract type, and local regulations. Last updated: May 2026.</div>`;
 }
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeCostCalculator();});function openCostCalculator(){ccActiveCountry='nl';navigatePage('cost-calculator');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeCostCalculator();});/* Opened from an EOR/PEO listing, Back returns to that same listing - the
+   sidebar-style navigatePage('contracts') would raise the type cards and lose
+   the type the user was working in. */
+let ccFromCtList=false;
+function openCostCalculator(){ccFromCtList=page==='contracts'&&!ctLandingOpen;ccActiveCountry='nl';navigatePage('cost-calculator');}
+function closeCostCalculatorPage(){navigatePage('contracts',ccFromCtList);}
 
 /* ── COST CALCULATOR PAGE ──────────────────────────────────────────────
    Three states: 'empty' (nothing chosen yet) → 'loading' (rates being
@@ -419,7 +421,7 @@ function buildCostCalculatorPageHTML(){
   return `<div class="ccp">
   <div class="ccp-topbar">
     <div class="ccp-topbar-l">
-      <button class="ccp-back" onclick="navigatePage('contracts')" aria-label="Back to contracts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="17" height="17"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+      <button class="ccp-back" onclick="closeCostCalculatorPage()" aria-label="Back to contracts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="17" height="17"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
       <div>
         <div class="ccp-title">Cost calculator</div>
         <div class="ccp-sub">What an employee actually costs you, by country</div>

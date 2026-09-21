@@ -505,7 +505,7 @@ function imgNext(){
 }
 function imgBack(){
   imgCapture();
-  if(imgStep===0){page='contract-type-select';renderADTPage();return;}
+  if(imgStep===0){ctIntakeExit();return;}
   imgStep--;renderADTPage();
 }
 function imgValidate(){
@@ -732,7 +732,7 @@ function cnrNext(){
 }
 function cnrBack(){
   cnrCapture();
-  if(cnrStep===0){page='contract-type-select';renderADTPage();return;}
+  if(cnrStep===0){ctIntakeExit();return;}
   cnrStep--;renderADTPage();
 }
 function cnrValidate(){
