@@ -7270,7 +7270,7 @@ function pickSeEntity(id){
   const trigger=document.getElementById('se-dd-trigger');
   if(trigger&&e){
     trigger.innerHTML='<div class="se-dd-sel-initials" style="background:'+
-      (e.active?'linear-gradient(135deg,var(--orange),#f97316)':'linear-gradient(135deg,#6366f1,#818cf8)')+'">'+e.initials+'</div>'+
+      (e.active?'var(--orange)':'#64748b')+'">'+e.initials+'</div>'+
       '<span class="se-dd-sel-name">'+e.name+'</span>'+
       '<svg class="se-dd-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
   }
@@ -7282,10 +7282,10 @@ function buildSwitchEntityHTML(){
   const checkIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
   const switchIco='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
   const sel=entitiesData.find(e=>e.id===seSelectedEntity)||entitiesData[0];
-  const triggerHTML='<div class="se-dd-sel-initials" style="background:'+(sel.active?'linear-gradient(135deg,var(--orange),#f97316)':'linear-gradient(135deg,#6366f1,#818cf8)')+'">'+sel.initials+'</div><span class="se-dd-sel-name">'+sel.name+'</span>'+chevIco;
+  const triggerHTML='<div class="se-dd-sel-initials" style="background:'+(sel.active?'var(--orange)':'#64748b')+'">'+sel.initials+'</div><span class="se-dd-sel-name">'+sel.name+'</span>'+chevIco;
   const optionItems=entitiesData.map(e=>`
     <div class="se-dd-option${seSelectedEntity===e.id?' active':''}" onclick="pickSeEntity('${e.id}')">
-      <div class="se-dd-opt-initials" style="background:${e.active?'linear-gradient(135deg,var(--orange),#f97316)':'linear-gradient(135deg,#6366f1,#818cf8)'}">${e.initials}</div>
+      <div class="se-dd-opt-initials" style="background:${e.active?'var(--orange)':'#64748b'}">${e.initials}</div>
       <div class="se-dd-opt-info">
         <div class="se-dd-opt-name">${e.name} ${e.active?'<span class="se-dd-curr">Current</span>':''}</div>
         <div class="se-dd-opt-sub">${e.entityId} &nbsp;·&nbsp; ${e.type}</div>

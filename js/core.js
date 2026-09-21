@@ -68,6 +68,7 @@ const sbIco={
   calStar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 12.6l1.15 2.35 2.6.38-1.88 1.83.44 2.59L12 18.53l-2.31 1.22.44-2.59-1.88-1.83 2.6-.38z"/></svg>',
   dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
   receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1V2l-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>',
+  wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7V5.5A1.5 1.5 0 0 0 18.5 4H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6"/><path d="M16.5 14h.01"/></svg>',
   card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2"/><path d="M12 15h4"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
   chatLines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>',
@@ -100,9 +101,11 @@ const sidebarItems=[
     {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText},
     {id:'holidays',label:'Holidays',color:'teal',icon:sbIco.calStar}
   ]},
-  {dropdown:'Payroll',color:'green',icon:sbIco.dollar,children:[
+  {dropdown:'Payroll Management',color:'green',icon:sbIco.dollar,children:[
     {id:'payroll',label:'Pay Runs',color:'green',icon:sbIco.dollar},
-    {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt},
+    {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt}
+  ]},
+  {dropdown:'Finance',color:'green',icon:sbIco.wallet,children:[
     {id:'payments',label:'Payments',color:'green',icon:sbIco.card}
   ]},
 
