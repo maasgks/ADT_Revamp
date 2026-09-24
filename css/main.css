@@ -2255,7 +2255,9 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .prof-att-upload:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 
 /* ── TOAST NOTIFICATIONS ── */
-#toast-stack{position:fixed;top:74px;right:20px;z-index:4000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:360px}
+/* Above every overlay (popups sit at 9000, search at 9999): feedback for an
+   action taken inside a popup has to be seen over that popup. */
+#toast-stack{position:fixed;top:74px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:360px}
 .toast{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(15,23,42,.12);pointer-events:auto;min-width:280px;max-width:360px;animation:toastIn .28s cubic-bezier(.21,1.02,.73,1) both}
 .toast.toast-leaving{animation:toastOut .22s ease forwards}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}

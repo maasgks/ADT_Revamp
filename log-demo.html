@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Add Demo</title>
+<!-- Standalone demo: a basic listing, one working "add log" flow, and the
+     product's success popup. Every colour, radius, duration and curve below is
+     copied from css/main.css, css/leaves.css and css/motion.css so the motion
+     here is the motion in the app - nothing is invented for the demo. -->
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+/* ── Tokens (css/main.css, css/buttons.css) ─────────────────────────────── */
+:root{
+  --orange:#1a1a1a;--navy:#0f172a;--gray:#6a7282;--light:#f8f9fb;--card:#fff;--border:#e5e7eb;
+  --r-status:999px;--r-control:8px;
+  --btn-ink:#353535;--btn-accent:#1a1a1a;--btn-ghost-bg:#f1f5f9;
+  --st-ok-bg:#dcfce7;--st-ok-fg:#16a34a;--st-ok-bd:#86efac;
+  --st-wait-bg:#fef3c7;--st-wait-fg:#92400e;--st-wait-bd:#fde68a;
+  --st-bad-bg:#fee2e2;--st-bad-fg:#dc2626;--st-bad-bd:#fca5a5;
+  --st-idle-bg:#f1f5f9;--st-idle-fg:#64748b;--st-idle-bd:#cbd5e1;
+  --row-hover:#fafbfc;--row-sel:#f1f5f9;--row-sel-rail:#1a1a1a;
+  /* Motion system (css/motion.css): four durations, three curves. */
+  --t-micro:110ms;--t-fast:170ms;--t-base:260ms;--t-slow:380ms;
+  --e-out:cubic-bezier(.22,1,.36,1);
+  --e-in-out:cubic-bezier(.65,0,.35,1);
+  --e-spring:cubic-bezier(.34,1.4,.64,1);
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{background:var(--light);color:var(--navy);-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font-family:inherit}
+
+/* ── Page ──────────────────────────────────────────────────────────────── */
+.top{height:60px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;
+  font-size:15px;font-weight:700}
+.page{padding:26px 28px 40px;max-width:1280px;margin:0 auto}
+@keyframes m-sec-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.page>*{animation:m-sec-in var(--t-base) var(--e-out) backwards}
+.page>*:nth-child(2){animation-delay:40ms}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.head h1{font-size:18px;font-weight:700}
+.head p{font-size:12.5px;color:var(--gray);margin-top:4px}
+
+/* Stat strip — a count that changes pops once (m-count-pop, spring). */
+.listing-stats{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.listing-stat{display:flex;flex-direction:column;align-items:center;padding:12px 22px;min-width:88px;gap:3px;border-right:1px solid var(--border)}
+.listing-stat:last-child{border-right:none}
+.listing-stat-count{font-size:22px;font-weight:700;line-height:1.2}
+.listing-stat-label{font-size:10.5px;font-weight:500;color:var(--gray)}
+.listing-stat.active .listing-stat-count{color:var(--st-ok-fg)}
+.listing-stat.inactive .listing-stat-count{color:var(--st-bad-fg)}
+.listing-stat.pending .listing-stat-count{color:var(--st-wait-fg)}
+@keyframes m-count-pop{0%{transform:scale(1)}45%{transform:scale(1.14)}100%{transform:scale(1)}}
+.m-count-pop{animation:m-count-pop 340ms var(--e-spring)}
+
+/* ── Listing + split panel (css/leaves.css) ─────────────────────────────── */
+.lp-split-wrap{position:relative;background:#fff;border:1px solid var(--border);border-radius:12px;min-height:520px}
+.lp-split-main{overflow:auto;border-radius:12px}
+.lp-table{width:100%;min-width:680px;border-collapse:collapse}
+.lp-table th{padding:11px 16px;text-align:left;font-size:10.5px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;
+  border-bottom:1px solid var(--border);background:#fafbfc;white-space:nowrap}
+.lp-table td{padding:13px 16px;font-size:13px;border-bottom:1px solid #f1f3f5;transition:background var(--t-micro) ease,box-shadow var(--t-micro) ease}
+.lp-table tbody tr{cursor:pointer;user-select:none}
+.lp-table tbody tr:last-child td{border-bottom:none}
+.lp-table tbody tr:hover td{background:var(--row-hover)}
+.lp-table tbody tr:hover:not(.sel)>td:first-child{box-shadow:inset 3px 0 0 #d7dbe2}
+.lp-table tbody tr.sel td{background:var(--row-sel)}
+.lp-table tbody tr.sel>td:first-child{box-shadow:inset 3px 0 0 var(--row-sel-rail)}
+/* Rows arrive in sequence (m-row-in, 22ms stagger). */
+@keyframes m-row-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.lp-table tbody tr{animation:m-row-in var(--t-base) var(--e-out) backwards}
+.lp-table tbody tr:nth-child(2){animation-delay:22ms}.lp-table tbody tr:nth-child(3){animation-delay:44ms}
+.lp-table tbody tr:nth-child(4){animation-delay:66ms}.lp-table tbody tr:nth-child(5){animation-delay:88ms}
+.lp-table tbody tr:nth-child(6){animation-delay:110ms}
+.name{font-weight:600}
+.sub{font-size:11.5px;color:#9ca3af;margin-top:2px}
+
+/* The row that just changed confirms it itself (m-flash-*). */
+@keyframes m-flash-ok{0%{background:var(--st-ok-bg)}100%{background:var(--row-sel)}}
+@keyframes m-flash-bad{0%{background:var(--st-bad-bg)}100%{background:var(--row-sel)}}
+@keyframes m-flash-wait{0%{background:var(--st-wait-bg)}100%{background:var(--row-sel)}}
+tr.m-flash-ok>td{animation:m-flash-ok 900ms var(--e-out)}
+tr.m-flash-bad>td{animation:m-flash-bad 900ms var(--e-out)}
+tr.m-flash-wait>td{animation:m-flash-wait 900ms var(--e-out)}
+
+.lp-status-badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 12px;border-radius:var(--r-status);
+  font-size:11px;font-weight:600;border:1.5px solid transparent;white-space:nowrap;min-width:68px}
+.tone-ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.tone-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.tone-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
+@keyframes m-badge-in{from{opacity:0;transform:scale(.86)}to{opacity:1;transform:none}}
+.lp-status-badge.m-changed{animation:m-badge-in var(--t-base) var(--e-spring)}
+
+.lp-action-btn{width:30px;height:30px;border:none;background:transparent;border-radius:7px;cursor:pointer;color:#64748b;
+  display:inline-flex;align-items:center;justify-content:center;transition:background var(--t-micro) ease,transform var(--t-fast) var(--e-out)}
+.lp-action-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+.lp-action-btn:active{transform:scale(.92)}
+
+.lp-split-sb{position:absolute;top:0;right:0;bottom:0;width:0;overflow:hidden;background:#fff;display:flex;flex-direction:column;
+  border-radius:12px;z-index:10;opacity:0;
+  transition:width var(--t-slow) var(--e-in-out),opacity var(--t-base) var(--e-out),box-shadow var(--t-slow) var(--e-out)}
+/* 60% rather than the app's 68%, so the Status column stays in view and the
+   row's confirmation can be watched while the panel is open. */
+.lp-split-sb.open{width:60%;border:1px solid var(--border);box-shadow:0 8px 32px rgba(15,23,42,.12);opacity:1}
+/* The panel opens first, then its contents land in it 90ms later. */
+@keyframes m-panel-body-in{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+.lp-split-sb.open .lp-isb-tabbar,.lp-split-sb.open .lp-isb-body{animation:m-panel-body-in var(--t-base) var(--e-out) 90ms backwards}
+.lp-isb-tabbar{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:46px;padding:0 10px 0 6px}
+.lp-isb-tab{padding:0 16px;height:34px;border:1.5px solid var(--navy);border-radius:4px;background:none;font-size:13px;font-weight:600;color:var(--navy)}
+.lp-isb-title{margin-left:auto;font-size:12px;color:var(--gray);margin-right:10px;white-space:nowrap}
+.lp-isb-close{width:26px;height:26px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray)}
+.lp-isb-close:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+.lp-isb-body{flex:1;overflow-y:auto;padding:18px 20px}
+
+/* ── Logs tab (css/leaves.css) ─────────────────────────────────────────── */
+.lp-logs-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.lp-log-row{display:flex;gap:10px}
+.lp-log-avatar-col{display:flex;flex-direction:column;align-items:center;width:34px;flex-shrink:0}
+.lp-log-avatar{width:34px;height:34px;border-radius:50%;border:1.5px solid transparent;display:flex;align-items:center;justify-content:center}
+.lp-log-avatar--ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-fg)}
+.lp-log-avatar--wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-fg)}
+.lp-log-avatar--bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-fg)}
+.lp-log-connector{flex:1;width:2px;background:#e5e7eb;margin:3px auto;min-height:16px}
+.lp-log-card{flex:1;background:#fff;border:1px solid #eef0f3;border-radius:10px;padding:11px 13px;margin-bottom:10px;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.lp-log-status-row{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.lp-log-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.lp-log-dot--ok{background:var(--st-ok-fg)}.lp-log-dot--wait{background:var(--st-wait-fg)}.lp-log-dot--bad{background:var(--st-bad-fg)}
+.lp-log-status-text{font-size:13px;font-weight:700}
+.lp-log-status-text--ok{color:var(--st-ok-fg)}.lp-log-status-text--wait{color:var(--st-wait-fg)}.lp-log-status-text--bad{color:var(--st-bad-fg)}
+.lp-log-meta-row{display:flex;gap:10px;font-size:11.5px;color:#64748b;flex-wrap:wrap;margin-bottom:7px}
+.lp-log-comment-row{font-size:12.5px;color:#374151;background:#f9fafb;border-radius:7px;padding:7px 10px;line-height:1.4}
+.lp-log-comment-label{font-weight:600;color:#9ca3af;margin-right:4px;font-size:11px}
+/* A new entry arrives like a row does: 5px up, fading in - and the card
+   under it gives way smoothly because its height grows from 0. */
+@keyframes log-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes log-grow{from{grid-template-rows:0fr}to{grid-template-rows:1fr}}
+.lp-log-new{display:grid;animation:log-grow var(--t-base) var(--e-out)}
+.lp-log-new>.lp-log-row{overflow:hidden;min-height:0;animation:log-in var(--t-base) var(--e-out) 60ms backwards}
+.lp-log-new .lp-log-card{box-shadow:0 0 0 3px rgba(22,163,74,.12),0 1px 4px rgba(15,23,42,.05);transition:box-shadow 1.2s ease}
+.lp-log-new.settled .lp-log-card{box-shadow:0 1px 4px rgba(15,23,42,.05)}
+
+.lp-logs-form{background:#fff;border:1px solid #eef0f3;border-radius:12px;padding:16px;position:sticky;top:0;box-shadow:0 1px 6px rgba(15,23,42,.06)}
+.lp-logs-form-header{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:700;margin-bottom:3px}
+.lp-logs-form-sub{font-size:11.5px;color:#9ca3af;margin:0 0 14px}
+.lp-logs-form-label{font-size:11.5px;font-weight:600;margin-bottom:5px}
+.lp-logs-form-req{color:#ef4444}
+/* The app's own dropdown (apCS), not a native <select>. */
+.cs-wrap{position:relative;margin-bottom:12px}
+.cs-trigger{width:100%;height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1.5px solid #e2e8f0;
+  border-radius:var(--r-control);background:#fff;font-size:13px;color:var(--navy);cursor:pointer;transition:border-color var(--t-micro) ease}
+.cs-trigger.placeholder{color:#b0b8c4}
+.cs-trigger svg{transition:transform var(--t-fast) var(--e-out);color:#94a3b8}
+.cs-wrap.open .cs-trigger{border-color:#94a3b8}
+.cs-wrap.open .cs-trigger svg{transform:rotate(180deg)}
+.cs-dropdown{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--border);border-radius:10px;
+  box-shadow:0 8px 28px rgba(15,23,42,.13);padding:4px;z-index:20;display:none;transform-origin:top left}
+@keyframes m-menu-in{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+.cs-wrap.open .cs-dropdown{display:block;animation:m-menu-in var(--t-fast) var(--e-out) both}
+.cs-option{padding:8px 10px;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background var(--t-micro) ease}
+.cs-option:hover{background:var(--btn-ghost-bg)}
+.lp-logs-form-textarea{width:100%;height:88px;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:var(--r-control);font-size:13px;color:#1e293b;
+  outline:none;resize:none;line-height:1.5;margin-bottom:12px;transition:border-color var(--t-micro) ease,background var(--t-micro) ease}
+.lp-logs-form-textarea:focus{border-color:#94a3b8}
+.is-invalid{border-color:var(--st-bad-fg)!important;background:var(--st-bad-bg)!important}
+@keyframes m-shake{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.m-shake{animation:m-shake 240ms var(--e-in-out)}
+.btns{display:flex;gap:10px}
+.ep-cancel-btn,.lp-logs-save-btn{flex:1;height:40px;border-radius:var(--r-control);font-size:13px;font-weight:600;cursor:pointer;
+  transition:background var(--t-micro) ease,transform var(--t-fast) var(--e-out)}
+.ep-cancel-btn{background:#fff;color:var(--btn-ink);border:1px solid var(--border)}
+.ep-cancel-btn:hover{background:var(--btn-ghost-bg)}
+.lp-logs-save-btn{background:var(--btn-ink);color:#fff;border:1px solid var(--btn-ink)}
+.lp-logs-save-btn:hover{background:var(--btn-accent)}
+.ep-cancel-btn:active,.lp-logs-save-btn:active{transform:scale(.97)}
+
+/* ── Success popup (css/leaves.css .rr-success-*, timed by motion.css) ──── */
+@keyframes m-backdrop-in{from{opacity:0}to{opacity:1}}
+@keyframes m-backdrop-out{from{opacity:1}to{opacity:0}}
+@keyframes rr-modal-pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes rr-modal-out{from{opacity:1;transform:none}to{opacity:0;transform:translateY(6px) scale(.97)}}
+@keyframes rr-check-pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes rr-ring-pulse{0%{transform:scale(.85);opacity:.55}100%{transform:scale(1.45);opacity:0}}
+@keyframes rr-tick-draw{to{stroke-dashoffset:0}}
+.ct-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:500;display:flex;align-items:center;justify-content:center;
+  animation:m-backdrop-in var(--t-base) var(--e-out) both}
+.rr-success-modal{background:#fff;border-radius:20px;padding:38px 32px 30px;width:min(360px,90vw);box-shadow:0 24px 60px rgba(15,23,42,.25);
+  text-align:center;position:relative;animation:rr-modal-pop .25s cubic-bezier(.34,1.56,.64,1)}
+/* Exit: same motion reversed at ~0.7x the time, and it never bounces. */
+.ct-modal-overlay.leaving{animation:m-backdrop-out 180ms var(--e-in-out) forwards}
+.ct-modal-overlay.leaving .rr-success-modal{animation:rr-modal-out 180ms var(--e-in-out) forwards}
+.rr-success-ring{width:76px;height:76px;border-radius:50%;background:var(--st-ok-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;position:relative}
+.rr-success-ring::before,.rr-success-ring::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid var(--st-ok-bd);opacity:0;
+  animation:rr-ring-pulse 1.5s ease-out infinite}
+.rr-success-ring::after{animation-delay:.5s}
+.rr-success-check{width:54px;height:54px;border-radius:50%;background:var(--st-ok-fg);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 16px rgba(22,163,74,.35);animation:rr-check-pop .45s cubic-bezier(.34,1.56,.64,1) .1s both}
+.rr-success-check polyline{stroke-dasharray:24;stroke-dashoffset:24;animation:rr-tick-draw .32s var(--e-out) .38s forwards}
+.rr-success-title{font-size:18px;font-weight:800;margin-bottom:8px}
+.rr-success-sub{font-size:13px;color:var(--gray);line-height:1.5;max-width:280px;margin:0 auto}
+.rr-success-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:#64748b}
+/* The popup closes itself; the bar fills left to right until it does. */
+.rr-success-timer{height:3px;border-radius:3px;background:#f1f5f9;margin:22px auto 0;width:120px;overflow:hidden}
+.rr-success-timer i{display:block;height:100%;background:var(--st-ok-fg);transform-origin:left;animation:rr-timer 2.4s linear forwards}
+@keyframes rr-timer{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.rr-success-modal:hover .rr-success-timer i{animation-play-state:paused}
+
+@media (max-width:760px){
+  .lp-split-sb.open{width:100%}
+  .lp-logs-wrap{grid-template-columns:1fr}
+  .lp-logs-form{position:static}
+}
+</style>
+</head>
+<body>
+<div class="top">Teams</div>
+<div class="page">
+  <div class="head">
+    <div><h1>Teams</h1><p>Click a row, add a log with a new status, and watch the row, the counts and the success popup respond.</p></div>
+    <div class="listing-stats" id="stats"></div>
+  </div>
+  <div class="lp-split-wrap">
+    <div class="lp-split-main">
+      <table class="lp-table">
+        <thead><tr><th style="width:64px">S. No</th><th style="width:220px">Team</th><th style="width:120px">Status</th><th>Department</th><th>Members</th><th>Action</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="lp-split-sb" id="sb"><div id="sb-inner" style="display:flex;flex-direction:column;height:100%"></div></div>
+  </div>
+</div>
+<div id="modal-host"></div>
+
+<script>
+const TONE={Active:'ok',Pending:'wait',Inactive:'bad'};
+const STATUSES=['Active','Pending','Inactive'];
+const ICO={
+  person:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  menu:'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>',
+  x:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  chev:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+};
+const teams=[
+  {id:1,name:'Platform Engineering',lead:'Anika Shah',dept:'Engineering',members:12,status:'Active',logs:[
+    {status:'Active',user:'Admin',date:'02 Sep 2026',time:'10:14 AM',comment:'Team created with 12 members.'}]},
+  {id:2,name:'People Operations',lead:'Pallavi Parate',dept:'HR',members:5,status:'Pending',logs:[
+    {status:'Pending',user:'Admin',date:'10 Sep 2026',time:'04:30 PM',comment:'Waiting on the team lead to confirm members.'}]},
+  {id:3,name:'Product Design',lead:'Meera Iyer',dept:'Design',members:4,status:'Active',logs:[
+    {status:'Active',user:'Admin',date:'28 Aug 2026',time:'11:02 AM',comment:'Team created.'}]},
+  {id:4,name:'Field Sales',lead:'Rahul Mehta',dept:'Sales',members:9,status:'Inactive',logs:[
+    {status:'Inactive',user:'Admin',date:'01 Jul 2026',time:'09:45 AM',comment:'Merged into Regional Sales.'}]},
+  {id:5,name:'QA Guild',lead:'Dev Kulkarni',dept:'Engineering',members:6,status:'Active',logs:[
+    {status:'Active',user:'Admin',date:'15 Aug 2026',time:'02:20 PM',comment:'Team created.'}]}
+];
+let selId=null,picked='';
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const badge=s=>'<span class="lp-status-badge tone-'+TONE[s]+'">'+s+'</span>';
+function now(){
+  const d=new Date(),M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let h=d.getHours();const ap=h>=12?'PM':'AM';h=h%12||12;
+  return {date:String(d.getDate()).padStart(2,'0')+' '+M[d.getMonth()]+' '+d.getFullYear(),time:String(h).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+' '+ap};
+}
+
+/* ── Listing ─────────────────────────────────────────────────────────── */
+function renderStats(pop){
+  const c=s=>teams.filter(t=>t.status===s).length;
+  const host=document.getElementById('stats');
+  const prev={};host.querySelectorAll('[data-s]').forEach(el=>prev[el.dataset.s]=el.textContent);
+  host.innerHTML=[['Active','active'],['Inactive','inactive'],['Pending','pending']].map(([s,cls])=>
+    '<div class="listing-stat '+cls+'"><div class="listing-stat-count" data-s="'+s+'">'+c(s)+'</div><div class="listing-stat-label">'+s+'</div></div>').join('');
+  /* Only a number that actually changed pops. */
+  if(pop)host.querySelectorAll('[data-s]').forEach(el=>{if(prev[el.dataset.s]!==el.textContent)el.classList.add('m-count-pop');});
+}
+function rowHTML(t,i){
+  return '<tr id="row-'+t.id+'" class="'+(t.id===selId?'sel':'')+'" onclick="openPanel('+t.id+')">'
+    +'<td style="color:var(--gray)">'+(i+1)+'</td>'
+    +'<td><div class="name">'+esc(t.name)+'</div><div class="sub">Lead: '+esc(t.lead)+'</div></td>'
+    +'<td class="st">'+badge(t.status)+'</td>'
+    +'<td>'+esc(t.dept)+'</td><td>'+t.members+'</td>'
+    +'<td><button class="lp-action-btn" title="Open" onclick="event.stopPropagation();openPanel('+t.id+')">'+ICO.menu+'</button></td></tr>';
+}
+function renderRows(){document.getElementById('rows').innerHTML=teams.map(rowHTML).join('');}
+
+/* ── Panel ───────────────────────────────────────────────────────────── */
+function logHTML(l,last){
+  const k=TONE[l.status];
+  return '<div class="lp-log-row"><div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+k+'">'+ICO.person+'</div>'
+    +(last?'':'<div class="lp-log-connector"></div>')+'</div>'
+    +'<div class="lp-log-card"><div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+k+'"></span>'
+    +'<span class="lp-log-status-text lp-log-status-text--'+k+'">'+l.status+'</span></div>'
+    +'<div class="lp-log-meta-row"><span>'+esc(l.user)+'</span><span>'+l.date+'</span><span>'+l.time+'</span></div>'
+    +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+esc(l.comment)+'</div></div></div>';
+}
+function timelineHTML(t){return t.logs.map((l,i)=>'<div class="lp-log-item">'+logHTML(l,i===t.logs.length-1)+'</div>').join('');}
+function formHTML(t){
+  return '<div class="lp-logs-form" id="form">'
+    +'<div class="lp-logs-form-header" id="form-head"><span class="lp-log-dot lp-log-dot--'+TONE[t.status]+'"></span>'+t.status+'</div>'
+    +'<p class="lp-logs-form-sub">Update team status and add a comment</p>'
+    +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
+    +'<div class="cs-wrap" id="cs"><button type="button" class="cs-trigger placeholder" id="cs-trig" onclick="toggleCS(event)"><span id="cs-val">Select Status</span>'+ICO.chev+'</button>'
+    +'<div class="cs-dropdown">'+STATUSES.map(s=>'<div class="cs-option" onclick="pickCS(\''+s+'\')"><span class="lp-log-dot lp-log-dot--'+TONE[s]+'"></span>'+s+'</div>').join('')+'</div></div>'
+    +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
+    +'<textarea class="lp-logs-form-textarea" id="cmt" placeholder="Enter comment"></textarea>'
+    +'<div class="btns"><button class="ep-cancel-btn" onclick="resetForm()">Cancel</button><button class="lp-logs-save-btn" onclick="submitLog()">Submit</button></div></div>';
+}
+function openPanel(id){
+  if(selId===id)return closePanel();
+  selId=id;picked='';
+  const t=teams.find(x=>x.id===id);
+  const sb=document.getElementById('sb');
+  const wasOpen=sb.classList.contains('open');
+  document.getElementById('sb-inner').innerHTML=
+    '<div class="lp-isb-tabbar"><button class="lp-isb-tab">Logs</button><span class="lp-isb-title">'+esc(t.name)+'</span>'
+    +'<button class="lp-isb-close" onclick="closePanel()" title="Close">'+ICO.x+'</button></div>'
+    +'<div class="lp-isb-body"><div class="lp-logs-wrap"><div id="timeline">'+timelineHTML(t)+'</div>'+formHTML(t)+'</div></div>';
+  /* Re-run the body entrance when switching records in an already-open panel. */
+  if(wasOpen){sb.classList.remove('open');void sb.offsetWidth;}
+  sb.classList.add('open');
+  document.querySelectorAll('#rows tr').forEach(r=>r.classList.toggle('sel',r.id==='row-'+id));
+}
+function closePanel(){
+  selId=null;document.getElementById('sb').classList.remove('open');
+  document.querySelectorAll('#rows tr').forEach(r=>r.classList.remove('sel'));
+}
+
+/* ── Status dropdown ─────────────────────────────────────────────────── */
+function toggleCS(e){e.stopPropagation();document.getElementById('cs').classList.toggle('open');}
+function pickCS(s){
+  picked=s;
+  const trig=document.getElementById('cs-trig');
+  document.getElementById('cs-val').textContent=s;
+  trig.classList.remove('placeholder','is-invalid');
+  document.getElementById('cs').classList.remove('open');
+}
+document.addEventListener('click',e=>{if(!e.target.closest('#cs')){const c=document.getElementById('cs');if(c)c.classList.remove('open');}});
+function resetForm(){
+  picked='';const v=document.getElementById('cs-val');if(!v)return;
+  v.textContent='Select Status';document.getElementById('cs-trig').classList.add('placeholder');
+  document.getElementById('cmt').value='';
+}
+/* Missing value: the field goes red and shakes once - no alert. */
+function flag(el){el.classList.remove('m-shake');void el.offsetWidth;el.classList.add('is-invalid','m-shake');el.focus&&el.focus();}
+document.addEventListener('input',e=>{if(e.target.id==='cmt')e.target.classList.remove('is-invalid');});
+
+/* ── Submit: the whole choreography ──────────────────────────────────── */
+function submitLog(){
+  const t=teams.find(x=>x.id===selId);if(!t)return;
+  const cmt=document.getElementById('cmt');
+  if(!picked)return flag(document.getElementById('cs-trig'));
+  if(!cmt.value.trim())return flag(cmt);
+
+  const from=t.status,to=picked,s=now();
+  const entry={status:to,user:'Shaun Test1',date:s.date,time:s.time,comment:cmt.value.trim()};
+  t.logs.unshift(entry);t.status=to;
+
+  // 1. The new log card grows in at the top of the timeline.
+  const tl=document.getElementById('timeline');
+  const wrap=document.createElement('div');
+  wrap.className='lp-log-item lp-log-new';
+  wrap.innerHTML=logHTML(entry,false);
+  tl.prepend(wrap);
+  setTimeout(()=>wrap.classList.add('settled'),700);
+
+  // 2. The form header follows the new status.
+  document.getElementById('form-head').innerHTML='<span class="lp-log-dot lp-log-dot--'+TONE[to]+'"></span>'+to;
+  resetForm();
+
+  // 3. The row confirms in place: badge pops, row flashes in the new tone.
+  const row=document.getElementById('row-'+t.id);
+  if(row){
+    row.querySelector('.st').innerHTML=badge(to);
+    if(from!==to)row.querySelector('.lp-status-badge').classList.add('m-changed');
+    row.classList.remove('m-flash-ok','m-flash-bad','m-flash-wait');void row.offsetWidth;
+    row.classList.add('m-flash-'+TONE[to]);
+  }
+  // 4. Any count that changed pops.
+  renderStats(true);
+
+  // 5. The success popup, a beat later so the row change is seen first.
+  //    One line, and it says the one thing worth saying: the status the
+  //    record now holds.
+  setTimeout(()=>showSuccess(from===to?'Comment Added':'Log Updated',
+    from===to?'Status stays '+to+'.':'Status changed to '+to+'.'),220);
+}
+
+let successTimer=null;
+function showSuccess(title,sub){
+  const tick='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 12 9 17 20 6"/></svg>';
+  document.getElementById('modal-host').innerHTML=
+    '<div class="ct-modal-overlay" id="succ" onclick="closeSuccess()">'
+    +'<div class="rr-success-modal" role="dialog" aria-modal="true" aria-label="'+esc(title)+'" onclick="event.stopPropagation()" onmouseenter="holdSuccess()" onmouseleave="armSuccess(1200)">'
+    +'<button class="rr-success-close" onclick="closeSuccess()" aria-label="Close">'+ICO.x+'</button>'
+    +'<div class="rr-success-ring"><div class="rr-success-check">'+tick+'</div></div>'
+    +'<div class="rr-success-title">'+esc(title)+'</div>'
+    +'<div class="rr-success-sub">'+esc(sub)+'</div>'
+    +'<div class="rr-success-timer"><i></i></div>'
+    +'</div></div>';
+  armSuccess(2400);
+}
+function holdSuccess(){clearTimeout(successTimer);}
+function armSuccess(ms){clearTimeout(successTimer);successTimer=setTimeout(closeSuccess,ms);}
+function closeSuccess(){
+  clearTimeout(successTimer);
+  const o=document.getElementById('succ');if(!o||o.classList.contains('leaving'))return;
+  o.classList.add('leaving');
+  setTimeout(()=>{o.remove();},190);
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('succ'))closeSuccess();else if(selId)closePanel();}});
+
+renderStats(false);renderRows();
+</script>
+</body>
+</html>

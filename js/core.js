@@ -3525,9 +3525,17 @@ const holidaysData=[
   {id:14,name:'Foundation Day',date:'2026-12-31',type:'Company Holiday',branches:['Hyderabad','Mumbai','Delhi'],entity:'Dhi Hyperlocal',recurring:false,status:'Active',createdBy:'Shaun Test1',createdAt:'02 Feb 2026 | 09:18:00 AM',logs:[]},
   {id:15,name:'Quarantine Day',date:'2025-04-20',type:'Company Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:false,status:'Inactive',createdBy:'Shaun Test1',createdAt:'12 Apr 2025 | 05:44:00 PM',logs:[]},
   {id:16,name:'Labour Day',date:'2026-05-01',type:'Optional Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'04 Jan 2026 | 03:40:00 PM',logs:[]},
-  {id:17,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]}
+  {id:17,name:'Christmas',date:'2026-12-25',type:'Public Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Aman Singh',createdAt:'22 Jan 2026 | 11:05:00 AM',logs:[]},
+  {id:18,name:'Karva Chauth',date:'2026-10-29',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:19,name:'Govardhan Puja',date:'2026-11-09',type:'Optional Holiday',branches:['Delhi','Mumbai'],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:20,name:'Bhai Dooj',date:'2026-11-11',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:21,name:'Chhath Puja',date:'2026-11-15',type:'Optional Holiday',branches:['Delhi'],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:22,name:'Guru Nanak Jayanti',date:'2026-11-24',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:23,name:'Christmas Eve',date:'2026-12-24',type:'Optional Holiday',branches:[],entity:'Dhi Hyperlocal',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:24,name:'Diwali (Day 2)',date:'2026-11-09',type:'Optional Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]},
+  {id:25,name:'Guru Nanak Jayanti',date:'2026-11-24',type:'Optional Holiday',branches:[],entity:'Closedhi',recurring:true,status:'Active',createdBy:'Neha Sharma',createdAt:'10 Feb 2026 | 11:30:00 AM',logs:[]}
 ];
-let holidayNextId=18;
+let holidayNextId=26;
 let hdSelectedId=null,hdTab='basic-details';
 let hdEditMode=false;              // Basic Details, in edit rather than read mode
 let hdYearFilter='',hdTypeFilter='',hdBranchFilter='',hdStatusFilter='';

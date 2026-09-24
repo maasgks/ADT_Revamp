@@ -1057,6 +1057,16 @@ function toggleAlCc(){
   const wrap=document.getElementById('al-cc-wrap');
   if(wrap)wrap.style.display=wrap.style.display==='none'?'':'none';
 }
+// The size limit is checked when the file is picked, not on submit, so the
+// person learns about it while they can still choose another file.
+function alAttachChosen(input){
+  const f=input.files&&input.files[0];
+  if(f&&f.size>5*1024*1024){
+    input.value='';
+    showToast('File too large','error','"'+sbEsc(f.name)+'" is over the 5 MB limit.');
+  }
+  updateFileLabel(input,'al-attach-name');
+}
 function submitAddLeave(isDraft){
   const empVal=(document.getElementById('al-emp-search')||{}).value||'';
   const typeWrap=document.getElementById('csw-al-type');
@@ -1064,6 +1074,8 @@ function submitAddLeave(isDraft){
   const fromVal=(document.getElementById('al-from-date')||{}).value||'';
   const emailVal=(document.getElementById('al-email-input')||{}).value||'';
   const descVal=(document.getElementById('al-desc')||{}).value||'';
+  const attachEl=document.getElementById('al-attach');
+  const attachFile=attachEl&&attachEl.files&&attachEl.files[0];
   if(!isDraft){
     if(!empVal){showToast('Please enter an employee name or ID','error');return;}
     if(!typeVal||typeVal==='Select'){showToast('Please select a leave type','error');return;}
@@ -1087,6 +1099,8 @@ function submitAddLeave(isDraft){
     leaveFrom:fmtDate(fromVal),leaveTo:fmtDate(toVal),
     leaveHours:hrMap[alDurationType]||'Full Day',
     description:descVal,email:emailVal,
+    attachments:attachFile?[{name:attachFile.name,size:attachFmtSize(attachFile.size),type:attachKind(attachFile.name),
+      by:CURRENT_USER,source:'Leave request',date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}]:[],
     appliedDate:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})+' '+new Date().toLocaleTimeString(),
     createdBy:'Admin',status:isDraft?'Pending':'Pending',subStatus:'Unpaid'
   });
@@ -1116,6 +1130,7 @@ function buildAddLeaveModalHTML(){
       "setAlDurationType('"+type+"')",'data-type="'+type+'"');
   };
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   return '<div class="ct-modal-overlay" onclick="cancelAddLeave()">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()" id="al-add-form">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
@@ -1174,6 +1189,11 @@ function buildAddLeaveModalHTML(){
     +'<div class="ep-form-group"><label class="ep-form-label">Description <span class="req">*</span></label>'
     +'<textarea id="al-desc" class="ep-form-input" rows="4" placeholder="Leave reason" style="resize:vertical;min-height:90px;height:auto;line-height:1.5"></textarea>'
     +'</div>'
+    // Optional: a medical certificate, a travel ticket - evidence, never a gate.
+    +'<div class="ep-form-group" style="margin-top:12px"><label class="ep-form-label">Attachment <span style="font-weight:400;color:var(--gray)">(optional)</span></label>'
+    +'<label class="ep-file-input" for="al-attach"><span class="ep-file-btn">'+uploadIco+'Choose File</span><span class="ep-file-name" id="al-attach-name">No file chosen</span></label>'
+    +'<input type="file" id="al-attach" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" style="display:none" onchange="alAttachChosen(this)">'
+    +'<span style="font-size:11px;color:var(--gray);margin-top:2px">PDF, image or Word document, up to 5 MB.</span></div>'
     +'</div>'
 
     +'</div>'
