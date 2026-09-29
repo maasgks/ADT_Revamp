@@ -1587,7 +1587,7 @@
       <div class="dashboard-view" id="opendhi-ops-view">
         <div class="hr-header">
           <div class="hr-header-title">Opendhi Ops Admin Dashboard</div>
-          <div class="hr-header-desc">Track contract pipeline, active contracts, compliance items, and pending entities across the selected entity.</div>
+          <div class="hr-header-desc">Track contract pipeline, active contracts and compliance items across the selected entity.</div>
         </div>
 
         <!-- Stat cards — 8 tiles on the standard track: 4 / 4.
@@ -1608,11 +1608,6 @@
             <div class="hr-stat-label">Compliance Items</div>
             <div class="hr-stat-number">14</div>
             <div class="hr-stat-sub orange">3 due soon</div>
-          </div>
-          <div class="hr-stat-card is-static">
-            <div class="hr-stat-label">Pending Entities</div>
-            <div class="hr-stat-number">3</div>
-            <div class="hr-stat-sub orange">Awaiting setup</div>
           </div>
           <div class="hr-stat-card is-link" role="button" tabindex="0">
             <div class="hr-stat-label">Ready for Payroll</div>
@@ -1643,26 +1638,31 @@
             <div class="hr-section-title">Contract Pipeline</div>
             <a href="javascript:void(0)" class="hr-section-link" onclick="navigatePage('contracts',true)">View all contracts</a>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px">
-            <div class="ops-pipe-card" onclick="navigatePage('contracts',true)">
-              <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Proposal Sent</div>
-              <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">8</div>
-              <div style="font-size:10px;color:#de7909;font-weight:500;margin-top:6px">Pending client action</div>
+          <!-- The same .hr-stat-grid track and .hr-stat-card the Key Metrics
+               row above uses. These were the one hand-styled, centre-aligned
+               card set in any dashboard: every other card in the product is a
+               left-aligned label / number / qualifier, and a pipeline stage is
+               exactly that - a labelled count with a note under it. -->
+          <div class="hr-stat-grid" style="margin:14px 0 0">
+            <div class="hr-stat-card is-link" role="button" tabindex="0" onclick="navigatePage('contracts',true)">
+              <div class="hr-stat-label">Proposal Sent</div>
+              <div class="hr-stat-number">8</div>
+              <div class="hr-stat-sub orange">Pending client action</div>
             </div>
-            <div class="ops-pipe-card" onclick="navigatePage('contracts',true)">
-              <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Proposal Approved</div>
-              <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">5</div>
-              <div style="font-size:10px;color:#22c55e;font-weight:500;margin-top:6px">Client approved</div>
+            <div class="hr-stat-card is-link" role="button" tabindex="0" onclick="navigatePage('contracts',true)">
+              <div class="hr-stat-label">Proposal Approved</div>
+              <div class="hr-stat-number">5</div>
+              <div class="hr-stat-sub green">Client approved</div>
             </div>
-            <div class="ops-pipe-card" onclick="navigatePage('contracts',true)">
-              <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contract Sent</div>
-              <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">6</div>
-              <div style="font-size:10px;color:#de7909;font-weight:500;margin-top:6px">Awaiting countersign</div>
+            <div class="hr-stat-card is-link" role="button" tabindex="0" onclick="navigatePage('contracts',true)">
+              <div class="hr-stat-label">Contract Sent</div>
+              <div class="hr-stat-number">6</div>
+              <div class="hr-stat-sub orange">Awaiting countersign</div>
             </div>
-            <div class="ops-pipe-card" onclick="navigatePage('contracts',true)">
-              <div style="font-size:10px;font-weight:600;color:#6a7282;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Contract Approved</div>
-              <div style="font-size:26px;font-weight:700;color:#0f172a;letter-spacing:-.5px;line-height:1">3</div>
-              <div style="font-size:10px;color:#22c55e;font-weight:500;margin-top:6px">Signed &amp; approved</div>
+            <div class="hr-stat-card is-link" role="button" tabindex="0" onclick="navigatePage('contracts',true)">
+              <div class="hr-stat-label">Contract Approved</div>
+              <div class="hr-stat-number">3</div>
+              <div class="hr-stat-sub green">Signed &amp; approved</div>
             </div>
           </div>
         </div>

@@ -858,12 +858,6 @@
   .oca-list .lp-pagination{padding:12px 14px}
 }
 
-/* ── Ops Admin: contract pipeline cards ────────────────────────────────────
-   Same hover as the Compliance Admin tiles — a neutral border lift and a soft
-   shadow. The stage cards used to flash orange on hover, which read as a
-   warning state on a card whose whole job is to report a neutral count. */
-.ops-pipe-card{
-  background:#fff;border:1px solid var(--border);border-top:3px solid var(--border);
-  border-radius:12px;padding:16px 12px;text-align:center;cursor:pointer;
-  transition:border-color .15s,box-shadow .15s}
-.ops-pipe-card:hover{border-color:#cbd5e1;box-shadow:0 2px 8px rgba(15,23,42,.06)}
+/* The Ops Admin contract-pipeline cards used to be a bespoke, centre-aligned
+   tile defined here. They now use .hr-stat-card like every other card in every
+   other dashboard, so there is nothing left to style. */
