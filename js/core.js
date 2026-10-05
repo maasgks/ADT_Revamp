@@ -265,7 +265,7 @@ const prWorkflowData={
 let prSelectedId=null,prTab='basic-details';
 function openPrSidebar(id){
   if(String(prSelectedId)===String(id)){closePrSidebar();return;}  // clicking the open row closes it again
-  prSelectedId=id;prTab='basic-details';
+  prTab=sbKeepTab(prSelectedId,prTab);prSelectedId=id;
   const sb=document.getElementById('pr-split-sb');if(sb)sb.classList.add('open');
   /* isbTab() rather than a wholesale innerHTML write: moving from one cycle to
      the next is the same panel showing a different record, so only the body
@@ -325,7 +325,7 @@ let lstSelectedPg=null,lstSelectedId=null,lstTab='basic-details';
 function openLstSidebar(pg,id){
   const same=lstSelectedPg===pg&&String(lstSelectedId)===String(id);
   if(same){closeLstSidebar();return;}   // clicking the open row closes it again
-  lstSelectedPg=pg;lstSelectedId=id;lstTab='basic-details';
+  lstTab=lstSelectedPg===pg?sbKeepTab(lstSelectedId,lstTab):'basic-details';lstSelectedPg=pg;lstSelectedId=id;
   const sb=document.getElementById('lst-split-sb');if(sb)sb.classList.add('open');
   markLstSelectedRow();
   refreshLstSidebar();
@@ -1426,6 +1426,20 @@ function sbRender(render,label){
       +'</div></div>';
   }
 }
+/* == MOVING ROW TO ROW KEEPS THE TAB =======================================
+   Someone reading the Logs of one record and clicking the next row in the
+   listing is comparing Logs with Logs. Throwing them back to Basic Details on
+   every click made that a two-click job per row. So the tab carries over when
+   the panel is ALREADY open; a panel opening from closed still starts on the
+   default, because there is no tab to carry.
+
+   `prevId` is the record the panel was showing before this click (null when
+   closed). An explicit tab - a dashboard tile or a row menu asking for Logs -
+   always wins, and is passed straight through by the callers. */
+function sbKeepTab(prevId,curTab,def){
+  return prevId!=null&&curTab?curTab:(def||'basic-details');
+}
+let isbTabFixing=false;
 function isbTab(prefix,render){
   var inner=document.getElementById(prefix+'-isb-inner');
   if(!inner)return;
@@ -1439,13 +1453,22 @@ function isbTab(prefix,render){
 
   if(!oldBody||!newBody||!oldTabs||!newTabs||!sameTabs(oldTabs,newTabs)){
     inner.innerHTML=tpl.innerHTML;
-    isbRevealTab(prefix);
-    return;
+  }else{
+    oldBody.replaceWith(newBody);
+    /* Move the highlight without touching the buttons themselves. */
+    var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
+    for(var i=0;i<a.length;i++)a[i].classList.toggle('active',b[i].classList.contains('active'));
   }
-  oldBody.replaceWith(newBody);
-  /* Move the highlight without touching the buttons themselves. */
-  var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
-  for(var i=0;i<a.length;i++)a[i].classList.toggle('active',b[i].classList.contains('active'));
+  /* The carried-over tab may not exist on this record - a ticket with no chat
+     has no Conversation tab, an entity of another kind has a different strip.
+     Then nothing in the strip is active, and the panel goes to its first tab
+     through that tab's own button, so each module's own nav function does
+     whatever else switching tab involves. Guarded so it can only happen once. */
+  var strip=inner.querySelector('.lp-isb-tabs');
+  if(strip&&!isbTabFixing&&!strip.querySelector('.lp-isb-tab.active')){
+    var first=strip.querySelector('.lp-isb-tab');
+    if(first){isbTabFixing=true;try{first.click();}finally{isbTabFixing=false;}return;}
+  }
   isbRevealTab(prefix);
 }
 
@@ -4522,7 +4545,7 @@ const csLogsData=[
    panel BODY alone, because a different record is the same tab strip. */
 function openCsSidebar(item){
   if(csSelectedItem===item){closeCsSidebar();return;}   // clicking the open row closes it again
-  csSelectedItem=item;csTab='basic-details';
+  csTab=sbKeepTab(csSelectedItem,csTab);csSelectedItem=item;
   const sb=document.getElementById('cs-isb');if(sb)sb.classList.add('open');
   markCsSelectedRow();
   isbTab('cs',renderCsSidebar);

@@ -937,20 +937,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    .ct-log-family tag, prev -> new chips) and a bespoke action card with its
    own textarea, its own button and a .ct-log-revert disclosure panel. All of
    it is gone and none of it should come back - if this tab needs something,
-   the shared design is where it goes, so every module gets it.
-
-   The banner below is the single exception, and only because no other module
-   has the thing it reports. */
-
-/* An override or a revert pins this for the life of the record. It is the one
-   place on these screens that uses the bad tone as a background rather than a
-   badge, because it is a standing condition of the record, not a status. */
-.ct-log-banner{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;
-  background:var(--st-bad-bg);border:1.5px solid var(--st-bad-bd);border-radius:var(--r-control);
-  font-size:var(--ds-caption);color:var(--st-bad-fg);line-height:1.5}
-.ct-log-banner-ico{flex-shrink:0;width:15px;height:15px;margin-top:1px}
-.ct-log-banner-ico svg{width:15px;height:15px}
-
+   the shared design is where it goes, so every module gets it. */
 /* ── Contracts landing: pick a type before the table ──────────────────────
    The whole screen is four cards. It used to carry a pipeline strip, a
    view-all button and two panels underneath; all of it went, because the gate

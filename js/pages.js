@@ -162,7 +162,7 @@ function attachTabHTML(scope,id){
 }
 
 ﻿function openDeSidebar(id){
-  deSelectedId=id;deTab='basic-details';deEditMode=false;
+  deTab=sbKeepTab(deSelectedId,deTab);deSelectedId=id;deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
   isbTab('de',renderDeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.de-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='de-row-'+id));
@@ -410,7 +410,7 @@ function buildDirectListingHTML(){
     +buildEmpStatusModalHTML('de');
 }
 function openGeSidebar(id){
-  geSelectedId=id;geTab='basic-details';geEditMode=false;
+  geTab=sbKeepTab(geSelectedId,geTab);geSelectedId=id;geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.add('open');
   isbTab('ge',renderGeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ge-row-'+id));
@@ -595,7 +595,7 @@ function resetGeFilters(){
   renderADTPage();
 }
 function openTmSidebar(id){
-  tmSelectedId=id;tmTab='basic-details';
+  tmTab=sbKeepTab(tmSelectedId,tmTab);tmSelectedId=id;
   const sb=document.getElementById('tm-split-sb');if(sb)sb.classList.add('open');
   isbTab('tm',renderTmSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.tm-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tm-row-'+id));
@@ -814,7 +814,7 @@ function alDecideFromDashboard(id,status){
   setTimeout(function(){openAlSidebar(id,tab,status);},0);
 }
 function openAlSidebar(id,tab,pendingStatus){
-  alSelectedId=id;alTab=tab||'basic-details';
+  alTab=tab||sbKeepTab(alSelectedId,alTab);alSelectedId=id;
   alPendingStatus=pendingStatus||'';
   const sb=document.getElementById('al-split-sb');if(sb)sb.classList.add('open');
   isbTab('al',renderAlSidebar);   // body-only swap when the panel is already open
@@ -1287,7 +1287,7 @@ function resetAlFilters(){
 /* `tab` and `pendingStatus` are what the row's Invoice Status menu passes in -
    a plain row click still lands on Basic Details with nothing pending. */
 function openPmSidebar(id,tab,pendingStatus){
-  pmSelectedId=id;pmTab=tab||'basic-details';pmUserSubTab='company-details';
+  pmTab=tab||sbKeepTab(pmSelectedId,pmTab);pmSelectedId=id;pmUserSubTab='company-details';
   pmPendingStatus=pendingStatus||'';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.add('open');
   isbTab('pm',renderPmSidebar);   // body-only swap when the panel is already open
@@ -1611,7 +1611,7 @@ function toggleCtAction(id,e){
   }
 }
 // ── TICKETS SIDEBAR ──
-function openTkSidebar(id,tab){tkSelectedId=id;tkTab=tab||'basic-details';const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');isbTab('tk',renderTkSidebar);document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
+function openTkSidebar(id,tab){tkTab=tab||sbKeepTab(tkSelectedId,tkTab);tkSelectedId=id;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.add('open');isbTab('tk',renderTkSidebar);document.querySelectorAll('.tk-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tk-row-'+id));}
 function closeTkSidebar(){tkSelectedId=null;const sb=document.getElementById('tk-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.tk-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navTkTab(tab){tkTab=tab;isbTab('tk',renderTkSidebar);}
 // Stored keys are snake_case; these are how they read. Shared by the table pill
@@ -1620,7 +1620,7 @@ const TK_STATUS_LABEL={open:'Open',in_progress:'In Progress',blocked:'Blocked',r
 function tkStatusLabel(s){return TK_STATUS_LABEL[s]||s;}
 function tkStatusBadge(s){const m={open:{bg:'var(--st-info-bg)',c:'var(--st-info-fg)',b:'var(--st-info-bd)'},in_progress:{bg:'var(--st-wait-bg)',c:'var(--st-wait-fg)',b:'var(--st-wait-bd)'},blocked:{bg:'var(--st-bad-bg)',c:'var(--st-bad-fg)',b:'var(--st-bad-bd)'},resolved:{bg:'var(--st-ok-bg)',c:'var(--st-ok-fg)',b:'var(--st-ok-bd)'},closed:{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'}};const v=m[s]||{bg:'var(--st-idle-bg)',c:'var(--st-idle-fg)',b:'var(--st-idle-bd)'};return'<span style="background:'+v.bg+';color:'+v.c+';border:1.5px solid '+v.b+';border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;white-space:nowrap">'+tkStatusLabel(s)+'</span>';}
 // ── CHATS SIDEBAR ──
-function openChatSidebar(id,tab){chatSelectedId=id;chatTab=tab||'basic-details';const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');isbTab('chat',renderChatSidebar);document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
+function openChatSidebar(id,tab){chatTab=tab||sbKeepTab(chatSelectedId,chatTab);chatSelectedId=id;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.add('open');isbTab('chat',renderChatSidebar);document.querySelectorAll('.chat-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='chat-row-'+id));}
 function closeChatSidebar(){chatSelectedId=null;const sb=document.getElementById('chat-split-sb');if(sb)sb.classList.remove('open');document.querySelectorAll('.chat-row').forEach(r=>r.classList.remove('lp-row-selected'));}
 function navChatTab(tab){chatTab=tab;isbTab('chat',renderChatSidebar);}
 /* Seeded from the chat's own start details rather than written out per record,
@@ -1754,7 +1754,7 @@ function resetCtFilters(){
   renderADTPage();
 }
 function openCtSidebar(id,tab,pendingStatus){
-  ctSelectedId=id;ctTab=tab||'basic-details';
+  ctTab=tab||sbKeepTab(ctSelectedId,ctTab);ctSelectedId=id;
   if(pendingStatus)window._ctPendingStatus=pendingStatus;else delete window._ctPendingStatus;
   const sb=document.getElementById('ct-split-sb');if(sb)sb.classList.add('open');
   isbTab('ct',renderCtSidebar);   // body-only swap when the panel is already open
@@ -1888,19 +1888,10 @@ function ctLogsTabHTML(c){
     ? '<div class="lp-logs-timeline">'+rows.map(function(r,i){return ctLogRowHTML(rows,i);}).join('')+'</div>'
     : '<div class="lp-logs-empty">No activity logs yet.</div>';
 
-  const overrides=rows.filter(ctIsOverrideRow);
-  const banner=overrides.length
-    ? '<div class="ct-log-banner">'
-      +'<span class="ct-log-banner-ico">'+CT_LOG_ICO.warn+'</span>'
-      +'<span><b>'+overrides.length+' override'+(overrides.length>1?'s':'')+' on this record.</b> '
-      +'Most recent: '+overrides[0].label+' by '+overrides[0].user+' on '+overrides[0].date+'.</span></div>'
-    : '';
-
   /* .lp-logs-wrap is a TWO-COLUMN grid and every module gives it exactly two
-     children. The banner and the revert panel belong WITH the form, not
-     beside it, so all three go in one column wrapper. */
+     children, so the form goes in its own column wrapper. */
   return '<div class="lp-logs-wrap">'+timelineHTML
-    +'<div class="lp-logs-side">'+banner+ctLogFormHTML(c)+'</div>'
+    +'<div class="lp-logs-side">'+ctLogFormHTML(c)+'</div>'
     +'</div>';
 }
 
@@ -2323,7 +2314,7 @@ function lpCreatedOn(v){return String(v==null?'':v).replace(' | ',', ');}
 
 // ── COMPLIANCE ITEM DETAIL SIDEBAR ──
 function openComplianceSidebar(id){
-  complianceSelectedId=id;complianceTab='basic-details';
+  complianceTab=sbKeepTab(complianceSelectedId,complianceTab);complianceSelectedId=id;
   const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.add('open');
   isbTab('cmp',renderComplianceSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='cmp-row-'+id));
@@ -2670,7 +2661,7 @@ function ocaMoveOptions(item){
 }
 const OCA_STATUSES=OCA_STATUS_KEYS;
 function openOcaSidebar(id){
-  ocaSelectedId=id;ocaTab='basic-details';
+  ocaTab=sbKeepTab(ocaSelectedId,ocaTab);ocaSelectedId=id;
   const sb=document.getElementById('oca-split-sb');if(sb)sb.classList.add('open');
   // a short page must not leave the panel hanging out of the card
   const wrap=document.getElementById('oca-split-wrap');if(wrap)wrap.classList.add('has-sb');
@@ -3382,7 +3373,7 @@ function renderOcaDashboard(){
 
 // ── RATES & RULES PAGE ──
 function openRatesRuleSidebar(id){
-  ratesRuleSelectedId=id;ratesRuleTab='basic-details';
+  ratesRuleTab=sbKeepTab(ratesRuleSelectedId,ratesRuleTab);ratesRuleSelectedId=id;
   const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.add('open');
   isbTab('rr',renderRatesRuleSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='rr-row-'+id));
@@ -3663,7 +3654,7 @@ function buildRuleSuccessModalHTML(){
 
 // ── CONTRACT TEMPLATES PAGE ──
 function openCtpSidebar(id){
-  ctpSelectedId=id;ctpTab='basic-details';
+  ctpTab=sbKeepTab(ctpSelectedId,ctpTab);ctpSelectedId=id;
   const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.add('open');
   isbTab('ctp',renderCtpSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ctp-row-'+id));
@@ -4581,7 +4572,7 @@ function buildContractsListingHTML(){
     const btnLabel=c.status.length>12?c.status.slice(0,10)+'…':c.status;
     const actionBtn='<div class="ct-action-wrap">'
       +'<button class="ct-action-btn" onclick="toggleCtAction('+c.id+',event)"><span>'+btnLabel+'</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
-      +'<button class="ct-dots-btn" onclick="openCtSidebar('+c.id+',\'basic-details\');event.stopPropagation()">'+dotsIco+'</button>'
+      +'<button class="ct-dots-btn" onclick="openCtSidebar('+c.id+');event.stopPropagation()">'+dotsIco+'</button>'
       +'<div class="ct-action-menu" id="ctm-'+c.id+'">'+menuItems+'</div>'
       +'</div>';
     /* In the All view the type cell is the ONLY thing that tells a mixed list
@@ -4819,7 +4810,7 @@ function resetPhFilters(){phCategoryFilter='';phStatusFilter='';phSearchQuery=''
 
 // ── Detail panel ──
 function openPhSidebar(id,tab){
-  phSelectedId=id;phTab=tab||'basic-details';
+  phTab=tab||sbKeepTab(phSelectedId,phTab);phSelectedId=id;
   const sb=document.getElementById('ph-split-sb');if(sb)sb.classList.add('open');
   const wrap=document.getElementById('ph-split-wrap');if(wrap)wrap.classList.add('has-sb');
   isbTab('ph',renderPhSidebar);
@@ -5218,7 +5209,7 @@ function resetHdFilters(){
 
 // ── Detail panel ──
 function openHdSidebar(id,tab){
-  hdSelectedId=id;hdTab=tab||'basic-details';hdEditMode=false;
+  hdTab=tab||sbKeepTab(hdSelectedId,hdTab);hdSelectedId=id;hdEditMode=false;
   const sb=document.getElementById('hd-split-sb');if(sb)sb.classList.add('open');
   const wrap=document.getElementById('hd-split-wrap');if(wrap)wrap.classList.add('has-sb');
   isbTab('hd',renderHdSidebar);
@@ -6052,7 +6043,7 @@ function markLPSelectedRow(id){
   });
 }
 function openLPSidebar(id){
-  lpSidebarPolicyId=id;lpSidebarTab='basic-details';lpSidebarEditMode=false;lpEmpEditMode=false;
+  lpSidebarTab=sbKeepTab(lpSidebarPolicyId,lpSidebarTab);lpSidebarPolicyId=id;lpSidebarEditMode=false;lpEmpEditMode=false;
   const sb=document.getElementById('lp-isb');
   if(!sb){page='leave-policies';renderADTPage();return;}
   sb.classList.add('open');
@@ -6812,7 +6803,7 @@ function buildMyTimesheetHTML(viewingOther) {
    what a detail view is. Two tabs: what the employee has FILED, and what they
    have been PAID. */
 function openAtSidebar(id,tab){
-  atSelectedId=id;atTab=tab||'timesheet';
+  atTab=tab||sbKeepTab(atSelectedId,atTab,'timesheet');atSelectedId=id;
   const sb=document.getElementById('at-split-sb');if(sb)sb.classList.add('open');
   const wrap=document.getElementById('at-split-wrap');if(wrap)wrap.classList.add('has-sb');
   isbTab('at',renderAtSidebar);

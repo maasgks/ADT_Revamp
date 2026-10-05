@@ -426,6 +426,30 @@ tr.lp-row-selected>td:first-child,
 .lp-log-status-text--unapproved,.lp-log-status-text--bad{color:var(--st-bad-fg)}
 .lp-log-status-text--info{color:var(--st-info-fg)}
 .lp-log-status-text--event{color:var(--gray);font-weight:600}
+
+/* ── TIMELINE TONE: WHERE WE ARE, AND WHAT IS DONE ────────────────────────────
+   Inside a Logs timeline an entry is coloured by its PLACE in the history, not
+   by the status it carries. Lists are newest first, so the top entry is the
+   step the record is on now - blue - and every entry under it is a step
+   already behind it - green. Two colours and no others, so amber, red and grey
+   rings no longer compete with the one question a timeline answers: how far
+   along is this?
+
+   It overrides every --tone modifier above from one place, so no module's
+   renderer had to change. The compliance panel's "next step" card sits above
+   the history and keeps its own look; the entry after it is the current one. */
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row) .lp-log-avatar{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-fg)}
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row) .lp-log-dot{background:var(--st-ok-fg)}
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row) .lp-log-status-text{color:var(--st-ok-fg);font-weight:700}
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row):first-child .lp-log-avatar,
+.lp-logs-timeline>.oca-next-row+.lp-log-row .lp-log-avatar{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-fg)}
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row):first-child .lp-log-dot,
+.lp-logs-timeline>.oca-next-row+.lp-log-row .lp-log-dot{background:var(--st-info-fg)}
+.lp-logs-timeline>.lp-log-row:not(.oca-next-row):first-child .lp-log-status-text,
+.lp-logs-timeline>.oca-next-row+.lp-log-row .lp-log-status-text{color:var(--st-info-fg)}
+/* The form beside the timeline is headed by the status the record is on now -
+   the same "current" as the top entry, so the same blue. */
+.lp-logs-form-header .lp-log-dot{background:var(--st-info-fg)}
 .lp-log-meta-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:#64748b;flex-wrap:wrap;margin-bottom:7px}
 .lp-log-meta-item{display:flex;align-items:center;gap:3px}
 .lp-log-meta-item svg{flex-shrink:0;opacity:.65}
