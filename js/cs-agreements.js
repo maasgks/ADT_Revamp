@@ -349,15 +349,20 @@ function csAttachmentsTabHTML(){
       +'<td class="csag-td csag-num">'+(i+1)+'</td>'
       +'<td class="csag-td"><div class="csag-file">'
         +'<span class="csag-file-ico csag-ico-'+a.key.toLowerCase()+'">'+CSAG_ICO.doc+'</span>'
-        +'<div class="csag-file-txt"><div class="lp-c-main">'+sbEsc(csagFileName(a))+'</div>'
+        +'<div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(csagFileName(a))+'">'+sbEsc(csagFileName(a))+'</div>'
         +'<div class="lp-c-sub">'+(done?'PDF &middot; '+(a.key==='MSA'?'184 KB':'142 KB'):a.title)+'</div></div></div></td>'
       +'<td class="csag-td">'+sbEsc(a.by)+'</td>'
       +'<td class="csag-td"><span class="att-kind">'+a.key+'</span></td>'
       +'<td class="csag-td csag-src">'+(done?'Generated':sbEsc(a.source))+'</td>'
+      /* Status, then the file's own actions, then e-sign - left to right in the
+         order they are needed. The chip and the e-sign controls come from
+         esign.js; the typeof guards keep this tab working if that file is not
+         loaded, in which case the row behaves exactly as it did before. */
       +'<td class="csag-td csag-act">'+(done
-        ?'<span class="lp-status-badge tone-wait csag-row-status">Pending Approval</span>'
+        ?(typeof esAgStatusChip==='function'?esAgStatusChip(a):'<span class="lp-status-badge tone-wait csag-row-status">Draft Generated</span>')
           +'<button class="att-row-btn" title="View" onclick="csagView(\''+a.key+'\')">'+CSAG_ICO.eye+'</button>'
           +'<button class="att-row-btn" title="Download" onclick="csagDownloadRow(\''+a.key+'\')">'+CSAG_ICO.dl+'</button>'
+          +(typeof esAgActionCell==='function'?esAgActionCell(a):'')
         :'<button class="csag-gen-btn" onclick="csagOpen(\''+a.key+'\')" title="Generate the '+a.title+'"><span class="csag-gen-dot"></span>'+CSAG_ICO.spark+'Generate</button>')
       +'</td></tr>';
   }).join('');
@@ -365,13 +370,19 @@ function csAttachmentsTabHTML(){
     return '<tr>'
       +'<td class="csag-td csag-num">'+(CS_AGREEMENTS.length+i+1)+'</td>'
       +'<td class="csag-td"><div class="csag-file"><span class="csag-file-ico">'+CSAG_ICO.file+'</span>'
-        +'<div class="csag-file-txt"><div class="lp-c-main">'+sbEsc(f.name)+'</div><div class="lp-c-sub">'+(f.size||'—')+'</div></div></div></td>'
+        +'<div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(f.name)+'">'+sbEsc(f.name)+'</div>'
+        +'<div class="lp-c-sub">'+(f.size||'—')+'</div></div></div></td>'
       +'<td class="csag-td">'+sbEsc(f.by||'—')+'</td>'
       +'<td class="csag-td"><span class="att-kind">'+sbEsc(f.type||attachKind(f.name))+'</span></td>'
       +'<td class="csag-td csag-src">'+sbEsc(f.source||'—')+'</td>'
+      /* Same shape as the agreement row above, so an uploaded MSA and a
+         generated NDA are sent for signature from the same place, in the same
+         way, and report their status in the same column. */
       +'<td class="csag-td csag-act">'
+        +(typeof esUpStatusChip==='function'?esUpStatusChip(f):'')
         +'<button class="att-row-btn" title="Download" onclick="attachOpen('+attrSafe(JSON.stringify(f.name))+')">'+CSAG_ICO.dl+'</button>'
         +'<button class="att-row-btn is-danger" title="Remove" onclick="attachRemove(\'cs\',\'entity\','+i+')">'+CSAG_ICO.bin+'</button>'
+        +(typeof esUpActionCell==='function'?esUpActionCell(f):'')
       +'</td></tr>';
   }).join('');
   return '<div class="att-bar csag-bar">'
@@ -381,7 +392,7 @@ function csAttachmentsTabHTML(){
       +'</div></div>'
     /* The table is the drop target now that the zone has made way for the
        listing - a drag still lands, it just lands on the list it adds to. */
-    +'<div class="att-table-wrap csag-table-wrap" '+dz+'><table class="att-table csag-table"><thead><tr>'
+    +'<div class="att-table-wrap csag-table-wrap" '+dz+'><table class="att-table csag-table csag-table--files"><thead><tr>'
       +'<th>Sr. No</th><th>File Name</th><th>Uploaded By</th><th>Type</th><th>Source</th><th class="csag-act">Action</th>'
     +'</tr></thead><tbody>'+agRows+fileRows+'</tbody></table></div>';
 }

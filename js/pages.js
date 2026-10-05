@@ -62,8 +62,15 @@ function attachCommit(scope,id,fileList){
     if(f.size>10*1024*1024){                   // said out loud, not silently dropped
       showToast('File too large','error','"'+sbEsc(f.name)+'" is over the 10 MB limit.');return;
     }
-    rec.attachments.unshift({name:f.name,size:attachFmtSize(f.size),type:attachKind(f.name),
-      by:CURRENT_USER,source:'Manual upload',date:s.date});
+    const att={name:f.name,size:attachFmtSize(f.size),type:attachKind(f.name),
+      by:CURRENT_USER,source:'Manual upload',date:s.date};
+    /* An uploaded file that can be e-signed needs an identity of its own: its
+       position in this list shifts every time another file is added or removed,
+       so the index it happens to sit at is not something a DocuSeal submission
+       can be stored against. esStampUpload() gives it a uid, decides whether
+       signing applies to this kind of file, and creates its e-sign record. */
+    if(typeof esStampUpload==='function')esStampUpload(att);
+    rec.attachments.unshift(att);
     added.push(f.name);
   });
   if(!added.length)return;
@@ -7700,6 +7707,10 @@ function renderCsSidebar(){
   const tabs=[
     {id:'basic-details',label:'Basic Details'},
     {id:'attachments',label:'Attachments'},
+    /* E-Sign sits beside Attachments because the documents it governs are
+       there. Its own changes are recorded in Logs and Workflow, further
+       along this same bar, rather than in an audit table of its own. */
+    {id:'esign',label:'E-Sign'},
     {id:'banking-details',label:'Banking Details'},
     {id:'company-structure',label:'Company Structure'},
     {id:'roles-access',label:'Roles & Access'},
@@ -7758,6 +7769,9 @@ function renderCsSidebar(){
   else if(csTab==='attachments'){
     body=csAttachmentsTabHTML();   // agreements + uploads, see cs-agreements.js
   }
+  else if(csTab==='esign'){
+    body=typeof csEsignTabHTML==='function'?csEsignTabHTML():'';
+  }
   else if(csTab==='banking-details'){
     const dlIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Banking Details</span>'+editBtn+'</div>'
@@ -7797,25 +7811,50 @@ function renderCsSidebar(){
     body=subBar+sub;
   }
   else if(csTab==='roles-access'){
-    const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-    const tdS='padding:9px 10px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-    const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-    const roles=[
-      {num:1,role:'Direct Employee',cls:'color:#3b82f6',assignedTo:'Antar Testemp'},
-      {num:2,role:'Direct Employee',cls:'color:#3b82f6',assignedTo:'Default Name'},
-      {num:3,role:'Direct Employee',cls:'color:#3b82f6',assignedTo:'Shaun J'},
-      {num:4,role:'Entity Super Admin',cls:'color:var(--orange)',assignedTo:'Shaun Test1'}
+    /* WAS: a hand-rolled table with its styles repeated inline on every cell,
+       an orange serial column that meant nothing, role names coloured by hand,
+       a header cell labelled "assigned to" in lower case and a fourth header
+       with no label at all. None of it matched the tables on the tabs either
+       side of it, and none of it could be restyled without editing each cell.
+
+       NOW: .csag-table, the same table the Attachments tab draws, with the
+       person cell built the way every person cell in the app is built - name
+       over a grey sub-line - and the role as a .lp-status-badge, because a
+       role IS the status of an assignment. */
+    const CS_ROLES=[
+      {role:'Entity Super Admin',tone:'ok',   user:'Shaun Test1',    email:'shaun@testemp.com',   scope:'Full access to this entity',    added:'12 Apr 2026'},
+      {role:'Direct Employee',   tone:'info', user:'Antar Testemp',  email:'antar@testemp.com',   scope:'Own profile, timesheet, leave', added:'18 Apr 2026'},
+      {role:'Direct Employee',   tone:'info', user:'Shaun J',        email:'shaun.j@testemp.com', scope:'Own profile, timesheet, leave', added:'22 Apr 2026'},
+      {role:'Direct Employee',   tone:'info', user:'Default Name',   email:'default@testemp.com', scope:'Own profile, timesheet, leave', added:'30 Apr 2026'}
     ];
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Role</button></div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-      +'<thead><tr><th style="'+thS+'">SR NO</th><th style="'+thS+'">Role Name</th><th style="'+thS+'">assigned to</th><th style="'+thS+'"></th></tr></thead>'
-      +'<tbody>'+roles.map(r=>'<tr>'
-        +'<td style="'+tdS+';color:#f97316;font-weight:600">'+r.num+'</td>'
-        +'<td style="'+tdS+'"><span style="font-weight:600;'+r.cls+'">'+r.role+'</span></td>'
-        +'<td style="'+tdS+'">'+r.assignedTo+'</td>'
-        +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:3px;line-height:0">'+editSvg+'</button></td>'
-        +'</tr>').join('')
-      +'</tbody></table>';
+    const editSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    const binSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+    const plusSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    const initials=(n)=>n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    body='<div class="att-bar csag-bar">'
+        +'<div class="att-bar-actions"><button class="att-link" onclick="showToast(\'Add Role\',\'info\',\'Role assignment is not wired in this prototype.\')">'
+        +plusSvg+'Add Role</button></div></div>'
+      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+        +'<th>Sr. No</th><th>User</th><th>Role</th><th>Access Scope</th><th>Added On</th><th class="csag-act">Action</th>'
+      +'</tr></thead><tbody>'
+      +CS_ROLES.map(function(r,i){
+          return '<tr>'
+            +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+            +'<td class="csag-td"><div class="csag-file">'
+              +'<span class="cs-role-av">'+initials(r.user)+'</span>'
+              +'<div class="csag-file-txt"><div class="lp-c-main">'+sbEsc(r.user)+'</div>'
+              +'<div class="lp-c-sub">'+sbEsc(r.email)+'</div></div></div></td>'
+            +'<td class="csag-td"><span class="lp-status-badge tone-'+r.tone+'">'+sbEsc(r.role)+'</span></td>'
+            +'<td class="csag-td cs-role-scope">'+sbEsc(r.scope)+'</td>'
+            +'<td class="csag-td">'+sbEsc(r.added)+'</td>'
+            +'<td class="csag-td csag-act">'
+              +'<button class="att-row-btn" title="Edit role">'+editSvg+'</button>'
+              +(r.role==='Entity Super Admin'
+                ?''   /* the last super admin cannot be removed, so no button promises it */
+                :'<button class="att-row-btn is-danger" title="Remove role">'+binSvg+'</button>')
+            +'</td></tr>';
+        }).join('')
+      +'</tbody></table></div>';
   }
   else if(csTab==='payroll'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Payroll Settings</span>'+editBtn+'</div>'

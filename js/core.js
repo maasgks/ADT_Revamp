@@ -456,6 +456,23 @@ function lpCommitLog(rec,statusSelId,commentInpId,fixture){
 // already use ("18 Jun 2026" / "04:40:00 PM"), so entries the user adds sit
 // in the same list as the seeded ones without looking foreign.
 const CURRENT_USER='Shaun Test1';
+/* The signed-in user's role. Company Settings → Roles & Access shows the same
+   value for this user, and the permission gates read it, so the two cannot
+   drift apart. */
+const CURRENT_USER_ROLE='Entity Super Admin';
+/* Dashboard headers can end with the date. Written from the clock rather than
+   typed into the markup - a date in a template is wrong the day after it ships.
+   Every [data-dash-date] on the page gets it, so adding one to another
+   dashboard is a markup change and nothing else. */
+function fillDashDates(){
+  const els=document.querySelectorAll('[data-dash-date]');
+  if(!els.length)return;
+  const txt=' \u00b7 '+new Date().toLocaleDateString('en-GB',
+    {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  els.forEach(function(el){el.textContent=txt;});
+}
+document.addEventListener('DOMContentLoaded',fillDashDates);
+
 function stampNow(){
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];

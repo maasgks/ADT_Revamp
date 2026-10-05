@@ -38,45 +38,31 @@
        aligned with the rows above instead of stretching to fill.
      · Anything wider than a tile spans whole columns (.hr-stat-span2), so it
        is still measured in the same track.                                  */
-/* ══ A GRID THAT NEVER ENDS ON A HOLE ══════════════════════════════════════
-   The track is 12 columns, not 4, and a tile spans 3 of them - so four to a
-   row, laid out exactly as before. 12 is the point: it divides by 4, 3, 2 and
-   1, which is what lets a SHORT LAST ROW share the full width instead of
-   stopping early and leaving a gap at the right-hand end. Eleven tiles used to
-   run 4 / 4 / 3-and-a-hole; they now run 4 / 4 / 3-across-the-full-width.
+/* ══ ONE TILE SIZE, EVERYWHERE ═════════════════════════════════════════════
+   The track is 12 columns and a tile spans 3, so four to a row. A last row
+   holding fewer than four stops where it stops and leaves the rest of the row
+   empty.
 
-   The rules below read as "this tile starts a row (:nth-child(4n+1)) AND only
-   k tiles remain (:nth-last-child(k))" - which can only be true of a final row
-   holding k tiles. The `~` picks up the one or two that follow it. Nothing is
-   hard-coded to a card count, so a dashboard gaining or losing a tile keeps
-   working on its own.
+   THIS REVERSES AN EARLIER DECISION, and the reason is worth keeping. The
+   grid used to deal a short last row across the full width - two left over
+   became half each, three became a third each - so that no row ended on a
+   gap. It worked, but it bought a tidy right-hand edge with a worse problem:
+   the last row's tiles came out visibly larger than the rows above, so nine
+   tiles rendered as four small, four small, then three big. Size is the first
+   thing the eye reads on a grid of cards, and making it mean "this row is
+   short" rather than "these are the same kind of thing" is a poor trade. A
+   metric tile is not more important because of where it happens to land.
 
-   The trade the user chose: last-row tiles are wider than the rows above, so
-   the columns no longer line up all the way down. A visible hole was the worse
-   of the two.                                                              */
+   Empty space at the end of a row costs nothing and reads as what it is. Rows
+   are also pinned to one height (grid-auto-rows), so a tile whose label wraps
+   to two lines cannot make its row taller than the others. */
 .hr-stat-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;margin-bottom:22px;align-items:stretch}
 .hr-stat-grid>*{grid-column:span 3}
+/* Every row the same height, so the grid reads as one block rather than as
+   rows of slightly different sizes. Held away from any grid with a
+   double-width tile in it - that one sets its own rhythm. */
+.hr-stat-grid:not(:has(.hr-stat-span2)){grid-auto-rows:1fr}
 .hr-stat-span2{grid-column:span 6}
-/* The orphan rules count ELEMENTS, so they are only sound where every tile is
-   one slot wide. The employee dashboard puts a double-width attendance card in
-   its grid, which makes "starts a row" stop meaning :nth-child(4n+1) — :has()
-   keeps these rules away from any grid like that, and it keeps its own layout
-   exactly as it was. */
-/* 2 left over — half each. */
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*{grid-column:span 6}
-/* 3 left over — a third each. */
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*{grid-column:span 4}
-/* 1 LEFT OVER is the case that has no good answer on its own: stretching a
-   lone tile across the full width turns one number into a banner, and leaving
-   it at a quarter width puts the hole back. So the split is moved a row
-   earlier instead — the last FIVE tiles are dealt 3 + 2 rather than 4 + 1, and
-   both rows fill. Nine tiles run 4 / 3 / 2; five run 3 / 2. */
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*{grid-column:span 4}
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
-.hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child{grid-column:span 6}
 /* Column, so the caption can be pinned to the bottom edge: a wrapped label on
    one card then pushes nothing out of line on its neighbours - label, metric
    and caption stay on their own baselines right across the row. */
@@ -120,59 +106,103 @@
    js/core.js. A card is a door if, and only if, a listing exists that holds
    the records it is counting. ═══════════════════════════════════════════ */
 
-/* A quick action is a door by definition - every one of them leaves the
-   dashboard - so it takes the same treatment rather than a second, quieter one
-   of its own. It used to answer a hover by darkening its border and tinting its
-   fill, which is the hover of a BUTTON; beside a stat tile that lifts, two cards
-   doing the same job looked like two different kinds of thing. Only the chip's
-   placement differs, below - a stat tile is read top to bottom and has a free
-   corner, an action card is read left to right and has a free right-hand edge. */
+/* A quick action is a door, and so is a clickable stat tile, so both carry the
+   chevron chip defined below. They are NOT, however, the same kind of door, and
+   giving them the same card chrome was where this went wrong.
+
+   A stat tile's first job is to report a number; the click is a second job it
+   also happens to have - a drill-down into the figure you have just read. A
+   quick action reports nothing. It exists only to be pressed. Rendering both as
+   white 14px cards with the same border, the same resting shadow and the same
+   hover lift left a dashboard of a dozen equally-weighted pressable rectangles,
+   with nothing to say where "here is the state of the business" ended and "here
+   is what you can do about it" began. The band headings named the two regions;
+   the cards then went on to contradict them.
+
+   SO THE DIFFERENCE IS IN FORM, NOT IN FILL. The rule further up still holds -
+   nothing here is greyed, because a grey surface is how this interface says
+   "you cannot use this", and these are the most pressable things on the page.
+   What changes is that the actions stop being cards at all. They become
+   segments of ONE control bar: a single bordered panel, hairline dividers
+   between the segments, one resting shadow for the whole instrument instead of
+   one per tile. Same white fill, same border colour, same chip - a completely
+   different silhouette.
+
+   The hover fill this file once ruled out is now the correct answer rather than
+   the wrong one. The old objection was that a filling card sat beside lifting
+   cards doing the same job. A segment in a bar is not a card and has no
+   neighbours to contradict: filling on hover is exactly how a segmented control
+   behaves, and lifting one segment out of a shared panel would be nonsense. */
 .hr-stat-card.is-link,
 .hr-action-card{
   position:relative;
   cursor:pointer;
-  box-shadow:0 1px 2px rgba(15,23,42,.05),0 2px 6px rgba(15,23,42,.045);
   transition:border-color var(--t-fast) var(--e-out),
              box-shadow var(--t-fast) var(--e-out),
-             transform var(--t-fast) var(--e-out);
-}
-
-/* Bottom-right, not top-right: the finance tiles already own their top-right
-   corner with a 40px icon, and this is the one corner every card has free. */
-.hr-stat-card.is-link::after,
-.hr-action-card::after{
-  content:'';
-  /* right:20px, not 16px — the card's padding is 18px 20px, so at 16px the chip
-     sat 4px nearer the edge than every piece of text beside it and a row of
-     tiles read as if the chips were drifting out of their cards.
-     bottom:13px centres it on the caption: 18px padding + half of the 11px/1.45
-     line box (8px) is 26px to the line's centre, less half the 26px chip. */
-  position:absolute;right:20px;bottom:13px;
-  width:26px;height:26px;
-  border:1px solid var(--border);
-  border-radius:50%;
-  background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E") center/11px 11px no-repeat;
-  transition:border-color var(--t-fast) var(--e-out),
              background-color var(--t-fast) var(--e-out),
              transform var(--t-fast) var(--e-out);
 }
-/* Keep a long caption clear of the chip: 26px chip + 14px of air. */
-.hr-stat-card.is-link .hr-stat-sub{padding-right:40px}
+/* A stat tile is a card, so it carries its own elevation. An action segment is
+   not; .hr-actions carries one for the whole bar. */
+.hr-stat-card.is-link{
+  box-shadow:0 1px 2px rgba(15,23,42,.05),0 2px 6px rgba(15,23,42,.045);
+}
 
-.hr-stat-card.is-link:hover,
-.hr-action-card:hover{
+/* THE TOP-RIGHT CORNER NOW BELONGS TO AN ICON, so the round chevron chip that
+   used to sit bottom-right on a stat tile is gone. A tile is identified at a
+   glance by its icon and separated from its neighbours by it; adding a second
+   mark in the opposite corner made a 106px card carry two competing signals
+   and cost the caption 40px of its line.
+
+   What the chip was carrying - "you can press this, visible at rest" - is now
+   carried by the icon tile itself: on a door it is inked (dark on tint), on a
+   read-only tile it is grey on grey. Same corner, same shape, one signal.
+   Actions keep an arrow, but a plain one, because an action card is a wide row
+   with a free right-hand edge and nothing competing for it. */
+.hr-action-card::after{
+  content:'';
+  position:absolute;right:14px;top:50%;margin-top:-14px;
+  width:28px;height:28px;
+  /* 10px, the same radius as .hr-action-icon at the other end of this card.
+     The chip and the icon tile are the card's two square marks and they sit on
+     one line, so a shared radius makes them read as a pair. The square corners
+     came from an earlier version of this rule losing its border-radius while
+     keeping the dark fill that needed one. */
+  border-radius:10px;
+  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3Cpolyline points='12 5 19 12 12 19'/%3E%3C/svg%3E") center/16px 16px no-repeat;
+  transition:background-color var(--t-fast) var(--e-out),
+             transform var(--t-fast) var(--e-out);
+}
+/* The chip answers to the CARD's hover, never its own - the card is the
+   target, the chip is only the mark that says so. */
+.hr-action-card:hover::after{
+  background-color:#0f172a;
+  transform:translateX(3px);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'/%3E%3Cpolyline points='12 5 19 12 12 19'/%3E%3C/svg%3E");
+}
+
+/* ── The tile head: label left, icon right ───────────────────────────────
+   The label keeps the top-left because that is where the card is read from.
+   The icon is the card's identity - it is what lets you find "Payroll
+   Blockers" in a grid of nine without reading nine labels. */
+.hr-stat-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.hr-stat-head .hr-stat-label{margin-bottom:0;flex:1;min-width:0}
+.hr-stat-ico{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#f1f3f5;color:#64748b;
+  transition:background-color var(--t-fast) var(--e-out),color var(--t-fast) var(--e-out);
+}
+.hr-stat-ico svg{width:16px;height:16px;stroke-width:1.8}
+/* A door's icon is inked; a read-only tile's stays grey. This is the whole of
+   the at-rest difference now, and it lives in one place. */
+.hr-stat-card.is-link .hr-stat-ico{background:#eef2f7;color:#0f172a}
+.hr-stat-card.is-link:hover .hr-stat-ico{background:#0f172a;color:#fff}
+
+.hr-stat-card.is-link:hover{
   border-color:#cbd5e1;
   box-shadow:0 10px 26px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.05);
   transform:translateY(-2px);
-}
-/* The chip answers to the CARD's hover, never its own - the tile is the
-   target, the chip is only the sign that says so. */
-.hr-stat-card.is-link:hover::after,
-.hr-action-card:hover::after{
-  border-color:#0f172a;
-  background-color:#0f172a;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='9 18 15 12 9 6'/%3E%3C/svg%3E");
-  transform:translateX(2px);
 }
 .hr-stat-card.is-link:active,.hr-action-card:active{transform:translateY(0) scale(.995)}
 .hr-stat-card.is-link:focus-visible,.hr-action-card:focus-visible{outline:2px solid var(--btn-accent,#1a1a1a);outline-offset:2px}
@@ -182,11 +212,28 @@
    inherit is a hover response, which the base no longer has. */
 .hr-stat-card.is-static{cursor:default}
 
+/* ── THE ALERT TILE ───────────────────────────────────────────────────────
+   One metric on a dashboard is sometimes not a number you read but a thing
+   blocking you - "Payroll Blockers: 4" stops a payroll run on Tuesday. Tinting
+   it is the exception the no-tinting rule above is worth breaking for: that
+   rule exists so a grey surface is never mistaken for "disabled", and red is
+   not grey. It says the opposite of disabled.
+
+   Used sparingly and on purpose - a dashboard where three tiles are red has
+   no alert tile, it just has a red dashboard. The NUMBER stays navy: it is
+   still the figure you came to read, and colouring it too would leave the
+   card with nothing to anchor on. */
+.hr-stat-card.is-alert{background:#fef5f5;border-color:#f6cccc}
+.hr-stat-card.is-alert .hr-stat-ico{background:#fde8e8;color:#c0392b}
+.hr-stat-card.is-alert .hr-stat-sub{color:#c0392b;font-weight:500}
+.hr-stat-card.is-alert.is-link:hover{border-color:#e9a8a8}
+.hr-stat-card.is-alert.is-link:hover .hr-stat-ico{background:#c0392b;color:#fff}
+
 @media (prefers-reduced-motion:reduce){
-  .hr-stat-card.is-link,.hr-stat-card.is-link::after,
+  .hr-stat-card.is-link,.hr-stat-card .hr-stat-ico,
   .hr-action-card,.hr-action-card::after{transition:none}
-  .hr-stat-card.is-link:hover,.hr-action-card:hover{transform:none}
-  .hr-stat-card.is-link:hover::after,.hr-action-card:hover::after{transform:none}
+  .hr-stat-card.is-link:hover{transform:none}
+  .hr-action-card:hover::after{transform:none}
 }
 .hr-stat-label{font-size:var(--ds-label);color:var(--gray);font-weight:600;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
 /* Every widget value renders at the same size so metric baselines line up across a row.
@@ -229,20 +276,49 @@
 .hr-band{display:flex;align-items:center;gap:10px;margin:0 0 12px}
 .hr-band-title{font-size:var(--ds-micro);font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 .hr-band-rule{flex:1;height:1px;background:var(--border)}
+/* The band can carry a note on its right - freshness, a count, a scope. The
+   rule still flexes, so the note sits hard against the right edge and the
+   line closes the gap between them whatever the note says. */
+.hr-band-meta{font-size:var(--ds-caption);color:var(--gray);font-weight:400;white-space:nowrap}
 /* A band that follows another band's content needs the gap to read as a break
    rather than as the grid's own row gap, which is 14px. */
 .hr-stat-grid+.hr-band,.hr-actions+.hr-band,.hr-section+.hr-band,.hr-grid-2+.hr-band{margin-top:26px}
-.hr-actions{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-/* padding-right, not a margin on the text: the chip is positioned against the
-   card, so only the card's own padding can guarantee a long description never
-   runs underneath it. 16px edge + 26px chip + 16px of air. */
-.hr-action-card{background:var(--card);border:1px solid var(--border);border-radius:14px;
-  padding:16px 58px 16px 16px;display:flex;align-items:center;gap:12px}
-/* Centred on the right edge rather than tucked in a corner: this card is a single
-   row, so its free space is a column down the right-hand side. top + a half-chip
-   margin does the centring, NOT a transform - the hover nudge is a transform and
-   the two would overwrite each other. */
-.hr-action-card::after{right:16px;top:50%;bottom:auto;margin-top:-13px}
+/* ── THE QUICK ACTIONS PANEL ──────────────────────────────────────────────
+   The band heading that used to sit above this row is now the panel's own
+   header, inside it. Two reasons. A floating label with a rule to the right
+   names a REGION of the page, which is right for Key Metrics - a grid of
+   tiles with nothing holding them together. Quick Actions is not a region, it
+   is one object: a short, fixed list of shortcuts. An object carries its own
+   title, the way .hr-section already does one level down.
+
+   And it settles the original complaint. Metrics are a grid of tiles on the
+   page; actions are a panel with a header, containing cards. The two bands no
+   longer differ only in what their cards say - they are different shapes. */
+.hr-actions{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px 18px;margin-bottom:20px;
+}
+.hr-actions-head{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.hr-actions-head .hr-actions-bolt{
+  width:22px;height:22px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--navy)}
+.hr-actions-head .hr-actions-bolt svg{width:15px;height:15px}
+.hr-actions-title{font-size:var(--ds-micro);font-weight:700;color:var(--navy);
+  text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+/* Sentence case beside an uppercase title: it is a description, not a second
+   heading, and setting both the same way would make it read as one. */
+.hr-actions-sub{font-size:var(--ds-caption);color:var(--gray);font-weight:400;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hr-actions-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.hr-actions--2 .hr-actions-grid{grid-template-columns:repeat(2,1fr)}
+.hr-actions--4 .hr-actions-grid{grid-template-columns:repeat(4,1fr)}
+
+/* A card again, but a quieter one than a stat tile: no elevation, because it
+   is already inside a panel and a card inside a card does not need to float
+   out of it. The border and the arrow carry it. */
+/* padding-right clears the chip: 14px edge + 28px chip + 10px of air. */
+.hr-action-card{background:var(--card);border:1px solid var(--border);border-radius:11px;
+  padding:14px 52px 14px 14px;display:flex;align-items:center;gap:12px}
+.hr-action-card:hover{background:#f8fafc;border-color:#cbd5e1}
 .hr-action-icon{width:40px;height:40px;border-radius:10px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;color:var(--navy);flex-shrink:0}
 .hr-action-icon svg{width:18px;height:18px;stroke-width:1.5}
 .hr-action-text{flex:1}
@@ -354,7 +430,7 @@
 .manager-action-cell{display:flex;gap:7px;align-items:center;justify-content:flex-start}
 .manager-action-cell .hr-action-btn{height:28px;min-width:60px;justify-content:center;border-radius:var(--r-control)}
 .hr-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px}
-.finance-action-grid{grid-template-columns:repeat(3,1fr)}
+.finance-action-grid .hr-actions-grid{grid-template-columns:repeat(3,1fr)}
 .finance-tables-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .csm-status-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
 .csm-status-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px;min-height:84px}
@@ -461,40 +537,26 @@
      the start of a short row at all. An odd count leaves one tile over, and
      here it does take the full row, because at this width "full row" is only
      two tiles wide, not four. */
-  .hr-stat-grid>*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child{grid-column:span 6}
+  .hr-stat-grid>*{grid-column:span 6}                  /* two to a row */
   .hr-stat-grid>.hr-stat-span2{grid-column:span 12}   /* a double tile is the whole row here */
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:last-child:nth-child(2n+1){grid-column:span 12}
   .hr-grid-2{grid-template-columns:1fr}
-  .hr-actions{grid-template-columns:repeat(2,1fr)}
-  .finance-action-grid{grid-template-columns:repeat(2,1fr)}
+  .hr-actions-grid,
+  .hr-actions--2 .hr-actions-grid,
+  .hr-actions--4 .hr-actions-grid,
+  .finance-action-grid .hr-actions-grid{grid-template-columns:repeat(2,1fr)}
   .csm-main-grid{grid-template-columns:1fr}
 }
 @media(max-width:768px){
   /* One to a row: every tile takes the full track and no short row can exist,
      so all the orphan rules are cancelled outright. */
   .hr-stat-grid>*,
-  .hr-stat-grid>.hr-stat-span2,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(2):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(3):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:nth-last-child(2),
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:nth-last-child(5):nth-child(4n+1)~*:last-child,
-  .hr-stat-grid:not(:has(.hr-stat-span2))>*:last-child:nth-child(2n+1){grid-column:span 12}
-  .hr-actions{grid-template-columns:1fr}
+  .hr-stat-grid>.hr-stat-span2{grid-column:span 12}   /* one to a row */
+  .hr-actions-grid,
+  .hr-actions--2 .hr-actions-grid,
+  .hr-actions--4 .hr-actions-grid,
+  .finance-action-grid .hr-actions-grid{grid-template-columns:1fr}
   .emp-support-card{flex-direction:column;gap:14px}
   .tab-btn{padding:8px 14px;font-size:12px}
-  .finance-action-grid{grid-template-columns:1fr}
   .finance-tables-grid{grid-template-columns:1fr}
   .csm-status-grid{grid-template-columns:repeat(2,1fr)}
   .pipeline-grid{grid-template-columns:repeat(2,1fr)}

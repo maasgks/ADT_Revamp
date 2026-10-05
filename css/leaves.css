@@ -464,7 +464,13 @@ tr.lp-row-selected>td:first-child,
 .lp-wf-dot{width:11px;height:11px;border-radius:50%;background:var(--wf-dot);border:2px solid var(--wf-ring);flex-shrink:0;box-shadow:0 0 0 3px var(--wf-halo)}
 .lp-wf-connector{flex:1;width:2px;background:var(--wf-ring);margin:5px auto;min-height:12px}
 .lp-wf-card{flex:1;background:#fff;border:1px solid #e9edf2;border-radius:10px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 4px rgba(15,23,42,.05);transition:.15s}
-.lp-wf-card:hover{border-color:#bfdbfe;box-shadow:0 2px 10px rgba(59,130,246,.09)}
+/* Hover is the same neutral lift as .lp-log-card above - a grey border and a
+   slate shadow. It used to go blue, which was the only blue hover on any
+   card in the app and read as a selected or active state on a card that is
+   neither: a Workflow entry is history, and pointing at it selects nothing.
+   The Logs and Workflow tabs sit next to each other on the same panel, so
+   two cards of the same shape must not answer the pointer differently. */
+.lp-wf-card:hover{border-color:#d1d5db;box-shadow:0 2px 8px rgba(15,23,42,.09)}
 .lp-wf-title{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:7px}
 .lp-wf-meta-row{display:flex;align-items:center;gap:10px;font-size:12px;color:#64748b;flex-wrap:wrap;margin-bottom:10px}
 .lp-wf-meta-item{display:flex;align-items:center;gap:3px}
