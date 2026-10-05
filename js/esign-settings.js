@@ -123,14 +123,9 @@ function esCfgTest(){
   }
   esTestState='busy';esCfgRepaint();
   setTimeout(function(){
-    if(ES_MOCK.failTest){
-      esTestState={ok:false,msg:'401 Unauthorized — '+d.provider+' rejected the API key for this environment. '
-        +'Check the key belongs to the '+d.env+' workspace.'};
-    }else{
-      esTestState={ok:true,msg:'Connection successful. Authenticated against '+d.provider+' '+d.env
-        +' as Opendhi Platform (workspace ws_4821).'};
-      ESIGN_CFG.workspace='Opendhi Platform · ws_4821';
-    }
+    esTestState={ok:true,msg:'Connection successful. Authenticated against '+d.provider+' '+d.env
+      +' as Opendhi Platform (workspace ws_4821).'};
+    ESIGN_CFG.workspace='Opendhi Platform · ws_4821';
     const s=stampNow();
     ESIGN_CFG.testedOn=s.date+' | '+s.time;
     esEntityLog('E-Sign connection tested against '+d.provider+' '+d.env+' — '
@@ -175,14 +170,6 @@ function esCfgSave(){
     ESIGN_CFG.enabled?'Documents can now be sent for e-sign from Attachments.'
                      :'Integration is disabled. Send to E-sign is unavailable until it is enabled.');
 }
-/* Test switches. Immediate rather than drafted: they are not configuration,
-   they are how the unhappy paths are reached, and they are not logged because
-   nothing about the entity changed. */
-function esMockToggle(k){
-  ES_MOCK[k]=!ES_MOCK[k];
-  if(k==='failTest')esTestState=null;
-  esCfgRepaint();
-}
 
 /* ── Field builders ───────────────────────────────────────────────────────
    The app's .ep-form-group / .ep-form-label / .ep-form-input inside the
@@ -215,19 +202,11 @@ function esCfgSecret(key,label,ph,hint,shown){
     +(hint?'<div class="es-hint">'+hint+'</div>':'')
     +'</div>';
 }
-function esSwitchRow(label,on,handler,sub){
-  return '<div class="es-switch-row">'
-    +'<div><div class="es-switch-txt">'+label+'</div>'+(sub?'<div class="es-hint">'+sub+'</div>':'')+'</div>'
-    +'<button type="button" class="np-switch'+(on?' on':'')+'" onclick="'+handler+'" '
-    +'role="switch" aria-checked="'+(on?'true':'false')+'" aria-label="'+attrSafe(label)+'"></button>'
-    +'</div>';
-}
-
 /* ── The tab ──────────────────────────────────────────────────────────────
-   Three blocks, each opening with the .lp-sb-view-header that every section
+   Two blocks, each opening with the .lp-sb-view-header that every section
    of every tab on this panel opens with: what the integration is doing now,
-   the credentials that make it do it, and the mock switches. There is no
-   fourth block for an audit trail - that is the Logs tab, two along. */
+   and the credentials that make it do it. There is no third block for an
+   audit trail - that is the Logs tab, two along. */
 function csEsignTabHTML(){
   const d=esCfgDraftInit();
   const complete=esDraftComplete();
@@ -302,23 +281,6 @@ function csEsignTabHTML(){
         +'<button class="ep-cancel-btn" onclick="esCfgTest()"'+(esTestState==='busy'?' disabled':'')+'>Test Connection</button>'
         +'<button class="ep-save-btn" id="es-cfg-save" onclick="esCfgSave()"'+(complete?'':' disabled')+'>Save</button>'
       +'</div>'
-    +'</div>';
-
-  /* 3 — the test harness, set apart by a dashed edge and by its wording
-     because none of it belongs in a real deployment. */
-  html+='<div class="es-rule"></div>'
-    +'<div class="es-mock">'
-    +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">Mock Controls</span>'
-      +'<span class="es-tag">mock only</span></div>'
-    +'<p class="es-tab-sub">This build has no backend, so these stand in for the things that go wrong on a '
-      +'provider&rsquo;s side. They exist to make the failure paths reviewable, and would not ship.</p>'
-    +esSwitchRow('Fail the next Test Connection',ES_MOCK.failTest,'esMockToggle(\'failTest\')',
-        'Returns a 401 from '+sbEsc(ESIGN_CFG.provider)+' instead of succeeding.')
-    +esSwitchRow('Fail submission creation',ES_MOCK.failSend,'esMockToggle(\'failSend\')',
-        'Send to E-sign returns a 502. The document&rsquo;s status becomes <b>Failed</b> and the reason is kept on the record.')
-    +esSwitchRow('Fail signed-file sync',ES_MOCK.failFileSync,'esMockToggle(\'failFileSync\')',
-        'The signature completes but the signed PDF cannot be fetched, so the document lands on '
-        +'<b>Fully Executed — File Sync Pending</b> with a manual retry.')
     +'</div>';
 
   return html;

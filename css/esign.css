@@ -21,22 +21,42 @@
    preview, the integration row, and the mock webhook simulator. */
 
 /* ── Row action ───────────────────────────────────────────────────────────
-   Deliberately identical to .csag-gen-btn, which is the row-primary action
-   sitting directly above it in the same column. Two primary row actions in
-   one table that look different would read as two different kinds of thing. */
-.es-send-btn{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;vertical-align:middle;
-  border:none;border-radius:var(--r-control,8px);background:var(--btn-ink,#1e293b);color:#fff;font-family:inherit;
-  font-size:12px;font-weight:600;cursor:pointer;transition:background .15s ease,transform .15s ease}
-.es-send-btn:hover:not(:disabled){background:var(--btn-accent)}
+   An outline button cut from the same cloth as the .att-row-btn icons it sits
+   beside - same 28px height, 7px corner, stroke and hover - so the action
+   cell reads as one toolbar rather than a row of icons with a black slab
+   bolted on the end. A hairline divider separates it from the file's own
+   actions (view, download, remove), because sending for signature is a
+   different kind of act from handling the file. */
+.es-send-btn{position:relative;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 10px;
+  margin-left:15px;vertical-align:middle;border:1px solid var(--border);border-radius:7px;background:var(--card);
+  color:var(--btn-ink,#353535);font-family:inherit;font-size:12px;font-weight:600;line-height:1;white-space:nowrap;
+  cursor:pointer;transition:background .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
+.es-send-btn::before{content:'';position:absolute;left:-9px;top:5px;bottom:5px;width:1px;background:var(--border)}
+.es-send-btn svg{flex-shrink:0;color:#64748b;transition:color .15s ease}
+.es-send-btn:hover:not(:disabled){background:var(--btn-ghost-bg);border-color:var(--btn-accent);color:var(--btn-accent)}
+.es-send-btn:hover:not(:disabled) svg{color:var(--btn-accent)}
 .es-send-btn:active:not(:disabled){transform:scale(.97)}
+.es-send-btn:focus-visible{outline:2px solid var(--btn-accent);outline-offset:2px}
 /* Disabled keeps the button's shape so the row does not reflow when the thing
    blocking it is resolved; the reason is on its tooltip. */
-.es-send-btn:disabled{background:#eef1f5;color:#9aa3b0;cursor:not-allowed}
+.es-send-btn:disabled{background:var(--light);border-color:var(--border);color:#9aa3b0;cursor:not-allowed}
+.es-send-btn:disabled svg{color:#c0c7d1}
+/* The e-sign detail and setup icons that replace the Send button once it has
+   done its job take the same divider, so the cell keeps its grouping. */
+.csag-act .att-row-btn.es-detail,.csag-act .att-row-btn.es-cog{position:relative;margin-left:15px}
+.csag-act .att-row-btn.es-detail::before,.csag-act .att-row-btn.es-cog::before{content:'';position:absolute;
+  left:-9px;top:5px;bottom:5px;width:1px;background:var(--border)}
 .att-row-btn.es-cog.is-on{background:var(--btn-tint-bg);color:var(--btn-accent)}
 
 /* ── Inside the popup ─────────────────────────────────────────────────────
    Spacing only. The parts themselves are the app's. */
-.es-modal .csag-body{padding-bottom:2px}
+.es-modal .csag-body{padding-bottom:20px}
+/* The send popup's closing note sits a full grid gap below the fields - the
+   info-box's own 8px top margin made it read as part of the last field row -
+   and its icon centres on the text block instead of hanging off its top edge. */
+.es-modal .ep-form-grid+.info-box{margin-top:22px}
+.es-modal .info-box.tip{padding:14px 16px;gap:12px;align-items:center}
+.es-modal .info-box.tip strong{color:var(--navy);margin-bottom:4px}
 .es-sec{margin-bottom:20px}
 .es-sec:last-child{margin-bottom:0}
 .es-sec .lp-sb-view-header{margin-bottom:10px}
@@ -154,15 +174,6 @@
 .es-state.is-idle{color:var(--gray);font-weight:500}
 .es-state .es-spinner{width:14px;height:14px;border-width:2px}
 .es-state svg{flex-shrink:0}
-
-.es-mock{border:1px dashed #d4dae2;border-radius:12px;padding:14px 16px;background:#fbfcfd}
-.es-mock .lp-sb-view-header{margin-bottom:8px}
-.es-mock .es-tab-sub{margin:0 0 6px}
-.es-switch-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;
-  padding:12px 0;border-bottom:1px solid #eef0f3}
-.es-switch-row:last-child{border-bottom:0;padding-bottom:2px}
-.es-switch-txt{font-size:12.5px;font-weight:600;color:var(--navy)}
-.es-switch-row .np-switch{flex-shrink:0;margin-top:3px}
 
 /* ══ THE ATTACHMENTS ROW ══════════════════════════════════════════════════
    A FILE NAME IS ONE LINE, TRUNCATED. Long upload names have no spaces to

@@ -118,13 +118,6 @@ const ES_REQUIRED=['provider','env','baseUrl','apiKey','webhookSecret'];
 function esCfgComplete(){return ES_REQUIRED.every(function(k){return !!String(ESIGN_CFG[k]||'').trim();});}
 function esCfgReady(){return ESIGN_CFG.enabled&&esCfgComplete();}
 
-/* ── The mock harness ─────────────────────────────────────────────────────
-   Three switches that make the unhappy paths reachable on demand, because a
-   failure state nobody can reproduce is a failure state nobody reviews. They
-   live on the Platform Settings page under a dashed border, clearly labelled
-   as test controls. */
-const ES_MOCK={failSend:false,failFileSync:false,failTest:false};
-
 /* ── Status vocabulary ────────────────────────────────────────────────────
    Every status in US7-US10, and nothing else. `tone` picks the existing
    .lp-status-badge colour, so an e-sign status is the same species of pill as
@@ -345,8 +338,6 @@ function esMintIds(){
 function esApiCreateSubmission(doc,signers){
   return new Promise(function(resolve,reject){
     setTimeout(function(){
-      if(ES_MOCK.failSend)
-        return reject({code:502,msg:'DocuSeal API error 502 — upstream request failed while creating the submission. No submission was created; the document was not sent.'});
       if(!esCfgReady())
         return reject({code:409,msg:'DocuSeal integration is disabled or incomplete. Configure it under Platform Settings → Integrations → E-Sign.'});
       const ids=esMintIds();
@@ -689,14 +680,6 @@ function esRedeliverLast(uid){
 function esFetchFiles(doc){
   const e=doc.esign;
   e.syncAttempts++;
-  if(ES_MOCK.failFileSync){
-    e.status='sync-pending';
-    e.signedPdf=null;e.auditCert=null;
-    esLog(doc,'wait','Fully Executed — File Sync Pending',
-      'All signers completed, but the signed PDF could not be fetched from DocuSeal '
-      +'(attempt '+e.syncAttempts+'). The signature is valid; only the stored copy is missing.','file.sync.failed');
-    return;
-  }
   const base=doc.kind==='agreement'?csagFileName(doc.rec):String(doc.name).replace(/\.[^.]+$/,'');
   e.status='executed';
   e.signedPdf={name:base+'_signed.pdf',size:'196 KB',at:e.signedAt};
@@ -976,7 +959,7 @@ function esSendControl(doc){
     +ES_ICO.pen+'Send to E-sign</button>';
 }
 function esDetailBtn(doc){
-  return '<button class="att-row-btn" title="E-sign details" onclick="esOpenDetail(\''+doc.uid+'\')">'+ES_ICO.pen+'</button>';
+  return '<button class="att-row-btn es-detail" title="E-sign details" onclick="esOpenDetail(\''+doc.uid+'\')">'+ES_ICO.pen+'</button>';
 }
 
 /* The agreement rows. The chip is returned separately from the actions
