@@ -1,0 +1,188 @@
+/* ══ HR DOCS ═══════════════════════════════════════════════════════════════
+   The tables are .lp-table and every popup is .ct-modal--form. This sheet
+   adds the two-column layout - the document-type catalogue and the drafts
+   rail - the letter preview page and the template editor. */
+
+/* ── Page header ───────────────────────────────────────────────────────── */
+.hdoc-page{max-width:1280px}
+.hdoc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:20px;flex-wrap:wrap}
+.hdoc-title{margin:0;font-size:22px;font-weight:700;color:var(--navy);letter-spacing:-.3px;line-height:1.25}
+.hdoc-sub{margin:4px 0 0;font-size:13px;color:var(--gray);line-height:1.5}
+.hdoc-head{align-items:center}
+.hdoc-stats .listing-stat{cursor:default}
+.hdoc-stats .listing-stat:hover{background:none;transform:none;box-shadow:none}
+
+/* ── Two columns: the work, and what is waiting ────────────────────────── */
+.hdoc-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.hdoc-main{min-width:0}
+.hdoc-rail{display:flex;flex-direction:column;gap:16px;position:sticky;top:0;min-width:0}
+@media(max-width:1100px){
+  .hdoc-layout{grid-template-columns:minmax(0,1fr)}
+  .hdoc-rail{position:static}
+}
+
+.hdoc-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.hdoc-panel-head{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.hdoc-panel-title{font-size:13.5px;font-weight:700;color:var(--navy)}
+.hdoc-pill{min-width:22px;height:20px;padding:0 7px;border-radius:99px;background:var(--ol);color:#475569;
+  font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.hdoc-pill.is-wait{background:var(--st-wait-bg);color:var(--st-wait-fg)}
+.hdoc-panel-search{margin-left:auto;display:flex;align-items:center;gap:8px}
+.hdoc-panel-search .lp-search-input{width:240px}
+
+/* ── The catalogue ─────────────────────────────────────────────────────── */
+.hdoc-group+.hdoc-group{border-top:1px solid var(--border)}
+.hdoc-group-label{display:flex;align-items:center;gap:8px;padding:16px 20px 6px}
+.hdoc-group-dot{width:8px;height:8px;border-radius:50%;background:var(--st-idle-fg);flex-shrink:0}
+.hdoc-group-dot.tone-info{background:var(--st-info-fg)}
+.hdoc-group-dot.tone-ok{background:var(--st-ok-fg)}
+.hdoc-group-dot.tone-bad{background:var(--st-bad-fg)}
+.hdoc-group-name{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
+.hdoc-group-hint{font-size:12px;color:#9aa3af}
+.hdoc-group-hint::before{content:'·';margin-right:8px;color:#cbd5e1}
+.hdoc-row{display:flex;align-items:center;gap:14px;padding:13px 20px;cursor:pointer;transition:background .12s}
+.hdoc-row+.hdoc-row{border-top:1px solid #f3f4f6}
+.hdoc-row:hover{background:#f8fafc}
+.hdoc-row:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
+.hdoc-row-ico{flex-shrink:0;width:40px;height:40px;border-radius:11px;background:var(--light);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;color:var(--navy);transition:background .15s,color .15s,border-color .15s}
+.hdoc-row-ico svg{width:18px;height:18px}
+/* Tinted by group; the tint deepens to the solid tone when the row is
+   pointed at, so the row being opened is unmistakable. */
+.hdoc-row-ico.tone-info{background:var(--st-info-bg);border-color:var(--st-info-bd);color:var(--st-info-fg)}
+.hdoc-row-ico.tone-ok{background:var(--st-ok-bg);border-color:var(--st-ok-bd);color:var(--st-ok-fg)}
+.hdoc-row-ico.tone-idle{background:var(--st-idle-bg);border-color:var(--st-idle-bd);color:var(--st-idle-fg)}
+.hdoc-row-ico.tone-bad{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
+.hdoc-row:hover .hdoc-row-ico.tone-info{background:var(--st-info-fg);border-color:var(--st-info-fg);color:#fff}
+.hdoc-row:hover .hdoc-row-ico.tone-ok{background:var(--st-ok-fg);border-color:var(--st-ok-fg);color:#fff}
+.hdoc-row:hover .hdoc-row-ico.tone-idle{background:var(--st-idle-fg);border-color:var(--st-idle-fg);color:#fff}
+.hdoc-row:hover .hdoc-row-ico.tone-bad{background:var(--st-bad-fg);border-color:var(--st-bad-fg);color:#fff}
+.hdoc-row-ico.is-lg{width:52px;height:52px;border-radius:12px}
+.hdoc-row-ico.is-lg svg{width:24px;height:24px}
+.hdoc-row-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hdoc-row-name{font-size:14.5px;font-weight:600;color:var(--navy)}
+.hdoc-row-desc{font-size:12.5px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdoc-warn{color:var(--st-bad-fg);font-weight:600}
+/* Counts in a fixed-width column, so they line up down the list. */
+.hdoc-row-stats{flex-shrink:0;width:160px;display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.hdoc-chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:99px;background:var(--ol);
+  font-size:11.5px;font-weight:600;color:#475569;white-space:nowrap}
+.hdoc-chip.is-zero{background:none;color:#9aa3af;font-weight:500}
+.hdoc-chip.is-draft{background:var(--st-wait-bg);color:var(--st-wait-fg)}
+.hdoc-row-acts{flex-shrink:0;display:flex;align-items:center;gap:6px}
+/* Templates is a Super Admin tool, not part of the row's message: it waits
+   in the row until the row is pointed at. */
+.hdoc-icon-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:8px;
+  background:none;color:#64748b;cursor:pointer;opacity:0;transition:opacity .15s,background .15s,color .15s}
+.hdoc-row:hover .hdoc-icon-btn,.hdoc-icon-btn:focus-visible{opacity:1}
+.hdoc-icon-btn:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+.hdoc-create{--btn-h:32px;--btn-px:14px;--btn-fs:12.5px;gap:6px}
+.hdoc-create svg{width:12px;height:12px}
+.hdoc-row:hover .hdoc-create:not(:disabled){border-color:var(--btn-accent);color:var(--btn-accent)}
+.hdoc-create:not(:disabled):hover{background:var(--btn-accent)!important;border-color:var(--btn-accent)!important;color:#fff!important}
+@media(max-width:700px){
+  .hdoc-row{flex-wrap:wrap}
+  .hdoc-row-stats{width:auto}
+  .hdoc-icon-btn{opacity:1}
+}
+
+/* ── Rail items: drafts and recently issued ────────────────────────────── */
+.hdoc-item{display:flex;align-items:center;gap:12px;padding:11px 18px;cursor:pointer;transition:background .12s}
+.hdoc-item+.hdoc-item{border-top:1px solid #f3f4f6}
+.hdoc-item:hover{background:#f8fafc}
+.hdoc-item:focus-visible{outline:2px solid var(--navy);outline-offset:-2px}
+.hdoc-av{flex-shrink:0;width:32px;height:32px;border-radius:50%;background:var(--st-wait-bg);color:var(--st-wait-fg);
+  display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;letter-spacing:.3px}
+.hdoc-av.is-issued{background:var(--ol);color:#475569}
+.hdoc-av.is-sm{width:26px;height:26px;font-size:10px}
+.hdoc-item-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hdoc-item-name{font-size:13px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdoc-item-name i{font-style:normal;color:var(--gray)}
+.hdoc-item-sub{font-size:11.5px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdoc-item-go{display:flex;color:#c0c7d1}
+.hdoc-item:hover .hdoc-item-go{color:var(--navy)}
+.hdoc-item-del{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border:none;border-radius:7px;
+  background:none;color:#9aa3af;cursor:pointer;opacity:0;transition:opacity .15s,background .15s,color .15s}
+/* The age sits where Delete appears: one is information, the other an action
+   you only want while pointing at the draft. */
+.hdoc-item-age{flex-shrink:0;font-size:11px;color:#9aa3af;white-space:nowrap}
+.hdoc-item-del{display:none}
+.hdoc-item:hover .hdoc-item-age,.hdoc-item:focus-within .hdoc-item-age{display:none}
+.hdoc-item:hover .hdoc-item-del,.hdoc-item:focus-within .hdoc-item-del{display:flex;opacity:1}
+.hdoc-item-del:hover{background:var(--st-bad-bg);color:var(--st-bad-fg)}
+.hdoc-rail-empty{padding:18px;font-size:12.5px;line-height:1.55;color:var(--gray)}
+.hdoc-rail-empty b{color:var(--navy)}
+
+/* ── A type's screen ───────────────────────────────────────────────────── */
+.hdoc-back{margin:0 0 16px}
+.hdoc-type-head{align-items:center;justify-content:flex-start}
+.hdoc-type-txt{flex:1;min-width:240px}
+.hdoc-type-tpl{margin:6px 0 0;font-size:12px;color:var(--gray)}
+.hdoc-type-tpl b{color:var(--navy);font-weight:600}
+.hdoc-type-btns{display:flex;gap:10px}
+.hdoc-type-btns button{gap:6px}
+.hdoc-type-btns svg{width:14px;height:14px}
+.hdoc-table{border:none}
+.hdoc-cell-who{display:inline-flex;align-items:center;gap:9px}
+.hdoc-table-empty{padding:36px 20px!important;text-align:center;color:var(--gray)!important;font-size:12.5px;line-height:1.7}
+.hdoc-table-empty b{color:var(--navy)}
+.hdoc-sm-btn{--btn-h:30px;--btn-px:12px;--btn-fs:12px;gap:5px}
+.hdoc-sm-btn svg{width:13px;height:13px}
+
+/* ── Form popup ────────────────────────────────────────────────────────── */
+.hdoc-auto{margin-left:6px;padding:1px 7px;border-radius:99px;background:var(--st-info-bg);color:var(--st-info-fg);
+  font-size:10px;font-weight:700;letter-spacing:.2px;vertical-align:1px}
+.hdoc-auto-input{background:var(--light)!important;color:#475569}
+.ct-modal textarea.ep-form-input.hdoc-textarea{height:96px!important;min-height:72px;padding-top:10px;resize:vertical;line-height:1.5}
+.hdoc-hdr-back{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-right:8px;
+  border:1px solid var(--border);border-radius:7px;background:#fff;color:#64748b;cursor:pointer;vertical-align:-6px}
+.hdoc-hdr-back:hover{border-color:var(--btn-accent);color:var(--btn-accent)}
+.ct-modal-btns button svg{vertical-align:-2px;margin-right:4px}
+.hdoc-miss-note{color:var(--st-wait-fg);font-weight:600}
+
+/* ── The letter ────────────────────────────────────────────────────────── */
+.ct-modal.ct-modal--form.hdoc-modal-wide{width:min(940px,94vw)}
+.hdoc-paper-wrap{background:#eef1f5;border-radius:12px;padding:24px;max-height:62vh;overflow:auto}
+.hdoc-paper{background:#fff;max-width:720px;margin:0 auto;padding:44px 52px 56px;border-radius:4px;
+  box-shadow:0 1px 3px rgba(15,23,42,.1),0 8px 24px rgba(15,23,42,.08);
+  font-size:13px;line-height:1.7;color:#1e293b}
+.hdoc-lh{border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:16px}
+.hdoc-lh-name{font-size:19px;font-weight:800;color:var(--navy);letter-spacing:-.2px}
+.hdoc-lh-sub{font-size:11px;color:var(--gray);margin-top:2px}
+.hdoc-ref{font-size:11px;color:var(--gray);text-align:right}
+.hdoc-heading{text-align:center;font-weight:800;font-size:15px;letter-spacing:1.2px;margin:18px 0 20px;color:var(--navy)}
+.hdoc-body p{margin:0 0 12px}
+.hdoc-val{font-weight:600}
+.hdoc-miss{display:inline-block;padding:0 6px;border:1px dashed var(--st-wait-fg);border-radius:4px;background:var(--st-wait-bg);
+  color:var(--st-wait-fg);font-size:11.5px;font-weight:600;line-height:1.6}
+
+/* ── Templates (Super Admin) ───────────────────────────────────────────── */
+.hdoc-tpl-table{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.hdoc-tpl-table td{vertical-align:middle}
+.hdoc-tpl-table .hdoc-sm-btn{margin-right:6px}
+.hdoc-tpl-sub{font-size:11.5px;color:var(--gray);margin-top:2px}
+.ct-modal textarea.ep-form-input.hdoc-tpl-body{height:280px!important;min-height:200px;padding-top:10px;resize:vertical;line-height:1.55;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.hdoc-ins-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center}
+.hdoc-ins-lbl{font-size:11px;font-weight:600;color:var(--gray);margin-right:4px}
+.hdoc-ins{padding:3px 9px;border:1px dashed var(--border);border-radius:99px;background:#fff;font-family:inherit;
+  font-size:11px;color:#475569;cursor:pointer}
+.hdoc-ins:hover{border-style:solid;border-color:var(--btn-accent);color:var(--btn-accent)}
+.hdoc-fchips{display:flex;flex-wrap:wrap;gap:6px}
+.hdoc-fchip{padding:4px 10px;border-radius:99px;background:var(--ol);color:var(--navy);font-size:11.5px;font-weight:600}
+.hdoc-fchip.is-auto{background:var(--st-info-bg);color:var(--st-info-fg)}
+.hdoc-chip-empty{font-size:12px;color:var(--gray)}
+.hdoc-check{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--navy);cursor:pointer}
+.hdoc-check input{width:16px;height:16px;accent-color:var(--navy)}
+.ct-modal-sub code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+
+@media(max-width:640px){
+  .hdoc-paper{padding:28px 22px 36px}
+  .hdoc-search .lp-search-input{width:100%}
+}
+
+/* ── Popup end spacing ─────────────────────────────────────────────────────
+   The footer bar sits flush under whatever the popup's last block is, so
+   that block needs its own room above the bar; without it the last row of
+   fields - or the bottom of the letter preview - ran straight into it. */
+.hdoc-modal>.ep-form-grid,.hdoc-modal>.hdoc-paper-wrap,.hdoc-modal>.hdoc-tpl-table{margin-bottom:26px}

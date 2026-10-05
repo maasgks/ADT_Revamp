@@ -47,6 +47,10 @@ const sbIco={
   shieldCheck:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
   sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2"/><path d="M16 7l3 3"/><path d="M18.5 4.5l2 2"/></svg>',
+  folderDoc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>',
+  laptop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
   /* Contract-type tiles. Same 24x24 box and same 1.8 stroke as every icon
      above, and all four drawn on currentColor - type is a FILTER, not a
      status, and colour on this screen is already spoken for by the p1..p8
@@ -118,6 +122,11 @@ const sidebarItems=[
     {id:'settings',label:'Company Settings',color:'slate',icon:sbIco.building},
     {id:'all-users',label:'Users',color:'slate',icon:sbIco.userCheck}
   ]},
+  {dropdown:'Admin Access',color:'slate',icon:sbIco.lock,children:[
+    {id:'it-access',label:'IT Access',color:'slate',icon:sbIco.key},
+    {id:'asset-allocation',label:'Asset Allocation',color:'slate',icon:sbIco.laptop}
+  ]},
+  {id:'hr-docs',label:'HR Docs',color:'slate',icon:sbIco.folderDoc},
 
   {section:'Support'},
   {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},
@@ -563,7 +572,11 @@ const SB_STATUS_TONE={
   'ready-for-payroll':'ok','ready-for-payroll ':'ok',
   // Immigration / Contractor stages. 'pending-onboarding' and 'active' are
   // already covered above and mean the same thing here.
-  'pending-kickoff':'wait','ready-for-filing':'wait','filed':'ok'
+  'pending-kickoff':'wait','ready-for-filing':'wait','filed':'ok',
+  // Admin Access: asset lifecycle and condition, and IT access. Assigned is the
+  // asset's working state (like Active); Available is stock on the shelf.
+  assigned:'ok',available:'info','in-repair':'wait',returned:'idle',revoked:'bad',
+  good:'ok',fair:'wait',poor:'bad',damaged:'bad'
 };
 // Contract pipeline stages get their own ordered palette so a deal's
 // position is readable at a glance. Anything not listed here falls back to
@@ -1366,6 +1379,8 @@ function navigatePage(pg,fromDashboard){
      that choice away - apply() runs before navigatePage(), so this guard is
      what keeps the two in the right order. */
   if(pg==='contracts'&&!fromDashboard)ctLandingOpen=true;
+  /* HR Docs opens on its cards, not on whichever type was open last. */
+  if(pg==='hr-docs'&&typeof hdocReset==='function')hdocReset();
   ctStatusModal=null;   // a half-made status move never follows you to another page
   empStatusModal=null;
   prCreateOpen=false;pmCreateOpen=false;
@@ -1828,7 +1843,8 @@ function lpLandedAt(key,index){
 const LP_ROW_PREFIX={
   'compliance':'cmp','rates-rules':'rr','contract-templates':'ctp','payheads':'ph',
   'teams':'tm','support-tickets':'tk','all-leaves':'al','leave-policies':'lp',
-  'holidays':'hd','direct-employees':'de','global-employees':'ge'
+  'holidays':'hd','direct-employees':'de','global-employees':'ge',
+  'asset-allocation':'ast','it-access':'ita','hr-docs':'hdoc'
 };
 /* Run at the end of every repaint. The mark is spent on the first paint that
    finds the row, so the flash happens once - on the repaint the add itself
@@ -2428,7 +2444,7 @@ function addListingItem(pg){if(pg==='contracts'){
   ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
-else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else{addDemoMetaRow(pg);}}
+else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
 /* addDemoEmployee() and its name pool lived here: one button that invented a
    plausible record and inserted it. It is gone, not deprecated - the four-step
    intake in js/employee-add.js is the only way an employee is created now, so
