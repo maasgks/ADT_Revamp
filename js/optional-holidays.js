@@ -251,7 +251,7 @@ function ohOverlayHTML(){
       +'class="mod-tab'+(ohTab===id?' active':'')+'" data-ohtab="'+id+'" '
       +'onclick="ohSetTab(\''+id+'\')">'+ico+'<span>'+label+'</span></button>';
   };
-  return '<div class="oh-overlay" onclick="if(event.target===this)closeOptionalHolidays()">'
+  return '<div class="oh-overlay">'
     +'<div class="oh-panel" role="dialog" aria-modal="true" aria-labelledby="oh-title">'
       +'<div class="oh-head">'
         +'<div><div class="oh-title" id="oh-title">Optional Holidays</div>'
@@ -470,4 +470,4 @@ document.addEventListener('click',function(e){
   if(!ohMpOpen)return;
   if(e.target.closest('.oh-mwrap'))return;
   ohMpOpen=false;ohPaint();
-});
+},true);   // capture: popups stop clicks bubbling

@@ -346,14 +346,18 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 /* --pg-gutter is the page's left margin, and the topbar reads it too: the page
    title lines up with the first thing in the content rather than with the edge
    of the rail, which left it a gutter-width out from everything under it. */
-/* The 28px above the page is a MARGIN, not padding, so the scrollport starts
-   below it. As padding it was inside the scroller, and a sticky head pins to
-   the content edge in Chrome — leaving a 28px band above the pinned head with
-   rows still scrolling visibly through it. Outside the scroller nothing can
-   paint there, and body's own --light shows instead, which is what that strip
-   looked like all along. */
+/* The 28px above the page is PADDING by default: it scrolls away with the
+   page, so a form or a dashboard runs right up to the top bar instead of
+   disappearing behind a fixed empty band.
+
+   ONLY A PAGE WITH A LISTING TABLE swaps it for a MARGIN. Its header row is
+   sticky, and a sticky head pins to the scroller's content edge in Chrome; as
+   padding that left a 28px band above the pinned head with rows still
+   scrolling visibly through it. As a margin the scrollport starts below it, so
+   the head pins flush and nothing paints in the strip. */
 .page-content{flex:1;overflow-y:auto;overflow-x:hidden;
-  margin-top:28px;padding:0 var(--pg-gutter,32px) 28px;min-width:0;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent}
+  margin-top:0;padding:28px var(--pg-gutter,32px) 28px;min-width:0;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent}
+.page-content:has(.lp-table thead th,.at-table thead th){margin-top:28px;padding-top:0}
 .page-content::-webkit-scrollbar{width:3px}
 .page-content::-webkit-scrollbar-track{background:transparent}
 .page-content::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:99px}

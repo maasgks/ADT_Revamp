@@ -314,7 +314,7 @@ function renderDeSidebar(){
         +'<button class="ep-save-btn">Save</button>'
       +'</div>';
   }else if(deTab==='logs'){
-    body=renderEmpLogsTab('de',emp,EMP_LIFE_SEED.de[emp.id]);
+    body=renderEmpLogsTab('de',emp);
   }else if(deTab==='workflow'){
     const wf=deWorkflowData[emp.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -348,18 +348,8 @@ function renderDeSidebar(){
    with __ so nothing mistakes one for a status a record could carry, and the
    Status dropdown shows its placeholder while a group is selected - it has no
    option that means 'any of these five'. */
-const EMP_STAT_GROUPS={__onboarding__:'Onboarding',__offboarding__:'Offboarding'};
-function empStatIsGroup(v){return !!EMP_STAT_GROUPS[v];}
-function empStatMatch(e,v){
-  if(!v)return true;
-  const g=EMP_STAT_GROUPS[v];
-  if(!g)return e.status===v;
-  const st=empLifeStage(e.status);
-  return !!st&&st.type===g;
-}
-function empStatCount(list,v){
-  return list.filter(function(e){return empStatMatch(e,v);}).length;
-}
+/* Status tiles and the Offboarding group live in employee-lifecycle.js
+   (empStatTilesHTML / empStatMatch). */
 function buildDirectListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
   let deRows=directEmpData;
@@ -389,16 +379,12 @@ function buildDirectListingHTML(){
     /* All eight rungs, not just the two that mean "employed" - filtering on
        Active/Inactive alone cannot find a record stuck in verification, which
        is the search HR actually runs. */
-    +apCS('de-f-status',EMP_LIFE_STATUSES,empStatIsGroup(deStatusFilter)?'':deStatusFilter,'Status')
+    +apCS('de-f-status',EMP_STATUSES,empStatIsGroup(deStatusFilter)?'':deStatusFilter,'Status')
     +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery],'resetDeFilters()')
     +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(deStatusFilter==='__onboarding__'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'__onboarding__\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+empStatCount(directEmpData,'__onboarding__')+'</div><div class="listing-stat-label">Onboarding</div></div>'
-    +'<div class="listing-stat'+(deStatusFilter==='Active'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+empStatCount(directEmpData,'Active')+'</div><div class="listing-stat-label">Active</div></div>'
-    +'<div class="listing-stat'+(deStatusFilter==='__offboarding__'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'__offboarding__\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+empStatCount(directEmpData,'__offboarding__')+'</div><div class="listing-stat-label">Offboarding</div></div>'
-    +'<div class="listing-stat'+(deStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="deToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+empStatCount(directEmpData,'Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
-    +'</div></div>'
+    +empStatTilesHTML(directEmpData,deStatusFilter,'deToggleStatFilter')
+    +'</div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>JOB TITLE</th><th>DEPARTMENT</th><th>BRANCH</th><th>STATUS</th><th>ACTION</th>'
@@ -407,7 +393,9 @@ function buildDirectListingHTML(){
     +'</div></div>'
     +'<div class="lp-split-sb'+(deSelectedId?' open':'')+'" id="de-split-sb"><div class="lp-isb" id="de-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>'
-    +buildEmpStatusModalHTML('de');
+    +buildEmpStatusModalHTML('de')
+    +buildAddEmployeeModalHTML('de')
+    +buildAddTeamModalHTML();
 }
 function openGeSidebar(id){
   geTab=sbKeepTab(geSelectedId,geTab);geSelectedId=id;geEditMode=false;
@@ -519,7 +507,7 @@ function renderGeSidebar(){
   }else if(geTab==='logs'){
     /* Same renderer as the Direct Employee panel above — see
        employee-lifecycle.js. */
-    body=renderEmpLogsTab('ge',emp,EMP_LIFE_SEED.ge[emp.id]);
+    body=renderEmpLogsTab('ge',emp);
   }else if(geTab==='workflow'){
     const wf=geWorkflowData[emp.id]||[];
     const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -558,16 +546,12 @@ function buildGlobalListingHTML(){
     +lpSearchField('ge-f-q',geSearchQuery,'Search name, ID','applyGeFilters()')
     +apCS('ge-f-country',['Germany','France','Italy','United Kingdom','Netherlands'],'','Country')
     +apCS('ge-f-type',['EOR','Contractor','PEO'],'','Worker Type')
-    +apCS('ge-f-status',EMP_LIFE_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
+    +apCS('ge-f-status',EMP_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
     +clearFiltersBtn([geStatusFilter,geSearchQuery],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="listing-stats">'
-    +'<div class="listing-stat'+(geStatusFilter==='__onboarding__'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'__onboarding__\')"><div class="listing-stat-count" style="color:var(--st-info-fg)">'+empStatCount(globalEmpData,'__onboarding__')+'</div><div class="listing-stat-label">Onboarding</div></div>'
-    +'<div class="listing-stat'+(geStatusFilter==='Active'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'Active\')"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+empStatCount(globalEmpData,'Active')+'</div><div class="listing-stat-label">Active</div></div>'
-    +'<div class="listing-stat'+(geStatusFilter==='__offboarding__'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'__offboarding__\')"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+empStatCount(globalEmpData,'__offboarding__')+'</div><div class="listing-stat-label">Offboarding</div></div>'
-    +'<div class="listing-stat'+(geStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="geToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+empStatCount(globalEmpData,'Inactive')+'</div><div class="listing-stat-label">Inactive</div></div>'
-    +'</div></div>'
+    +empStatTilesHTML(globalEmpData,geStatusFilter,'geToggleStatFilter')
+    +'</div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
@@ -576,7 +560,9 @@ function buildGlobalListingHTML(){
     +'</div></div>'
     +'<div class="lp-split-sb'+(geSelectedId?' open':'')+'" id="ge-split-sb"><div class="lp-isb" id="ge-isb-inner">'+sbInner+'</div></div>'
     +'</div></div>'
-    +buildEmpStatusModalHTML('ge');
+    +buildEmpStatusModalHTML('ge')
+    +buildAddEmployeeModalHTML('ge')
+    +buildAddTeamModalHTML();
 }
 function geToggleStatFilter(v){
   geStatusFilter=geStatusFilter===v?'':v;
@@ -768,7 +754,8 @@ function buildTeamsListingHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(tmSelectedId?' open':'')+'" id="tm-split-sb"><div class="lp-isb" id="tm-isb-inner">'+sbInner+'</div></div>'
-    +'</div></div>';
+    +'</div></div>'
+    +buildAddTeamModalHTML();
 }
 /* The decision carried in from the dashboard's Approve / Reject, held only
    until the form it pre-fills is submitted or dismissed. It describes one
@@ -1138,7 +1125,7 @@ function buildAddLeaveModalHTML(){
   };
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="cancelAddLeave()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()" id="al-add-form">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
       +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
@@ -1704,7 +1691,7 @@ function buildCtStatusModalHTML(){
   const preset=allowed?asked:(opts[1]||c.status);
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const arrow='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeCtStatusModal()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-sm" style="width:min(540px,92vw)" role="dialog" aria-modal="true" aria-label="Update contract status" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Update Status</span><button class="ct-modal-close" onclick="closeCtStatusModal()" aria-label="Close">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">'+c.contractId+' &middot; '+c.empName+' &middot; '+ctTypeCfg(c.type).label+'</p>'
@@ -2256,7 +2243,7 @@ function saveComplianceItem(){
 }
 function buildCreateComplianceModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeComplianceModal()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Compliance</span><button class="ct-modal-close" onclick="closeComplianceModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
@@ -3603,7 +3590,7 @@ function buildCreateRuleModalHTML(){
    strips — a tab bar — for questions that are one-of-N answers, which is
    what a radio is. Read back with ciPicked(<group>). */
   const seg=(group,options,activeIdx)=>ciRadio(group,options,options[activeIdx||0]);
-  return '<div class="ct-modal-overlay" onclick="closeRatesRuleModal()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Rule</span><button class="ct-modal-close" onclick="closeRatesRuleModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-card" style="margin-bottom:16px">'
@@ -3643,7 +3630,7 @@ function buildCreateRuleModalHTML(){
 }
 function buildRuleSuccessModalHTML(){
   const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeRuleSuccess()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
     +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeRuleSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
     +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
@@ -3855,7 +3842,7 @@ function buildCreateTemplateModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   const req='<span class="req">*</span>';
-  return '<div class="ct-modal-overlay" onclick="closeCtpModal()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Template</span><button class="ct-modal-close" onclick="closeCtpModal()">'+xSvg+'</button></div>'
     +'<div class="ep-form-grid">'
@@ -3879,7 +3866,7 @@ function buildCreateTemplateModalHTML(){
 }
 function buildCtpSuccessModalHTML(){
   const checkSvg='<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeCtpSuccess()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="rr-success-modal" onclick="event.stopPropagation()">'
     +'<button class="ct-modal-close" style="position:absolute;top:14px;right:14px" onclick="closeCtpSuccess()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
     +'<div class="rr-success-ring"><div class="rr-success-check">'+checkSvg+'</div></div>'
@@ -4709,38 +4696,48 @@ function renderApEmpLists(){
 function addApEmp(id){selectedEmps.add(id);renderApEmpLists();}
 function removeApEmp(id){selectedEmps.delete(id);renderApEmpLists();}
 function openEditLeavePolicy(id){leaveEditId=id;page='leave-policy-edit';renderADTPage();}
-function cancelAddTeam(){page='teams';renderADTPage();}
-function buildAddTeamHTML(){
+/* ── Create New Team: a popup, like every other create form ─────────────
+   Opens over the Teams listing, or over the Create New Employee popup when
+   HR starts a team from there - saving then ticks the new team in that
+   employee's form. Only the X / Cancel closes it. */
+let tmCreateOpen=false;
+function startAddTeam(){
+  tmCreateOpen=true;
+  const fromEmployee=typeof eaOpen!=='undefined'&&eaOpen;
+  if(!fromEmployee&&page!=='teams'){page='teams';syncSidebarDropdown(page);}
+  renderADTPage();
+  setTimeout(function(){const n=document.getElementById('team-name');if(n)n.focus();},30);
+}
+function cancelAddTeam(){tmCreateOpen=false;renderADTPage();}
+function buildAddTeamModalHTML(){
+  if(!tmCreateOpen)return '';
   const departments=['Engineering','Finance','HR','Legal','Operations','Support','Admin'];
   const roles=['Team Lead','Manager','HR Partner','Member','Approver'];
   const members=empPool.map(e=>e.name+' - '+e.key);
-  return '<div class="ep-page team-form-page">'
-    +'<div><button class="ep-back" onclick="cancelAddTeam()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Back to Team listing</button></div>'
-    +'<div class="ep-header">'
-    +'<div class="ep-title-wrap" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="ep-title">Create New Team</span><span style="font-size:13px;color:#98a2b3">Add team details to your workforce</span></div>'
-    +'</div>'
-    +'<div class="ep-form-card team-form-card" style="padding:0;overflow:visible">'
-    +'<div class="policy-form-section">'
-    +'<div class="policy-section-title">Basic Detail</div>'
-    +'<div class="policy-form-grid team-form-row">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Team Name <span class="req">*</span></label><input class="ep-form-input" id="team-name" type="text" placeholder="Enter team name"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Team Email ID <span class="req">*</span></label><input class="ep-form-input" id="team-email" type="email" placeholder="Enter email"></div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Department <span class="req">*</span><span class="team-form-links"><button type="button" class="team-form-link">+ Add Department</button><button type="button" class="team-form-link muted">Refresh</button></span></label>'
-    +apCS('team-department',departments,'','Select Department')+'</div>'
-    +'</div>'
-    +'</div>'
-    +'<hr class="team-form-divider">'
-    +'<div class="policy-form-section">'
-    +'<div class="team-section-head"><div class="policy-section-title">Role Assignment</div><button type="button" class="team-add-members">+ Add Members</button></div>'
-    +'<div class="policy-form-grid team-form-row">'
-    +'<div class="ep-form-group"><label class="ep-form-label">Member role <span class="team-help-dot">!</span></label>'+apCS('team-role',roles,'','Select')+'</div>'
-    +'<div class="ep-form-group"><label class="ep-form-label">Members name <span class="team-form-links"><button type="button" class="team-form-link">+ Add Employee</button><button type="button" class="team-form-link muted">Refresh</button></span></label>'
-    +apCS('team-member',members,'','Select')+'</div>'
-    +'</div>'
-    +'</div>'
-    +'</div>'
-    +'<div class="team-form-actions"><button class="ep-cancel-btn" onclick="cancelAddTeam()">Cancel</button><button class="ep-save-btn" onclick="submitAddTeam()">Create Team</button></div>'
-    +'</div>';
+  const x='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay">'
+    +'<div class="ct-modal ct-modal--form tm-modal" role="dialog" aria-modal="true" aria-label="Create New Team" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Team</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddTeam()" aria-label="Close">'+x+'</button></div>'
+    +'<p class="ct-modal-sub">Add team details to your workforce. Fields marked <span class="req">*</span> are required.</p>'
+    +'<div class="tm-modal-sec"><div class="tm-modal-sec-title">Basic Detail</div>'
+      +'<div class="ep-form-grid">'
+        +'<div class="ep-form-group"><label class="ep-form-label" for="team-name">Team Name <span class="req">*</span></label><input class="ep-form-input" id="team-name" type="text" placeholder="Enter team name"></div>'
+        +'<div class="ep-form-group"><label class="ep-form-label" for="team-email">Team Email ID <span class="req">*</span></label><input class="ep-form-input" id="team-email" type="email" placeholder="Enter email"></div>'
+        +'<div class="ep-form-group"><label class="ep-form-label tm-label">Department <span class="req">*</span><span class="team-form-links"><button type="button" class="team-form-link">+ Add Department</button><button type="button" class="team-form-link muted">Refresh</button></span></label>'
+          +apCS('team-department',departments,'','Select Department')+'</div>'
+      +'</div></div>'
+    +'<div class="tm-modal-sec"><div class="tm-modal-sec-title">Role Assignment<button type="button" class="team-add-members">+ Add Members</button></div>'
+      +'<div class="ep-form-grid">'
+        +'<div class="ep-form-group"><label class="ep-form-label">Member Role <span class="team-help-dot">!</span></label>'+apCS('team-role',roles,'','Select')+'</div>'
+        +'<div class="ep-form-group"><label class="ep-form-label tm-label">Members Name <span class="team-form-links"><button type="button" class="team-form-link">+ Add Employee</button><button type="button" class="team-form-link muted">Refresh</button></span></label>'
+          +apCS('team-member',members,'','Select')+'</div>'
+      +'</div></div>'
+    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="cancelAddTeam()">Cancel</button>'
+      +'<button class="ep-save-btn" onclick="submitAddTeam()">Create Team</button>'
+    +'</div></div>'
+    +'</div></div>';
 }
 // An untouched select still shows its placeholder as .cs-value text, so return
 // '' unless the user actually picked an option (mirrors getCustomSelectValue).
@@ -4785,8 +4782,12 @@ function submitAddTeam(){
   const rows=supportPageMeta.teams.rows;
   rows.unshift([0,teamName,dept,'India',member&&member!=='Select'?'1':'0','Active']);
   rows.forEach(function(r,i){r[0]=i+1;});
-  page='teams';renderADTPage();
-  showToast('Team created','success','"'+teamName+'" has been added to Teams.');
+  tmCreateOpen=false;
+  /* Started from Create New Employee: tick the new team there and go back. */
+  const forEmployee=typeof eaOpen!=='undefined'&&eaOpen&&eaData;
+  if(forEmployee&&eaData.teams.indexOf(teamName)<0)eaData.teams.push(teamName);
+  renderADTPage();
+  showToast('Team created','success','"'+teamName+'" has been added to Teams'+(forEmployee?' and selected for this employee.':'.'));
 }
 
 /* ══ PAYHEADS ══════════════════════════════════════════════════════════════
@@ -5084,7 +5085,7 @@ function buildCreatePayheadModalHTML(){
   if(!phDraftSlabs.length)phDraftSlabs=[phBlankSlab()];
   phChainFrom();
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="cancelAddPayhead()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Payhead</span>'
       +'<button class="ct-modal-close" onclick="cancelAddPayhead()">'+xSvg+'</button></div>'
@@ -5699,7 +5700,7 @@ function buildAddHolidaysModalHTML(){
   const plusSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   const bldSvg='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
   const lockSvg='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="cancelAddHoliday()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Holidays</span>'
       +'<button class="ct-modal-close" onclick="cancelAddHoliday()">'+xSvg+'</button></div>'
@@ -5827,7 +5828,7 @@ function startAddLeavePolicy(){
 function buildAddLeavePolicyModalHTML(){
   const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="cancelAddPolicy()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Leave Policy</span>'
       +'<button class="ct-modal-close" onclick="cancelAddPolicy()">'+xSvg+'</button></div>'
@@ -6761,7 +6762,7 @@ function buildMyTimesheetHTML(viewingOther) {
   // ── Fixed overlay sidebar ──
   const overlayHTML = tsSelectedDay
     ? '<div class="ts-overlay">'
-      + '<div class="ts-overlay-bg" onclick="tsCloseDay()"></div>'
+      + '<div class="ts-overlay-bg"></div>'
       + '<div class="ts-overlay-panel">'+buildTsSidebarHTML(tsSelectedDay)+'</div>'
       + '</div>'
     : '';
@@ -7389,7 +7390,7 @@ function profReceiveFile(docName,file){
   const MAX=5*1024*1024;
   if(file.size>MAX){showToast('File too large','error',profFormatSize(file.size)+' exceeds the 5 MB limit.');return;}
   if(file.size===0){showToast('File is empty','error','Please choose a valid document.');return;}
-  profAttachments[docName]={
+  profAttachMap()[docName]={
     file:file.name,
     size:profFormatSize(file.size),
     date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})
@@ -7398,13 +7399,13 @@ function profReceiveFile(docName,file){
   showToast(docName+' uploaded','success',file.name+' &middot; '+profFormatSize(file.size));
 }
 function profRemoveAttachment(docName){
-  if(!profAttachments[docName])return;
-  delete profAttachments[docName];
+  if(!profAttachMap()[docName])return;
+  delete profAttachMap()[docName];
   refreshProfile();
   showToast(docName+' removed','info','The document is back in the pending list.');
 }
 function profDownloadAttachment(docName){
-  const a=profAttachments[docName];
+  const a=profAttachMap()[docName];
   if(!a)return;
   showToast('Preparing download…','info',a.file);
   setTimeout(function(){showToast('Downloaded','success',a.file);},900);
@@ -7432,16 +7433,19 @@ function buildMyProfileHTML(){
   ];
   const tabBar=`<div class="prof-tab-bar">${profTabs.map(t=>`<button class="prof-tab${profTab===t.id?' active':''}" data-tab="${t.id}" onclick="setProfTab('${t.id}')">${t.label}</button>`).join('')}</div>`;
 
+  /* An employee arriving from their dashboard (Upload Documents) sees their
+     own profile; everyone else sees the signed-in admin's. */
+  const pe=typeof empProfPerson==='function'?empProfPerson():null;
   const heroCard=`
     <div class="prof-hero-card">
       <div class="prof-avatar-wrap">
-        <div class="prof-avatar">PP</div>
+        <div class="prof-avatar">${pe?empInitials(pe.name):'PP'}</div>
         <div class="prof-avatar-badge">${iCheck}</div>
       </div>
       <div class="prof-hero-info">
-        <div class="prof-hero-name">Pallavi Parate</div>
-        <div class="prof-hero-role"><span class="prof-role-badge">Admin</span><span class="prof-hero-entity"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Dhi Hyperlocal</span></div>
-        <div class="prof-hero-meta">Last login: Today, 9:41 AM &nbsp;·&nbsp; Member since Jan 2024</div>
+        <div class="prof-hero-name">${pe?sbEsc(pe.name):'Pallavi Parate'}</div>
+        <div class="prof-hero-role"><span class="prof-role-badge">${pe?'Employee':'Admin'}</span><span class="prof-hero-entity"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> Dhi Hyperlocal</span></div>
+        <div class="prof-hero-meta">${pe?sbEsc(pe.empId)+' &nbsp;·&nbsp; '+sbEsc(pe.jobTitle||'')+' &nbsp;·&nbsp; Employee Status: '+sbEsc(pe.status):'Last login: Today, 9:41 AM &nbsp;·&nbsp; Member since Jan 2024'}</div>
       </div>
       <button class="ep-save-btn prof-edit-btn">${iEdit} Edit Profile</button>
     </div>`;
@@ -7473,8 +7477,46 @@ function buildProfTabContent(){
   const fc=(ico,label,val)=>`<div class="prof-field"><div class="prof-field-icon">${ico}</div><div class="prof-field-body"><div class="prof-field-label">${label}</div><div class="prof-field-val">${val}</div></div></div>`;
 
   let tabContent='';
+  const pe=typeof empProfPerson==='function'?empProfPerson():null;
 
-  if(profTab==='basic-details'){
+  if(profTab==='basic-details'&&pe){
+    const v=x=>x&&x!=='--'?sbEsc(x):'<span style="color:#9ca3af">—</span>';
+    const recent=empLogs(pe).slice(0,5);
+    tabContent=`<div class="prof-body">
+      <div class="prof-left">
+        <div class="ep-form-card">
+          <div class="prof-section-hdr"><span class="policy-section-title">Personal Information</span></div>
+          <div class="prof-field-grid">
+            ${fc(iUser,'Full Name',v(pe.name))}
+            ${fc(iMail,'Email Address',v(pe.email))}
+            ${fc(iPhone,'Phone Number',v(pe.contact))}
+            ${fc(iGlobe,'Country',v(pe.country||'India'))}
+          </div>
+        </div>
+        <div class="ep-form-card">
+          <div class="prof-section-hdr"><span class="policy-section-title">Work Details</span></div>
+          <div class="prof-field-grid">
+            ${fc(iShield,'Job Title',v(pe.jobTitle))}
+            ${fc(iUser,'Department',v(pe.dept))}
+            ${fc(iGlobe,'Entity','Dhi Hyperlocal')}
+            ${fc(iCal,'Joining Date',v(pe.joinDate))}
+            ${fc(iUser,'Employee ID',v(pe.empId))}
+            ${fc(iShield,'Employee Status',empLifeBadge(pe.status))}
+          </div>
+        </div>
+      </div>
+      <div class="prof-right">
+        <div class="ep-form-card">
+          <div class="prof-section-hdr"><span class="policy-section-title">Recent Activity</span></div>
+          <div class="prof-activity-list">
+            ${recent.map((a,i)=>`<div class="prof-activity-row"><div class="prof-activity-dot${i===0?' active':''}"></div><div class="prof-activity-body"><div class="prof-activity-action">${sbEsc(a.status)}</div><div class="prof-activity-time">${a.date}, ${a.time}</div></div></div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  else if(profTab==='basic-details'){
     const activities=[
       {action:'Logged in',time:'Today, 9:41 AM'},
       {action:'Updated leave policy — Casual Leave',time:'Yesterday, 3:15 PM'},
@@ -7567,8 +7609,8 @@ function buildProfTabContent(){
 
   else if(profTab==='attachments'){
     const iTrash='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-    const uploadedDocs=PROF_DOCS.filter(d=>profAttachments[d]).map(d=>Object.assign({name:d},profAttachments[d]));
-    const pendingDocs=PROF_DOCS.filter(d=>!profAttachments[d]);
+    const uploadedDocs=PROF_DOCS.filter(d=>profAttachMap()[d]).map(d=>Object.assign({name:d},profAttachMap()[d]));
+    const pendingDocs=PROF_DOCS.filter(d=>!profAttachMap()[d]);
     const total=PROF_DOCS.length;
     const esc=s=>String(s).replace(/'/g,"\\'");
     const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -7597,7 +7639,9 @@ function buildProfTabContent(){
       <div class="prof-section-hdr"><span class="policy-section-title">Others (Not Uploaded)</span><span class="prof-att-count">${pendingDocs.length} pending</span></div>
       <div class="prof-att-grid">${pendingItems}</div>
     </div>`:`<div class="ep-form-card"><div class="prof-att-empty">${tick} All ${total} documents have been uploaded.</div></div>`;
-    tabContent=uploadedCard+pendingCard;
+    /* Requested Docs first - it is what HR is waiting on. It renders nothing
+       when nothing has been requested, so the section stays hidden. */
+    tabContent=(typeof empProfReqDocsHTML==='function'?empProfReqDocsHTML():'')+uploadedCard+pendingCard;
   }
 
   else if(profTab==='salary-slip'){
@@ -8414,7 +8458,7 @@ function buildCreateTicketModalHTML(){
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const clients=[...new Set(ticketsData.map(function(t){return t.clientName;}))].sort();
   const cats=[...new Set(ticketsData.map(function(t){return t.category;}))].sort();
-  return '<div class="ct-modal-overlay" onclick="closeCreateTicket()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Ticket</span>'
       +'<button class="ct-modal-close" onclick="closeCreateTicket()">'+xSvg+'</button></div>'

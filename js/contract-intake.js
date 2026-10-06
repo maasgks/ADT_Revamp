@@ -220,7 +220,7 @@ function ciDdKey(e){
    the click was about to open. */
 document.addEventListener('click',function(e){
   if(!e.target.closest('.ci-dd'))ciDdCloseAll();
-});
+},true);   // capture: popups stop clicks bubbling
 /* A fixed-position menu does not travel with its trigger, so a scroll leaves it
    floating over unrelated content. The fix is to move it, not to close it.
 

@@ -35,9 +35,6 @@
 <link rel="stylesheet" href="css/leave-settings.css">
 <!-- How a day is judged: the rail colour, the day-panel tag and the legend. -->
 <link rel="stylesheet" href="css/day-status.css">
-<!-- Two fit rules for the longer employee status vocabulary; after main.css,
-     because it overrides .lp-status-badge. -->
-<link rel="stylesheet" href="css/employee-lifecycle.css">
 <link rel="stylesheet" href="css/cs-agreements.css">
 <link rel="stylesheet" href="css/esign.css">
 <!-- The four-step Create New Employee wizard. Builds on the form system in
@@ -50,6 +47,10 @@
 <link rel="stylesheet" href="css/admin-access.css">
 <!-- Governance → HR Docs: letter types, templates, drafts and the preview page. -->
 <link rel="stylesheet" href="css/hr-docs.css">
+<!-- Employee lifecycle: log blocks, document picker, Asset / IT sections,
+     the dashboard tracker and Requested Docs. After leaves.css, whose shared
+     row-menu rules it extends. -->
+<link rel="stylesheet" href="css/employee-lifecycle.css">
 <!-- LAST: settles control height and button shape across every creation form,
      popup and page alike. Must win over the per-screen sheets above. -->
 <link rel="stylesheet" href="css/form-system.css"></head>
@@ -160,6 +161,11 @@
           <div class="hr-header-title">Employee Dashboard</div>
           <div class="hr-header-desc">Welcome back, John Doe. Here's your workspace overview.</div>
         </div>
+
+        <!-- Onboarding / Offboarding tracker. Filled from the employee's own
+             record by empDashRender() (js/employee-lifecycle.js); empty while
+             no lifecycle is running, which hides it. -->
+        <div id="emp-life-dash"></div>
 
         <!-- Metric Cards -->
         <!-- NO PAYROLL STATUS CARD, HERE OR ON ANY OTHER DASHBOARD. The other
@@ -2198,12 +2204,12 @@
 <script src="js/contract-types.js"></script>
 <script src="js/core.js"></script>
 <script src="js/contract-events.js"></script>
-<!-- After core.js: it registers its eight statuses into SB_STATUS_TONE and
-     reads statusClass() at parse time. Before pages.js, which renders both
-     employee Logs tabs through renderEmpLogsTab(). -->
+<!-- After core.js: it registers its log tones into SB_STATUS_TONE and settles
+     every employee onto its log at parse time. Before pages.js, which renders
+     both employee Logs tabs through renderEmpLogsTab(). -->
 <script src="js/employee-lifecycle.js"></script>
-<!-- After core.js for apCS/apCD and teamsData; before renderer.js, which
-     routes page==="employee-add" to buildAddEmployeeHTML(). -->
+<!-- After core.js for apCS/apCD and teamsData. The Create New Employee popup;
+     the employee listings in pages.js paint it with buildAddEmployeeModalHTML(). -->
 <script src="js/employee-add.js"></script>
 <!-- Before pages.js only for tidiness: the timesheet builders call
      tsxExportBtn() at RENDER time, long after every file here has parsed. -->
@@ -2319,13 +2325,13 @@ function initDashboardTabsBar(){
 </div>
 
 <!-- CONTRACTS MODAL -->
-<div id="ct-modal-overlay" class="ct-modal-overlay" style="display:none" onclick="if(event.target===this)closeCtModal()"></div>
+<div id="ct-modal-overlay" class="ct-modal-overlay" style="display:none"></div>
 
 <!-- AI TOAST NOTIFICATIONS -->
 <div id="ai-toast-stack" class="ai-toast-stack"></div>
 
 <!-- COST CALCULATOR MODAL -->
-<div id="cost-calc-overlay" class="cost-calc-overlay hidden" onclick="if(event.target===this)closeCostCalculator()">
+<div id="cost-calc-overlay" class="cost-calc-overlay hidden">
   <div class="cost-calc-panel">
     <div class="cost-calc-header">
       <div>

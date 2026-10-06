@@ -650,22 +650,49 @@ function hdocTypeScreenHTML(){
         +(hdocIsAdmin()?'<button class="ep-cancel-btn" onclick="hdocOpenTemplates(\''+t.key+'\')">'+HDOC_ICO.cog+' Templates</button>':'')
         +'<button class="ep-save-btn" onclick="hdocCreate(\''+t.key+'\')"'+(act?'':' disabled title="No Active Template"')+'>'+HDOC_ICO.plus+' Create '+t.label+'</button>'
       +'</div></header>'
-    +'<div class="hdoc-layout">'
-      +'<div class="hdoc-main"><section class="hdoc-panel">'
-        +'<div class="hdoc-panel-head"><span class="hdoc-panel-title">Issued Documents</span><span class="hdoc-pill">'+all.length+'</span>'
-          +'<span class="hdoc-panel-search">'+lpSearchField('hdoc-q',hdocQ,'Search number or employee','hdocSearch()')
-          +(hdocQ?'<button class="lp-pill-clear" onclick="hdocClearSearch()">Clear</button>':'')+'</span></div>'
-        +'<table class="lp-table hdoc-table"><thead><tr><th>S. No</th><th>Document No</th><th>Employee</th><th>Created By</th>'
-          +'<th>Issued On</th><th>Status</th><th>Action</th></tr></thead><tbody>'+pgn.rows+'</tbody></table>'
-        +(all.length>LIST_PAGE_SIZE?pgn.pager:'')
-      +'</section></div>'
-      +'<aside class="hdoc-rail">'+hdocDraftsPanel(t.key)+'</aside>'
-    +'</div></div>';
+    /* FR-22.1 / 22.6: Saved Drafts first, with its count, then what has been
+       issued - both full width, one above the other. */
+    +hdocDraftsTableHTML(t.key)
+    +'<section class="hdoc-panel">'
+      +'<div class="hdoc-panel-head"><span class="hdoc-panel-title">Issued Documents</span><span class="hdoc-pill">'+all.length+'</span>'
+        +'<span class="hdoc-panel-search">'+lpSearchField('hdoc-q',hdocQ,'Search number or employee','hdocSearch()')
+        +(hdocQ?'<button class="lp-pill-clear" onclick="hdocClearSearch()">Clear</button>':'')+'</span></div>'
+      +'<table class="lp-table hdoc-table"><thead><tr><th>S. No</th><th>Document No</th><th>Employee</th><th>Created By</th>'
+        +'<th>Issued On</th><th>Status</th><th>Action</th></tr></thead><tbody>'+pgn.rows+'</tbody></table>'
+      +(all.length>LIST_PAGE_SIZE?pgn.pager:'')
+    +'</section></div>';
+}
+/* FR-22.6: the type's drafts as a table - who the letter is for, its type,
+   who started it, when, and the way back into it. */
+function hdocDraftsTableHTML(type){
+  const list=hdocDrafts(type);
+  const rows=list.map(function(d,i){
+    const who=hdocSubject(d);
+    return '<tr class="hdoc-trow" style="cursor:pointer" onclick="hdocOpenDoc('+d.id+')">'
+      +'<td class="lp-c-n">'+(i+1)+'</td>'
+      +'<td>'+(who?'<span class="hdoc-cell-who"><span class="hdoc-av is-sm">'+hdocInitials(who)+'</span>'+hdocEsc(who)+'</span>':'<i style="color:var(--gray)">Not chosen yet</i>')+'</td>'
+      +'<td>'+hdocTypeOf(d.type).label+'</td>'
+      +'<td>'+hdocEsc(d.createdBy)+'</td>'
+      +'<td style="white-space:nowrap">'+String(d.createdAt).split(' | ')[0]+'</td>'
+      +'<td style="white-space:nowrap">'+String(d.updatedAt).split(' | ')[0]+'</td>'
+      +'<td onclick="event.stopPropagation()" style="white-space:nowrap">'
+        +'<button class="att-row-btn" title="Continue editing" onclick="hdocOpenDoc('+d.id+')">'+HDOC_ICO.edit+'</button>'
+        +'<button class="att-row-btn is-danger" title="Delete draft" onclick="hdocDeleteDraft('+d.id+',event)">'+HDOC_ICO.trash+'</button></td>'
+      +'</tr>';
+  }).join('');
+  return '<section class="hdoc-panel hdoc-drafts-top">'
+    +'<div class="hdoc-panel-head"><span class="hdoc-panel-title">Saved Drafts</span>'
+      +'<span class="hdoc-pill'+(list.length?' is-wait':'')+'">'+list.length+'</span></div>'
+    +(list.length
+      ?'<table class="lp-table hdoc-table"><thead><tr><th>S. No</th><th>Employee / Candidate</th><th>Document Type</th><th>Created By</th>'
+        +'<th>Created Date</th><th>Updated Date</th><th>Action</th></tr></thead><tbody>'+rows+'</tbody></table>'
+      :'<div class="hdoc-rail-empty">No drafts for this letter. Use <b>Save as Draft</b> while creating a document to finish it later.</div>')
+    +'</section>';
 }
 
 /* ── The popups ──────────────────────────────────────────────────────────── */
 function hdocModalShell(title,sub,body,foot,wide,back){
-  return '<div class="ct-modal-overlay" onclick="hdocClose()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form hdoc-modal'+(wide?' hdoc-modal-wide':'')+'" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'
       +(back?'<button class="hdoc-hdr-back" onclick="'+back+'" title="Back">'+HDOC_ICO.back+'</button>':'')+title+'</span>'

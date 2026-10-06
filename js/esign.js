@@ -919,7 +919,7 @@ function esModalHTML(){
     ?sbEsc(doc.title)+' for '+sbEsc(CSAG_ENTITY)+'. Fields marked <span class="req">*</span> are required.'
     :sbEsc(doc.name)+' &middot; '+sbEsc(doc.size)+' &middot; '+sbEsc(ESIGN_CFG.provider)+' '+sbEsc(ESIGN_CFG.env);
 
-  return '<div class="ct-modal-overlay" onclick="'+(esState.busy?'':'esClose()')+'">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form es-modal" role="dialog" aria-modal="true" '
       +'aria-label="'+attrSafe(title.replace(/&mdash;/g,'-'))+'" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+title+'</span>'

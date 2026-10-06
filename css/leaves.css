@@ -1036,3 +1036,13 @@ tr.lp-row-selected>td:first-child,
    shown when a later stage was picked than the one-step rule allows. */
 .ct-sm-move{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
 .ct-sm-note{margin:0 0 16px;padding:10px 12px;border-radius:10px;background:var(--st-wait-bg);border:1px solid var(--st-wait-bd);color:var(--st-wait-fg);font-size:12.5px;line-height:1.5}
+
+/* ── Create New Team as a popup ───────────────────────────────────────────
+   Two sections in the standard create popup, divided the way the page form
+   divided them. */
+.tm-modal-sec{margin-bottom:24px}
+.tm-modal-sec+.tm-modal-sec{padding-top:20px;border-top:1px dashed #cfd6df}
+.tm-modal-sec-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;
+  font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#98a2b3}
+.tm-modal-sec-title .team-add-members{text-transform:none;letter-spacing:0}
+.tm-modal .ep-form-grid{align-items:end}

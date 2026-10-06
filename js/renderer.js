@@ -63,8 +63,6 @@ function renderPageContent(target){
   if(page==='asset-allocation'){el.innerHTML=buildAssetAllocationHTML();return;}
   if(page==='it-access'){el.innerHTML=buildItAccessHTML();return;}
   if(page==='hr-docs'){el.innerHTML=buildHrDocsHTML();return;}
-  if(page==='team-add'){el.innerHTML=buildAddTeamHTML();return;}
-  if(page==='employee-add'){el.innerHTML=buildAddEmployeeHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
   if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
@@ -81,6 +79,8 @@ function renderPageContent(target){
     el.innerHTML=dashboardContentHTML;
     // Numbers come from the data, not from the snapshot's typed-in markup.
     if(typeof syncDashCardCounts==='function')syncDashCardCounts(el);
+    // The employee's lifecycle tracker is drawn from the live record.
+    if(typeof empDashRender==='function')empDashRender(el);
     // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
     _attRestore();   // ...and the snapshot is always the idle clock — see _attRestore
@@ -820,7 +820,7 @@ var PALETTE_EXTRA=[
   {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){navigatePage('all-leaves');startAddLeave();}},
   {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){navigatePage('leave-policies');startAddLeavePolicy();}},
   {label:'Add holidays',group:'Create',keys:'new holiday holidays calendar public festival entity day off',run:function(){navigatePage('holidays');startAddHoliday();}},
-  {label:'Create a team',group:'Create',keys:'new team group department',run:function(){page='team-add';renderADTPage();}},
+  {label:'Create a team',group:'Create',keys:'new team group department',run:function(){startAddTeam();}},
   {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},
   {label:'Add a rate or rule',group:'Create',keys:'new rate rule tax statutory',run:function(){navigatePage('rates-rules');ratesRuleModalOpen=true;renderADTPage();}},
   {label:'Add a contract template',group:'Create',keys:'new template contract document',run:function(){navigatePage('contract-templates');ctpModalOpen=true;renderADTPage();}},

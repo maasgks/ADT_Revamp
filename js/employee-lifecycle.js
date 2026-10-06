@@ -1,535 +1,1183 @@
-/* ══ EMPLOYEE LIFECYCLE: ELEVEN MAJOR STATUSES, ONE LOGS TAB, TWO MODULES ══
-   Direct Employee and Global Employee both logged the same two words —
-   "Created" and "Updated" — and offered the same two statuses. That is a
-   record that something happened and no record of WHAT. An employee record
-   actually walks eleven major statuses, each owned by a named team:
+/* ══ EMPLOYEE LIFECYCLE (FR-01 … FR-21, FR-23, FR-24) ═══════════════════════
+   Employee Status is one of four values and nothing else:
 
-      1  Pending                     Onboarding   HR Team
-      2  Onboarding                  Onboarding   HR Team
-      3  Documents & Info Submitted  Onboarding   Automatic when saved
-      4  Verification Completed      Onboarding   Compliance Team
-         └ Verification Failed       Onboarding   Compliance Team   (branch)
-      5  Onboarding Setup            Onboarding   HR + IT Teams
-      6  Onboarding Setup Completed  Onboarding   HR + IT Teams
-      7  Active                      Employment   HR / Authorized Admin
-      8  Offboarding                 Offboarding  HR Team
-      9  Exit Clearance              Offboarding  IT + Compliance + HR
-     10  Exit Clearance Completed    Offboarding  IT + Compliance + HR
-     11  Inactive                    Employment   HR / Authorized Admin
+      Pending      created, onboarding not started
+      Onboarding   onboarding activities are open
+      Active       employed (offboarding, when it is running, is a PHASE of
+                   Active - the status does not move until the exit is done)
+      Inactive     exited, or onboarding was cancelled
 
-   EMPLOYMENT STATUS IS NOT A SECOND FIELD. emp.status IS the major status —
-   all eleven of them. "Employment Status = Active" is not a value to mirror
-   somewhere else; it is what standing on rung 7 MEANS. Two fields would need
-   reconciling on every move and would let a record still in document
-   verification call itself Active in the listing, which is the one column HR
-   actually reads.
+   Everything between those four is a LOG, added from the record's Logs tab
+   (Employee Record → Action → Logs → Add Log). Each log type asks for what
+   that step needs and is owned by a team (FR-01):
 
-   The panel itself is the SAME Logs tab every other module has — the shared
-   .lp-logs-* timeline on the left, lpLogStatusField() + a comment on the
-   right, committed through lpCommitLog(). The one addition is the block that
-   appears under the status dropdown asking for whatever THAT status actually
-   needs before the record may move on: a tick-list, some fields, or — for
-   seven of the eleven — nothing at all. Both employee modules render through
-   renderEmpLogsTab(); if you find yourself copying this timeline into
-   pages.js, this file has failed. */
+     Pending / Onboarding / Document Request Raised     HR
+     Documents Submitted                                System
+     Document Rejected / Verification Completed         Compliance
+     Asset Allocation & IT Access Completed             HR / IT
+     Active                                             System
+     Cancel Onboarding / Offboarding                    HR
+     KT / Handover Completed                            Reporting Manager
+     Asset Recovery & IT Access Revocation Completed    HR / IT
+     Compliance Clearance Completed                     Compliance
+     F&F Settlement Completed                           HR / Finance
+     Inactive                                           System
+     Cancel Offboarding                                 HR
 
-/* ── The mandatory document set ────────────────────────────────────────────
-   The list Compliance ticks against at Verification Failed: which documents
-   came back. One list, so "which documents" cannot drift between the screens
-   that talk about it. */
-const EMP_LIFE_DOCS=['Identity Proof','Address Proof','Educational Certificate',
-                     'Previous Employment Letter','Bank Account Proof'];
-/* The spec's rejection reasons, verbatim and in its order. */
-const EMP_DOC_REJECT_REASONS=['Incorrect / Invalid Document','Illegible / Unreadable','Expired Document',
-                              'Information Mismatch','Incomplete / Missing Pages','Incorrect Document Type','Other'];
-/* The spec's separation types, verbatim and in its order. */
-const EMP_SEPARATION_TYPES=['Voluntary','Involuntary','Contract End','Retirement','Other'];
+   THREE LOGS ARE NEVER PICKED BY A PERSON. Documents Submitted is written the
+   moment the last outstanding requested document is uploaded (FR-07); Active
+   the moment Verification Completed and Asset Allocation & IT Access
+   Completed both exist, in either order (FR-12); Inactive the moment the
+   applicable exit activities exist AND the Last Working Date is reached
+   (FR-19). Each is stamped Performed By = System, comment "Automated by
+   System" (FR-01).
 
-/* What is currently outstanding, written by the last Verification Failed entry
-   and cleared by the next Verification Completed. It is derived from the log,
-   not a second store to keep in step with it. */
-function empDocsRejected(emp){return emp.failedDocs||[];}
+   THE LOG IS THE SOURCE OF TRUTH. empState() walks it oldest-first; every
+   entry also records the Employee Status before and after it (FR-24), and
+   the emails it triggered (FR-23). */
 
-/* ── The eleven statuses, plus the rejection branch ────────────────────────
-   The ladder, in order:
+/* ── Log types ─────────────────────────────────────────────────────────────
+   Keyed by a slug so inline handlers never carry "&" or "/" around; the
+   label is what a person reads and what the entry stores as its status. */
+const EMP_SYS_COMMENT='Automated by System';
+const EMP_LOG={
+  pending:         {label:'Pending',owner:'HR'},
+  onboarding:      {label:'Onboarding',owner:'HR'},
+  'doc-request':   {label:'Document Request Raised',owner:'HR'},
+  'docs-submitted':{label:'Documents Submitted',owner:'System',system:true},
+  'doc-rejected':  {label:'Document Rejected',owner:'Compliance'},
+  verified:        {label:'Verification Completed',owner:'Compliance'},
+  'asset-it':      {label:'Asset Allocation & IT Access Completed',owner:'HR / IT'},
+  active:          {label:'Active',owner:'System',system:true},
+  'cancel-onb':    {label:'Cancel Onboarding',owner:'HR',cancel:true},
+  offboarding:     {label:'Offboarding',owner:'HR'},
+  kt:              {label:'KT / Handover Completed',owner:'Reporting Manager'},
+  'asset-rev':     {label:'Asset Recovery & IT Access Revocation Completed',owner:'HR / IT'},
+  compliance:      {label:'Compliance Clearance Completed',owner:'Compliance'},
+  fnf:             {label:'F&F Settlement Completed',owner:'HR / Finance'},
+  inactive:        {label:'Inactive',owner:'System',system:true},
+  'cancel-off':    {label:'Cancel Offboarding',owner:'HR',cancel:true}
+};
+function empLogKey(label){
+  for(var k in EMP_LOG)if(EMP_LOG[k].label===label)return k;
+  return '';
+}
+const EMP_STATUSES=['Pending','Onboarding','Active','Inactive'];
 
-     Pending -> Onboarding -> Documents & Info Submitted
-             -> Verification Failed / Verification Completed
-             -> Onboarding Setup -> Onboarding Setup Completed
-             -> Active -> Offboarding
-             -> Exit Clearance -> Exit Clearance Completed -> Inactive
+/* One tone map for the app. Only keys nobody else owns are added here. */
+Object.assign(SB_STATUS_TONE,{
+  'document-request-raised':'info','documents-submitted':'info','verification-completed':'ok',
+  'document-rejected':'bad','asset-allocation-it-access-completed':'ok','cancel-onboarding':'bad',
+  offboarding:'wait','kt-handover-completed':'ok','asset-recovery-it-access-revocation-completed':'ok',
+  'compliance-clearance-completed':'ok','f-f-settlement-completed':'ok','cancel-offboarding':'idle',
+  'pending-upload':'wait',uploaded:'info',accepted:'ok'
+});
 
-   THE "...ED" STATUSES ARE NOT DUPLICATES OF THE ONES BEFORE THEM. Onboarding
-   Setup is the state of doing the setup; Onboarding Setup Completed is the
-   state of having finished it, and it is where the checklist is answered. Same
-   pair at the exit: Exit Clearance, then Exit Clearance Completed. Both are
-   single-user checklist steps - one person works the list and ticks it - not
-   multi-team sign-offs, so there is one checklist and no per-item owner.
-
-   `input` is what the log form asks for BEFORE the record may move on, and it
-   is empty for most of them. Reading the spec's field table literally, only
-   four statuses ask for anything at all:
-
-     Verification Failed         which documents failed  + why  (checklist + select)
-     Onboarding Setup Completed  four setup items               (checklist)
-     Offboarding                 separation type, LWD, revocation date/time (fields)
-     Exit Clearance Completed    five clearance items           (checklist)
-
-   Every other status is a comment and nothing else. That restraint is the
-   point: an earlier pass gave all of them something to fill in - uploads,
-   per-document verdicts, readiness sign-offs - which turned "say what
-   happened" into a form to get through, and asked people to tick a box
-   asserting work the log had no way to check. */
-const EMP_LIFE_STAGES=[
-  {status:'Pending',short:'Pending',owner:'HR Team',type:'Onboarding',tone:'wait',
-   next:'Onboarding',behaviour:'Record created; onboarding has not started yet'},
-
-  {status:'Onboarding',short:'Onboarding',owner:'HR Team',type:'Onboarding',tone:'wait',
-   next:'Documents & Info Submitted',behaviour:'Employee completes information / documents'},
-
-  /* "Automatic when saved" is an owner in the spec, not a team - the employee
-     saving their own details is what moves this one, so it is stamped System. */
-  {status:'Documents & Info Submitted',short:'Docs Submitted',owner:'System',type:'Onboarding',tone:'info',
-   next:'Verification Completed',behaviour:'Compliance verification begins'},
-
-  /* The branch, not a rung. Rejection is handled inside verification, so this
-     does not knock the record back to Documents & Info Submitted and lose the
-     documents that were fine - it holds the record while the failed ones come
-     back. Which failed is a tick-list; WHY is one reason for the batch, which
-     is what the spec asks for: one dropdown, not one per document. */
-  {status:'Verification Failed',short:'Verify Failed',owner:'Compliance Team',type:'Onboarding',tone:'bad',
-   branch:true,next:'Verification Completed',behaviour:'Failed documents are re-submitted and verified again',
-   input:{
-     checklist:{role:'failed',min:1,label:'Failed / rejected document(s)',
-       items:EMP_LIFE_DOCS.map(function(n){return {label:n};})},
-     fields:[{k:'why',label:'Rejection Reason',type:'select',req:true,opts:EMP_DOC_REJECT_REASONS}]}},
-
-  {status:'Verification Completed',short:'Verified',owner:'Compliance Team',type:'Onboarding',tone:'info',
-   next:'Onboarding Setup',behaviour:'Onboarding Setup becomes available'},
-
-  {status:'Onboarding Setup',short:'Setup',owner:'HR + IT Teams',type:'Onboarding',tone:'wait',
-   next:'Onboarding Setup Completed',behaviour:'Payroll, leave, asset and IT access setup is carried out'},
-
-  {status:'Onboarding Setup Completed',short:'Setup Complete',owner:'HR + IT Teams',type:'Onboarding',tone:'info',
-   next:'Active',behaviour:'Active becomes available once every item is ticked',
-   input:{checklist:{label:'Onboarding setup checklist',items:[
-     {label:'Payroll Setup Done',mandatory:true},
-     {label:'Leave / Holiday Setup Done',mandatory:true},
-     {label:'Asset Allocation Done',mandatory:true},
-     {label:'IT Access Setup Done',mandatory:true}
-   ]}}},
-
-  {status:'Active',short:'Active',owner:'HR / Authorized Admin',type:'Employment',tone:'ok',
-   next:'Offboarding',behaviour:'Employment Status = Active'},
-
-  {status:'Offboarding',short:'Offboarding',owner:'HR Team',type:'Offboarding',tone:'wait',
-   next:'Exit Clearance',behaviour:'Exit Clearance becomes available',
-   input:{fields:[
-     {k:'septype',label:'Separation Type',type:'select',req:true,opts:EMP_SEPARATION_TYPES},
-     {k:'lwd',label:'Last Working Date',type:'date',req:true},
-     {k:'revoke',label:'Access Revocation Effective Date',type:'date',req:true}
-   ]}},
-
-  {status:'Exit Clearance',short:'Exit Clearance',owner:'IT + Compliance + HR',type:'Offboarding',tone:'wait',
-   next:'Exit Clearance Completed',behaviour:'KT, assets, access, compliance and F&F are worked through'},
-
-  {status:'Exit Clearance Completed',short:'Exit Cleared',owner:'IT + Compliance + HR',type:'Offboarding',tone:'wait',
-   next:'Inactive',behaviour:'Inactive becomes available once every item is ticked',
-   input:{checklist:{label:'Exit clearance checklist',items:[
-     {label:'KT / Handover Done',mandatory:true},
-     {label:'Asset Recovery Done',mandatory:true},
-     {label:'IT Access Revocation Done',mandatory:true},
-     {label:'Compliance Clearance Done',mandatory:true},
-     {label:'F&F Settlement Done',mandatory:true}
-   ]}}},
-
-  {status:'Inactive',short:'Inactive',owner:'HR / Authorized Admin',type:'Employment',tone:'bad',
-   next:'',behaviour:'Employment Status = Inactive'}
+/* ── Reference lists ──────────────────────────────────────────────────── */
+/* FR-04: the configured Employee attachment types, searchable by Document
+   Name or Document Type. The first block is the FR's own list; the last
+   three are entity-configured types used by the Global employees. */
+const EMP_DOC_CATALOG=[
+  {id:'resume',name:'Resume',type:'Employment History'},
+  {id:'aadhaar-front',name:'Aadhaar Front',type:'Identity Proof'},
+  {id:'aadhaar-back',name:'Aadhaar Back',type:'Identity Proof'},
+  {id:'pan',name:'PAN',type:'Tax ID'},
+  {id:'passport',name:'Passport',type:'Identity Proof'},
+  {id:'address',name:'Address Proof',type:'Address Proof'},
+  {id:'qualification',name:'Qualification Certificate',type:'Educational Certificate'},
+  {id:'photo',name:'Passport Photo',type:'Photograph'},
+  {id:'cheque',name:'Cancelled Cheque',type:'Bank Proof'},
+  {id:'bankstmt',name:'Bank Statement',type:'Bank Proof'},
+  {id:'offer',name:'Previous Offer Letter',type:'Employment History'},
+  {id:'relieving',name:'Relieving Letter',type:'Employment History'},
+  {id:'salary',name:'Salary Slip',type:'Employment History'},
+  {id:'codice',name:'Codice Fiscale',type:'Tax ID'},
+  {id:'nif',name:'NIF Certificate',type:'Tax ID'},
+  {id:'permit',name:'Work Permit / Visa',type:'Immigration'}
 ];
+function empDocDef(id){return EMP_DOC_CATALOG.find(function(d){return d.id===id;})||null;}
+const EMP_DOC_REJECT_REASONS=['Incorrect / Invalid Document','Illegible / Unreadable','Expired Document',
+  'Information Mismatch','Incomplete / Missing Pages','Incorrect Document Type','Other'];
+const EMP_SEPARATION_TYPES=['Voluntary','Involuntary','Contract End','Retirement','Other'];
+const EMP_CANCEL_REASONS=['Candidate Declined','No Show on Joining Date','Offer Withdrawn','Background Check Failed','Other'];
+const EMP_PAY_MODES=['Bank Transfer','Cheque','Cash'];
+const EMP_HANDOVER_TYPES=['Project(s)','Client(s)'];
+/* Access Revocation time, in the app's own dropdown (there is no native time
+   box anywhere else): every half hour, 12:00 AM to 11:30 PM. */
+const EMP_TIME_SLOTS=(function(){var o=[];for(var m=0;m<1440;m+=30){var h=Math.floor(m/60),mm=m%60;
+  o.push(((h%12)||12)+':'+(mm<10?'0':'')+mm+' '+(h<12?'AM':'PM'));}return o;})();
+/* Requested-document upload status (FR-05). */
+const EMP_DOC_OPEN=['Pending Upload','Rejected'];
 
-/* One tone map for the whole app, so a lifecycle status reads the same in a
-   log dot, a table badge and a detail panel. statusClass() is the same slugger
-   the badges use, so 'Documents & Info Submitted' lands on
-   .documents-info-submitted without a second naming scheme. */
-EMP_LIFE_STAGES.forEach(function(s){SB_STATUS_TONE[statusClass(s.status)]=s.tone;});
-
-/* The status dropdown and both listing filters read this. Offering only
-   Active/Inactive cannot find a record stuck in verification, which is the
-   search HR actually runs. */
-const EMP_LIFE_STATUSES=EMP_LIFE_STAGES.map(function(s){return s.status;});
-
-function empLifeStage(status){
-  for(var i=0;i<EMP_LIFE_STAGES.length;i++)if(EMP_LIFE_STAGES[i].status===status)return EMP_LIFE_STAGES[i];
-  return null;
-}
-/* Falls through to statusTone() so a record carrying some older status still
-   gets a sensible colour rather than a missing class. */
-function empLifeTone(status){var s=empLifeStage(status);return s?s.tone:statusTone(status);}
-
-/* The status cell for both employee listings - a plain .lp-status-badge, the
-   same pill at the same size as every other listing in the app. The short
-   label is what makes that possible; the full status rides on the title, for
-   the reader who needs to check exactly which "Completed" this is. */
-function empLifeBadge(status){
-  var st=empLifeStage(status),label=st?st.short:status;
-  var full=String(status).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-  return '<span class="lp-status-badge tone-'+empLifeTone(status)+'"'
-    +(label===status?'':' title="'+full+'"')+'>'+label+'</span>';
-}
-
-/* ── Panel plumbing ────────────────────────────────────────────────────────
-   'de' and 'ge' are the two employee modules. Everything below takes that
-   prefix and nothing else, which is the whole reason one renderer serves both
-   panels. A third employee module would add one line here, not a second copy
-   of the timeline. */
+/* ── Records ──────────────────────────────────────────────────────────── */
 const EMP_LIFE_SCOPES={
-  de:{list:function(){return directEmpData;},sel:function(){return deSelectedId;}},
-  ge:{list:function(){return globalEmpData;},sel:function(){return geSelectedId;}}
+  de:{list:function(){return directEmpData;},sel:function(){return deSelectedId;},label:'Direct Employee'},
+  ge:{list:function(){return globalEmpData;},sel:function(){return geSelectedId;},label:'Global Employee'}
 };
-function empLifeRec(kind){
-  var s=EMP_LIFE_SCOPES[kind];if(!s)return null;
-  var id=s.sel();
-  return s.list().find(function(e){return e.id===id;})||null;
+function empFind(kind,id){
+  var s=EMP_LIFE_SCOPES[kind];
+  return s?s.list().find(function(e){return e.id===id;})||null:null;
 }
+function empLifeRec(kind){var s=EMP_LIFE_SCOPES[kind];return s?empFind(kind,s.sel()):null;}
+function empKindOf(emp){return directEmpData.indexOf(emp)>=0?'de':'ge';}
 function empLifeHtml(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-/* Every control inside a status block is addressed by kind + status + key, so
-   nine blocks can sit in the DOM at once without colliding. */
-function empFid(kind,status,k){return kind+'-f-'+statusClass(status)+'-'+k;}
-/* Where a form's controls live: the side panel for 'de'/'ge', the status
-   popup's body for its own prefix ('desm'/'gesm'). One lookup, so the input
-   block and the commit below serve both without knowing which they are in. */
-function empScopeSel(kind){return EMP_LIFE_SCOPES[kind]?'#'+kind+'-isb-inner':'#'+kind+'-body';}
-function empBlock(kind){return document.querySelector(empScopeSel(kind)+' .emp-log-input:not([hidden])');}
+function empJs(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function empToday(){return cdISO(new Date());}
+function empStamp(){var s=stampNow();return s.date+', '+s.time;}
 
-/* ── The per-status input block ────────────────────────────────────────────
-   Every status's block is rendered up front and all but one is `hidden`;
-   changing the dropdown just swaps which is shown. Re-rendering on change
-   would throw away a comment already being typed, and this way anything
-   entered before changing your mind is still there if you change back.
+/* What an employee currently holds - read live from the Admin Access
+   module, never copied onto the employee. IT access counts while it is still
+   live or about to be (FR-13 "Active/applicable"). */
+const EMP_IT_LIVE=['Active','Pending','On Hold'];
+function empAssets(emp){
+  return (typeof assetsData!=='undefined'?assetsData:[]).filter(function(a){return a.status==='Assigned'&&a.assignedTo===emp.name;});
+}
+function empItAccess(emp){
+  return (typeof itAccessData!=='undefined'?itAccessData:[]).filter(function(r){
+    return r.assignedTo===emp.name&&EMP_IT_LIVE.indexOf(r.status)>=0;
+  });
+}
+function empAvailableAssets(){
+  return (typeof assetsData!=='undefined'?assetsData:[]).filter(function(a){return a.status==='Available';});
+}
 
-   Only the VISIBLE block is ever read, by empLogCollect(). */
-const EMP_LOG_ICONS={
+/* ── Deriving where a record stands ──────────────────────────────────────
+   `onb`/`off` describe the CURRENT cycle only: a new Onboarding after an
+   exit starts a fresh one. */
+function empLogs(emp){
+  if(!emp.logs){
+    var seed=(EMP_LIFE_SEED[empKindOf(emp)]||{})[emp.id]||[];
+    emp.logs=seed.map(function(l){return Object.assign({},l);});
+  }
+  return emp.logs;
+}
+function empState(emp){
+  var st={status:'Pending',phase:'pending',onb:null,off:null};
+  var logs=empLogs(emp);
+  for(var i=logs.length-1;i>=0;i--){
+    var l=logs[i],k=l.type||empLogKey(l.status);
+    if(k==='pending'){st.status='Pending';st.phase='pending';}
+    else if(k==='onboarding'){st.status='Onboarding';st.phase='onb';st.off=null;
+      st.onb={docReq:false,noDocs:false,verified:false,assetIt:false};}
+    else if(st.onb&&st.phase==='onb'){
+      if(k==='doc-request'){st.onb.docReq=true;st.onb.noDocs=!!l.noDocs;}
+      else if(k==='verified')st.onb.verified=true;
+      else if(k==='asset-it')st.onb.assetIt=true;
+      else if(k==='active'){st.status='Active';st.phase='none';}
+      else if(k==='cancel-onb'){st.status='Inactive';st.phase='none';}
+    }
+    if(k==='offboarding'&&st.status==='Active'){st.phase='off';st.off={kt:false,assetRev:false,compliance:false,fnf:false,lwd:l.lwd||''};}
+    else if(st.off&&st.phase==='off'){
+      if(k==='kt')st.off.kt=true;
+      else if(k==='asset-rev')st.off.assetRev=true;
+      else if(k==='compliance')st.off.compliance=true;
+      else if(k==='fnf')st.off.fnf=true;
+      else if(k==='inactive'){st.status='Inactive';st.phase='none';}
+      else if(k==='cancel-off'){st.phase='none';st.off=null;}
+    }
+  }
+  return st;
+}
+function empReqDocs(emp){return emp.reqDocs||(emp.reqDocs=[]);}
+/* Outstanding = still owed by the employee: never uploaded, or rejected. */
+function empDocsOutstanding(emp){
+  return empReqDocs(emp).filter(function(d){return EMP_DOC_OPEN.indexOf(d.status)>=0;});
+}
+function empDocsAllIn(emp){
+  var d=empReqDocs(emp);
+  return d.length>0&&!empDocsOutstanding(emp).length;
+}
+function empDocsAllAccepted(emp){
+  var d=empReqDocs(emp);
+  return d.length>0&&d.every(function(x){return x.status==='Accepted';});
+}
+/* FR-16 / FR-19: Asset Recovery applies "where applicable" - the employee
+   holds something to recover, or the step was already recorded. */
+function empAssetRevApplicable(emp,st){
+  return !!(st.off&&st.off.assetRev)||empAssets(emp).length>0||empItAccess(emp).length>0;
+}
+function empOffDone(emp,st){
+  var f=st.off;if(!f)return false;
+  return f.kt&&(f.assetRev||!empAssetRevApplicable(emp,st))&&f.compliance&&f.fnf;
+}
+function empLwdReached(st){return !st.off||!st.off.lwd||st.off.lwd<=empToday();}
+
+/* ── Milestones and progress (FR-21.2 / FR-21.3) ─────────────────────────
+   Progress = completed applicable milestones / total applicable milestones.
+   Repeated logs count once; a rejection is rework, not a milestone, and only
+   puts Documents Submitted back to pending. Excluded milestones are dropped
+   from both the denominator and the tracker. */
+function empMilestones(emp){
+  var st=empState(emp),items;
+  if(st.phase==='onb'){
+    var o=st.onb,docs=!o.noDocs;
+    items=[
+      {key:'onboarding',label:'Onboarding',state:'done'},
+      docs&&{key:'doc-request',label:'Document Request Raised',state:o.docReq?'done':'pending'},
+      docs&&{key:'docs-submitted',label:'Documents Submitted',auto:true,state:o.docReq&&empDocsAllIn(emp)?'done':'pending'},
+      {key:'verified',label:'Verification Completed',state:o.verified?'done':'pending'},
+      {key:'asset-it',label:'Asset Allocation & IT Access Completed',state:o.assetIt?'done':'pending'},
+      {key:'active',label:'Active',auto:true,state:'pending'}
+    ];
+  }else if(st.phase==='off'){
+    var f=st.off;
+    items=[
+      {key:'offboarding',label:'Offboarding',state:'done'},
+      {key:'kt',label:'KT / Handover Completed',state:f.kt?'done':'pending'},
+      empAssetRevApplicable(emp,st)&&{key:'asset-rev',label:'Asset Recovery & IT Access Revocation Completed',state:f.assetRev?'done':'pending'},
+      {key:'compliance',label:'Compliance Clearance Completed',state:f.compliance?'done':'pending'},
+      {key:'fnf',label:'F&F Settlement Completed',state:f.fnf?'done':'pending'},
+      {key:'inactive',label:'Inactive',auto:true,state:'pending',
+       note:f.lwd?'On LWD '+cdLabel(f.lwd):''}
+    ];
+  }else return null;
+  items=items.filter(Boolean);
+  /* FOUR STAGES, 25% EACH. The middle stage bundles the steps that run side
+     by side - Document Request / Documents Submitted / Verification on the
+     way in, KT / Asset Recovery / Compliance Clearance on the way out - and
+     counts only once every applicable step inside it is done. A step that
+     does not apply (no documents, nothing to recover) drops out of its stage. */
+  var stages=(st.phase==='onb'
+    ?[['Onboarding',['onboarding']],['Documents & Verification',['doc-request','docs-submitted','verified']],
+      ['Asset Allocation & IT Access',['asset-it']],['Active',['active']]]
+    :[['Offboarding',['offboarding']],['Exit Clearances',['kt','asset-rev','compliance']],
+      ['F&F Settlement',['fnf']],['Inactive',['inactive']]]
+  ).map(function(s){
+    var subs=s[1].map(function(k){return items.find(function(x){return x.key===k;});}).filter(Boolean);
+    return {label:s[0],subs:s[1].length>1?subs:null,
+            state:subs.every(function(x){return x.state==='done';})?'done':'pending'};
+  });
+  var done=stages.filter(function(x){return x.state==='done';}).length;
+  return {phase:st.phase,title:st.phase==='onb'?'Onboarding':'Offboarding',items:items,stages:stages,
+          done:done,total:stages.length,pct:done*25};
+}
+/* FR-21.1: the lifecycle status the employee is waiting on, in words. */
+function empTrackerStatus(emp){
+  var st=empState(emp);
+  if(st.phase==='onb'){
+    var o=st.onb,docs=empReqDocs(emp);
+    if(empDocsOutstanding(emp).length)return 'Document Upload Pending';
+    if(!o.docReq)return 'Onboarding';
+    if(!o.verified)return (!o.noDocs&&!docs.some(function(d){return d.status==='Accepted';}))?'Documents Submitted':'Verification Pending';
+    if(!o.assetIt)return 'Asset & IT Setup Pending';
+    return 'Active';
+  }
+  if(st.phase==='off'){
+    var f=st.off;
+    if(!f.kt)return 'KT / Handover Pending';
+    if(!f.assetRev&&empAssetRevApplicable(emp,st))return 'Asset Recovery & IT Revocation Pending';
+    if(!f.compliance)return 'Compliance Clearance Pending';
+    if(!f.fnf)return 'F&F Settlement Pending';
+    return 'Awaiting Last Working Date';
+  }
+  return emp.status;
+}
+
+/* ── What can be logged right now ──────────────────────────────────────── */
+function empLogOptions(emp){
+  var st=empState(emp),out=[];
+  if(st.status==='Pending'||st.status==='Inactive')return ['onboarding'];
+  if(st.phase==='onb'){
+    var o=st.onb;
+    if(!o.verified){
+      out.push('doc-request');
+      if(empReqDocs(emp).some(function(d){return d.status==='Uploaded'||d.status==='Accepted';}))out.push('doc-rejected');
+      out.push('verified');
+    }
+    if(!o.assetIt)out.push('asset-it');
+    out.push('cancel-onb');
+    return out;
+  }
+  if(st.phase==='off'){
+    var f=st.off;
+    if(!f.kt)out.push('kt');
+    if(!f.assetRev)out.push('asset-rev');
+    if(!f.compliance)out.push('compliance');
+    if(!f.fnf)out.push('fnf');
+    out.push('cancel-off');
+    return out;
+  }
+  if(st.status==='Active')return ['offboarding'];
+  return out;
+}
+function empPhaseLabel(emp){var st=empState(emp);return st.phase==='off'?'Offboarding':st.status;}
+
+/* ── Badges ───────────────────────────────────────────────────────────── */
+function empLifeBadge(status){
+  return '<span class="lp-status-badge tone-'+statusTone(status)+'">'+empLifeHtml(status)+'</span>';
+}
+function empDocBadge(status){return empLifeBadge(status);}
+
+/* ══ FORM STATE ════════════════════════════════════════════════════════════
+   pk is the prefix of the form being worked: 'de'/'ge' for the panel's Logs
+   tab, 'desm'/'gesm' for the popup. The picked log type is kept here, not
+   only in the dropdown's DOM, so a repaint never forgets it. */
+const empFormType={};
+const empFormPre={};      // pk -> {doc} preselection (Reject from Verification)
+let empLogModal=null;     // {kind,id} while the Add Log popup is open
+function empScopeSel(pk){return EMP_LIFE_SCOPES[pk]?'#'+pk+'-isb-inner':'#'+pk+'-body';}
+function empPkRec(pk){
+  if(EMP_LIFE_SCOPES[pk])return empLifeRec(pk);
+  return empLogModal?empFind(empLogModal.kind,empLogModal.id):null;
+}
+function empFid(pk,key,k){return pk+'-f-'+key+'-'+k;}
+function empBlock(pk){return document.querySelector(empScopeSel(pk)+' .emp-log-input:not([hidden])');}
+
+const EMP_ICO={
   tick:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><polyline points="20 6 9 17 4 12"/></svg>',
-  warn:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.6"/></svg>'
-};
-
-/* Every status's block is in the DOM at once and all but one is hidden, so the
-   dropdown swaps them without a re-render and anything typed before changing
-   your mind is still there if you change back.
-
-   THE BLOCK IS NOT A PANEL OF ITS OWN. It used to be a grey sub-card with the
-   status repeated as a heading, the owning team as a chip and a footnote
-   saying what the move unlocks - three pieces of chrome no other module's log
-   form has. What is left is plain fields sitting in the form between Status
-   and Comment, wearing the same .lp-logs-form-label as the two controls they
-   sit between, so the panel reads as one form rather than a form with a
-   different product embedded in the middle of it. */
-function empLogInputs(kind,emp,current){
-  return '<div class="emp-log-input-wrap">'+EMP_LIFE_STAGES.map(function(s){
-    return '<div class="emp-log-input" data-status="'+empLifeHtml(s.status)+'"'
-      +(s.status===current?'':' hidden')+'>'
-      +empLogInputBody(kind,emp,s)
-      +'</div>';
-  }).join('')+'</div>';
-}
-
-/* A status asks for a checklist, some fields, both, or - for seven of the
-   eleven - neither, and then the form is Status and Comment and nothing in
-   between, exactly like Teams or Leave Policies. */
-function empLogInputBody(kind,emp,s){
-  var inp=s.input;
-  if(!inp)return '';
-  return (inp.checklist?empLogChecklist(kind,s,inp.checklist):'')
-        +(inp.fields?empLogFields(kind,s,inp.fields):'');
-}
-
-/* The tick-lists. Two shapes share this:
-
-   role 'done' (the default) - Onboarding Setup Completed and Exit Clearance
-   Completed. Every item is mandatory, and the ticks are the evidence the
-   status was actually reached, so they are read back into the entry.
-
-   role 'failed' - Verification Failed. The ticks are not work completed, they
-   are which documents came back, so at least ONE has to be ticked and none is
-   mandatory on its own. They are recorded as the outstanding set, not as
-   "Recorded: Identity Proof", which would read as an achievement. */
-function empLogChecklist(kind,s,c){
-  var role=c.role||'done';
-  /* .lp-logs-form-label / -req, the SAME heading the Status and Comment
-     controls above and below wear - not a label class of this module's own. */
-  return '<div class="lp-logs-form-label">'+empLifeHtml(c.label)
-      +' <span class="lp-logs-form-req">*</span></div>'
-    +'<div class="emp-log-list" data-role="'+role+'" data-min="'+(c.min||0)+'"'
-    +' data-list-label="'+empLifeHtml(c.label)+'">'
-    +c.items.map(function(i){
-      return '<label class="emp-log-check">'
-        +'<input type="checkbox" data-label="'+empLifeHtml(i.label)+'"'+(i.mandatory?' data-req="1"':'')+'>'
-        +'<span class="emp-log-box">'+EMP_LOG_ICONS.tick+'</span>'
-        +'<span>'+empLifeHtml(i.label)+'</span></label>';
-    }).join('')+'</div>';
-}
-
-/* Values someone types or picks. apCS and apCD, so the controls match the rest
-   of the app rather than being raw browser widgets in a panel. */
-function empLogFields(kind,s,items){
-  return '<div class="emp-log-fields">'+items.map(function(f){
-    var id=empFid(kind,s.status,f.k);
-    var ctl;
-    if(f.type==='date')ctl=apCD(id,'','Select date');
-    else if(f.type==='select')ctl=apCS(id,f.opts,'','Select');
-    else if(f.type==='textarea')ctl='<textarea class="emp-log-textarea" id="'+id+'" data-label="'+empLifeHtml(f.label)+'" placeholder="'+empLifeHtml(f.ph||'')+'"></textarea>';
-    else ctl='<input class="emp-log-text" id="'+id+'" type="text" data-label="'+empLifeHtml(f.label)+'" placeholder="'+empLifeHtml(f.ph||'')+'">';
-    return '<div class="emp-log-field" data-fk="'+f.k+'" data-ftype="'+f.type+'" data-fid="'+id+'"'
-      +' data-label="'+empLifeHtml(f.label)+'"'+(f.req?' data-req="1"':'')+'>'
-      +'<div class="lp-logs-form-label">'+empLifeHtml(f.label)
-      +(f.req?' <span class="lp-logs-form-req">*</span>':'')+'</div>'+ctl+'</div>';
-  }).join('')+'</div>';
-}
-
-/* Called by the status dropdown's onchange. Every status's block is in the DOM
-   at once and all but one is hidden, so switching back to a status you had
-   started filling in still has what you entered. */
-function empLogSwapInput(kind,status){
-  var wrap=document.querySelector(empScopeSel(kind)+' .emp-log-input-wrap');
-  if(!wrap)return;
-  wrap.querySelectorAll('.emp-log-input').forEach(function(b){
-    b.hidden=b.getAttribute('data-status')!==status;
-  });
-}
-
-/* ── Reading the visible block ─────────────────────────────────────────────
-   Returns what was entered, and what is still missing. `missing` is the gate:
-   a status whose mandatory work is not done has not actually been reached, so
-   the entry is refused rather than written with holes in it. */
-function empLogCollect(kind,emp,status){
-  var out={details:[],failed:[],reason:'',missing:[]};
-  var block=empBlock(kind);
-  var s=empLifeStage(status);
-  if(!block||!s)return out;
-
-  block.querySelectorAll('.emp-log-list').forEach(function(list){
-    var role=list.getAttribute('data-role')||'done';
-    var min=+list.getAttribute('data-min')||0;
-    var ticked=0;
-    list.querySelectorAll('input[type=checkbox]').forEach(function(i){
-      var label=i.getAttribute('data-label');
-      if(i.checked){
-        ticked++;
-        /* A 'failed' tick is not an achievement - it names a document that
-           came back. It goes to the outstanding set, not to "Recorded:". */
-        if(role==='failed')out.failed.push(label);
-        else out.details.push({label:label,value:'Done'});
-      }else if(i.getAttribute('data-req'))out.missing.push(label);
-    });
-    if(min&&ticked<min)out.missing.push(list.getAttribute('data-list-label')||'At least one item');
-  });
-
-  block.querySelectorAll('.emp-log-field').forEach(function(f){
-    var id=f.getAttribute('data-fid'),type=f.getAttribute('data-ftype'),label=f.getAttribute('data-label');
-    var v='';
-    if(type==='date'){var h=document.getElementById(id);v=h&&h.value?cdLabel(h.value):'';}
-    else if(type==='select')v=getCSValue(id);
-    else{var el=document.getElementById(id);v=el?el.value.trim():'';}
-    if(v)out.details.push({label:label,value:v});
-    else if(f.getAttribute('data-req'))out.missing.push(label);
-    if(f.getAttribute('data-fk')==='why')out.reason=v;
-  });
-
-  return out;
-}
-
-/* apCS calls its hook with (value, id); the panel's kind is the id's prefix,
-   'de-log-status-sel' or 'ge-log-status-sel'. */
-function empLogStatusHook(val,csid){empLogSwapInput(String(csid).split('-')[0],val);}
-function empCancelLog(kind){
-  csClear(kind+'-log-status-sel');
-  var inp=document.getElementById(kind+'-log-comment-inp');if(inp)inp.value='';
-  /* Setting .value in code does not fire onchange, so the block has to be
-     cleared by hand — otherwise Cancel leaves "Select Status" sitting above a
-     half-filled form for a status nobody has chosen. */
-  document.querySelectorAll('#'+kind+'-isb-inner .emp-log-input input[type=checkbox]')
-    .forEach(function(i){i.checked=false;});
-  empLogSwapInput(kind,'');
-}
-
-function empSaveLog(kind){
-  var emp=empLifeRec(kind);if(emp)empCommitLog(kind,emp,kind);
-}
-/* The one commit path, for the Logs tab and the status popup alike. `kind` is
-   the module ('de'/'ge') and picks the seeded history; `pk` is the prefix of
-   the form being read ('de' for the panel, 'desm' for the popup). */
-function empCommitLog(kind,emp,pk){
-  var picked=getCSValue(pk+'-log-status-sel');
-  var was=emp.status;
-  var got=picked?empLogCollect(pk,emp,picked):{missing:[],details:[],failed:[],reason:''};
-
-  /* The spec's gate, checked BEFORE the entry is written: a status whose
-     mandatory work is not done has not actually been reached. */
-  if(picked&&got.missing.length){
-    showToast('Not complete yet','error',got.missing.length+' item'+(got.missing.length===1?'':'s')
-      +' outstanding — first: '+got.missing[0]+'.');
-    return;
-  }
-  if(!lpCommitLog(emp,pk+'-log-status-sel',pk+'-log-comment-inp',EMP_LIFE_SEED[kind][emp.id]))return;
-
-  /* lpCommitLog writes the five fields every module shares and moves the
-     record onto the status that was picked. Everything below is what THIS
-     module adds to that entry. */
-  var entry=emp.logs[0];
-  if(got.details.length)entry.details=got.details;
-
-  /* The outstanding set is the log's, not a second store: the last
-     Verification Failed entry writes it, Verification Completed clears it. */
-  if(got.failed.length){
-    entry.rejected=got.failed.map(function(n){return {name:n,reason:got.reason};});
-    emp.failedDocs=entry.rejected;
-  }
-  if(emp.status==='Verification Completed')emp.failedDocs=[];
-
-  empStatusModal=null;
-  renderADTPage();      // the listing row carries the status badge too
-  showToast(got.failed.length?'Verification failed':'Log added',
-    got.failed.length?'error':'success',
-    got.failed.length
-      ?got.failed.length+' document'+(got.failed.length===1?'':'s')+' sent back to '+emp.name+' for re-submission.'
-      :(emp.status!==was?emp.name+' moved to '+emp.status+'.':'Comment saved to '+emp.name+'.'));
-}
-
-/* ── The Logs tab ──────────────────────────────────────────────────────────
-   Deliberately the same shape as the Compliance, Rates & Rules, Payheads and
-   Holidays logs tabs: timeline left, status + comment right, Cancel/Submit.
-   The addition is the block under the status dropdown that asks for whatever
-   that particular status actually needs. */
-function renderEmpLogsTab(kind,emp,fixture){
-  const logs=seedLogs(emp,fixture||[]);
-  const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-  const timelineHTML=logs.length
-    ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
-      const sk=empLifeTone(l.status);
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'
-        +logHeadRow(_all,i,sk,l.status)
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        /* What the form actually captured, in the same row shape as the
-           comment so an entry reads as one card and not two. */
-        +(l.details&&l.details.length
-          ?'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Recorded:</span>'
-            +l.details.map(function(d){return empLifeHtml(d.label)+(d.value==='Done'?'':': '+empLifeHtml(d.value));}).join(' · ')
-            +'</div>':'')
-        +(l.rejected&&l.rejected.length
-          ?'<div class="lp-log-comment-row is-bad"><span class="lp-log-comment-label">To re-submit:</span>'
-            +l.rejected.map(function(d){return empLifeHtml(d.name)+(d.reason?' ('+empLifeHtml(d.reason)+')':'');}).join(' · ')
-            +'</div>':'')
-        +'</div></div>';
-    }).join('')+'</div>'
-    :'<div class="lp-logs-empty">No activity logs yet.</div>';
-
-  const bad=empDocsRejected(emp);
-  const formHTML='<div class="lp-logs-form">'
-    +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+empLifeTone(emp.status)+'"></span>'+emp.status+'</div>'
-    +'<p class="lp-logs-form-sub">Update employee status and add a comment</p>'
-    /* A record holding rejected documents says so at the top of the form, not
-       only inside the one status that lists them. */
-    +(bad.length?'<div class="emp-log-alert">'+EMP_LOG_ICONS.warn+'<span><b>'+bad.length+' document'
-      +(bad.length===1?'':'s')+'</b> awaiting re-submission: '+bad.map(function(d){return empLifeHtml(d.name);}).join(', ')+'</span></div>':'')
-    +lpLogStatusField(kind+'-log-status-sel',emp.status,EMP_LIFE_STATUSES,'empLogStatusHook')
-    +empLogInputs(kind,emp,emp.status)
-    +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-    +'<textarea class="lp-logs-form-textarea" id="'+kind+'-log-comment-inp" placeholder="Enter comment"></textarea>'
-    +'<div style="display:flex;gap:10px;margin-top:12px">'
-    +'<button class="ep-cancel-btn" style="flex:1" onclick="empCancelLog(\''+kind+'\')">Cancel</button>'
-    +'<button class="lp-logs-save-btn" style="flex:1" onclick="empSaveLog(\''+kind+'\')">Submit</button>'
-    +'</div></div>';
-  return '<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
-}
-
-/* ── Status journey and popup ──────────────────────────────────────────────
-   The Contracts listing's pattern, on the employee lifecycle: the row's Action
-   cell carries a status button whose menu walks the ladder (done / current /
-   next), and picking a stage opens a small popup to make the move without
-   opening the five-tab panel. The popup is the Logs tab's form - status, the
-   per-status input block, a mandatory comment - and commits through the same
-   empCommitLog(), so both routes write identical entries.
-
-   Like Contracts, a record moves ONE stage forward at a time, or back to any
-   stage behind it. A later stage picked from the menu is offered as the next
-   legal one, with a line saying why. */
-
-/* The main ladder, without the rejection branch. */
-const EMP_LIFE_LADDER=EMP_LIFE_STAGES.filter(function(s){return !s.branch;}).map(function(s){return s.status;});
-
-/* Where a status sits on the ladder. A branch sits at the rung it returns to:
-   Verification Failed is not past Documents & Info Submitted, it is waiting
-   to become Verification Completed. */
-function empLadderIdx(status){
-  var i=EMP_LIFE_LADDER.indexOf(status);
-  if(i>=0)return i;
-  var st=empLifeStage(status);
-  return st&&st.branch?EMP_LIFE_LADDER.indexOf(st.next):-1;
-}
-/* A branch can be entered from the rung just before the one it returns to. */
-function empBranchesFrom(status){
-  return EMP_LIFE_STAGES.filter(function(b){
-    return b.branch&&EMP_LIFE_LADDER[EMP_LIFE_LADDER.indexOf(b.next)-1]===status;
-  });
-}
-
-/* Stay put, one stage forward (plus any branch opening here), or back to any
-   earlier rung, nearest first. Same shape as ctMoveOptions(). */
-function empMoveOptions(emp){
-  var st=empLifeStage(emp.status),idx=empLadderIdx(emp.status);
-  if(!st||idx<0)return [emp.status];
-  return [emp.status]
-    .concat(st.next?[st.next]:[])
-    .concat(empBranchesFrom(emp.status).map(function(b){return b.status;}))
-    .concat(EMP_LIFE_LADDER.slice(0,idx).reverse());
-}
-
-/* The rows of the Action menu. The branch only appears while it is the
-   current status or the next thing that could happen - a record that sailed
-   through verification never shows a "Verification Failed" step. */
-function empJourneySteps(emp){
-  var cur=emp.status,idx=empLadderIdx(cur),curSt=empLifeStage(cur);
-  var onBranch=!!(curSt&&curSt.branch);
-  var out=[];
-  EMP_LIFE_LADDER.forEach(function(s,i){
-    EMP_LIFE_STAGES.forEach(function(b){
-      if(b.branch&&b.next===s&&(cur===b.status||EMP_LIFE_LADDER[i-1]===cur))
-        out.push({status:b.status,state:cur===b.status?'current':'next',branch:true});
-    });
-    out.push({status:s,n:i+1,state:i<idx?'done':(i===idx&&!onBranch)?'current':'next'});
-  });
-  return out;
-}
-
-const EMP_ACT_ICO={
+  warn:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.6"/></svg>',
+  info:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></svg>',
+  plus:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  arrow:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  x:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  laptop:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
+  key:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2"/><path d="M16 7l3 3"/></svg>',
+  doc:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+  upload:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  person:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  cog:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+  cal:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  clk:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  mail:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/></svg>',
   dots:'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>',
   chev:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>',
-  tick:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
-  branch:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  close:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  trash:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
 };
 
-/* The Action cell for both employee listings: status button + journey menu,
-   and the panel button beside it - the Contracts row's cell, as is. */
+/* ══ PER-TYPE FORM BLOCKS ══════════════════════════════════════════════════
+   Every available type's block is rendered up front and all but the picked
+   one is `hidden`, so switching back to a type you had started still has
+   what you entered. Only the VISIBLE block is ever read. */
+function empLogInputs(pk,emp,opts,current){
+  return '<div class="emp-log-input-wrap">'+opts.map(function(k){
+    return '<div class="emp-log-input" data-type="'+k+'"'+(k===current?'':' hidden')+'>'+empBlockHTML(pk,emp,k)+'</div>';
+  }).join('')+'</div>';
+}
+function empLabel(text,req){
+  return '<div class="lp-logs-form-label">'+text+(req?' <span class="lp-logs-form-req">*</span>':'')+'</div>';
+}
+/* Typed or picked values. apCS / apCD so the controls match the app. */
+function empFields(pk,k,items){
+  return '<div class="emp-log-fields'+(items.length>1?' is-grid':'')+'">'+items.map(function(f){
+    var id=empFid(pk,k,f.k),ctl;
+    if(f.type==='date')ctl=apCD(id,f.val||'','Select date');
+    else if(f.type==='select')ctl=apCS(id,f.opts,f.val||'','Select',f.hook);
+    else if(f.type==='textarea')ctl='<textarea class="emp-log-textarea" id="'+id+'" placeholder="'+empLifeHtml(f.ph||'')+'"></textarea>';
+    else if(f.type==='number')ctl='<input class="emp-log-text" id="'+id+'" type="number" step="1"'+(f.signed?'':' min="0"')+' placeholder="'+(f.ph||'0')+'"'
+      +(f.calc?' oninput="empFnfCalc(\''+pk+'\')"':'')+(f.net?' oninput="this.dataset.touched=1"':'')+'>';
+    else if(f.type==='time')ctl='<input class="emp-log-text" id="'+id+'" type="time" value="'+(f.val||'')+'">';
+    else if(f.type==='readonly')ctl='<input class="emp-log-text is-readonly" id="'+id+'" type="text" readonly value="'+empLifeHtml(f.val||'')+'">';
+    else ctl='<input class="emp-log-text" id="'+id+'" type="text" placeholder="'+empLifeHtml(f.ph||'')+'">';
+    return '<div class="emp-log-field'+(f.full?' is-full':'')+(f.cls?' '+f.cls:'')+'" data-fk="'+f.k+'" data-ftype="'+f.type+'" data-fid="'+id+'"'
+      +' data-label="'+empLifeHtml(f.label)+'"'+(f.req?' data-req="1"':'')+(f.hidden?' hidden':'')+'>'
+      +empLabel(empLifeHtml(f.label),f.req)+ctl+(f.hint?'<div class="emp-log-fhint">'+f.hint+'</div>':'')+'</div>';
+  }).join('')+'</div>';
+}
+function empCheck(id,label,checked,onchange){
+  return '<label class="emp-log-check"><input type="checkbox" id="'+id+'"'+(checked?' checked':'')
+    +(onchange?' onchange="'+onchange+'"':'')+'><span class="emp-log-box">'+EMP_ICO.tick+'</span><span>'+label+'</span></label>';
+}
+function empSecHead(ico,title,right){
+  return '<div class="emp-sec-head"><span class="emp-sec-title">'+ico+title+'</span>'+(right||'')+'</div>';
+}
+
+function empBlockHTML(pk,emp,k){
+  if(k==='doc-request')return empDocPickerHTML(pk,emp);
+  if(k==='verified')return empVerifyHTML(pk,emp);
+  if(k==='doc-rejected'){
+    var docs=empReqDocs(emp).filter(function(d){return d.status==='Uploaded'||d.status==='Accepted';});
+    var pre=(empFormPre[pk]||{}).doc||'';
+    return '<div class="emp-log-field" data-fk="doc" data-ftype="ss" data-fid="'+empFid(pk,k,'doc')+'" data-label="Rejected Document" data-req="1">'
+        +empLabel('Rejected Document',true)
+        +empSSHTML(empFid(pk,k,'doc'),docs.map(function(d){
+          return {v:d.id,label:d.name,sub:d.type+' · '+(d.file||'—')+' · '+d.status};}),'Search by document name or type',pre)+'</div>'
+      +empFields(pk,k,[{k:'reason',label:'Rejection Reason',type:'select',req:true,opts:EMP_DOC_REJECT_REASONS}]);
+  }
+  if(k==='asset-it')return empAssetItHTML(pk,emp);
+  if(k==='cancel-onb')return empResourceHTML(emp,'cancel')
+    +empFields(pk,k,[{k:'reason',label:'Cancellation Reason',type:'select',req:true,opts:EMP_CANCEL_REASONS}]);
+  if(k==='offboarding')return empFields(pk,k,[
+    {k:'septype',label:'Separation Type',type:'select',req:true,opts:EMP_SEPARATION_TYPES,hook:'empSepHook'},
+    {k:'lwd',label:'Last Working Date',type:'date',req:true},
+    {k:'sepother',label:'Specify Separation Type',type:'text',req:true,full:true,hidden:true,cls:'emp-sep-other',ph:'Describe the separation'},
+    {k:'revdate',label:'Access Revocation Effective Date',type:'date'},
+    {k:'revtime',label:'Access Revocation Effective Time',type:'select',opts:EMP_TIME_SLOTS}]);
+  if(k==='kt')return empFields(pk,k,[
+    {k:'to',label:'Handover To',type:'select',opts:empPeers(emp)},
+    {k:'type',label:'Handover Type',type:'select',opts:EMP_HANDOVER_TYPES},
+    {k:'docs',label:'Documents Handed Over',type:'select',opts:['Yes','No']},
+    {k:'work',label:'Outstanding Work Handed Over',type:'select',opts:['Yes','No']},
+    {k:'kt',label:'Knowledge Transfer Completed',type:'select',opts:['Yes','No']},
+    {k:'ref',label:'Handover Document / Reference',type:'text',ph:'Link or document name'}]);
+  if(k==='asset-rev')return empResourceHTML(emp,'recover');
+  if(k==='compliance')return empFields(pk,k,[
+    {k:'ref',label:'Compliance Requirement / Reference',type:'text',full:true,ph:'e.g. NDA, statutory exit filing, policy reference'},
+    {k:'issue',label:'Outstanding Issue?',type:'select',opts:['Yes','No'],hook:'empIssueHook'},
+    {k:'by',label:'Cleared By',type:'readonly',val:CURRENT_USER}])
+    +'<div class="emp-issue-extra" hidden>'+empPairsHTML()+'</div>';
+  if(k==='fnf')return empFields(pk,k,[
+    {k:'date',label:'Settlement Date',type:'date',req:true},
+    {k:'salary',label:'Salary Till LWD',type:'number',req:true,calc:true},
+    {k:'leave',label:'Leave Encashment',type:'number',calc:true},
+    {k:'bonus',label:'Bonus / Incentives',type:'number',calc:true},
+    {k:'gratuity',label:'Gratuity',type:'number',calc:true},
+    {k:'otherEarn',label:'Other Earnings',type:'number',calc:true},
+    {k:'notice',label:'Notice Period Recovery',type:'number',calc:true},
+    {k:'loan',label:'Loan / Advance Recovery',type:'number',calc:true},
+    {k:'otherDed',label:'Other Deductions',type:'number',calc:true},
+    {k:'adjust',label:'Adjustments (+ / −)',type:'number',calc:true,signed:true},
+    {k:'net',label:'Net Settlement Amount',type:'number',req:true,net:true,hint:'Calculated from the values above — edit to override.'},
+    {k:'mode',label:'Payment Mode',type:'select',req:true,opts:EMP_PAY_MODES},
+    {k:'payref',label:'Payment Reference',type:'text',full:true,ph:'UTR / cheque number'}]);
+  return '';      // onboarding, cancel-off: the comment is the whole form
+}
+function empPeers(emp){
+  return directEmpData.concat(globalEmpData).filter(function(e){return e!==emp&&e.status==='Active';})
+    .map(function(e){return e.name;});
+}
+
+/* ── Searchable single-select (Rejected Document) ──────────────────────── */
+function empSSHTML(id,opts,ph,val){
+  var cur=opts.find(function(o){return o.v===val;});
+  return '<div class="emp-ss" id="'+id+'-ss"><input type="hidden" id="'+id+'" value="'+empLifeHtml(cur?cur.v:'')+'">'
+    +'<div class="emp-dp-field emp-ss-field" onclick="empSSOpen(\''+id+'\')">'
+      +'<input class="emp-dp-input" type="text" placeholder="'+empLifeHtml(ph)+'" value="'+empLifeHtml(cur?cur.label:'')+'"'
+      +' oninput="empSSFilter(\''+id+'\',this.value)" onfocus="empSSOpen(\''+id+'\')">'+EMP_ICO.chev+'</div>'
+    +'<div class="emp-dp-menu" hidden>'+(opts.length?opts.map(function(o){
+      return '<div class="emp-ss-opt'+(cur&&cur.v===o.v?' is-sel':'')+'" data-v="'+empLifeHtml(o.v)+'" data-label="'+empLifeHtml(o.label)+'"'
+        +' data-q="'+empLifeHtml((o.label+' '+(o.sub||'')).toLowerCase())+'" onclick="empSSPick(\''+id+'\',this)">'
+        +'<span class="emp-ss-name">'+empLifeHtml(o.label)+'</span>'+(o.sub?'<span class="emp-ss-sub">'+empLifeHtml(o.sub)+'</span>':'')+'</div>';
+    }).join(''):'')+'<div class="emp-dp-none"'+(opts.length?' hidden':'')+'>'+(opts.length?'No matches.':'Nothing available.')+'</div></div></div>';
+}
+function empSS(id){return document.getElementById(id+'-ss');}
+function empSSOpen(id){var s=empSS(id);if(s)s.querySelector('.emp-dp-menu').hidden=false;}
+function empSSFilter(id,q){
+  var s=empSS(id);if(!s)return;
+  q=String(q||'').trim().toLowerCase();
+  s.querySelector('.emp-dp-menu').hidden=false;
+  document.getElementById(id).value='';
+  var any=false;
+  s.querySelectorAll('.emp-ss-opt').forEach(function(o){var on=!q||o.getAttribute('data-q').indexOf(q)>=0;o.hidden=!on;if(on)any=true;});
+  var none=s.querySelector('.emp-dp-none');if(none&&s.querySelectorAll('.emp-ss-opt').length)none.hidden=any;
+}
+function empSSPick(id,el){
+  var s=empSS(id);if(!s)return;
+  document.getElementById(id).value=el.getAttribute('data-v');
+  s.querySelector('.emp-dp-input').value=el.getAttribute('data-label');
+  s.querySelectorAll('.emp-ss-opt').forEach(function(o){o.classList.toggle('is-sel',o===el);o.hidden=false;});
+  s.querySelector('.emp-dp-menu').hidden=true;
+}
+
+/* ── Document Request Raised: the searchable, multi-select picker (FR-04) ─
+   The field is the app's own dropdown trigger (.cs-trigger), saying how many
+   documents are picked. Opening it shows a search box - matching Document
+   Name OR Document Type - over the grouped, tickable list. What has been
+   picked is listed under the field, one row per document, each removable.
+   Documents already requested in this cycle are shown but cannot be picked
+   twice. */
+const EMP_DP_SEARCH='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+function empDocPickerHTML(pk,emp){
+  var have=empReqDocs(emp).map(function(d){return d.docId;});
+  var groups={};
+  EMP_DOC_CATALOG.forEach(function(d){(groups[d.type]=groups[d.type]||[]).push(d);});
+  var id=pk+'-dp';
+  return '<div class="emp-dp-nodocs">'+empCheck(pk+'-nodocs','No Documents Required',false,'empDpNoDocs(\''+pk+'\',this.checked)')+'</div>'
+    +empLabel('Required Documents',true)
+    +'<div class="emp-dp" id="'+id+'">'
+      +'<button type="button" class="cs-trigger cs-placeholder emp-dp-trigger" onclick="empDpToggle(\''+pk+'\')">'
+        +'<span class="cs-value">Select documents</span>'
+        +'<svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'
+      +'</button>'
+      +'<div class="emp-dp-menu" hidden>'
+        +'<div class="emp-dp-search">'+EMP_DP_SEARCH
+          +'<input class="emp-dp-input" type="text" placeholder="Search by document name or type" oninput="empDpFilter(\''+pk+'\',this.value)"></div>'
+        +'<div class="emp-dp-list">'
+        +Object.keys(groups).map(function(t){
+          return '<div class="emp-dp-group" data-type="'+empLifeHtml(t.toLowerCase())+'">'
+            +'<div class="emp-dp-group-label">'+empLifeHtml(t)+'</div>'
+            +groups[t].map(function(d){
+              var taken=have.indexOf(d.id)>=0;
+              return '<label class="emp-dp-opt'+(taken?' is-taken':'')+'" data-q="'+empLifeHtml((d.name+' '+d.type).toLowerCase())+'">'
+                +'<input type="checkbox" data-doc="'+d.id+'"'+(taken?' disabled':'')+' onchange="empDpSync(\''+pk+'\')">'
+                +'<span class="emp-log-box">'+EMP_ICO.tick+'</span><span class="emp-dp-name">'+empLifeHtml(d.name)+'</span>'
+                +(taken?'<span class="emp-dp-tag">Already requested</span>':'')+'</label>';
+            }).join('')+'</div>';
+        }).join('')
+        +'<div class="emp-dp-none" hidden>No documents match.</div>'
+        +'</div>'
+      +'</div>'
+      +'<div class="emp-dp-picked" hidden></div>'
+    +'</div>'
+    +(have.length?'<div class="emp-log-fhint">'+have.length+' document'+(have.length===1?' is':'s are')+' already requested in this onboarding.</div>':'');
+}
+function empDp(pk){return document.querySelector(empScopeSel(pk)+' #'+pk+'-dp');}
+function empDpOpen(pk){
+  var dp=empDp(pk);if(!dp||dp.classList.contains('is-off'))return;
+  dp.querySelector('.emp-dp-menu').hidden=false;
+  dp.querySelector('.emp-dp-trigger').classList.add('cs-open');
+  var inp=dp.querySelector('.emp-dp-input');if(inp)inp.focus();
+}
+function empDpClose(dp){
+  dp.querySelector('.emp-dp-menu').hidden=true;
+  dp.querySelector('.emp-dp-trigger').classList.remove('cs-open');
+}
+function empDpToggle(pk){
+  var dp=empDp(pk);if(!dp)return;
+  if(dp.querySelector('.emp-dp-menu').hidden)empDpOpen(pk);else empDpClose(dp);
+}
+function empDpFilter(pk,q){
+  var dp=empDp(pk);if(!dp)return;
+  q=String(q||'').trim().toLowerCase();
+  dp.querySelector('.emp-dp-menu').hidden=false;
+  var any=false;
+  dp.querySelectorAll('.emp-dp-group').forEach(function(g){
+    var typeHit=!q||g.getAttribute('data-type').indexOf(q)>=0,shown=0;
+    g.querySelectorAll('.emp-dp-opt').forEach(function(o){
+      var on=typeHit||o.getAttribute('data-q').indexOf(q)>=0;
+      o.hidden=!on;if(on)shown++;
+    });
+    g.hidden=!shown;if(shown)any=true;
+  });
+  dp.querySelector('.emp-dp-none').hidden=any;
+}
+/* The trigger says how many; the list under the field says which. */
+function empDpSync(pk){
+  var dp=empDp(pk);if(!dp)return;
+  var picked=Array.prototype.map.call(dp.querySelectorAll('.emp-dp-menu input:checked'),function(i){return empDocDef(i.getAttribute('data-doc'));});
+  var trig=dp.querySelector('.emp-dp-trigger');
+  trig.classList.toggle('cs-placeholder',!picked.length);
+  trig.querySelector('.cs-value').textContent=picked.length?picked.length+' document'+(picked.length===1?'':'s')+' selected':'Select documents';
+  var list=dp.querySelector('.emp-dp-picked');
+  list.hidden=!picked.length;
+  list.innerHTML=picked.map(function(d){
+    return '<div class="emp-dp-item"><span class="emp-dp-item-ico">'+EMP_ICO.doc+'</span>'
+      +'<span class="emp-dp-item-txt"><span class="emp-dp-item-name">'+empLifeHtml(d.name)+'</span><span class="emp-dp-item-type">'+empLifeHtml(d.type)+'</span></span>'
+      +'<button type="button" class="emp-dp-item-del" title="Remove" aria-label="Remove '+empLifeHtml(d.name)+'" onclick="empDpRemove(\''+pk+'\',\''+d.id+'\',event)">'+EMP_ICO.x+'</button></div>';
+  }).join('');
+}
+function empDpRemove(pk,id,e){
+  if(e)e.stopPropagation();
+  var dp=empDp(pk);if(!dp)return;
+  var i=dp.querySelector('.emp-dp-menu input[data-doc="'+id+'"]');if(i)i.checked=false;
+  empDpSync(pk);
+}
+/* No Documents Required: nothing is requested, so the picker is cleared and
+   switched off rather than left holding a choice that will not be used. */
+function empDpNoDocs(pk,on){
+  var dp=empDp(pk);if(!dp)return;
+  dp.classList.toggle('is-off',on);
+  empDpClose(dp);
+  if(on){dp.querySelectorAll('.emp-dp-menu input:checked').forEach(function(i){i.checked=false;});empDpSync(pk);}
+  dp.querySelector('.emp-dp-trigger').disabled=on;
+  var lbl=dp.previousElementSibling;
+  if(lbl){var r=lbl.querySelector('.lp-logs-form-req');if(r)r.style.visibility=on?'hidden':'';}
+}
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.emp-dp-menu:not([hidden])').forEach(function(m){
+    var dp=m.parentNode;
+    if(dp.contains(e.target))return;
+    m.hidden=true;
+    var t=dp.querySelector('.emp-dp-trigger');if(t)t.classList.remove('cs-open');
+  });
+},true);   // capture: popups stop clicks bubbling
+
+/* ── Verification Completed (FR-08) ──────────────────────────────────────
+   Compliance accepts or rejects each document here. Accept is recorded on
+   the document at once; Reject moves the form to Document Rejected with
+   that document picked. Verification Completed can be saved once every
+   requested document is Accepted. */
+function empVerifyHTML(pk,emp){
+  var st=empState(emp),docs=empReqDocs(emp),kind=empKindOf(emp);
+  if(st.onb&&st.onb.noDocs)return '<div class="emp-log-ok">'+EMP_ICO.tick+'<span>No Documents Required was selected for this employee.</span></div>';
+  if(!st.onb||!st.onb.docReq)return '<div class="emp-log-alert">'+EMP_ICO.warn+'<span>No documents have been requested yet. Raise a <b>Document Request</b> first, or mark it <b>No Documents Required</b>.</span></div>';
+  var acc=docs.filter(function(d){return d.status==='Accepted';}).length;
+  return '<div class="emp-sec">'
+    +empSecHead(EMP_ICO.doc,'Document Review','<span class="emp-sec-count">'+acc+' of '+docs.length+' accepted</span>')
+    +'<div class="emp-sec-body is-flush">'+docs.map(function(d){
+      var can=d.status==='Uploaded';
+      /* Two lines: what the document is and where it stands; then its file
+         and what Compliance can do with it. */
+      return '<div class="emp-rev-row">'
+        +'<div class="emp-rev-line"><span class="emp-res-name">'+empLifeHtml(d.name)+'</span>'+empDocBadge(d.status)+'</div>'
+        +'<div class="emp-rev-line"><span class="emp-res-sub">'+empLifeHtml(d.type)+(d.file?' · '+empLifeHtml(d.file):'')
+          +(d.status==='Accepted'&&d.acceptedBy?' · Accepted by '+empLifeHtml(d.acceptedBy):'')
+          +(d.status==='Rejected'&&d.reason?' · '+empLifeHtml(d.reason):'')+'</span>'
+        +(can?'<span class="emp-rev-acts">'
+          +'<button type="button" class="emp-mini-btn is-ok" onclick="empDocAccept(\''+kind+'\','+emp.id+',\''+d.id+'\')">Accept</button>'
+          +'<button type="button" class="emp-mini-btn is-bad" onclick="empDocRejectFrom(\''+pk+'\',\''+d.id+'\')">Reject</button></span>':'')
+        +'</div></div>';
+    }).join('')+'</div></div>'
+    +(acc<docs.length?'<div class="emp-log-note">'+EMP_ICO.info+'<span>Verification Completed can be saved once all '+docs.length+' documents are <b>Accepted</b>.</span></div>':'');
+}
+function empDocAccept(kind,id,docId){
+  var emp=empFind(kind,id);if(!emp)return;
+  var d=empReqDocs(emp).find(function(x){return x.id===docId;});if(!d||d.status!=='Uploaded')return;
+  d.status='Accepted';d.acceptedBy=CURRENT_USER;d.acceptedAt=empStamp();
+  renderADTPage();
+  showToast('Document accepted','success',d.name+' accepted for '+emp.name+'.');
+}
+function empDocRejectFrom(pk,docId){
+  empFormType[pk]='doc-rejected';empFormPre[pk]={doc:docId};
+  renderADTPage();
+}
+
+/* ── Asset Allocation & IT Access Completed (FR-11) ──────────────────────
+   Two sections, one below the other. Each lists what the employee already
+   holds; Assets also offers Assign Existing Asset (search by name or ID) and
+   + Add Asset, IT offers + Add IT Access - both the module's own popups. */
+function empAssetCard(a,mode){
+  var pairs=mode==='recover'
+    ?[['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],['Assigned Date',cdLabel(a.assignedOn)],['Condition',a.condition]]
+    :[['Asset Category',a.category],['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],
+      ['Brand / Model',[a.brand,a.model].filter(Boolean).join(' · ')],['Assigned Date',cdLabel(a.assignedOn)],['Location',a.branch],['Condition',a.condition]];
+  return empResCard(a.name,a.status,pairs);
+}
+function empItCard(r,mode){
+  var pairs=[['Access Type',r.accessType],['Login ID',r.login],['Role / Permission',r.role],['Effective Date',cdLabel(r.effective)]];
+  if(mode!=='recover')pairs.push(['Provisioned By',r.provisionedBy],['MFA Enabled',r.mfa]);
+  return empResCard(r.system,r.status,pairs);
+}
+function empResCard(title,status,pairs){
+  return '<div class="emp-res-card"><div class="emp-res-top"><span class="emp-res-name">'+empLifeHtml(title)+'</span>'+empLifeBadge(status)+'</div>'
+    +'<dl class="emp-res-dl">'+pairs.map(function(p){
+      return '<div><dt>'+p[0]+'</dt><dd>'+(p[1]?empLifeHtml(p[1]):'<span class="sb-dash">—</span>')+'</dd></div>';
+    }).join('')+'</dl></div>';
+}
+function empAssetItHTML(pk,emp){
+  var assets=empAssets(emp),its=empItAccess(emp);
+  var by='Asset Name';
+  return '<div class="emp-sec">'
+      +empSecHead(EMP_ICO.laptop,'Asset Allocation',empCheck(pk+'-skip-asset','Skip Asset Allocation',false,'empSkipToggle(this)'))
+      +'<div class="emp-sec-body">'
+        +(assets.length?'<div class="emp-res-list">'+assets.map(function(a){return empAssetCard(a);}).join('')+'</div>'
+          :'<div class="emp-sec-empty">No asset assigned to '+empLifeHtml(emp.name)+' yet.</div>')
+        +'<div class="emp-assign">'
+          +'<div class="emp-assign-title">Assign Existing Asset</div>'
+          +'<div class="emp-log-fields is-grid">'
+            +'<div class="emp-log-field">'+empLabel('Search Asset By')+apCS(pk+'-asg-by',['Asset Name','Asset ID / Code'],by,'Search Asset By','empAssignByHook')+'</div>'
+            +'<div class="emp-log-field">'+empLabel('Select Asset')+'<div class="emp-assign-sel">'+empAssignSelHTML(pk,by)+'</div></div>'
+          +'</div>'
+          +'<div class="emp-sec-btns">'
+            +'<button type="button" class="emp-sec-btn" onclick="empAssignExisting(\''+pk+'\')">'+EMP_ICO.tick+'Assign</button>'
+            +'<button type="button" class="emp-sec-btn" onclick="empGoAddAsset(\''+pk+'\')">'+EMP_ICO.plus+'Add Asset</button>'
+          +'</div>'
+        +'</div>'
+      +'</div></div>'
+    +'<div class="emp-sec">'
+      +empSecHead(EMP_ICO.key,'IT Access',empCheck(pk+'-skip-it','Skip IT Access',false,'empSkipToggle(this)'))
+      +'<div class="emp-sec-body">'
+        +(its.length?'<div class="emp-res-list">'+its.map(function(r){return empItCard(r);}).join('')+'</div>'
+          :'<div class="emp-sec-empty">No IT access recorded for '+empLifeHtml(emp.name)+' yet.</div>')
+        +'<div class="emp-sec-btns"><button type="button" class="emp-sec-btn" onclick="empGoAddItAccess(\''+pk+'\')">'+EMP_ICO.plus+'Add IT Access</button></div>'
+      +'</div></div>';
+}
+function empAssetOptLabel(a,by){return by==='Asset ID / Code'?a.code+' — '+a.name:a.name+' ('+a.code+')';}
+function empAssignSelHTML(pk,by){
+  var av=empAvailableAssets();
+  return apCS(pk+'-asg-sel',av.map(function(a){return empAssetOptLabel(a,by);}),'',av.length?'Select Asset':'No available assets');
+}
+function empAssignByHook(val,csid){
+  var pk=String(csid).replace(/-asg-by$/,'');
+  var w=document.querySelector(empScopeSel(pk)+' .emp-log-input:not([hidden]) .emp-assign-sel');
+  if(w)w.innerHTML=empAssignSelHTML(pk,val);
+}
+function empAssignExisting(pk){
+  var emp=empPkRec(pk);if(!emp)return;
+  var by=getCSValue(pk+'-asg-by')||'Asset Name',lbl=getCSValue(pk+'-asg-sel');
+  var a=empAvailableAssets().find(function(x){return empAssetOptLabel(x,by)===lbl;});
+  if(!a){showToast('Select an asset','error','Pick an available asset to assign to '+emp.name+'.');return;}
+  var today=empToday();
+  if(typeof astSeedLogs==='function')astSeedLogs(a);
+  a.status='Assigned';a.assignedTo=emp.name;a.assignedOn=today;a.updatedAt=empStamp();
+  if(emp.branch)a.branch=emp.branch;
+  a.history=a.history||[];a.history.unshift({employee:emp.name,from:today,to:'',condition:a.condition});
+  var s=stampNow();
+  if(a.logs)a.logs.unshift({date:s.date,time:s.time,user:CURRENT_USER,status:'Assigned',action:'Assigned to '+emp.name+' from the onboarding log.'});
+  if(typeof wfPush==='function'&&typeof astWorkflowData!=='undefined'){if(typeof astWorkflow==='function')astWorkflow(a);wfPush(astWorkflowData,a.id,'Asset Assigned','Handed to '+emp.name+' during onboarding.');}
+  renderADTPage();
+  showToast('Asset assigned','success',a.name+' ('+a.code+') is now assigned to '+emp.name+'.');
+}
+function empSkipToggle(cb){var sec=cb.closest('.emp-sec');if(sec)sec.classList.toggle('is-skipped',cb.checked);}
+
+/* ── Asset Recovery & IT Access Revocation (FR-16), and the pre-check for
+   Cancel Onboarding (FR-13): what the employee still holds, with the way to
+   go and resolve each list. */
+function empResourceHTML(emp,mode){
+  var assets=empAssets(emp),its=empItAccess(emp),n=empJs(emp.name),rec=mode==='recover';
+  return '<div class="emp-sec">'
+      +empSecHead(EMP_ICO.laptop,rec?'Asset Recovery':'Assigned Assets',
+        assets.length?'<button type="button" class="emp-sec-link" onclick="empGoAllAssets(\''+n+'\')">Manage Asset'+EMP_ICO.arrow+'</button>':'')
+      +'<div class="emp-sec-body">'+(assets.length
+        ?'<div class="emp-res-list">'+assets.map(function(a){return empAssetCard(a,'recover');}).join('')+'</div>'
+        :'<div class="emp-sec-empty is-ok">'+EMP_ICO.tick+'No Assigned Assets</div>')+'</div></div>'
+    +'<div class="emp-sec">'
+      +empSecHead(EMP_ICO.key,rec?'IT Access Revocation':'Active IT Access',
+        its.length?'<button type="button" class="emp-sec-link" onclick="empGoAllItAccess(\''+n+'\')">Manage IT Access'+EMP_ICO.arrow+'</button>':'')
+      +'<div class="emp-sec-body">'+(its.length
+        ?'<div class="emp-res-list">'+its.map(function(r){return empItCard(r,'recover');}).join('')+'</div>'
+        :'<div class="emp-sec-empty is-ok">'+EMP_ICO.tick+'No Active IT Access</div>')+'</div></div>'
+    +((assets.length||its.length)?'<div class="emp-log-alert">'+EMP_ICO.warn+'<span>'
+        +(rec?'Every asset must be returned and every access revoked before this can be completed.'
+          :'Assets and IT access must be resolved before onboarding can be cancelled.')+'</span></div>':'');
+}
+
+/* ── Compliance Clearance: Issue Details / Resolution pairs (FR-17) ────── */
+function empPairRowHTML(){
+  return '<div class="emp-pair">'
+    +'<div class="emp-pair-f">'+empLabel('Issue Details',true)+'<textarea class="emp-log-textarea" data-pair="issue" placeholder="What is outstanding"></textarea></div>'
+    +'<div class="emp-pair-f">'+empLabel('Resolution / Action Taken')+'<textarea class="emp-log-textarea" data-pair="res" placeholder="How it was or will be resolved"></textarea></div>'
+    +'<button type="button" class="emp-pair-del" title="Remove" onclick="empPairDel(this)">'+EMP_ICO.trash+'</button>'
+    +'</div>';
+}
+function empPairsHTML(){
+  return '<div class="emp-pairs">'+empPairRowHTML()+'</div>'
+    +'<button type="button" class="emp-sec-btn" onclick="empPairAdd(this)">'+EMP_ICO.plus+'Add Issue</button>';
+}
+function empPairAdd(btn){
+  var list=btn.previousElementSibling;if(!list)return;
+  list.insertAdjacentHTML('beforeend',empPairRowHTML());
+  var ta=list.lastElementChild.querySelector('textarea');if(ta)ta.focus();
+}
+function empPairDel(btn){
+  var list=btn.closest('.emp-pairs'),row=btn.closest('.emp-pair');
+  if(list&&list.children.length>1)row.remove();
+  else row.querySelectorAll('textarea').forEach(function(t){t.value='';});
+}
+function empIssueHook(val,csid){
+  var w=document.getElementById('csw-'+csid);
+  var blk=w&&w.closest('.emp-log-input');
+  var x=blk&&blk.querySelector('.emp-issue-extra');
+  if(x)x.hidden=val!=='Yes';
+}
+/* Offboarding: "Other" separation needs words. */
+function empSepHook(val,csid){
+  var w=document.getElementById('csw-'+csid);
+  var blk=w&&w.closest('.emp-log-input');
+  var x=blk&&blk.querySelector('.emp-sep-other');
+  if(x)x.hidden=val!=='Other';
+}
+/* F&F: the net figure follows the lines above until someone types in it. */
+function empFnfCalc(pk){
+  var g=function(k){var el=document.querySelector(empScopeSel(pk)+' #'+empFid(pk,'fnf',k));return el&&el.value!==''?parseFloat(el.value)||0:0;};
+  var net=g('salary')+g('leave')+g('bonus')+g('gratuity')+g('otherEarn')-g('notice')-g('loan')-g('otherDed')+g('adjust');
+  var out=document.querySelector(empScopeSel(pk)+' #'+empFid(pk,'fnf','net'));
+  if(out&&!out.dataset.touched)out.value=Math.round(net*100)/100;
+}
+
+/* ── Picking a type ─────────────────────────────────────────────────────── */
+function empLogTypeHook(val,csid){
+  var pk=String(csid).replace(/-log-type$/,'');
+  var k=empLogKey(val);
+  empFormType[pk]=k;
+  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
+  if(wrap)wrap.querySelectorAll('.emp-log-input').forEach(function(b){b.hidden=b.getAttribute('data-type')!==k;});
+  /* Cancel Onboarding is checked the moment it is picked (FR-13). */
+  if(k==='cancel-onb'){
+    var emp=empPkRec(pk);
+    if(emp&&(empAssets(emp).length||empItAccess(emp).length))empShowCancelBlock(pk,emp);
+  }
+}
+function empResetForm(pk){
+  empFormType[pk]='';delete empFormPre[pk];
+  if(typeof csClear==='function')csClear(pk+'-log-type');
+  var inp=document.getElementById(pk+'-log-comment-inp');if(inp)inp.value='';
+  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
+  if(wrap)wrap.querySelectorAll('.emp-log-input').forEach(function(b){b.hidden=true;});
+}
+function empCancelLog(pk){
+  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
+  if(wrap)wrap.querySelectorAll('input[type=checkbox]').forEach(function(i){if(!i.disabled)i.checked=false;});
+  empResetForm(pk);
+}
+
+/* ══ READ, VALIDATE, COMMIT ════════════════════════════════════════════════ */
+function empReadFields(block,out){
+  block.querySelectorAll('.emp-log-field[data-fid]').forEach(function(f){
+    if(f.hidden||f.closest('[hidden]'))return;   // a field that is not shown is not asked
+    var id=f.getAttribute('data-fid'),type=f.getAttribute('data-ftype'),label=f.getAttribute('data-label');
+    var v='',shown='';
+    if(type==='date'){var h=document.getElementById(id);v=h?h.value:'';shown=cdLabel(v);}
+    else if(type==='select'){v=getCSValue(id);shown=v;}
+    else if(type==='ss'){var hs=document.getElementById(id);v=hs?hs.value:'';
+      var o=v&&f.querySelector('.emp-ss-opt[data-v="'+v+'"]');shown=o?o.getAttribute('data-label'):'';}
+    else{var el=document.getElementById(id);v=el?String(el.value).trim():'';
+      shown=type==='time'?empTime12(v):type==='number'?empNum(v):v;}
+    out.vals[f.getAttribute('data-fk')]=v;
+    if(v!=='')out.details.push({label:label,value:shown});
+    else if(f.getAttribute('data-req'))out.missing.push(label);
+  });
+}
+function empTime12(v){
+  var m=/^(\d{1,2}):(\d{2})/.exec(v||'');if(!m)return v;
+  var h=+m[1];return ((h%12)||12)+':'+m[2]+' '+(h>=12?'PM':'AM');
+}
+function empNum(v){var n=parseFloat(v);return isNaN(n)?v:n.toLocaleString('en-IN');}
+function empFail(title,sub){showToast(title,'error',sub);return false;}
+
+function empCommitLog(pk){
+  var emp=empPkRec(pk);if(!emp)return;
+  var k=empFormType[pk]||empLogKey(getCSValue(pk+'-log-type'));
+  var inp=document.getElementById(pk+'-log-comment-inp');
+  var comment=inp?inp.value.trim():'';
+  var flash=function(el){if(el){el.classList.add('is-invalid');setTimeout(function(){el.classList.remove('is-invalid');},1600);}};
+  if(!k){flash(typeof csTrigger==='function'?csTrigger(pk+'-log-type'):null);empFail('Select a log','Pick what happened from Add Log.');return;}
+  if(empLogOptions(emp).indexOf(k)<0){empFail('Not available now',EMP_LOG[k].label+' cannot be logged at this stage.');return;}
+  var block=empBlock(pk);
+  var got={vals:{},details:[],missing:[]};
+  if(block)empReadFields(block,got);
+  var entry={type:k,status:EMP_LOG[k].label,action:comment};
+  var st=empState(emp);
+  var effects=null;
+
+  if(k==='doc-request'){
+    var noDocs=!!(document.getElementById(pk+'-nodocs')||{}).checked;
+    var ids=block?Array.prototype.map.call(block.querySelectorAll('.emp-dp-menu input:checked'),function(i){return i.getAttribute('data-doc');}):[];
+    if(noDocs&&empReqDocs(emp).length){empFail('Documents already requested','No Documents Required can only be chosen before any document is requested.');return;}
+    if(!noDocs&&!ids.length){var dp=empDp(pk);if(dp)flash(dp.querySelector('.emp-dp-trigger'));empFail('Required Documents is mandatory','Select at least one document, or tick No Documents Required.');return;}
+    if(noDocs){entry.noDocs=true;entry.details=[{label:'Required Documents',value:'No Documents Required'}];}
+    else{
+      entry.docs=ids.map(function(i){return empDocDef(i).name;});
+      effects=function(){
+        var s=stampNow();
+        ids.forEach(function(i){var d=empDocDef(i);
+          empReqDocs(emp).push({id:'rq'+(++empReqSeq),docId:i,name:d.name,type:d.type,status:'Pending Upload',requestedAt:s.date});});
+      };
+    }
+  }else if(k==='verified'){
+    if(!st.onb.noDocs){
+      if(!st.onb.docReq){empFail('Documents are not requested','Raise a Document Request first, or mark it No Documents Required.');return;}
+      if(!empDocsAllAccepted(emp)){
+        var left=empReqDocs(emp).filter(function(d){return d.status!=='Accepted';});
+        empFail('Documents not yet accepted',left.length+' document'+(left.length===1?' is':'s are')+' not Accepted — first: '+left[0].name+' ('+left[0].status+').');return;}
+      entry.details=[{label:'Accepted Documents',value:empReqDocs(emp).map(function(d){return d.name;}).join(', ')}];
+    }else entry.details=[{label:'Documents',value:'No Documents Required'}];
+  }else if(k==='doc-rejected'){
+    if(!got.missing.length){
+      var d=empReqDocs(emp).find(function(x){return x.id===got.vals.doc;});
+      entry.rejected=[{name:d.name,reason:got.vals.reason}];
+      effects=function(){
+        /* The file leaves the employee's active attachments; the request
+           goes back to Requested Docs asking for a replacement (FR-09). */
+        if(emp.attachments)emp.attachments=emp.attachments.filter(function(a){return a.reqId!==d.id;});
+        d.status='Rejected';d.reason=got.vals.reason;d.prevFile=d.file;d.file='';d.size='';d.wasRejected=true;
+        d.acceptedBy='';d.acceptedAt='';
+      };
+    }
+  }else if(k==='asset-it'){
+    var skA=!!(document.getElementById(pk+'-skip-asset')||{}).checked;
+    var skI=!!(document.getElementById(pk+'-skip-it')||{}).checked;
+    var as=empAssets(emp),is=empItAccess(emp);
+    if(!skA&&!as.length){empFail('Asset Allocation is not complete','Assign or add an asset for '+emp.name+', or tick Skip Asset Allocation.');return;}
+    if(!skI&&!is.length){empFail('IT Access is not complete','Add IT access for '+emp.name+', or tick Skip IT Access.');return;}
+    entry.details=[{label:'Asset Allocation',value:skA?'Skipped':as.map(function(a){return a.code;}).join(', ')},
+                   {label:'IT Access',value:skI?'Skipped':is.map(function(r){return r.system;}).join(', ')}];
+  }else if(k==='cancel-onb'){
+    if(empAssets(emp).length||empItAccess(emp).length){empShowCancelBlock(pk,emp);return;}
+  }else if(k==='asset-rev'){
+    var ra=empAssets(emp).length,ri=empItAccess(emp).length;
+    if(ra||ri){empFail('Resources still assigned',(ra?ra+' asset'+(ra===1?'':'s')+' still assigned':'')+(ra&&ri?' and ':'')+(ri?ri+' IT access record'+(ri===1?'':'s')+' still active':'')+'.');return;}
+    entry.details=[{label:'Assets',value:'No Assigned Assets'},{label:'IT Access',value:'No Active IT Access'}];
+  }else if(k==='offboarding'){
+    entry.lwd=got.vals.lwd||'';
+  }else if(k==='compliance'&&got.vals.issue==='Yes'&&block){
+    var pairs=[];
+    block.querySelectorAll('.emp-pair').forEach(function(p){
+      var i=p.querySelector('[data-pair=issue]').value.trim(),r=p.querySelector('[data-pair=res]').value.trim();
+      if(i||r)pairs.push({issue:i,res:r});
+    });
+    if(!pairs.length||pairs.some(function(p){return !p.issue;})){
+      var bad=block.querySelector('.emp-pair [data-pair=issue]');flash(bad);
+      empFail('Issue Details is mandatory','Every issue line needs its Issue Details when Outstanding Issue is Yes.');return;}
+    entry.issues=pairs;
+  }
+  if(got.missing.length){empFail(got.missing[0]+' is mandatory',got.missing.length>1?(got.missing.length-1)+' more required field'+(got.missing.length>2?'s':'')+' also empty.':'');return;}
+  if(!comment){flash(inp);empFail('Comment is mandatory','Say what happened before saving the log.');return;}
+  if(!entry.details&&got.details.length)entry.details=got.details;
+
+  if(k==='onboarding')emp.reqDocs=[];     // a new cycle starts with nothing requested
+  if(effects)effects();
+  empPushLog(emp,entry);
+  empAutoAdvance(emp);
+
+  empFormType[pk]='';delete empFormPre[pk];
+  if(empLogModal)empLogModal=null;
+  renderADTPage();
+  /* The repaint keeps typed values (that is what patchDom is for), so a
+     saved form has to be emptied by hand or the next log starts with the
+     last one's comment in it. */
+  var c2=document.getElementById(pk+'-log-comment-inp');if(c2)c2.value='';
+  document.querySelectorAll(empScopeSel(pk)+' .emp-log-input-wrap input, '+empScopeSel(pk)+' .emp-log-input-wrap textarea').forEach(function(i){
+    if(i.type==='checkbox'){if(!i.disabled)i.checked=false;}else if(i.type!=='hidden'&&!i.readOnly)i.value='';
+  });
+  var top=empLogs(emp)[0],st2=empState(emp);
+  if(top.system&&(top.type==='active'||top.type==='inactive'))
+    showToast(emp.name+' is now '+emp.status,'success','All mandatory '+(top.type==='active'?'onboarding':'offboarding')+' activities are complete — '+emp.status+' was set automatically.');
+  else if(st2.phase==='off'&&empOffDone(emp,st2))
+    showToast('Offboarding activities complete','success',emp.name+' becomes Inactive automatically on the Last Working Date, '+cdLabel(st2.off.lwd)+'.');
+  else showToast('Log added','success',EMP_LOG[k].label+' recorded for '+emp.name+'.');
+}
+
+let empReqSeq=100;
+/* Every entry, person or system, goes through here: stamped, the Employee
+   Status before and after it recorded (FR-24), the emails it triggers sent
+   and noted on it (FR-23), and the Workflow tab told. */
+function empPushLog(emp,entry){
+  var s=stampNow();
+  var e=Object.assign({date:s.date,time:s.time,user:entry.system?'System':CURRENT_USER},entry);
+  if(e.system&&!e.action)e.action=EMP_SYS_COMMENT;
+  e.prev=emp.status;
+  empLogs(emp).unshift(e);
+  emp.status=empState(emp).status;
+  e.next=emp.status;
+  empNotifyFor(emp,e);
+  var wf=empKindOf(emp)==='de'?deWorkflowData:geWorkflowData;
+  if(typeof wfPush==='function')wfPush(wf,emp.id,e.status,e.action||'',e.user);
+  return e;
+}
+/* The moves no person makes (FR-12, FR-19). Checked after every log - and,
+   for Inactive, again whenever the date moves past an LWD (empSweepLwd). */
+function empAutoAdvance(emp){
+  var st=empState(emp);
+  if(st.phase==='onb'&&st.onb.verified&&st.onb.assetIt){
+    empPushLog(emp,{type:'active',status:'Active',system:true,
+      details:[{label:'Performed By',value:'System'},{label:'Active Date/Time',value:empStamp()},{label:'Onboarding',value:'Completed'}]});
+  }else if(st.phase==='off'&&empOffDone(emp,st)&&empLwdReached(st)){
+    empPushLog(emp,{type:'inactive',status:'Inactive',system:true,
+      details:[{label:'Performed By',value:'System'},{label:'Inactive Date/Time',value:empStamp()},{label:'Offboarding',value:'Completed'}]});
+  }
+}
+function empSweepLwd(){
+  ['de','ge'].forEach(function(k){EMP_LIFE_SCOPES[k].list().forEach(function(emp){
+    var st=empState(emp);
+    if(st.phase==='off'&&empOffDone(emp,st)&&empLwdReached(st))empAutoAdvance(emp);
+  });});
+}
+
+/* ══ EMAIL NOTIFICATIONS (FR-23) ═══════════════════════════════════════════
+   Sent after the action is saved, through the app's existing notification
+   feed. A failed send never undoes the action - it is only noted. */
+const EMP_MAIL={
+  onboarding:     {to:'Employee',subject:'Onboarding Started',
+    body:'Hi {name}, your onboarding process has been started. Please complete the required onboarding activities and document uploads, where applicable.'},
+  'doc-request':  {to:'Employee',subject:'Documents Required',
+    body:'Hi {name}, the following documents are required for your onboarding: {docs}. Please upload them under Profile → Attachments → Requested Docs.'},
+  'docs-submitted':{to:'Compliance',subject:'Documents Submitted for Verification',
+    body:'Hi Team, all requested documents for {name} ({id}) have been submitted and are ready for verification.'},
+  resubmitted:    {to:'Compliance',subject:'Corrected Documents Submitted',
+    body:'Hi Team, the corrected/requested documents for {name} ({id}) have been uploaded and are ready for verification.'},
+  'doc-rejected': {to:'Employee',subject:'Action Required: Document Rejected',
+    body:'Hi {name}, {doc} has been rejected. Reason: {reason}. Please upload the corrected document under Profile → Attachments → Requested Docs.'},
+  verified:       {to:'HR / IT',subject:'Verification Completed',
+    body:'Hi Team, document verification has been completed for {name} ({id}). Please proceed with the remaining applicable onboarding activities.'},
+  'asset-it':     {to:'Employee / HR / IT',subject:'Asset & IT Access Setup Completed',
+    body:'Hi {name}, your applicable Asset Allocation and IT Access setup has been completed. HR/IT may review the assigned records where required.'},
+  active:         {to:'Employee',subject:'Onboarding Completed',
+    body:'Hi {name}, your onboarding has been completed successfully and your Employee status is now Active.'},
+  'cancel-onb':   {to:'Employee / HR',subject:'Onboarding Cancelled',
+    body:'Hi {name}, your onboarding process has been cancelled. Your Employee status has been updated to Inactive.'},
+  offboarding:    {to:'Employee / Reporting Manager',subject:'Offboarding Initiated',
+    body:'Hi {name}, your offboarding process has been initiated. Last Working Date: {lwd}. Applicable exit activities will now be processed.'},
+  'kt-req':       {to:'Reporting Manager',subject:'KT / Handover Required',
+    body:'Hi Reporting Manager, KT / Handover is required for {name} ({id}). Please complete the applicable handover activities.'},
+  'rev-req':      {to:'HR / IT',subject:'Asset Recovery & IT Access Revocation Required',
+    body:'Hi Team, please review the assigned Assets and active IT Access for {name} ({id}) and complete the applicable recovery/revocation activities.'},
+  'cc-req':       {to:'Compliance',subject:'Compliance Clearance Required',
+    body:'Hi Team, compliance clearance is required for {name} ({id}) as part of the offboarding process. Please complete the applicable clearance details.'},
+  'fnf-req':      {to:'HR / Finance',subject:'F&F Settlement Required',
+    body:'Hi Team, Full & Final Settlement is required for {name} ({id}). Please complete the applicable settlement details.'},
+  inactive:       {to:'Employee',subject:'Offboarding Completed',
+    body:'Hi {name}, your offboarding has been completed and your Employee status is now Inactive.'},
+  'cancel-off':   {to:'Employee / HR',subject:'Offboarding Cancelled',
+    body:'Hi {name}, your offboarding process has been cancelled. Your Employee status has been restored to Active.'}
+};
+function empNotifyFor(emp,e){
+  var keys=[];
+  if(e.type==='docs-submitted')keys.push(e.resubmit?'resubmitted':'docs-submitted');
+  else if(e.type==='doc-request'){if(!e.noDocs)keys.push('doc-request');}
+  else if(e.type==='offboarding'){
+    keys.push('offboarding','kt-req');
+    if(empAssets(emp).length||empItAccess(emp).length)keys.push('rev-req');
+    keys.push('cc-req','fnf-req');
+  }else if(EMP_MAIL[e.type])keys.push(e.type);
+  if(!keys.length)return;
+  var vars={name:emp.name,id:emp.empId||'',docs:(e.docs||[]).join(', '),lwd:e.lwd?cdLabel(e.lwd):'—',
+    doc:e.rejected&&e.rejected[0]?e.rejected[0].name:'',reason:e.rejected&&e.rejected[0]?e.rejected[0].reason:''};
+  e.notified=keys.map(function(key){
+    var t=EMP_MAIL[key];
+    var subject=t.subject+' – '+emp.name+' – '+(emp.empId||'');
+    var n={to:t.to,subject:subject,body:t.body.replace(/\{(\w+)\}/g,function(_,v){return vars[v]||'';}),status:'Sent'};
+    try{
+      if(typeof notifData!=='undefined')notifData.unshift({name:subject,cid:emp.empId||'',sub:'Email · To: '+t.to,time:'Just now',pending:true});
+    }catch(err){n.status='Failed';}      // never reverses the saved action
+    return n;
+  });
+}
+
+/* ══ EMPLOYEE UPLOADS A REQUESTED DOCUMENT (FR-05, FR-07) ══════════════════
+   Lands the file against the request and in the employee's attachments. If
+   it was the last one outstanding, the system writes Documents Submitted. */
+function empUploadRequested(kind,id,reqId,file){
+  var emp=empFind(kind,id);if(!emp)return;
+  var d=empReqDocs(emp).find(function(x){return x.id===reqId;});if(!d)return;
+  if(file.size>5*1024*1024){showToast('File too large','error','Requested documents can be up to 5 MB.');return;}
+  var s=stampNow();
+  var wasRejected=d.status==='Rejected';
+  d.status='Uploaded';d.file=file.name;d.size=attachFmtSize(file.size);d.uploadedAt=s.date+', '+s.time;d.reason='';
+  if(!emp.attachments)emp.attachments=[];
+  emp.attachments=emp.attachments.filter(function(a){return a.reqId!==d.id;});
+  emp.attachments.unshift({name:file.name,size:d.size,type:attachKind(file.name),by:emp.name,
+    source:'Requested Doc · '+d.name,date:s.date,reqId:d.id});
+  var st=empState(emp);
+  var last=st.phase==='onb'&&empDocsAllIn(emp);
+  if(last){
+    empPushLog(emp,{type:'docs-submitted',status:'Documents Submitted',system:true,
+      resubmit:empReqDocs(emp).some(function(x){return x.wasRejected;}),
+      details:[{label:'Submitted By',value:emp.name},{label:'Submitted Date/Time',value:s.date+', '+s.time}]});
+    empReqDocs(emp).forEach(function(x){x.wasRejected=false;});
+  }
+  renderADTPage();
+  showToast(wasRejected?'Replacement uploaded':'Document uploaded','success',
+    last?'All requested documents are in — Documents Submitted was recorded automatically.':d.name+' · '+file.name);
+}
+function empPickRequested(kind,id,reqId){
+  var inp=document.createElement('input');
+  inp.type='file';inp.accept='.pdf,.png,.jpg,.jpeg,.doc,.docx';
+  inp.addEventListener('change',function(){if(inp.files&&inp.files[0])empUploadRequested(kind,id,reqId,inp.files[0]);});
+  inp.click();
+}
+
+/* ══ THE LOGS TAB ══════════════════════════════════════════════════════════ */
+function empTimelineHTML(emp){
+  var logs=empLogs(emp);
+  if(!logs.length)return '<div class="lp-logs-empty">No activity logs yet.</div>';
+  return '<div class="lp-logs-timeline">'+logs.map(function(l,i){
+    var moved=l.prev&&l.next&&l.prev!==l.next;
+    return '<div class="lp-log-row'+(l.system?' emp-log-sys':'')+'">'
+      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar">'+(l.system?EMP_ICO.cog:EMP_ICO.person)+'</div>'
+        +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
+      +'<div class="lp-log-card">'
+      +'<div class="lp-log-status-row"><span class="lp-log-dot"></span><span class="lp-log-status-text">'+empLifeHtml(l.status)+'</span>'
+        +(l.system?'<span class="emp-sys-chip">System</span>':'')+'</div>'
+      +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+EMP_ICO.person+'<span>'+empLifeHtml(l.user)+'</span></span>'
+        +'<span class="lp-log-meta-item">'+EMP_ICO.cal+'<span>'+l.date+'</span></span>'
+        +'<span class="lp-log-meta-item">'+EMP_ICO.clk+'<span>'+l.time+'</span></span>'
+        +(moved?'<span class="emp-log-move">'+empLifeHtml(l.prev)+EMP_ICO.arrow+empLifeHtml(l.next)+'</span>':'')+'</div>'
+      +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+empLifeHtml(l.action)+'</div>'
+      +(l.docs&&l.docs.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Requested:</span>'+l.docs.map(empLifeHtml).join(' · ')+'</div>':'')
+      +(l.details&&l.details.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Recorded:</span>'
+        +l.details.map(function(d){return empLifeHtml(String(d.label).replace(/\?$/,''))+': <b>'+empLifeHtml(d.value)+'</b>';}).join(' · ')+'</div>':'')
+      +(l.issues&&l.issues.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Issues:</span>'
+        +l.issues.map(function(p,n){return (n+1)+'. '+empLifeHtml(p.issue)+(p.res?' — <b>'+empLifeHtml(p.res)+'</b>':'');}).join('<br>')+'</div>':'')
+      +(l.rejected&&l.rejected.length?'<div class="lp-log-comment-row is-bad"><span class="lp-log-comment-label">Rejected:</span>'
+        +l.rejected.map(function(d){return empLifeHtml(d.name)+(d.reason?' ('+empLifeHtml(d.reason)+')':'');}).join(' · ')+'</div>':'')
+      +(l.notified&&l.notified.length?'<div class="emp-log-mail">'+l.notified.map(function(n){
+          return '<span title="'+empLifeHtml(n.body)+'">'+EMP_ICO.mail+'<b>'+empLifeHtml(n.to)+'</b> · '+empLifeHtml(n.subject.split(' – ')[0])+(n.status==='Failed'?' (failed)':'')+'</span>';
+        }).join('')+'</div>':'')
+      +'</div></div>';
+  }).join('')+'</div>';
+}
+function empFormHTML(pk,emp,inModal){
+  var opts=empLogOptions(emp);
+  var cur=empFormType[pk]&&opts.indexOf(empFormType[pk])>=0?empFormType[pk]:'';
+  empFormType[pk]=cur;
+  var out=empDocsOutstanding(emp),rej=out.filter(function(d){return d.status==='Rejected';});
+  var alert=out.length&&empState(emp).phase==='onb'
+    ?'<div class="emp-log-note">'+EMP_ICO.info+'<span><b>'+out.length+' requested document'+(out.length===1?'':'s')+'</b> waiting on the employee'
+      +(rej.length?' ('+rej.length+' rejected, replacement needed)':'')+'.</span></div>':'';
+  var typeField=empLabel('Add Log',true)
+    +apCS(pk+'-log-type',opts.map(function(k){return EMP_LOG[k].label;}),cur?EMP_LOG[cur].label:'','Select Status','empLogTypeHook');
+  var blocks=empLogInputs(pk,emp,opts,cur);
+  if(inModal){
+    return '<div class="ep-form-grid">'
+      +(alert?'<div class="ep-form-group ep-form-full">'+alert+'</div>':'')
+      +'<div class="ep-form-group ep-form-full">'+typeField+'</div>'
+      +'<div class="ep-form-group ep-form-full emp-sm-inputs">'+blocks+'</div>'
+      +'<div class="ep-form-group ep-form-full">'+empLabel('Comment',true)
+        +'<textarea id="'+pk+'-log-comment-inp" class="lp-logs-form-textarea" placeholder="Enter comment"></textarea></div>'
+      +'</div>';
+  }
+  return '<div class="lp-logs-form emp-logs-form">'
+    +'<div class="emp-logs-form-scroll">'
+      +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+empLifeHtml(emp.status)
+        +(empState(emp).phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
+      +'<p class="lp-logs-form-sub">Add a lifecycle log for this employee</p>'
+      +alert
+      +typeField
+      +blocks
+      +empLabel('Comment',true)
+      +'<textarea class="lp-logs-form-textarea" id="'+pk+'-log-comment-inp" placeholder="Enter comment"></textarea>'
+    +'</div>'
+    +'<div class="emp-logs-form-foot">'
+      +'<button class="ep-cancel-btn" style="flex:1" onclick="empCancelLog(\''+pk+'\')">Cancel</button>'
+      +'<button class="lp-logs-save-btn" style="flex:1" onclick="empCommitLog(\''+pk+'\')">Submit</button>'
+    +'</div></div>';
+}
+/* Two columns that scroll on their own: the history on the left, the form on
+   the right with Cancel / Submit always in reach - so a long form is never
+   held back until the timeline beside it has scrolled to its end. */
+function renderEmpLogsTab(kind,emp){
+  return '<div class="lp-logs-wrap emp-logs">'
+    +'<div class="emp-logs-col">'+empTimelineHTML(emp)+'</div>'
+    +empFormHTML(kind,emp,false)+'</div>';
+}
+function empSaveLog(kind){empCommitLog(kind);}
+
+/* ══ LISTING: STATUS TILES AND THE ACTION CELL ═════════════════════════════ */
+const EMP_STAT_GROUPS={__offboarding__:'Offboarding'};
+function empStatIsGroup(v){return !!EMP_STAT_GROUPS[v];}
+function empStatMatch(e,v){
+  if(!v)return true;
+  if(v==='__offboarding__')return empState(e).phase==='off';
+  return e.status===v;
+}
+function empStatCount(list,v){return list.filter(function(e){return empStatMatch(e,v);}).length;}
+function empStatTilesHTML(list,cur,toggleFn){
+  var tiles=[['Pending','Pending','wait'],['Onboarding','Onboarding','info'],['Active','Active','ok'],
+             ['__offboarding__','Offboarding','wait'],['Inactive','Inactive','idle']];
+  return '<div class="listing-stats">'+tiles.map(function(t){
+    return '<div class="listing-stat'+(cur===t[0]?' stat-selected':'')+'" onclick="'+toggleFn+'(\''+t[0]+'\')">'
+      +'<div class="listing-stat-count" style="color:var(--st-'+t[2]+'-fg)">'+empStatCount(list,t[0])+'</div>'
+      +'<div class="listing-stat-label">'+t[1]+'</div></div>';
+  }).join('')+'</div>';
+}
+function empJourneyItems(emp){
+  var m=empMilestones(emp),opts=empLogOptions(emp),out=[];
+  if(m){
+    m.items.forEach(function(x,i){
+      var can=opts.indexOf(x.key)>=0&&x.state!=='done';
+      out.push({key:x.key,label:x.label,n:i+1,state:x.state==='done'?'done':x.auto?'auto':can?'next':'wait'});
+    });
+    opts.forEach(function(k){
+      if(m.items.some(function(x){return x.key===k;}))return;
+      if(k==='doc-request')return;           // more documents: from the Logs tab
+      out.push({key:k,label:EMP_LOG[k].label,state:'next',branch:true});
+    });
+  }else opts.forEach(function(k){out.push({key:k,label:EMP_LOG[k].label,state:'next'});});
+  return out;
+}
 function empActionCellHTML(kind,emp){
-  var st=empLifeStage(emp.status),label=st?st.short:emp.status;
-  var btnLabel=label.length>12?label.slice(0,10)+'…':label;
-  var items=empJourneySteps(emp).map(function(x){
+  var label=empPhaseLabel(emp),m=empMilestones(emp);
+  var cog=EMP_ICO.cog.replace(/width="14" height="14"/,'width="10" height="10"');
+  var items=empJourneyItems(emp).map(function(x){
     var cls=x.state+(x.branch?' branch':'');
-    var ico=x.state==='done'?EMP_ACT_ICO.tick:x.branch?EMP_ACT_ICO.branch:x.n;
-    var click=x.state==='next'?' onclick="empPickStatus(\''+kind+'\','+emp.id+',\''+empLifeHtml(x.status).replace(/'/g,"\\'")+'\')"':'';
-    return '<div class="ct-act-item '+cls+'"'+click+'><span class="ct-act-step '+cls+'">'+ico+'</span>'+empLifeHtml(x.status)+'</div>';
+    var ico=x.state==='done'?EMP_ICO.tick:x.branch?EMP_ICO.x:x.state==='auto'?cog:(x.n||EMP_ICO.plus);
+    var click=x.state==='next'?' onclick="empOpenLogModal(\''+kind+'\','+emp.id+',\''+x.key+'\')"':'';
+    var tag=x.state==='auto'?'<em>Automatic</em>':'';
+    return '<div class="ct-act-item emp-act-item '+cls+'"'+click+'><span class="ct-act-step '+cls+'">'+ico+'</span><span class="emp-act-label">'+empLifeHtml(x.label)+'</span>'+tag+'</div>';
   }).join('');
   var open=kind==='de'?'openDeSidebar':'openGeSidebar';
   return '<div class="ct-action-wrap">'
-    +'<button class="ct-action-btn" title="'+empLifeHtml(emp.status)+'" onclick="toggleEmpAction(\''+kind+'\','+emp.id+',event)"><span>'+empLifeHtml(btnLabel)+'</span>'+EMP_ACT_ICO.chev+'</button>'
-    +'<button class="ct-dots-btn" onclick="'+open+'('+emp.id+');event.stopPropagation()">'+EMP_ACT_ICO.dots+'</button>'
-    +'<div class="ct-action-menu emp-act-menu" id="empm-'+kind+'-'+emp.id+'">'+items+'</div>'
-    +'</div>';
+    /* The Contracts row button, as is: same 80px button, label cut at 12
+       characters the way Contracts cuts it, full text on the title. */
+    +'<button class="ct-action-btn" title="'+empLifeHtml(label)+'" onclick="toggleEmpAction(\''+kind+'\','+emp.id+',event)"><span>'
+      +empLifeHtml(label.length>12?label.slice(0,10)+'…':label)+'</span>'+EMP_ICO.chev+'</button>'
+    +'<button class="ct-dots-btn" title="View details" onclick="'+open+'('+emp.id+');event.stopPropagation()">'+EMP_ICO.dots+'</button>'
+    +'<div class="ct-action-menu emp-act-menu" id="empm-'+kind+'-'+emp.id+'">'
+      +'<div class="emp-act-head">'+(m?m.title+' · '+m.pct+'% completed':'Employee Status: '+empLifeHtml(emp.status))+'</div>'
+      +items
+      +'<div class="ct-act-item emp-act-item emp-act-logs" onclick="empOpenLogsTab(\''+kind+'\','+emp.id+')"><span class="ct-act-step next">'+EMP_ICO.arrow+'</span>View Logs</div>'
+    +'</div></div>';
 }
 function toggleEmpAction(kind,id,e){
   if(e)e.stopPropagation();
@@ -538,179 +1186,482 @@ function toggleEmpAction(kind,id,e){
   var m=document.getElementById(mid);if(!m)return;
   var willOpen=!m.classList.contains('open');
   m.classList.toggle('open');
-  if(willOpen&&e){
-    var wrap=e.target.closest('.ct-action-wrap');
-    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
-  }
+  if(willOpen&&e){var wrap=e.target.closest('.ct-action-wrap');if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());}
+}
+function empOpenLogsTab(kind,id){
+  document.querySelectorAll('.ct-action-menu').forEach(function(m){m.classList.remove('open');});
+  if(kind==='de'){openDeSidebar(id);navDeTab('logs');}else{openGeSidebar(id);navGeTab('logs');}
 }
 
-let empStatusModal=null;   // {kind, id, to} while the popup is open
-function empPickStatus(kind,id,status){
+/* ── The Add Log popup ─────────────────────────────────────────────────── */
+let empStatusModal=null;     // legacy name, still cleared by navigatePage
+function empOpenLogModal(kind,id,key){
   document.querySelectorAll('.ct-action-menu').forEach(function(m){m.classList.remove('open');});
-  empStatusModal={kind:kind,id:id,to:status};
+  empLogModal={kind:kind,id:id};
+  empFormType[kind+'sm']=key;
   renderADTPage();
-  var inp=document.getElementById(kind+'sm-log-comment-inp');if(inp)inp.focus();
+  if(key==='cancel-onb'){var emp=empFind(kind,id);if(emp&&(empAssets(emp).length||empItAccess(emp).length))empShowCancelBlock(kind+'sm',emp);}
 }
-function closeEmpStatusModal(){empStatusModal=null;renderADTPage();}
-function empStatusModalRec(){
-  var m=empStatusModal,sc=m&&EMP_LIFE_SCOPES[m.kind];
-  return sc?sc.list().find(function(e){return e.id===m.id;})||null:null;
-}
-function empSubmitStatusModal(){
-  var emp=empStatusModalRec();if(!emp)return;
-  empCommitLog(empStatusModal.kind,emp,empStatusModal.kind+'sm');
-}
-function empStatusModalToLog(){
-  var m=empStatusModal;
-  empStatusModal=null;
+function closeEmpStatusModal(){empLogModal=null;renderADTPage();}
+function empModalToLog(){
+  var m=empLogModal;empLogModal=null;
+  if(!m){renderADTPage();return;}
+  empFormType[m.kind]=empFormType[m.kind+'sm']||'';
+  empOpenLogsTab(m.kind,m.id);
   renderADTPage();
-  if(!m)return;
-  if(m.kind==='de'){openDeSidebar(m.id);navDeTab('logs');}
-  else{openGeSidebar(m.id);navGeTab('logs');}
 }
 document.addEventListener('keydown',function(e){
-  if(e.key==='Escape'&&empStatusModal&&page==='employees')closeEmpStatusModal();
+  if(e.key==='Escape'&&empLogModal&&!empAxCtx&&!document.getElementById('emp-block-pop'))closeEmpStatusModal();
 });
-
-function buildEmpStatusModalHTML(kind){
-  if(!empStatusModal||empStatusModal.kind!==kind)return '';
-  var emp=empStatusModalRec();
-  if(!emp){empStatusModal=null;return '';}
+function buildEmpStatusModalHTML(kind){return empLogModalHTML(kind)+empAxModalHTML(kind);}
+function empLogModalHTML(kind){
+  if(!empLogModal||empLogModal.kind!==kind)return '';
+  var emp=empFind(kind,empLogModal.id);
+  if(!emp){empLogModal=null;return '';}
   var pk=kind+'sm';
-  var opts=empMoveOptions(emp);
-  var asked=empStatusModal.to;
-  var allowed=opts.indexOf(asked)>=0;
-  var preset=allowed?asked:(opts[1]||emp.status);
-  var bad=empDocsRejected(emp);
-  var xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  var arrow='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-  return '<div class="ct-modal-overlay" onclick="closeEmpStatusModal()">'
-    +'<div class="ct-modal ct-sm emp-sm" id="'+pk+'-body" style="width:min(540px,92vw)" role="dialog" aria-modal="true" aria-label="Update employee status" onclick="event.stopPropagation()">'
-    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Update Status</span><button class="ct-modal-close" onclick="closeEmpStatusModal()" aria-label="Close">'+xSvg+'</button></div>'
-    +'<p class="ct-modal-sub">'+empLifeHtml(emp.empId||'')+' &middot; '+empLifeHtml(emp.name)+' &middot; '+(kind==='de'?'Direct Employee':'Global Employee')+'</p>'
-    +'<div class="ct-sm-move">'+empLifeBadge(emp.status)+arrow+empLifeBadge(preset)+'</div>'
-    +(allowed?'':'<div class="ct-sm-note">Employees move one stage at a time. <b>'+empLifeHtml(asked)+'</b> opens up once this employee reaches <b>'+empLifeHtml(preset)+'</b>.</div>')
-    +(bad.length?'<div class="emp-log-alert">'+EMP_LOG_ICONS.warn+'<span><b>'+bad.length+' document'
-      +(bad.length===1?'':'s')+'</b> awaiting re-submission: '+bad.map(function(d){return empLifeHtml(d.name);}).join(', ')+'</span></div>':'')
-    +'<div class="ep-form-grid">'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Status <span class="req">*</span></label>'
-      +apCS(pk+'-log-status-sel',opts,preset,'Select Status','empLogStatusHook')+'</div>'
-    /* Whatever the picked status needs before the move is allowed - the same
-       blocks the Logs tab shows, swapped by the dropdown's hook. */
-    +'<div class="ep-form-group ep-form-full emp-sm-inputs">'+empLogInputs(pk,emp,preset)+'</div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Comment <span class="req">*</span></label>'
-      +'<textarea id="'+pk+'-log-comment-inp" class="ep-form-input" rows="4" placeholder="Why is this employee moving?" style="resize:vertical;min-height:90px;height:auto;line-height:1.5"></textarea></div>'
-    +'</div>'
+  return '<div class="ct-modal-overlay">'
+    +'<div class="ct-modal ct-sm emp-sm" id="'+pk+'-body" style="width:min(600px,92vw)" role="dialog" aria-modal="true" aria-label="Add log" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Log</span><button class="ct-modal-close" onclick="closeEmpStatusModal()" aria-label="Close">'+EMP_ICO.close+'</button></div>'
+    +'<p class="ct-modal-sub">'+empLifeHtml(emp.empId||'')+' &middot; '+empLifeHtml(emp.name)+' &middot; '+EMP_LIFE_SCOPES[kind].label+'</p>'
+    +'<div class="ct-sm-move">'+empLifeBadge(emp.status)+(empState(emp).phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
+    +empFormHTML(pk,emp,true)
     +'<div class="ct-modal-foot">'
-      +'<button class="add-link" onclick="empStatusModalToLog()">View full log</button>'
+      +'<button class="add-link" onclick="empModalToLog()">View full log</button>'
       +'<div class="ct-modal-btns">'
         +'<button class="ep-cancel-btn" onclick="closeEmpStatusModal()">Cancel</button>'
-        +'<button class="ep-save-btn" onclick="empSubmitStatusModal()">Submit</button>'
-      +'</div>'
-    +'</div>'
+        +'<button class="ep-save-btn" onclick="empCommitLog(\''+pk+'\')">Submit</button>'
+      +'</div></div>'
     +'</div></div>';
 }
 
-/* ── Seeded histories ──────────────────────────────────────────────────────
-   Newest first, like every other fixture in the app. The owning team is the
-   entry's user — that is the Owner column, carried without any extra chrome —
-   and the sub-activities that cleared under each status are named in the
-   comment, which is where a log says what happened. */
-function empLog(status,date,time,action,user){
-  var st=empLifeStage(status);
-  return {date:date,time:time,user:user||(st?st.owner:'Admin'),status:status,action:action};
+/* ── Cancel Onboarding: the blocking popup (FR-13) ─────────────────────────
+   Painted straight onto <body> rather than through renderADTPage, so the form
+   underneath keeps exactly what has been typed into it. */
+function empShowCancelBlock(pk,emp){
+  empCloseCancelBlock();
+  var a=empAssets(emp),it=empItAccess(emp);
+  var n=empJs(emp.name);
+  var list=function(rows){return '<ul class="emp-block-list">'+rows.map(function(r){return '<li>'+empLifeHtml(r)+'</li>';}).join('')+'</ul>';};
+  var el=document.createElement('div');
+  el.id='emp-block-pop';el.className='ct-modal-overlay emp-block-overlay';
+  el.innerHTML='<div class="ct-modal emp-block" role="alertdialog" aria-modal="true" aria-label="Cleanup required">'
+    +'<div class="emp-block-ico">'+EMP_ICO.warn+'</div>'
+    +'<div class="ct-modal-title">Asset and IT Access cleanup required</div>'
+    +'<p class="ct-modal-sub">Onboarding for <b>'+empLifeHtml(emp.name)+'</b> cannot be cancelled while Assets and/or IT Access are still assigned. Recover or revoke them first.</p>'
+    +(a.length?'<div class="emp-block-sec"><div class="emp-block-h">'+EMP_ICO.laptop+a.length+' asset'+(a.length===1?'':'s')+' assigned</div>'
+      +list(a.map(function(x){return x.name+' ('+x.code+')';}))+'</div>':'')
+    +(it.length?'<div class="emp-block-sec"><div class="emp-block-h">'+EMP_ICO.key+it.length+' IT access record'+(it.length===1?'':'s')+' active</div>'
+      +list(it.map(function(x){return x.system+' — '+x.login+' ('+x.status+')';}))+'</div>':'')
+    +'<div class="ct-modal-foot"><div></div><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="empBlockGo(\''+n+'\','+(a.length?'1':'0')+')">Go to Assets Page</button>'
+      +'<button class="ep-save-btn" onclick="empBlockContinue(\''+pk+'\')">Continue Onboarding</button>'
+    +'</div></div></div>';
+  document.body.appendChild(el);
+}
+function empCloseCancelBlock(){var el=document.getElementById('emp-block-pop');if(el)el.remove();}
+function empBlockContinue(pk){empCloseCancelBlock();empResetForm(pk);}
+function empBlockGo(name,assets){
+  empCloseCancelBlock();
+  if(assets)empGoAllAssets(name);else empGoAllItAccess(name);
 }
 
+/* ══ ADD ASSET / ADD IT ACCESS FROM THE LOG ════════════════════════════════
+   The Admin Access module's own create popups, opened right over the
+   employee's log with the employee already filled in. HR never leaves the
+   record: on save the popup closes and the new asset or access is already
+   listed in the section it was added from, with the log form as it was. */
+let empAxCtx=null;      // {kind,id} while an Add Asset / Add IT Access popup is up from a log
+function empGoAddAsset(pk){
+  var emp=empPkRec(pk);if(!emp)return;
+  empAxCtx={kind:empKindOf(emp),id:emp.id};
+  astDraft=Object.assign(astBlankDraft(),{assignedTo:emp.name,status:'Assigned',branch:emp.branch||''});
+  astEditId=null;astAddOpen='';astModalOpen=true;
+  renderADTPage();
+}
+function empGoAddItAccess(pk){
+  var emp=empPkRec(pk);if(!emp)return;
+  empAxCtx={kind:empKindOf(emp),id:emp.id};
+  itaDraft=Object.assign(itaBlankDraft(),{assignedTo:emp.name,login:String(emp.email||'')});
+  itaEditId=null;itaAddOpen='';itaModalOpen=true;
+  renderADTPage();
+}
+function empAxModalHTML(kind){
+  if(!empAxCtx||empAxCtx.kind!==kind)return '';
+  if(astModalOpen&&typeof buildAddAssetModalHTML==='function')return buildAddAssetModalHTML();
+  if(itaModalOpen&&typeof buildAddItAccessModalHTML==='function')return buildAddItAccessModalHTML();
+  return '';
+}
+
+/* ══ MANAGE ASSET / MANAGE IT ACCESS, AND THE WAY BACK ═════════════════════ */
+let empReturn=null;     // {kind,id,type,page,sub,name}
+let empNavKeep=false;
+function empSetReturnFor(name){
+  var emp=directEmpData.concat(globalEmpData).find(function(e){return e.name===name;});
+  if(emp&&!empReturn){var kind=empKindOf(emp);
+    empReturn={kind:kind,id:emp.id,page:page,sub:typeof empSubTab!=='undefined'?empSubTab:'',name:emp.name,
+      type:empFormType[kind+'sm']||empFormType[kind]||''};}
+  empLogModal=null;
+}
+function empGoAllAssets(name){
+  empSetReturnFor(name);
+  astDeptF='';astBranchF='';astCatF='';astStatusF='';astSelectedId=null;
+  if(typeof astEmpF!=='undefined')astEmpF='';
+  if(typeof astCondF!=='undefined')astCondF='';
+  astQ=name;
+  empNavKeep=true;navigatePage('asset-allocation');
+}
+function empGoAllItAccess(name){
+  empSetReturnFor(name);
+  itaSysF='';itaStatusF='';itaSelectedId=null;
+  if(typeof itaTypeF!=='undefined')itaTypeF='';
+  itaQ=name;
+  empNavKeep=true;navigatePage('it-access');
+}
+function empReturnBarHTML(){
+  if(!empReturn)return '';
+  return '<div class="emp-return-bar">'+EMP_ICO.info+'<span>Working on <b>'+empLifeHtml(empReturn.name)+'</b>’s lifecycle log.</span>'
+    +'<button type="button" class="emp-sec-link" onclick="empReturnTo()">Back to '+empLifeHtml(empReturn.name.split(' ')[0])+'’s log'+EMP_ICO.arrow+'</button></div>';
+}
+function empReturnTo(){
+  var r=empReturn;if(!r)return;
+  empReturn=null;
+  if(r.page==='employees'&&r.sub)empSubTab=r.sub;
+  if(r.kind==='de'){deSelectedId=r.id;deTab='logs';}else{geSelectedId=r.id;geTab='logs';}
+  empFormType[r.kind]=r.type||'';
+  empNavKeep=true;
+  navigatePage(r.page==='direct'||r.page==='global'||r.page==='employees'?r.page:'employees');
+}
+/* Called by navigatePage. A redirect we started keeps its context; a plain
+   sidebar click drops it. Also the moment to catch an LWD that has passed. */
+function empNavHook(pg){
+  var keep=empNavKeep;empNavKeep=false;
+  empLogModal=null;empAxCtx=null;empCloseCancelBlock();
+  empSweepLwd();
+  if(!keep){
+    empReturn=null;
+    if(pg==='my-profile')empProfPersona={kind:'de',id:2};
+  }
+}
+
+/* ══ EMPLOYEE SELF-SERVICE: DASHBOARD TRACKER (FR-21) ══════════════════════
+   The Employee Dashboard belongs to one employee; empSelf is who that is. */
+let empSelf={kind:'de',id:6};
+let empProfPersona={kind:'de',id:2};     // whose My Profile is open
+function empSelfRec(){return empFind(empSelf.kind,empSelf.id);}
+function empPendingAction(emp,m){
+  var out=empDocsOutstanding(emp),st=empState(emp);
+  if(m.phase==='onb'){
+    if(out.length)return {upload:true,title:'Document Upload Pending',
+      text:out.length+' document'+(out.length===1?' is':'s are')+' waiting for you'
+        +(out.some(function(d){return d.status==='Rejected';})?' — including a rejected document that needs a replacement':'')+'.'};
+    if(!st.onb.docReq)return {title:'Waiting for HR',text:'HR will let you know which documents to upload.'};
+    if(!st.onb.verified&&!st.onb.assetIt)return {title:'In progress',text:'Compliance is verifying your documents while HR / IT set up your assets and system access.'};
+    if(!st.onb.verified)return {title:'Verification Pending',text:'Your documents are with Compliance for verification.'};
+    if(!st.onb.assetIt)return {title:'Asset & IT Setup Pending',text:'HR / IT are allocating your assets and system access.'};
+    return {title:'Almost there',text:'You will become Active automatically.'};
+  }
+  var left=m.items.filter(function(x){return x.state==='pending'&&!x.auto;}).map(function(x){return x.label;});
+  return {title:empTrackerStatus(emp),text:left.length?'Waiting for: '+left.join(', ')+'.'
+    :'Every exit activity is complete. You become Inactive automatically'+(st.off.lwd?' on your Last Working Date, '+cdLabel(st.off.lwd):'')+'.'};
+}
+function empDashTrackerHTML(){
+  var emp=empSelfRec();if(!emp)return '';
+  var m=empMilestones(emp);
+  if(!m)return '';          // no onboarding or offboarding running - no tracker
+  var act=empPendingAction(emp,m);
+  return '<div class="hr-section emp-trk">'
+    +'<div class="hr-section-header"><div class="hr-section-title">'+m.title+' Tracker</div>'
+      +'<span class="emp-trk-status">Current Status '+empLifeBadge(empTrackerStatus(emp))+'</span></div>'
+    +'<div class="emp-trk-top"><div class="emp-trk-pct">'+m.pct+'%</div>'
+      +'<div class="emp-trk-pct-sub">'+m.title+' – '+m.pct+'% Completed · '+m.done+' of '+m.total+' stages</div></div>'
+    +'<div class="emp-trk-bar"><span style="width:'+m.pct+'%"></span></div>'
+    +'<div class="emp-trk-steps" style="--n:'+m.stages.length+'">'+m.stages.map(function(x,i){
+      return '<div class="emp-trk-step is-'+x.state+'">'
+        +'<span class="emp-trk-dot">'+(x.state==='done'?EMP_ICO.tick:(i+1))+'</span>'
+        +'<span class="emp-trk-lbl">'+empLifeHtml(x.label)+'</span>'
+        +(x.subs?'<ul class="emp-trk-subs">'+x.subs.map(function(t){
+            return '<li class="is-'+t.state+'">'+(t.state==='done'?EMP_ICO.tick:'<span class="emp-trk-subdot"></span>')+empLifeHtml(t.label)+'</li>';
+          }).join('')+'</ul>':'')
+        +'</div>';
+    }).join('')+'</div>'
+    /* Only an action the employee can take gets a row here (FR-06): the
+       Upload Documents button. Waiting on other teams is already said by
+       Current Status and the milestone cards. */
+    +(act.upload?'<div class="emp-trk-action is-upload">'
+      +'<div class="emp-trk-action-ico">'+EMP_ICO.upload+'</div>'
+      +'<div class="emp-trk-action-txt"><div class="emp-trk-action-title">'+empLifeHtml(act.title)+'</div><div class="emp-trk-action-sub">'+empLifeHtml(act.text)+'</div></div>'
+      +'<button class="ep-save-btn emp-trk-btn" onclick="empGoRequestedDocs()">'+EMP_ICO.upload+'Upload Documents</button>'
+    +'</div>':'')
+    +'</div>';
+}
+/* FR-01: each pending lifecycle step, with its Owner, in Action Required. */
+function empActionRowsHTML(emp){
+  var m=empMilestones(emp);if(!m)return '';
+  var rows=[];
+  var out=empDocsOutstanding(emp);
+  if(m.phase==='onb'&&out.length)rows.push({item:'Upload Requested Documents',owner:'Employee',btn:'<button class="hr-action-btn neutral" onclick="empGoRequestedDocs()">Upload</button>'});
+  m.items.forEach(function(x){
+    if(x.state!=='pending')return;
+    if(x.key==='docs-submitted'&&out.length)return;     // that is the upload row above
+    rows.push({item:x.label,owner:EMP_LOG[x.key].owner});
+  });
+  return rows.map(function(r){
+    return '<tr data-emp-life="1"><td><span class="hr-emp-name">'+empLifeHtml(r.item)+'</span></td>'
+      +'<td style="color:var(--gray)">'+m.title+' · Owner: '+empLifeHtml(r.owner)+'</td>'
+      +'<td style="color:var(--gray)">—</td>'
+      +'<td><span class="lp-status-badge pending">Pending</span></td>'
+      +'<td>'+(r.btn||'')+'</td></tr>';
+  }).join('');
+}
+function empDashRender(root){
+  var scope=(root||document);
+  var host=scope.querySelector?scope.querySelector('#emp-life-dash'):null;
+  if(!host)return;
+  host.innerHTML=empDashTrackerHTML();
+  var emp=empSelfRec();
+  var view=host.closest('#employee-view');
+  var desc=view&&view.querySelector('.hr-header-desc');
+  if(desc&&emp)desc.textContent='Welcome back, '+emp.name.split(' ')[0]+'. Here’s your workspace overview.';
+  /* Action Required: the employee's lifecycle rows sit above the seeded ones. */
+  if(view&&emp){
+    var sec=Array.prototype.find.call(view.querySelectorAll('.hr-section'),function(s){
+      var t=s.querySelector('.hr-section-title');return t&&t.textContent.trim()==='Action Required';});
+    var tb=sec&&sec.querySelector('tbody');
+    if(tb){
+      tb.querySelectorAll('tr[data-emp-life]').forEach(function(r){r.remove();});
+      tb.insertAdjacentHTML('afterbegin',empActionRowsHTML(emp));
+    }
+  }
+}
+function empGoRequestedDocs(){
+  empProfPersona={kind:empSelf.kind,id:empSelf.id};
+  profTab='attachments';
+  empNavKeep=true;
+  navigatePage('my-profile');
+  setTimeout(function(){
+    var el=document.getElementById('prof-reqdocs');
+    if(el){el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('emp-flash');setTimeout(function(){el.classList.remove('emp-flash');},1600);}
+  },60);
+}
+
+/* ══ EMPLOYEE SELF-SERVICE: PROFILE → ATTACHMENTS → REQUESTED DOCS (FR-05) ══ */
+function empProfRec(){return empFind(empProfPersona.kind,empProfPersona.id);}
+function empProfReqDocsHTML(){
+  var emp=empProfRec();if(!emp)return '';
+  var docs=empReqDocs(emp);
+  if(!docs.length)return '';                 // zero requested: the section stays hidden
+  var kind=empKindOf(emp);
+  var up=docs.filter(function(d){return d.status==='Uploaded'||d.status==='Accepted';}).length;
+  return '<div class="ep-form-card emp-rq" id="prof-reqdocs" style="margin-bottom:16px">'
+    +'<div class="prof-section-hdr"><span class="policy-section-title">Requested Docs</span>'
+      +'<span class="prof-att-count'+(up===docs.length?' ok':'')+'">'+up+' of '+docs.length+' uploaded</span></div>'
+    +'<p class="emp-rq-sub">HR has asked for the documents below to continue your onboarding. PDF, JPG, PNG or Word, up to 5 MB each.</p>'
+    +'<div class="emp-rq-list">'+docs.map(function(d){
+      var can=d.status==='Pending Upload'||d.status==='Rejected';
+      return '<div class="emp-rq-row is-'+statusClass(d.status)+'">'
+        +'<span class="emp-rq-ico">'+EMP_ICO.doc+'</span>'
+        +'<div class="emp-rq-body"><div class="emp-rq-name">'+empLifeHtml(d.name)+'<span class="emp-rq-type">'+empLifeHtml(d.type)+'</span></div>'
+          +(d.file?'<div class="emp-rq-file">'+empLifeHtml(d.file)+(d.size?' · '+d.size:'')+(d.uploadedAt?' · Uploaded '+empLifeHtml(d.uploadedAt):'')+'</div>':'')
+          +(d.status==='Rejected'?'<div class="emp-rq-reason">'+EMP_ICO.warn+'Rejection Reason: '+empLifeHtml(d.reason||'—')+(d.prevFile?' ('+empLifeHtml(d.prevFile)+')':'')+'</div>':'')
+        +'</div>'
+        +empDocBadge(d.status)
+        +(can?'<button class="'+(d.status==='Rejected'?'ep-save-btn':'ep-cancel-btn')+' emp-rq-btn" onclick="empPickRequested(\''+kind+'\','+emp.id+',\''+d.id+'\')">'
+          +EMP_ICO.upload+(d.status==='Rejected'?'Re-upload':'Upload')+'</button>':'<span class="emp-rq-btn-ph"></span>')
+        +'</div>';
+    }).join('')+'</div></div>';
+}
+/* What the profile hero and Basic Details read. Pallavi Parate is the
+   signed-in admin and keeps her full profile; anyone else is shown from
+   their employee record. */
+function empProfPerson(){
+  var emp=empProfRec();
+  if(!emp||(empProfPersona.kind==='de'&&empProfPersona.id===2))return null;
+  return emp;
+}
+const empProfDocStore={};
+function profAttachMap(){
+  var p=empProfPerson();
+  if(!p)return profAttachments;
+  var k=empKindOf(p)+p.id;
+  return empProfDocStore[k]||(empProfDocStore[k]={});
+}
+function empInitials(name){
+  var w=String(name||'').trim().split(/\s+/);
+  return ((w[0]||'')[0]||'').toUpperCase()+(w.length>1?(w[w.length-1][0]||'').toUpperCase():'');
+}
+
+/* ══ SEEDED HISTORIES ══════════════════════════════════════════════════════
+   Newest first. Built from the same log types a person picks, so every
+   record already sits at a real point in the journey. */
+const EMP_OWNER_USER={'HR':'Pallavi Parate','Compliance':'Tarak Swain','HR / IT':'Shaun Test1',
+  'HR / Finance':'Pallavi Parate','Reporting Manager':'Rajan Kumar'};
+function L(type,date,time,action,o){
+  o=o||{};
+  var t=EMP_LOG[type];
+  return Object.assign({type:type,status:t.label,date:date,time:time,
+    user:t.system?'System':(o.user||EMP_OWNER_USER[t.owner]||'Pallavi Parate'),
+    action:t.system?EMP_SYS_COMMENT:action,system:!!t.system},o.extra||{});
+}
+function D(label,value){return {label:label,value:value};}
 const EMP_LIFE_SEED={
   de:{
     1:[
-      empLog('Active','10 Jun 2025','03:30:00 PM','Job title updated to Software Engineer.','Admin'),
-      empLog('Active','15 Jan 2025','09:00:00 AM','Final onboarding readiness check cleared on the date of joining. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','14 Jan 2025','04:20:00 PM','Payroll setup, leave-holiday setup, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','13 Jan 2025','11:10:00 AM','Document verification checklist cleared. Address proof was rejected once and re-submitted inside verification.'),
-      empLog('Documents & Info Submitted','11 Jan 2025','06:05:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','08 Jan 2025','09:30:00 AM','Onboarding initiated. Date of Joining set to 15 Jan 2025.')
+      L('active','15 Jan 2025','09:05:00 AM','',{extra:{details:[D('Performed By','System'),D('Onboarding','Completed')]}}),
+      L('asset-it','14 Jan 2025','04:20:00 PM','Dell Latitude handed over; Microsoft 365 and Jira access granted.',{extra:{details:[D('Asset Allocation','LT-001'),D('IT Access','Microsoft 365, Jira')]}}),
+      L('verified','13 Jan 2025','11:10:00 AM','All four documents checked against originals.'),
+      L('docs-submitted','12 Jan 2025','06:05:00 PM','',{extra:{details:[D('Submitted By','Testemp Antar'),D('Submitted Date/Time','12 Jan 2025, 06:05:00 PM')]}}),
+      L('doc-request','08 Jan 2025','10:00:00 AM','Standard joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Qualification Certificate','Cancelled Cheque']}}),
+      L('onboarding','08 Jan 2025','09:30:00 AM','Offer accepted. Date of Joining set to 15 Jan 2025.')
     ],
     2:[
-      empLog('Active','01 Jun 2025','02:00:00 PM','Department changed to HR.','Pallavi P.'),
-      empLog('Active','20 Mar 2024','10:15:00 AM','Final onboarding readiness check cleared. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','19 Mar 2024','05:40:00 PM','Payroll setup, leave-holiday setup, asset allocation and HRMS access all completed.'),
-      empLog('Verification Completed','18 Mar 2024','12:20:00 PM','Document verification checklist cleared on the first pass. No documents rejected.'),
-      empLog('Documents & Info Submitted','15 Mar 2024','07:15:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','12 Mar 2024','10:00:00 AM','Onboarding initiated. Date of Joining set to 20 Mar 2024.')
+      L('active','20 Mar 2024','10:15:00 AM','',{extra:{details:[D('Performed By','System'),D('Onboarding','Completed')]}}),
+      L('asset-it','19 Mar 2024','05:40:00 PM','Laptop assigned; HRMS and Microsoft 365 access granted.'),
+      L('verified','18 Mar 2024','12:20:00 PM','Records carried over from the group entity verified.'),
+      L('doc-request','13 Mar 2024','11:00:00 AM','Internal transfer — documents already on file with the group.',{extra:{noDocs:true,details:[D('Required Documents','No Documents Required')]}}),
+      L('onboarding','12 Mar 2024','10:00:00 AM','Internal transfer from the group entity. Date of Joining set to 20 Mar 2024.')
     ],
+    /* Mid-offboarding: KT done; MacBook and GitHub still to recover. */
     3:[
-      empLog('Active','05 Jun 2024','11:30:00 AM','Final onboarding readiness check cleared. Fixed-term contract signed. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','04 Jun 2024','06:00:00 PM','Contract payroll head, holiday calendar, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','03 Jun 2024','10:45:00 AM','Document verification checklist cleared on the first pass.'),
-      empLog('Documents & Info Submitted','31 May 2024','08:20:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','28 May 2024','09:15:00 AM','Onboarding initiated for a fixed-term engagement. Date of Joining set to 05 Jun 2024.')
+      L('kt','01 Oct 2026','04:10:00 PM','Payments service and release checklist handed over to Aman.',{extra:{details:[D('Handover To','Aman Singh'),D('Handover Type','Project(s)'),D('Documents Handed Over','Yes'),D('Outstanding Work Handed Over','Yes'),D('Knowledge Transfer Completed','Yes'),D('Handover Document / Reference','Confluence › Payments › Handover')]}}),
+      L('offboarding','25 Sep 2026','10:00:00 AM','Resignation accepted. Serving notice until 15 Oct 2026.',{extra:{lwd:'2026-10-15',details:[D('Separation Type','Voluntary'),D('Last Working Date','15 Oct 2026'),D('Access Revocation Effective Date','15 Oct 2026'),D('Access Revocation Effective Time','6:00 PM')]}}),
+      L('active','05 Jun 2024','11:30:00 AM','',{extra:{details:[D('Performed By','System'),D('Onboarding','Completed')]}}),
+      L('asset-it','04 Jun 2024','06:00:00 PM','GitHub access granted. Laptop to follow from the July batch.'),
+      L('verified','03 Jun 2024','10:45:00 AM','Documents verified on the first pass.'),
+      L('docs-submitted','31 May 2024','08:20:00 PM','',{extra:{details:[D('Submitted By','Anika Shah')]}}),
+      L('doc-request','29 May 2024','09:30:00 AM','Fixed-term joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Cancelled Cheque']}}),
+      L('onboarding','28 May 2024','09:15:00 AM','Fixed-term engagement. Date of Joining set to 05 Jun 2024.')
     ],
     4:[
-      empLog('Inactive','12 Feb 2025','02:00:00 PM','Final offboarding readiness check cleared. Employment Status set to Inactive.'),
-      empLog('Exit Clearance Completed','11 Feb 2025','04:30:00 PM','KT/handover signed off, assets recovered, IT access revoked, compliance cleared and F&F settled.'),
-      empLog('Offboarding','05 Feb 2025','10:00:00 AM','Separation details recorded. LWD 11 Feb 2025; revocation effective 11 Feb 2025, 06:00 PM.'),
-      empLog('Active','01 Feb 2024','09:00:00 AM','Final onboarding readiness check cleared. Employment Status set to Active. Role: Product Manager.'),
-      empLog('Onboarding Setup Completed','31 Jan 2024','05:10:00 PM','Payroll setup, leave-holiday setup, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','30 Jan 2024','11:00:00 AM','Document verification checklist cleared on the first pass.'),
-      empLog('Documents & Info Submitted','28 Jan 2024','04:45:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','25 Jan 2024','09:30:00 AM','Onboarding initiated. Date of Joining set to 01 Feb 2024.')
+      L('inactive','12 Feb 2025','02:00:00 PM','',{extra:{details:[D('Performed By','System'),D('Offboarding','Completed')]}}),
+      L('fnf','12 Feb 2025','01:55:00 PM','Final settlement paid by bank transfer.',{extra:{details:[D('Salary Till LWD','84,000'),D('Leave Encashment','22,500'),D('Net Settlement Amount','1,06,500'),D('Payment Mode','Bank Transfer')]}}),
+      L('compliance','11 Feb 2025','05:00:00 PM','Nothing outstanding.',{extra:{details:[D('Compliance Requirement / Reference','NDA acknowledgement'),D('Outstanding Issue?','No'),D('Cleared By','Tarak Swain')]}}),
+      L('asset-rev','11 Feb 2025','04:30:00 PM','Laptop returned; all accounts disabled.',{extra:{details:[D('Assets','No Assigned Assets'),D('IT Access','No Active IT Access')]}}),
+      L('kt','10 Feb 2025','03:00:00 PM','Roadmap and stakeholder notes handed over.',{extra:{details:[D('Handover To','Testemp Antar'),D('Handover Type','Project(s)')]}}),
+      L('offboarding','05 Feb 2025','10:00:00 AM','Resignation accepted.',{extra:{lwd:'2025-02-11',details:[D('Separation Type','Voluntary'),D('Last Working Date','11 Feb 2025')]}}),
+      L('active','01 Feb 2024','09:00:00 AM','',{extra:{details:[D('Performed By','System')]}}),
+      L('asset-it','31 Jan 2024','05:10:00 PM','Laptop assigned; product tools access granted.'),
+      L('verified','30 Jan 2024','11:00:00 AM','Documents verified on the first pass.'),
+      L('doc-request','26 Jan 2024','10:00:00 AM','Documents already on file.',{extra:{noDocs:true}}),
+      L('onboarding','25 Jan 2024','09:30:00 AM','Date of Joining set to 01 Feb 2024.')
     ],
-    /* Two records parked mid-ladder. Without them every employee in the app
-       sits at a terminal rung and the six statuses between Onboarding and
-       Active are never seen on a real row. */
+    /* Verified and waiting on HR / IT: holds a keyboard and Slack, so Asset
+       Allocation & IT Access Completed can be logged - and that tips him to
+       Active automatically. */
     5:[
-      empLog('Onboarding Setup Completed','31 Aug 2026','10:20:00 AM','Payroll setup and leave-holiday setup done. Asset allocation and IT access setup still open — laptop on order.'),
-      empLog('Verification Completed','29 Aug 2026','03:05:00 PM','Document verification checklist cleared on the first pass.'),
-      empLog('Documents & Info Submitted','27 Aug 2026','08:10:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','25 Aug 2026','09:40:00 AM','Onboarding initiated. Date of Joining set to 10 Sep 2026.')
+      L('verified','05 Sep 2026','03:05:00 PM','All documents checked; no issues.',{extra:{details:[D('Accepted Documents','Aadhaar Front, PAN, Relieving Letter')]}}),
+      L('docs-submitted','03 Sep 2026','08:10:00 PM','',{extra:{details:[D('Submitted By','Dev Kulkarni'),D('Submitted Date/Time','3 Sep 2026, 08:10:00 PM')]}}),
+      L('doc-request','26 Aug 2026','11:00:00 AM','Joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Relieving Letter']}}),
+      L('onboarding','25 Aug 2026','09:40:00 AM','Offer accepted. Date of Joining set to 10 Sep 2026.')
     ],
+    /* The Employee Dashboard's employee: one document in, three owed. */
     6:[
-      empLog('Onboarding','02 Sep 2026','09:15:00 AM','Onboarding initiated and invitation sent. Date of Joining set to 15 Sep 2026.')
+      L('doc-request','03 Sep 2026','10:15:00 AM','Joining documents requested. Please upload before your joining date.',{extra:{docs:['Aadhaar Front','PAN','Qualification Certificate','Cancelled Cheque']}}),
+      L('onboarding','02 Sep 2026','09:15:00 AM','Offer accepted. Date of Joining set to 15 Sep 2026.')
+    ],
+    7:[
+      L('pending','04 Oct 2026','05:30:00 PM','Employee created as Pending. Onboarding will start once the joining date is confirmed.')
     ]
   },
   ge:{
     1:[
-      empLog('Active','14 May 2025','11:00:00 AM','Job title updated to Senior Developer.','Admin'),
-      empLog('Active','10 Feb 2024','09:00:00 AM','Final onboarding readiness check cleared. Germany entity payroll activated. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','09 Feb 2024','03:30:00 PM','German payroll head, statutory leave calendar, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','07 Feb 2024','01:15:00 PM','Document verification checklist cleared. Work permit was rejected once and re-submitted inside verification.'),
-      empLog('Documents & Info Submitted','05 Feb 2024','06:45:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','01 Feb 2024','10:20:00 AM','EOR onboarding initiated via Dhi. Date of Joining set to 10 Feb 2024.')
+      L('active','10 Feb 2024','09:00:00 AM','',{extra:{details:[D('Performed By','System')]}}),
+      L('asset-it','09 Feb 2024','03:30:00 PM','Laptop shipped; Germany entity accounts created.'),
+      L('verified','07 Feb 2024','01:15:00 PM','Work permit re-submitted and accepted.'),
+      L('docs-submitted','06 Feb 2024','06:45:00 PM','',{extra:{details:[D('Submitted By','Emma Schmidt')]}}),
+      L('doc-rejected','05 Feb 2024','11:00:00 AM','Work permit scan was cut off at the bottom.',{extra:{rejected:[{name:'Work Permit / Visa',reason:'Incomplete / Missing Pages'}]}}),
+      L('docs-submitted','04 Feb 2024','07:30:00 PM','',{extra:{details:[D('Submitted By','Emma Schmidt')]}}),
+      L('doc-request','02 Feb 2024','10:00:00 AM','EOR joining documents requested.',{extra:{docs:['Passport','Work Permit / Visa','Bank Statement']}}),
+      L('onboarding','01 Feb 2024','10:20:00 AM','EOR onboarding initiated via Dhi. Date of Joining set to 10 Feb 2024.')
     ],
     2:[
-      empLog('Active','15 Apr 2024','10:30:00 AM','Final onboarding readiness check cleared. France entity payroll activated. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','12 Apr 2024','05:00:00 PM','French payroll head, leave calendar, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','10 Apr 2024','11:40:00 AM','Document verification checklist cleared for the France entity.'),
-      empLog('Documents & Info Submitted','08 Apr 2024','07:30:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','04 Apr 2024','09:45:00 AM','EOR onboarding initiated. Date of Joining set to 15 Apr 2024.')
+      L('active','15 Apr 2024','10:30:00 AM','',{extra:{details:[D('Performed By','System')]}}),
+      L('asset-it','12 Apr 2024','05:00:00 PM','France entity accounts created.'),
+      L('verified','10 Apr 2024','11:40:00 AM','Documents verified for the France entity.'),
+      L('docs-submitted','08 Apr 2024','07:30:00 PM','',{extra:{details:[D('Submitted By','Lucas Dubois')]}}),
+      L('doc-request','05 Apr 2024','10:00:00 AM','EOR joining documents requested.',{extra:{docs:['Passport','Bank Statement']}}),
+      L('onboarding','04 Apr 2024','09:45:00 AM','EOR onboarding initiated. Date of Joining set to 15 Apr 2024.')
     ],
     3:[
-      empLog('Active','20 Nov 2024','02:15:00 PM','Contractor agreement renewed for 12 months.','HR'),
-      empLog('Active','01 Mar 2024','09:00:00 AM','Final onboarding readiness check cleared. Contractor agreement signed. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','29 Feb 2024','04:10:00 PM','Contractor payment schedule, holiday calendar, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','27 Feb 2024','10:50:00 AM','Contractor documentation verified for the Italy entity.'),
-      empLog('Documents & Info Submitted','24 Feb 2024','06:20:00 PM','Mandatory information complete and mandatory documents uploaded by the contractor.'),
-      empLog('Onboarding','20 Feb 2024','09:10:00 AM','Contractor onboarding initiated. Start date set to 01 Mar 2024.')
+      L('active','01 Mar 2024','09:00:00 AM','',{extra:{details:[D('Performed By','System')]}}),
+      L('asset-it','29 Feb 2024','04:10:00 PM','Contractor — no company assets.',{extra:{details:[D('Asset Allocation','Skipped'),D('IT Access','Jira')]}}),
+      L('verified','27 Feb 2024','10:50:00 AM','Contractor documentation verified for the Italy entity.'),
+      L('doc-request','21 Feb 2024','10:00:00 AM','Contractor — identity already verified by the agency.',{extra:{noDocs:true,details:[D('Required Documents','No Documents Required')]}}),
+      L('onboarding','20 Feb 2024','09:10:00 AM','Contractor onboarding initiated. Start date set to 01 Mar 2024.')
     ],
     4:[
-      empLog('Inactive','05 Jan 2025','03:00:00 PM','Final offboarding readiness check cleared. Employment Status set to Inactive.'),
-      empLog('Exit Clearance Completed','03 Jan 2025','05:20:00 PM','KT/handover completed, assets recovered, UK entity access revoked, compliance cleared and F&F settled.'),
-      empLog('Offboarding','20 Dec 2024','10:00:00 AM','Contract end confirmed. LWD 02 Jan 2025; revocation effective 02 Jan 2025, 06:00 PM.'),
-      empLog('Active','01 Feb 2024','09:00:00 AM','Final onboarding readiness check cleared. UK entity payroll activated. Employment Status set to Active.'),
-      empLog('Onboarding Setup Completed','31 Jan 2024','04:00:00 PM','UK payroll head, leave calendar, asset allocation and IT access setup all completed.'),
-      empLog('Verification Completed','29 Jan 2024','12:30:00 PM','Right-to-work and document verification checklist cleared for the UK entity.'),
-      empLog('Documents & Info Submitted','26 Jan 2024','07:00:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','22 Jan 2024','09:20:00 AM','EOR onboarding initiated. Date of Joining set to 01 Feb 2024.')
+      L('inactive','05 Jan 2025','03:00:00 PM','',{extra:{details:[D('Performed By','System'),D('Offboarding','Completed')]}}),
+      L('fnf','05 Jan 2025','02:40:00 PM','Final settlement processed through UK payroll.',{extra:{details:[D('Net Settlement Amount','4,820'),D('Payment Mode','Bank Transfer')]}}),
+      L('compliance','04 Jan 2025','05:20:00 PM','Right-to-work file closed.',{extra:{details:[D('Compliance Requirement / Reference','Right-to-work file'),D('Outstanding Issue?','No'),D('Cleared By','Tarak Swain')]}}),
+      L('asset-rev','03 Jan 2025','04:00:00 PM','Laptop couriered back; UK entity access revoked.'),
+      L('kt','02 Jan 2025','03:00:00 PM','Ops runbooks handed over.'),
+      L('offboarding','20 Dec 2024','10:00:00 AM','Contract end confirmed.',{extra:{lwd:'2025-01-02',details:[D('Separation Type','Contract End'),D('Last Working Date','2 Jan 2025')]}}),
+      L('active','01 Feb 2024','09:00:00 AM','',{extra:{details:[D('Performed By','System')]}}),
+      L('asset-it','31 Jan 2024','04:00:00 PM','UK entity accounts and laptop provided.'),
+      L('verified','29 Jan 2024','12:30:00 PM','Right-to-work verified.'),
+      L('doc-request','23 Jan 2024','10:00:00 AM','Documents on file.',{extra:{noDocs:true}}),
+      L('onboarding','22 Jan 2024','09:20:00 AM','EOR onboarding initiated. Date of Joining set to 01 Feb 2024.')
     ],
+    /* Codice Fiscale rejected; Passport already accepted. */
     5:[
-      empLog('Documents & Info Submitted','01 Sep 2026','07:40:00 PM','Mandatory information complete. Codice Fiscale document still outstanding, so verification has not started.'),
-      empLog('Onboarding','28 Aug 2026','10:05:00 AM','EOR onboarding initiated for the Italy entity. Date of Joining set to 21 Sep 2026.')
+      L('doc-rejected','03 Sep 2026','11:20:00 AM','The Codice Fiscale scan is unreadable — please upload a clearer copy.',{extra:{rejected:[{name:'Codice Fiscale',reason:'Illegible / Unreadable'}],details:[D('Rejected Document','Codice Fiscale'),D('Rejection Reason','Illegible / Unreadable')]}}),
+      L('docs-submitted','01 Sep 2026','07:40:00 PM','',{extra:{details:[D('Submitted By','Marco Rossi'),D('Submitted Date/Time','1 Sep 2026, 07:40:00 PM')]}}),
+      L('doc-request','29 Aug 2026','10:30:00 AM','Italy EOR joining documents requested.',{extra:{docs:['Passport','Codice Fiscale','Qualification Certificate','Bank Statement']}}),
+      L('onboarding','28 Aug 2026','10:05:00 AM','EOR onboarding initiated for the Italy entity. Date of Joining set to 21 Sep 2026.')
     ],
+    /* Everything is in and waiting on Compliance to accept or reject. */
     6:[
-      empLog('Verification Completed','01 Sep 2026','12:35:00 PM','Document verification checklist cleared on the first pass. Onboarding Setup is now available.'),
-      empLog('Documents & Info Submitted','30 Aug 2026','05:50:00 PM','Mandatory information complete and mandatory documents uploaded by the employee.'),
-      empLog('Onboarding','26 Aug 2026','09:25:00 AM','EOR onboarding initiated for the Portugal entity. Date of Joining set to 14 Sep 2026.')
+      L('docs-submitted','01 Sep 2026','12:35:00 PM','',{extra:{details:[D('Submitted By','Ana Silva'),D('Submitted Date/Time','1 Sep 2026, 12:35:00 PM')]}}),
+      L('doc-request','27 Aug 2026','11:00:00 AM','Portugal EOR joining documents requested.',{extra:{docs:['Passport','NIF Certificate','Bank Statement']}}),
+      L('onboarding','26 Aug 2026','09:25:00 AM','EOR onboarding initiated for the Portugal entity. Date of Joining set to 14 Sep 2026.')
     ]
   }
 };
+/* The requested documents behind those histories. */
+function RQ(docId,status,file,o){
+  var d=empDocDef(docId);
+  return Object.assign({id:'rq'+(++empReqSeq),docId:docId,name:d.name,type:d.type,status:status,file:file||'',
+    size:file?'184 KB':'',requestedAt:'',uploadedAt:''},o||{});
+}
+const EMP_REQ_SEED={
+  de:{
+    1:[RQ('aadhaar-front','Accepted','aadhaar_antar.pdf'),RQ('pan','Accepted','pan_antar.pdf'),RQ('qualification','Accepted','btech_degree.pdf'),RQ('cheque','Accepted','cheque_icici.jpg')],
+    3:[RQ('aadhaar-front','Accepted','anika_aadhaar.pdf'),RQ('pan','Accepted','anika_pan.pdf'),RQ('cheque','Accepted','anika_cheque.jpg')],
+    5:[RQ('aadhaar-front','Accepted','dev_aadhaar.pdf',{uploadedAt:'2 Sep 2026',acceptedBy:'Tarak Swain'}),RQ('pan','Accepted','dev_pan.pdf',{uploadedAt:'2 Sep 2026',acceptedBy:'Tarak Swain'}),RQ('relieving','Accepted','dev_relieving_letter.pdf',{uploadedAt:'3 Sep 2026',acceptedBy:'Tarak Swain'})],
+    6:[RQ('aadhaar-front','Uploaded','meera_aadhaar.pdf',{requestedAt:'3 Sep 2026',uploadedAt:'4 Sep 2026, 08:12:00 PM'}),
+       RQ('pan','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('qualification','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('cheque','Pending Upload','',{requestedAt:'3 Sep 2026'})]
+  },
+  ge:{
+    1:[RQ('passport','Accepted','emma_passport.pdf'),RQ('permit','Accepted','emma_work_permit_v2.pdf'),RQ('bankstmt','Accepted','emma_bank.pdf')],
+    2:[RQ('passport','Accepted','lucas_passport.pdf'),RQ('bankstmt','Accepted','lucas_bank.pdf')],
+    5:[RQ('passport','Accepted','marco_passport.pdf',{uploadedAt:'30 Aug 2026, 06:10:00 PM',acceptedBy:'Tarak Swain',acceptedAt:'3 Sep 2026, 11:15:00 AM'}),
+       RQ('codice','Rejected','',{reason:'Illegible / Unreadable',prevFile:'codice_fiscale_scan.jpg',requestedAt:'29 Aug 2026',wasRejected:true}),
+       RQ('qualification','Uploaded','marco_laurea.pdf',{uploadedAt:'31 Aug 2026, 09:40:00 PM'}),
+       RQ('bankstmt','Uploaded','marco_bank_statement.pdf',{uploadedAt:'1 Sep 2026, 07:40:00 PM'})],
+    6:[RQ('passport','Uploaded','ana_passport.pdf',{uploadedAt:'30 Aug 2026, 05:50:00 PM'}),
+       RQ('nif','Uploaded','ana_nif.pdf',{uploadedAt:'31 Aug 2026, 10:05:00 AM'}),
+       RQ('bankstmt','Uploaded','ana_bank.pdf',{uploadedAt:'1 Sep 2026, 12:35:00 PM'})]
+  }
+};
+
+/* Settle every record onto its log once, at load: requested documents in
+   place, uploaded files in the employee's attachments, and emp.status
+   matching what the log says. */
+(function(){
+  function kindOf(n){
+    var e=String(n).split('.').pop().toLowerCase();
+    return e==='pdf'?'PDF':/^(png|jpe?g)$/.test(e)?'Image':'Document';
+  }
+  ['de','ge'].forEach(function(kind){
+    EMP_LIFE_SCOPES[kind].list().forEach(function(emp){
+      empLogs(emp);
+      emp.reqDocs=((EMP_REQ_SEED[kind]||{})[emp.id]||[]).map(function(d){return Object.assign({},d);});
+      emp.reqDocs.forEach(function(d){
+        if(d.file&&(d.status==='Uploaded'||d.status==='Accepted')){
+          if(!emp.attachments)emp.attachments=[];
+          emp.attachments.push({name:d.file,size:d.size,type:kindOf(d.file),by:emp.name,source:'Requested Doc · '+d.name,date:'',reqId:d.id});
+        }
+      });
+      emp.status=empState(emp).status;
+    });
+  });
+})();

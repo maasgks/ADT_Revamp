@@ -47,7 +47,7 @@ function prCycleOptions(){
 }
 
 function buildCreatePayRunModalHTML(){
-  return '<div class="ct-modal-overlay" onclick="cancelAddPayRun()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" role="dialog" aria-modal="true" aria-label="Create Pay Run" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Pay Run</span>'
       +'<button class="ct-modal-close" onclick="cancelAddPayRun()" aria-label="Close">'+PAY_X_SVG+'</button></div>'
@@ -120,7 +120,7 @@ function cancelAddInvoice(){pmCreateOpen=false;renderADTPage();}
 const PM_ORDER_TYPES=['EOR - Employee','PEO - Employee','Contractor','Immigration'];
 
 function buildCreateInvoiceModalHTML(){
-  return '<div class="ct-modal-overlay" onclick="cancelAddInvoice()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" role="dialog" aria-modal="true" aria-label="Create Invoice" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create Invoice</span>'
       +'<button class="ct-modal-close" onclick="cancelAddInvoice()" aria-label="Close">'+PAY_X_SVG+'</button></div>'

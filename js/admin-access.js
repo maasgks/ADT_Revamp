@@ -16,21 +16,31 @@
    alone, and says where they live. */
 
 /* ── Shared reference data ─────────────────────────────────────────────── */
+/* People outside the Employees module who still hold assets or access.
+   Employees themselves are read live from directEmpData / globalEmpData. */
 const AX_EMPLOYEES=[
-  {name:'Pallavi Parate',dept:'HR',branch:'Hyderabad',desig:'HR Manager'},
-  {name:'Rajan Kumar',dept:'Engineering',branch:'Punjab',desig:'Senior Developer'},
-  {name:'Anika Shah',dept:'Engineering',branch:'Mumbai',desig:'Developer'},
-  {name:'Dev Kulkarni',dept:'Finance',branch:'Bangalore',desig:'Accountant'},
-  {name:'Rahul Mehta',dept:'Operations',branch:'Delhi',desig:'Ops Lead'},
-  {name:'Neha Sharma',dept:'Sales',branch:'Mumbai',desig:'Account Executive'},
-  {name:'Aman Singh',dept:'Engineering',branch:'Bangalore',desig:'DevOps Engineer'},
-  {name:'Shaun Test1',dept:'Admin',branch:'Hyderabad',desig:'IT Administrator'}
+  {name:'Rajan Kumar',empId:'EMP101',dept:'Engineering',branch:'Punjab',desig:'Senior Developer'},
+  {name:'Neha Sharma',empId:'EMP102',dept:'Sales',branch:'Mumbai',desig:'Account Executive'},
+  {name:'Aman Singh',empId:'EMP103',dept:'Engineering',branch:'Bangalore',desig:'DevOps Engineer'},
+  {name:'Shaun Test1',empId:'EMP104',dept:'Admin',branch:'Hyderabad',desig:'IT Administrator'}
 ];
 const AX_DEPTS=['Engineering','Finance','HR','Operations','Sales','Admin'];
 const AX_BRANCHES=['Hyderabad','Punjab','Mumbai','Delhi','Bangalore'];
-const AX_APPROVERS=['Shaun Test1','Pallavi Parate','Rahul Mehta'];
-function axEmp(name){return AX_EMPLOYEES.find(function(e){return e.name===name;})||null;}
-function axEmpNames(){return AX_EMPLOYEES.map(function(e){return e.name;});}
+/* Everyone an asset or access can be assigned to: the people above plus
+   every Direct and Global employee, so a new joiner created today can be
+   handed a laptop in the same session. */
+function axPeople(withInactive){
+  const out=[];
+  (typeof directEmpData!=='undefined'?directEmpData:[]).concat(typeof globalEmpData!=='undefined'?globalEmpData:[]).forEach(function(e){
+    if(e.status==='Inactive'&&!withInactive)return;
+    out.push({name:e.name,empId:e.empId,dept:e.dept,branch:e.branch||e.country||'',desig:e.jobTitle||''});
+  });
+  AX_EMPLOYEES.forEach(function(x){if(!out.some(function(o){return o.name===x.name;}))out.push(x);});
+  return out;
+}
+/* Look-ups include Inactive people, so a past holder still shows their ID. */
+function axEmp(name){return axPeople(true).find(function(e){return e.name===name;})||null;}
+function axEmpNames(){return axPeople().map(function(e){return e.name;});}
 function axDash(v){return (v==null||v==='')?'<span class="sb-dash">—</span>':v;}
 function axDate(iso){return cdLabel(iso)||'—';}
 function axToday(){return cdISO(new Date());}
@@ -147,8 +157,10 @@ function axInlineAdd(prefix,key,openKey,placeholder,saveFn,cancelFn){
 function axFocus(id){setTimeout(function(){const el=document.getElementById(id);if(el)el.focus();},30);}
 
 /* ══ ASSET ALLOCATION ══════════════════════════════════════════════════════ */
-const AST_STATUSES=['Assigned','Available','In Repair','Returned'];
-const AST_CONDITIONS=['New','Good','Fair','Poor','Damaged'];
+const AST_STATUSES=['Available','Assigned','In Repair','Returned','Lost','Damaged','Retired','Disposed'];
+/* The listing's quick tiles: the four states an asset spends its life in. */
+const AST_TILES=['Assigned','Available','In Repair','Returned'];
+const AST_CONDITIONS=['New','Good','Fair','Damaged','Under Repair','Scrap'];
 let AST_CATEGORIES=['Laptop','Monitor','Mobile','Accessories','Furniture','Networking'];
 let AST_TYPES=['Hardware','Peripheral','Furniture','Network Device'];
 let AST_VENDORS=['Dell India','Apple Store','HP World','Logitech Distributors','Croma Business'];
@@ -190,10 +202,10 @@ const assetsData=[
    createdBy:'Pallavi Parate',createdAt:'15 Mar 2025 | 02:30:00 PM',
    history:[{employee:'Neha Sharma',from:'2025-03-20',to:'2026-09-30',condition:'Good'}]},
   {id:8,name:'Office Chair',category:'Furniture',type:'Furniture',code:'FN-008',serial:'',brand:'Featherlite',model:'Astra Mesh',
-   assignedTo:'Rahul Mehta',assignedOn:'2026-01-12',branch:'Delhi',status:'Assigned',condition:'Good',
+   assignedTo:'Shaun Test1',assignedOn:'2026-01-12',branch:'Hyderabad',status:'Assigned',condition:'Good',
    purchaseDate:'2026-01-08',cost:14500,vendor:'Croma Business',warrantyStart:'2026-01-08',warrantyEnd:'2027-01-07',
    createdBy:'Shaun Test1',createdAt:'08 Jan 2026 | 10:10:00 AM',
-   history:[{employee:'Rahul Mehta',from:'2026-01-12',to:'',condition:'New'}]},
+   history:[{employee:'Shaun Test1',from:'2026-01-12',to:'',condition:'New'}]},
   {id:9,name:'Wi-Fi Router',category:'Networking',type:'Network Device',code:'NW-009',serial:'SN741963',brand:'TP-Link',model:'Archer AX55',
    assignedTo:'',assignedOn:'',branch:'Bangalore',status:'Available',condition:'New',
    purchaseDate:'2026-09-02',cost:6800,vendor:'Croma Business',warrantyStart:'2026-09-02',warrantyEnd:'2029-09-01',
@@ -210,19 +222,28 @@ const assetsData=[
    history:[{employee:'Neha Sharma',from:'2025-05-15',to:'2026-08-22',condition:'Damaged'}]}
 ];
 let assetNextId=12;
+/* Updated Date (FR-10.2): the last time anything happened to the asset. */
+assetsData.forEach(function(a){
+  const last=(a.history||[]).reduce(function(m,x){return [x.from,x.to,m].filter(Boolean).sort().pop()||'';},'');
+  a.updatedAt=a.updatedAt||(last?cdLabel(last):String(a.createdAt).split(' | ')[0]);
+  a.notes=a.notes||'';
+});
+function astTouch(a){a.updatedAt=stampNow().date;}
 /* The employee's department is read through the person rather than stored on
    the asset, so a transfer moves every asset they hold with them. */
 function astDept(a){const e=axEmp(a.assignedTo);return e?e.dept:'';}
 
 // ── State ──
 let astSelectedId=null,astTab='basic-details';
-let astDeptF='',astBranchF='',astCatF='',astStatusF='',astQ='';
+let astDeptF='',astBranchF='',astCatF='',astStatusF='',astQ='',astEmpF='',astCondF='';
 let astDraft=null,astEditId=null,astAddOpen='',astModalOpen=false;
 let astLogAssignee='';   // the employee picked in the Logs form, when moving to Assigned
 
 function astRows(){
   return assetsData.filter(function(a){
     if(astDeptF&&astDept(a)!==astDeptF)return false;
+    if(astEmpF&&a.assignedTo!==astEmpF)return false;
+    if(astCondF&&a.condition!==astCondF)return false;
     if(astBranchF&&a.branch!==astBranchF)return false;
     if(astCatF&&a.category!==astCatF)return false;
     if(astStatusF&&a.status!==astStatusF)return false;
@@ -231,15 +252,15 @@ function astRows(){
 }
 function astToggleStat(v){astStatusF=astStatusF===v?'':v;astSelectedId=null;renderADTPage();}
 function applyAstFilters(){
-  const d=getCSValue('ast-f-dept'),b=getCSValue('ast-f-branch'),c=getCSValue('ast-f-cat'),s=getCSValue('ast-f-status');
-  astDeptF=d&&d!=='All Departments'?d:'';
+  const e=getCSValue('ast-f-emp'),b=getCSValue('ast-f-branch'),c=getCSValue('ast-f-cond'),s=getCSValue('ast-f-status');
+  astEmpF=e&&e!=='All Employees'?e:'';
   astBranchF=b&&b!=='All Branches'?b:'';
-  astCatF=c&&c!=='All Categories'?c:'';
+  astCondF=c&&c!=='All Conditions'?c:'';
   astStatusF=s&&s!=='All Statuses'?s:'';
   astQ=lpSearchValue('ast-f-q');
   astSelectedId=null;renderADTPage();
 }
-function resetAstFilters(){astDeptF='';astBranchF='';astCatF='';astStatusF='';astQ='';astSelectedId=null;renderADTPage();}
+function resetAstFilters(){astDeptF='';astBranchF='';astCatF='';astStatusF='';astQ='';astEmpF='';astCondF='';astSelectedId=null;renderADTPage();}
 
 // ── Detail panel ──
 function openAstSidebar(id,tab){
@@ -318,6 +339,8 @@ function renderAstSidebar(){
       +axField(AX_ICO.fPin,'Branch / Location',a.branch)
       +axField(AX_ICO.fUser,'Created By',a.createdBy)
       +axField(AX_ICO.fCal,'Created At',a.createdAt)
+      +axField(AX_ICO.fCal,'Updated Date',a.updatedAt)
+      +axField(AX_ICO.fTicket,'Comment / Notes',a.notes,true)
       +'</div>';
   }else if(astTab==='assignment'){
     const e=axEmp(a.assignedTo);
@@ -416,9 +439,11 @@ function astSaveLog(id){
     a.assignedTo=emp;a.assignedOn=today;
     const e=axEmp(emp);if(e)a.branch=e.branch;
   }
+  astTouch(a);
   if(a.status!==was){
     astWorkflow(a);
-    const title={'Assigned':'Asset Assigned','Available':'Back in Inventory','In Repair':'Sent for Repair','Returned':'Asset Returned'}[a.status];
+    const title={'Assigned':'Asset Assigned','Available':'Back in Inventory','In Repair':'Sent for Repair','Returned':'Asset Returned',
+      'Lost':'Asset Lost','Damaged':'Asset Damaged','Retired':'Asset Retired','Disposed':'Asset Disposed'}[a.status];
     wfPush(astWorkflowData,id,title,'Moved from '+was+' to '+a.status+(a.status==='Assigned'?' — handed to '+emp:'')+'. '+comment);
   }
   astLogAssignee='';
@@ -432,44 +457,45 @@ function buildAssetAllocationHTML(){
   const rows=astRows();
   const shown=lpSearchRows(rows,astQ);
   if(astSelectedId&&!shown.some(function(a){return a.id===astSelectedId;}))astSelectedId=null;
-  const pgn=listPage('asset-allocation',[astDeptF,astBranchF,astCatF,astStatusF,astQ].join('|'),shown.map(function(a,i){
+  const pgn=listPage('asset-allocation',[astEmpF,astBranchF,astCondF,astStatusF,astQ].join('|'),shown.map(function(a,i){
     return '<tr class="ast-row'+(astSelectedId===a.id?' lp-row-selected':'')+'" id="ast-row-'+a.id+'" style="cursor:pointer" onclick="openAstSidebar('+a.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
-      +'<td><span style="color:var(--orange);font-weight:500">'+a.name+'</span></td>'
-      +'<td>'+a.category+'</td>'
-      +'<td style="white-space:nowrap">'+a.code+'</td>'
-      +'<td style="white-space:nowrap">'+(a.serial||'<span class="sb-dash">—</span>')+'</td>'
-      +'<td>'+(a.assignedTo||'<span class="sb-dash">—</span>')+'</td>'
-      +'<td>'+a.branch+'</td>'
-      +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
+      +'<td><div class="lp-c-main ax-c-link">'+a.name+'</div><div class="lp-c-sub">'+a.code+(a.serial?' · '+a.serial:'')+'</div></td>'
+      +'<td><div class="lp-c-plain">'+a.category+'</div><div class="lp-c-sub">'+(a.type||'—')+'</div></td>'
+      +'<td><div class="lp-c-plain'+(a.assignedTo?'':' is-none')+'">'+(a.assignedTo||'Unassigned')+'</div><div class="lp-c-sub">'+a.branch+'</div></td>'
       +'<td>'+axBadge(statusTone(a.condition),a.condition)+'</td>'
+      +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
+      +'<td><div class="lp-c-plain">'+String(a.createdAt).split(' | ')[0]+'</div><div class="lp-c-sub">Updated '+(a.updatedAt||'—')+'</div></td>'
       +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAstSidebar('+a.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
       +'</tr>';
-  }),'<tr><td colspan="10" style="padding:24px;text-align:center;color:var(--gray)">No assets match this filter.</td></tr>');
+  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No assets match this filter.</td></tr>');
   const stat=function(s){const color='var(--st-'+statusTone(s)+'-fg)';
     return '<div class="listing-stat'+(astStatusF===s?' stat-selected':'')+'" onclick="astToggleStat(\''+s+'\')">'
       +'<div class="listing-stat-count" style="color:'+color+'">'+count(s)+'</div><div class="listing-stat-label">'+s+'</div></div>';
   };
   return '<div class="lp-page">'
     +dashboardBackHTML()
+    +(typeof empReturnBarHTML==='function'?empReturnBarHTML():'')
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +lpSearchField('ast-f-q',astQ,'Search by asset name, ID, employee','applyAstFilters()')
-    +apCS('ast-f-dept',AX_DEPTS,astDeptF,'All Departments')
+    +lpSearchField('ast-f-q',astQ,'Search asset name, ID, employee','applyAstFilters()')
+    +apCS('ast-f-emp',axEmpNames(),astEmpF,'All Employees')
     +apCS('ast-f-branch',AX_BRANCHES,astBranchF,'All Branches')
-    +apCS('ast-f-cat',AST_CATEGORIES,astCatF,'All Categories')
+    +apCS('ast-f-cond',AST_CONDITIONS,astCondF,'All Conditions')
     +apCS('ast-f-status',AST_STATUSES,astStatusF,'All Statuses')
-    +clearFiltersBtn([astDeptF,astBranchF,astCatF,astStatusF,astQ],'resetAstFilters()')
+    +clearFiltersBtn([astEmpF,astBranchF,astCondF,astStatusF,astQ],'resetAstFilters()')
     +'<button class="lp-pill-search" onclick="applyAstFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +AST_STATUSES.map(function(s){return stat(s);}).join('')
+    +AST_TILES.map(function(s){return stat(s);}).join('')
     +'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="ast-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:1040px"><thead><tr><th>S. No</th><th>Asset Name</th><th>Asset Category</th><th>Asset ID / Code</th>'
-      +'<th>Serial Number</th><th>Assigned To</th><th>Branch</th><th>Status</th><th>Condition</th><th>Action</th></tr></thead>'
+    /* Fits the card: the app's listing card clips rather than scrolls, so
+       paired fields share a cell - the main value with the second under it. */
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset Name / ID / Serial No.</th><th>Category / Type</th>'
+      +'<th>Assigned Employee / Location</th><th>Condition</th><th>Status</th><th>Created / Updated</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -484,7 +510,7 @@ function buildAssetAllocationHTML(){
    otherwise adding a vendor would wipe the asset name above it. */
 function astBlankDraft(){
   return {name:'',type:'',category:'',serial:'',code:'',model:'',brand:'',cost:'',purchaseDate:'',warrantyEnd:'',
-    vendor:'',condition:'',warrantyStart:'',status:'',branch:'',assignedTo:'',image:'',imageName:''};
+    vendor:'',condition:'',warrantyStart:'',status:'',branch:'',assignedTo:'',image:'',imageName:'',notes:''};
 }
 function startAddAsset(editId){
   const a=editId?assetsData.find(function(x){return x.id===editId;}):null;
@@ -492,17 +518,20 @@ function startAddAsset(editId){
   astDraft=a?Object.assign(astBlankDraft(),{name:a.name,type:a.type,category:a.category,serial:a.serial,code:a.code,
       model:a.model,brand:a.brand,cost:a.cost!=null?String(a.cost):'',purchaseDate:a.purchaseDate,warrantyEnd:a.warrantyEnd,
       vendor:a.vendor,condition:a.condition,warrantyStart:a.warrantyStart,status:a.status,branch:a.branch,
-      assignedTo:a.assignedTo,image:a.image||'',imageName:a.imageName||''})
+      assignedTo:a.assignedTo,image:a.image||'',imageName:a.imageName||'',notes:a.notes||''})
     :astBlankDraft();
   astAddOpen='';astModalOpen=true;
   if(page!=='asset-allocation'){page='asset-allocation';syncSidebarDropdown(page);}
   renderADTPage();
 }
-function cancelAddAsset(){astDraft=null;astEditId=null;astAddOpen='';astModalOpen=false;renderADTPage();}
+function cancelAddAsset(){
+  astDraft=null;astEditId=null;astAddOpen='';astModalOpen=false;
+  axCloseCreate();
+}
 function astSync(){
   if(!astDraft)return;
   const v=function(id){const el=document.getElementById(id);return el?el.value.trim():null;};
-  [['name','ast-name'],['serial','ast-serial'],['code','ast-code'],['model','ast-model'],['brand','ast-brand'],['cost','ast-cost']]
+  [['name','ast-name'],['serial','ast-serial'],['code','ast-code'],['model','ast-model'],['brand','ast-brand'],['cost','ast-cost'],['notes','ast-notes']]
     .forEach(function(p){const x=v(p[1]);if(x!==null)astDraft[p[0]]=x;});
   [['purchaseDate','ast-pdate'],['warrantyEnd','ast-wend'],['warrantyStart','ast-wstart']]
     .forEach(function(p){const el=document.getElementById(p[1]);if(el)astDraft[p[0]]=el.value;});
@@ -569,7 +598,7 @@ function buildAddAssetModalHTML(){
   const sel=function(key,id,label,opts,val,ph,req){
     return '<div class="ep-form-group">'+axAddLabel(label,req,key,'astOpenAdd')
       +apCS(id,opts,val,ph)
-      +(key?axInlineAdd('ast',key,astAddOpen,'New '+label.toLowerCase(),'astSaveAdd','astCancelAdd'):'')+'</div>';
+      +(key?axInlineAdd('ast',key,astAddOpen,label+' Name','astSaveAdd','astCancelAdd'):'')+'</div>';
   };
   const date=function(id,label,val){
     return '<div class="ep-form-group"><label class="ep-form-label">'+label+'</label>'+apCD(id,val,'dd-mm-yyyy')+'</div>';
@@ -595,35 +624,45 @@ function buildAddAssetModalHTML(){
       +'<span class="att-zone-ico">'+AX_ICO.upload+'</span>'
       +'<span><span class="att-zone-title">Click to upload or drag and drop</span>'
       +'<span class="att-zone-hint"> · PNG, JPG (max 5 MB)</span></span></label>';
-  return '<div class="ct-modal-overlay" onclick="cancelAddAsset()">'
+  /* FR-10.1, in its order. Asset Type stays (the Assets listing and the lifecycle
+     logs show it) as a plain dropdown; + Add is on Category and Vendor. */
+  const fields=txt('ast-name','Asset Name',d.name,'e.g. Dell Laptop',true)
+      +sel('category','ast-cat','Asset Category',AST_CATEGORIES,d.category,'Select Category',true)
+      +txt('ast-code','Asset ID / Asset Code',d.code,'e.g. LT-001',true)
+      +txt('ast-serial','Barcode / Serial Number',d.serial,'e.g. SN123456')
+      +txt('ast-brand','Brand',d.brand,'e.g. Dell')
+      +txt('ast-model','Model',d.model,'e.g. Latitude 7420')
+      +date('ast-pdate','Purchase Date',d.purchaseDate)
+      +'<div class="ep-form-group"><label class="ep-form-label" for="ast-cost">Purchase Cost</label>'
+        +'<div class="ax-currency"><span>₹</span><input class="ep-form-input" id="ast-cost" type="number" min="0" step="1" value="'+attrSafe(d.cost||'')+'" placeholder="e.g. 75000"></div></div>'
+      +sel('vendor','ast-vendor','Vendor / Supplier',AST_VENDORS,d.vendor,'Select Vendor / Supplier',false)
+      +sel('','ast-type','Asset Type',AST_TYPES,d.type,'Select Type',true)
+      +date('ast-wstart','Warranty Start Date',d.warrantyStart)
+      +date('ast-wend','Warranty End Date',d.warrantyEnd)
+      +sel('','ast-branch','Branch / Location',AX_BRANCHES,d.branch,'Select Branch',false)
+      +sel('','ast-cond','Asset Condition',AST_CONDITIONS,d.condition,'Select Condition',true)
+      +assignFields
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Asset Image</label>'+imageBox+'</div>'
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ast-notes">Comment / Notes</label>'
+        +'<textarea class="ep-form-input ax-notes" id="ast-notes" placeholder="Anything worth knowing about this asset">'+attrSafe(d.notes||'')+'</textarea></div>';
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(edit?'Edit Asset':'Add Asset')+'</span>'
       +'<button class="ct-modal-close" onclick="cancelAddAsset()">'+AX_ICO.x+'</button></div>'
     +'<p class="ct-modal-sub">'+(edit?'Update the details of '+d.name+' ('+d.code+').':'Create a new asset and assign it to an employee.')
       +' Fields marked <span class="req">*</span> are required.</p>'
-    +'<div class="ep-form-grid">'
-      +txt('ast-name','Asset Name',d.name,'e.g. Dell Laptop',true)
-      +sel('type','ast-type','Asset Type',AST_TYPES,d.type,'Select Type',true)
-      +sel('category','ast-cat','Asset Category',AST_CATEGORIES,d.category,'Select Category',true)
-      +txt('ast-serial','Barcode / Serial Number',d.serial,'e.g. SN123456')
-      +txt('ast-code','Asset ID / Code',d.code,'e.g. LT-001',true)
-      +txt('ast-model','Model',d.model,'e.g. Latitude 7420')
-      +txt('ast-brand','Brand',d.brand,'e.g. Dell')
-      +txt('ast-cost','Purchase Cost',d.cost,'e.g. 75000',false,'number')
-      +date('ast-pdate','Purchase Date',d.purchaseDate)
-      +date('ast-wend','Warranty End Date',d.warrantyEnd)
-      +sel('vendor','ast-vendor','Vendor / Supplier',AST_VENDORS,d.vendor,'Select Vendor / Supplier',false)
-      +sel('','ast-cond','Asset Condition',AST_CONDITIONS,d.condition,'Select Condition',true)
-      +date('ast-wstart','Warranty Start Date',d.warrantyStart)
-      +sel('','ast-branch','Branch / Location',AX_BRANCHES,d.branch,'Select Branch',false)
-      +assignFields
-      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Asset Image</label>'+imageBox+'</div>'
-    +'</div>'
+    +'<div class="ep-form-grid">'+fields+'</div>'
     +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddAsset()">Cancel</button>'
       +'<button class="ep-save-btn" onclick="submitAddAsset()">'+(edit?'Save Changes':'Save Asset')+'</button>'
     +'</div></div>'
     +'</div></div>';
+}
+/* Closing a create / edit popup. It may have been opened over an employee's
+   lifecycle log, so that context is released too. */
+function axCloseCreate(){
+  if(typeof empAxCtx!=='undefined')empAxCtx=null;
+  renderADTPage();
 }
 function submitAddAsset(){
   astSync();
@@ -649,18 +688,19 @@ function submitAddAsset(){
     const a=assetsData.find(function(x){return x.id===astEditId;});if(!a)return;
     const fields=[['name','Asset Name'],['type','Asset Type'],['category','Category'],['serial','Serial Number'],['code','Asset ID'],
       ['model','Model'],['brand','Brand'],['purchaseDate','Purchase Date'],['warrantyStart','Warranty Start'],['warrantyEnd','Warranty End'],
-      ['vendor','Vendor'],['condition','Condition'],['branch','Branch']];
+      ['vendor','Vendor'],['condition','Condition'],['branch','Branch'],['notes','Notes']];
     const changes=fields.filter(function(f){return String(a[f[0]]||'')!==String(f[0]==='branch'?branch:(d[f[0]]||''));}).map(function(f){return f[1];});
     if(String(a.cost)!==String(d.cost===''?'':parseFloat(d.cost)))changes.push('Purchase Cost');
     if((a.image||'')!==(d.image||''))changes.push('Image');
     if(!changes.length){cancelAddAsset();showToast('No changes','info','Nothing was different.');return;}
     Object.assign(a,{name:d.name,type:d.type,category:d.category,serial:d.serial,code:d.code,model:d.model,brand:d.brand,
       cost:d.cost===''?'':parseFloat(d.cost),purchaseDate:d.purchaseDate,warrantyStart:d.warrantyStart,warrantyEnd:d.warrantyEnd,
-      vendor:d.vendor,condition:d.condition,branch:branch,image:d.image,imageName:d.imageName});
+      vendor:d.vendor,condition:d.condition,branch:branch,image:d.image,imageName:d.imageName,notes:d.notes});
+    astTouch(a);
     astWorkflow(a);
     wfPush(astWorkflowData,a.id,'Asset Edited','Updated: '+changes.join(', ')+'.');
     astDraft=null;astEditId=null;astModalOpen=false;
-    renderADTPage();
+    axCloseCreate();
     showToast('Asset updated','success',a.name+' ('+a.code+') saved.');
     return;
   }
@@ -669,8 +709,8 @@ function submitAddAsset(){
   const a={id:id,name:d.name,category:d.category,type:d.type,code:d.code,serial:d.serial,brand:d.brand,model:d.model,
     assignedTo:d.status==='Assigned'?d.assignedTo:'',assignedOn:d.status==='Assigned'?today:'',branch:branch,
     status:d.status,condition:d.condition,purchaseDate:d.purchaseDate,cost:d.cost===''?'':parseFloat(d.cost),vendor:d.vendor,
-    warrantyStart:d.warrantyStart,warrantyEnd:d.warrantyEnd,image:d.image,imageName:d.imageName,
-    createdBy:CURRENT_USER,createdAt:axStamp(),
+    warrantyStart:d.warrantyStart,warrantyEnd:d.warrantyEnd,image:d.image,imageName:d.imageName,notes:d.notes,
+    createdBy:CURRENT_USER,createdAt:axStamp(),updatedAt:stampNow().date,
     history:d.status==='Assigned'?[{employee:d.assignedTo,from:today,to:'',condition:d.condition}]:[]};
   const s=stampNow();
   a.logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:a.status,
@@ -680,76 +720,87 @@ function submitAddAsset(){
   assetsData.unshift(a);
   lpLanded('asset-allocation',id);
   astDraft=null;astModalOpen=false;
-  renderADTPage();
+  axCloseCreate();
   showToast('Asset saved','success',a.name+' ('+a.code+') is '+(a.status==='Assigned'?'assigned to '+a.assignedTo:a.status.toLowerCase())+'.');
 }
 
-/* ══ IT ACCESS ═════════════════════════════════════════════════════════════ */
-const ITA_STATUSES=['Active','Pending','Revoked','Expired'];
-const ITA_ACCESS_TYPES=['User Account','Application Access','Admin Access','VPN Access','Repository Access','Email Account'];
+/* ══ IT ACCESS (FR-10.3 / FR-10.4) ═════════════════════════════════════════
+   Who has access to what. Passwords, API tokens, secret keys and other
+   authentication secrets are never stored here - only the login, the role
+   and who provisioned it. */
+const ITA_STATUSES=['Pending','Active','Inactive','On Hold','Revoked','Expired'];
+const ITA_TILES=['Active','Pending','On Hold','Revoked','Expired'];
+const ITA_ACCESS_TYPES=['User Account','Admin Access','Group Access','Shared Access','Application Access',
+  'Database Access','VPN Access','Repository Access','Other'];
 const ITA_ROLES=['Viewer','Contributor','Editor','Administrator','Owner'];
+const AX_PROVISIONERS=['Shaun Test1','Pallavi Parate','Aman Singh','Tarak Swain'];
 let ITA_SYSTEMS=['Microsoft 365','Jira','AWS Console','VPN','GitHub','Slack','Google Workspace','Salesforce'];
+/* + Add System / Application stores its domain and logo as master data. */
+const ITA_SYSTEM_META={
+  'Microsoft 365':{url:'office.com'},'Jira':{url:'atlassian.net'},'AWS Console':{url:'console.aws.amazon.com'},
+  'VPN':{url:'vpn.company.com'},'GitHub':{url:'github.com'},'Slack':{url:'slack.com'},
+  'Google Workspace':{url:'workspace.google.com'},'Salesforce':{url:'salesforce.com'}
+};
 
 const itAccessData=[
   {id:1,system:'Microsoft 365',accessType:'User Account',login:'pallavi@company.com',assignedTo:'Pallavi Parate',role:'Contributor',
-   status:'Active',effective:'2024-01-01',expiry:'',mfa:'Yes',approvedBy:'Shaun Test1',requestRef:'REQ-1001',
+   status:'Active',effective:'2024-01-01',expiry:'',mfa:'Yes',provisionedBy:'Shaun Test1',notes:'',
    createdBy:'Shaun Test1',createdAt:'01 Jan 2024 | 10:00:00 AM'},
   {id:2,system:'Jira',accessType:'Application Access',login:'pallavi_jira',assignedTo:'Pallavi Parate',role:'Editor',
-   status:'Active',effective:'2024-01-01',expiry:'',mfa:'No',approvedBy:'Rahul Mehta',requestRef:'REQ-1002',
+   status:'Active',effective:'2024-01-01',expiry:'',mfa:'No',provisionedBy:'Shaun Test1',notes:'',
    createdBy:'Shaun Test1',createdAt:'01 Jan 2024 | 10:20:00 AM'},
   {id:3,system:'AWS Console',accessType:'Admin Access',login:'rajan.aws',assignedTo:'Rajan Kumar',role:'Administrator',
-   status:'Active',effective:'2024-02-15',expiry:'2026-11-15',mfa:'Yes',approvedBy:'Shaun Test1',requestRef:'REQ-1010',
+   status:'Active',effective:'2024-02-15',expiry:'2026-11-15',mfa:'Yes',provisionedBy:'Aman Singh',notes:'Quarterly access review.',
    createdBy:'Shaun Test1',createdAt:'15 Feb 2024 | 11:30:00 AM'},
   {id:4,system:'VPN',accessType:'VPN Access',login:'rk.vpn',assignedTo:'Rajan Kumar',role:'Viewer',
-   status:'Revoked',effective:'2024-03-10',expiry:'2027-03-09',mfa:'Yes',approvedBy:'Shaun Test1',requestRef:'REQ-1014',
+   status:'Revoked',effective:'2024-03-10',expiry:'2027-03-09',mfa:'Yes',provisionedBy:'Shaun Test1',notes:'',
    createdBy:'Shaun Test1',createdAt:'10 Mar 2024 | 09:15:00 AM',revokedOn:'2026-08-12'},
   {id:5,system:'GitHub',accessType:'Repository Access',login:'anika.gh',assignedTo:'Anika Shah',role:'Contributor',
-   status:'Active',effective:'2024-04-01',expiry:'',mfa:'Yes',approvedBy:'Rahul Mehta',requestRef:'REQ-1021',
+   status:'Active',effective:'2024-04-01',expiry:'',mfa:'Yes',provisionedBy:'Aman Singh',notes:'',
    createdBy:'Shaun Test1',createdAt:'01 Apr 2024 | 02:00:00 PM'},
   {id:6,system:'Salesforce',accessType:'User Account',login:'neha.sharma@company.com',assignedTo:'Neha Sharma',role:'Editor',
-   status:'Pending',effective:'2026-10-10',expiry:'2027-10-09',mfa:'Yes',approvedBy:'',requestRef:'REQ-1188',
+   status:'Pending',effective:'2026-10-10',expiry:'2027-10-09',mfa:'Yes',provisionedBy:'',notes:'',
    createdBy:'Pallavi Parate',createdAt:'01 Oct 2026 | 03:40:00 PM'},
   {id:7,system:'Slack',accessType:'User Account',login:'dev.k@company.com',assignedTo:'Dev Kulkarni',role:'Contributor',
-   status:'Active',effective:'2026-05-02',expiry:'',mfa:'No',approvedBy:'Pallavi Parate',requestRef:'REQ-1120',
+   status:'Active',effective:'2026-05-02',expiry:'',mfa:'No',provisionedBy:'Pallavi Parate',notes:'',
    createdBy:'Pallavi Parate',createdAt:'02 May 2026 | 10:05:00 AM'},
   {id:8,system:'AWS Console',accessType:'Application Access',login:'aman.devops',assignedTo:'Aman Singh',role:'Administrator',
-   status:'Active',effective:'2026-06-15',expiry:'2026-10-20',mfa:'Yes',approvedBy:'Shaun Test1',requestRef:'REQ-1142',
+   status:'Active',effective:'2026-06-15',expiry:'2026-10-20',mfa:'Yes',provisionedBy:'Shaun Test1',notes:'',
    createdBy:'Shaun Test1',createdAt:'15 Jun 2026 | 12:30:00 PM'},
-  {id:9,system:'Google Workspace',accessType:'Email Account',login:'rahul.mehta@company.com',assignedTo:'Rahul Mehta',role:'Contributor',
-   status:'Expired',effective:'2025-04-01',expiry:'2026-03-31',mfa:'Yes',approvedBy:'Shaun Test1',requestRef:'REQ-1066',
+  {id:9,system:'Google Workspace',accessType:'User Account',login:'rahul.mehta@company.com',assignedTo:'Rahul Mehta',role:'Contributor',
+   status:'Expired',effective:'2025-04-01',expiry:'2026-03-31',mfa:'Yes',provisionedBy:'Shaun Test1',notes:'',
    createdBy:'Shaun Test1',createdAt:'01 Apr 2025 | 09:00:00 AM'},
   {id:10,system:'Jira',accessType:'Application Access',login:'aman_jira',assignedTo:'Aman Singh',role:'Viewer',
-   status:'Pending',effective:'2026-10-07',expiry:'',mfa:'No',approvedBy:'',requestRef:'REQ-1191',
+   status:'On Hold',effective:'2026-10-07',expiry:'',mfa:'No',provisionedBy:'',notes:'Waiting on licence.',
    createdBy:'Shaun Test1',createdAt:'03 Oct 2026 | 11:10:00 AM'}
 ];
 let itAccessNextId=11;
-function itaEmpField(r,k){const e=axEmp(r.assignedTo);return e?e[k]:'';}
+function itaEmpId(r){const e=axEmp(r.assignedTo);return e&&e.empId?e.empId:'';}
 
 // ── State ──
 let itaSelectedId=null,itaTab='basic-details';
-let itaDeptF='',itaBranchF='',itaSysF='',itaStatusF='',itaQ='';
+let itaSysF='',itaTypeF='',itaStatusF='',itaQ='';
 let itaDraft=null,itaEditId=null,itaAddOpen='',itaModalOpen=false;
+let itaSysDraft={name:'',url:'',logo:'',logoName:''};
 
 function itaRows(){
   return itAccessData.filter(function(r){
-    if(itaDeptF&&itaEmpField(r,'dept')!==itaDeptF)return false;
-    if(itaBranchF&&itaEmpField(r,'branch')!==itaBranchF)return false;
     if(itaSysF&&r.system!==itaSysF)return false;
+    if(itaTypeF&&r.accessType!==itaTypeF)return false;
     if(itaStatusF&&r.status!==itaStatusF)return false;
     return true;
   });
 }
 function itaToggleStat(v){itaStatusF=itaStatusF===v?'':v;itaSelectedId=null;renderADTPage();}
 function applyItaFilters(){
-  const d=getCSValue('ita-f-dept'),b=getCSValue('ita-f-branch'),s=getCSValue('ita-f-sys'),st=getCSValue('ita-f-status');
-  itaDeptF=d&&d!=='All Departments'?d:'';
-  itaBranchF=b&&b!=='All Branches'?b:'';
+  const s=getCSValue('ita-f-sys'),t=getCSValue('ita-f-type'),st=getCSValue('ita-f-status');
   itaSysF=s&&s!=='All Systems'?s:'';
+  itaTypeF=t&&t!=='All Access Types'?t:'';
   itaStatusF=st&&st!=='All Statuses'?st:'';
   itaQ=lpSearchValue('ita-f-q');
   itaSelectedId=null;renderADTPage();
 }
-function resetItaFilters(){itaDeptF='';itaBranchF='';itaSysF='';itaStatusF='';itaQ='';itaSelectedId=null;renderADTPage();}
+function resetItaFilters(){itaSysF='';itaTypeF='';itaStatusF='';itaQ='';itaSelectedId=null;renderADTPage();}
 
 // ── Detail panel ──
 function openItaSidebar(id,tab){
@@ -768,13 +819,14 @@ function navItaTab(t){itaTab=t;isbTab('ita',renderItaSidebar);}
 function itaSeedLogs(r){
   const p=String(r.createdAt).split(' | ');
   const fx=[{date:p[0],time:p[1]||'09:00:00 AM',user:r.createdBy,status:'Pending',
-    action:'Access to '+r.system+' requested for '+r.assignedTo+(r.requestRef?' ('+r.requestRef+')':'')+'.'}];
-  if(r.status!=='Pending')fx.unshift({date:axDate(r.effective),time:'10:00:00 AM',user:r.approvedBy||r.createdBy,status:'Active',
-    action:r.accessType+' granted as '+r.role+'. Login '+r.login+'.'});
+    action:'Access to '+r.system+' requested for '+r.assignedTo+'.'}];
+  if(r.status!=='Pending')fx.unshift({date:axDate(r.effective),time:'10:00:00 AM',user:r.provisionedBy||r.createdBy,status:'Active',
+    action:r.accessType+' provisioned as '+r.role+'. Login '+r.login+'.'});
   if(r.status==='Revoked')fx.unshift({date:axDate(r.revokedOn||r.expiry),time:'05:00:00 PM',user:'Shaun Test1',status:'Revoked',
     action:'Access revoked — no longer required for the role.'});
   if(r.status==='Expired')fx.unshift({date:axDate(r.expiry),time:'11:59:00 PM',user:'System',status:'Expired',
-    action:'Access lapsed on its expiry date.'});
+    action:'Access lapsed on its expiry / review date.'});
+  if(r.status==='On Hold')fx.unshift({date:p[0],time:'11:30:00 AM',user:r.createdBy,status:'On Hold',action:r.notes||'Put on hold.'});
   return seedLogs(r,fx);
 }
 const itaWorkflowData={};
@@ -784,51 +836,57 @@ function itaWorkflow(r){
     const d=(p[0]||'').trim(),t=(p[1]||'').trim()||'09:00:00 AM';
     const wf=[{title:'Access Requested',user:r.createdBy,date:d,time:t,
       description:r.accessType+' on '+r.system+' requested for '+r.assignedTo+'.'}];
-    if(r.status!=='Pending')wf.unshift({title:'Access Granted',user:r.approvedBy||r.createdBy,date:axDate(r.effective),time:'10:00:00 AM',
-      description:'Approved by '+(r.approvedBy||r.createdBy)+'. Effective '+axDate(r.effective)+(r.expiry?', until '+axDate(r.expiry):', with no end date')+'.'});
+    if(['Active','Revoked','Expired','Inactive'].indexOf(r.status)>=0)wf.unshift({title:'Access Provisioned',user:r.provisionedBy||r.createdBy,date:axDate(r.effective),time:'10:00:00 AM',
+      description:'Provisioned by '+(r.provisionedBy||r.createdBy)+'. Effective '+axDate(r.effective)+(r.expiry?', review / expiry '+axDate(r.expiry):', with no end date')+'.'});
     if(r.status==='Revoked')wf.unshift({title:'Access Revoked',user:'Shaun Test1',date:axDate(r.revokedOn||r.expiry),time:'05:00:00 PM',
       description:'Login '+r.login+' disabled on '+r.system+'.'});
     if(r.status==='Expired')wf.unshift({title:'Access Expired',user:'System',date:axDate(r.expiry),time:'11:59:00 PM',
-      description:'Reached its expiry date without renewal.'});
+      description:'Reached its expiry / review date without renewal.'});
     itaWorkflowData[r.id]=wf;
   }
   return itaWorkflowData[r.id];
 }
-/* "Expiry 20 Oct 2026" is a date; "15 days left" is the thing an admin
-   renewing access actually needs, so the panel says that too. */
+/* "Expiry 20 Oct 2026" is a date; "15 days left" is what an admin renewing
+   access actually needs, so the panel says that too. */
 function itaValidity(r){
   if(r.status==='Revoked')return {tone:'bad',text:'Revoked'};
+  if(r.status==='Inactive')return {tone:'bad',text:'Inactive'};
+  if(r.status==='On Hold')return {tone:'wait',text:'On hold'};
   if(r.status==='Pending')return {tone:'wait',text:'Starts '+axDate(r.effective)};
   if(!r.expiry)return {tone:'ok',text:'No expiry'};
   const left=axDaysBetween(axToday(),r.expiry);
   if(left<0)return {tone:'idle',text:'Expired '+axDate(r.expiry)};
-  if(left<=30)return {tone:'wait',text:'Expires in '+left+' day'+(left===1?'':'s')};
+  if(left<=30)return {tone:'wait',text:'Review in '+left+' day'+(left===1?'':'s')};
   return {tone:'ok',text:left+' days left'};
+}
+function itaSysLogo(name,size){
+  const m=ITA_SYSTEM_META[name];
+  return m&&m.logo?'<img class="ax-sys-logo" src="'+m.logo+'" alt="" style="width:'+(size||18)+'px;height:'+(size||18)+'px">':'';
 }
 function renderItaSidebar(){
   const r=itAccessData.find(function(x){return x.id===itaSelectedId;});if(!r)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'validity',label:'Validity'},
-    {id:'approval',label:'Approval'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+    {id:'provisioning',label:'Provisioning'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar('ita',tabs,itaTab,'navItaTab','closeItaSidebar');
   const e=axEmp(r.assignedTo);
+  const meta=ITA_SYSTEM_META[r.system]||{};
   let body='';
   if(itaTab==='basic-details'){
-    body='<div class="ax-hero"><div class="ax-hero-ico">'+AX_ICO.heroKey+'</div>'
+    body='<div class="ax-hero">'+(meta.logo?'<img class="ax-hero-img" src="'+meta.logo+'" alt="">':'<div class="ax-hero-ico">'+AX_ICO.heroKey+'</div>')
       +'<div class="ax-hero-txt"><div class="ax-hero-name">'+r.system+'</div>'
         +'<div class="ax-hero-meta">'+r.accessType+'<span class="ax-dot">•</span>'+r.assignedTo+'</div></div>'
       +'<div class="ax-hero-right">'+axBadge(statusTone(r.status),r.status)
         +'<button class="lp-sb-view-edit-btn" onclick="startAddItAccess('+r.id+')">'+AX_ICO.pen+' Edit</button></div></div>'
       +'<div class="lp-sb-detail-grid">'
-      +axField(AX_ICO.fMonitor,'System / Application',r.system)
+      +axField(AX_ICO.fUser,'Employee Name',r.assignedTo)
+      +axField(AX_ICO.fHash,'Employee ID',itaEmpId(r))
+      +axField(AX_ICO.fMonitor,'System / Application',r.system+(meta.url?' <span class="ax-sub">'+meta.url+'</span>':''))
       +axField(AX_ICO.fKey,'Access Type',r.accessType)
-      +axField(AX_ICO.fMail,'Login ID / Email',r.login)
-      +axField(AX_ICO.fShield,'Role / Permission Level',r.role)
-      +axField(AX_ICO.fUser,'Assigned To',r.assignedTo)
+      +axField(AX_ICO.fMail,'Work Email / Login ID',r.login)
+      +axField(AX_ICO.fShield,'Role / Permission Profile',r.role)
       +axField(AX_ICO.fBuild,'Department',e?e.dept:'')
-      +axField(AX_ICO.fPin,'Branch',e?e.branch:'')
       +axField(AX_ICO.fLock,'MFA Enabled',r.mfa==='Yes'?axBadge('ok','Yes'):axBadge('wait','No'))
-      +axField(AX_ICO.fUser,'Created By',r.createdBy)
-      +axField(AX_ICO.fCal,'Created At',r.createdAt)
+      +axField(AX_ICO.fTicket,'Comment / Notes',r.notes,true)
       +'</div>';
   }else if(itaTab==='validity'){
     const v=itaValidity(r);
@@ -839,21 +897,18 @@ function renderItaSidebar(){
         +'<div class="ax-warranty-ends"><span>'+axDate(r.effective)+'</span><span>'+axDate(r.expiry)+'</span></div></div>':'')
       +'<div class="lp-sb-detail-grid">'
       +axField(AX_ICO.fCal,'Effective Date',axDate(r.effective))
-      +axField(AX_ICO.fCal,'Expiry Date',r.expiry?axDate(r.expiry):'No expiry')
-      +axField(AX_ICO.fClock,'Active For',r.status==='Pending'?'Not started':(axDaysBetween(r.effective,r.status==='Revoked'&&r.revokedOn?r.revokedOn:(r.expiry&&r.expiry<axToday()?r.expiry:axToday()))+' days'))
-      +axField(AX_ICO.fCheck,'Status',axBadge(statusTone(r.status),r.status))
+      +axField(AX_ICO.fCal,'Expiry / Review Date',r.expiry?axDate(r.expiry):'No expiry')
+      +axField(AX_ICO.fCheck,'Access Status',axBadge(statusTone(r.status),r.status))
       +(r.revokedOn?axField(AX_ICO.fLock,'Revoked On',axDate(r.revokedOn)):'')
-      +'</div>'
-      +(r.status==='Active'&&!r.expiry?'<div class="ax-empty" style="margin-top:14px">This access has no end date. It stays active until it is revoked in <b>Logs</b>.</div>':'');
-  }else if(itaTab==='approval'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Request &amp; Approval</span></div>'
+      +'</div>';
+  }else if(itaTab==='provisioning'){
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Provisioning</span></div>'
       +'<div class="lp-sb-detail-grid">'
-      +axField(AX_ICO.fTicket,'Request Reference / Ticket ID',r.requestRef)
+      +axField(AX_ICO.fCheck,'Provisioned By',r.provisionedBy||(r.status==='Pending'||r.status==='On Hold'?'Not yet provisioned':''))
       +axField(AX_ICO.fUser,'Requested By',r.createdBy)
-      +axField(AX_ICO.fCheck,'Approved By',r.approvedBy||(r.status==='Pending'?'Awaiting approval':''))
       +axField(AX_ICO.fCal,'Requested On',String(r.createdAt).split(' | ')[0])
-      +'</div>'
-      +(r.status==='Pending'?'<div class="ax-empty" style="margin-top:14px">Waiting for approval. Move it to <b>Active</b> in Logs once it is approved — the move is recorded with your comment.</div>':'');
+      +axField(AX_ICO.fLock,'Credentials','Not stored — no passwords, tokens or secrets are kept here.')
+      +'</div>';
   }else if(itaTab==='logs'){
     body=axLogsHTML(itaSeedLogs(r),r.status,ITA_STATUSES,
       {sel:'ita-log-status-sel',inp:'ita-log-comment-inp',sub:'Move this access on and say why',
@@ -871,59 +926,59 @@ function itaSaveLog(id){
   itaSeedLogs(r);
   if(!lpCommitLog(r,'ita-log-status-sel','ita-log-comment-inp',r.logs))return;
   if(r.status!==was){
-    if(r.status==='Active'&&was==='Pending'&&!r.approvedBy)r.approvedBy=CURRENT_USER;
+    if(r.status==='Active'&&!r.provisionedBy)r.provisionedBy=CURRENT_USER;
     if(r.status==='Revoked')r.revokedOn=axToday();
     if(r.status==='Active')delete r.revokedOn;
     itaWorkflow(r);
-    const title={'Active':was==='Pending'?'Access Granted':'Access Restored','Pending':'Access On Hold','Revoked':'Access Revoked','Expired':'Access Expired'}[r.status];
+    const title={'Active':was==='Pending'?'Access Provisioned':'Access Restored','Pending':'Access Pending','On Hold':'Access On Hold',
+      'Inactive':'Access Deactivated','Revoked':'Access Revoked','Expired':'Access Expired'}[r.status];
     wfPush(itaWorkflowData,id,title,'Moved from '+was+' to '+r.status+'. '+comment);
   }
   renderADTPage();
   showToast('Log added','success',r.system+' access for '+r.assignedTo+' is now '+r.status+'.');
 }
 
-// ── Listing ──
+// ── Listing (FR-10.4) ──
 function buildItAccessHTML(){
   const count=function(s){return itAccessData.filter(function(r){return r.status===s;}).length;};
   const shown=lpSearchRows(itaRows(),itaQ);
   if(itaSelectedId&&!shown.some(function(r){return r.id===itaSelectedId;}))itaSelectedId=null;
-  const pgn=listPage('it-access',[itaDeptF,itaBranchF,itaSysF,itaStatusF,itaQ].join('|'),shown.map(function(r,i){
+  const pgn=listPage('it-access',[itaSysF,itaTypeF,itaStatusF,itaQ].join('|'),shown.map(function(r,i){
     return '<tr class="ita-row'+(itaSelectedId===r.id?' lp-row-selected':'')+'" id="ita-row-'+r.id+'" style="cursor:pointer" onclick="openItaSidebar('+r.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
-      +'<td><span style="color:var(--orange);font-weight:500">'+r.system+'</span></td>'
-      +'<td>'+r.accessType+'</td>'
-      +'<td>'+r.login+'</td>'
-      +'<td>'+r.assignedTo+'</td>'
+      +'<td><div class="lp-c-main ax-c-link">'+r.assignedTo+'</div><div class="lp-c-sub">'+(itaEmpId(r)||'—')+'</div></td>'
+      +'<td><div class="lp-c-plain ax-sys-cell">'+itaSysLogo(r.system,16)+r.system+'</div><div class="lp-c-sub">'+r.accessType+'</div></td>'
+      +'<td><div class="lp-c-plain ax-c-trunc" title="'+attrSafe(r.login)+'">'+r.login+'</div><div class="lp-c-sub">'+(r.role||'—')+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
-      +'<td style="white-space:nowrap">'+axDate(r.effective)+'</td>'
-      +'<td style="white-space:nowrap">'+(r.expiry?axDate(r.expiry):'<span class="sb-dash">—</span>')+'</td>'
+      +'<td><div class="lp-c-plain">'+axDate(r.effective)+'</div><div class="lp-c-sub">'+(r.expiry?'Review '+axDate(r.expiry):'No expiry')+'</div></td>'
+      +'<td><div class="lp-c-plain'+(r.provisionedBy?'':' is-none')+'">'+(r.provisionedBy||'Not provisioned')+'</div><div class="lp-c-sub">MFA '+r.mfa+'</div></td>'
       +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openItaSidebar('+r.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
       +'</tr>';
-  }),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No access records match this filter.</td></tr>');
+  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No access records match this filter.</td></tr>');
   const stat=function(s){const color='var(--st-'+statusTone(s)+'-fg)';
     return '<div class="listing-stat'+(itaStatusF===s?' stat-selected':'')+'" onclick="itaToggleStat(\''+s+'\')">'
       +'<div class="listing-stat-count" style="color:'+color+'">'+count(s)+'</div><div class="listing-stat-label">'+s+'</div></div>';
   };
   return '<div class="lp-page">'
     +dashboardBackHTML()
+    +(typeof empReturnBarHTML==='function'?empReturnBarHTML():'')
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +lpSearchField('ita-f-q',itaQ,'Search by system, login ID, employee','applyItaFilters()')
-    +apCS('ita-f-dept',AX_DEPTS,itaDeptF,'All Departments')
-    +apCS('ita-f-branch',AX_BRANCHES,itaBranchF,'All Branches')
+    +lpSearchField('ita-f-q',itaQ,'Search employee, ID, login','applyItaFilters()')
     +apCS('ita-f-sys',ITA_SYSTEMS,itaSysF,'All Systems')
+    +apCS('ita-f-type',ITA_ACCESS_TYPES,itaTypeF,'All Access Types')
     +apCS('ita-f-status',ITA_STATUSES,itaStatusF,'All Statuses')
-    +clearFiltersBtn([itaDeptF,itaBranchF,itaSysF,itaStatusF,itaQ],'resetItaFilters()')
+    +clearFiltersBtn([itaSysF,itaTypeF,itaStatusF,itaQ],'resetItaFilters()')
     +'<button class="lp-pill-search" onclick="applyItaFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
-    +ITA_STATUSES.map(function(s){return stat(s);}).join('')
+    +ITA_TILES.map(function(s){return stat(s);}).join('')
     +'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="ita-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:980px"><thead><tr><th>S. No</th><th>System / Application</th><th>Access Type</th>'
-      +'<th>Login ID / Email</th><th>Assigned To</th><th>Access Status</th><th>Effective Date</th><th>Expiry Date</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Employee Name / ID</th><th>System / Access Type</th>'
+      +'<th>Login ID / Role</th><th>Access Status</th><th>Effective / Expiry Date</th><th>Provisioned By / MFA</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -932,44 +987,80 @@ function buildItAccessHTML(){
     +(itaModalOpen?buildAddItAccessModalHTML():'');
 }
 
-// ── Add / Edit IT Access popup ──
+// ── Add / Edit IT Access popup (FR-10.3) ──
 function itaBlankDraft(){
-  return {system:'',accessType:'',login:'',assignedTo:'',role:'',status:'',effective:'',expiry:'',approvedBy:'',requestRef:'',mfa:'Yes'};
+  return {system:'',accessType:'',login:'',assignedTo:'',role:'',status:'',effective:'',expiry:'',provisionedBy:'',mfa:'Yes',notes:''};
 }
 function startAddItAccess(editId){
   const r=editId?itAccessData.find(function(x){return x.id===editId;}):null;
   itaEditId=r?r.id:null;
   itaDraft=r?Object.assign(itaBlankDraft(),{system:r.system,accessType:r.accessType,login:r.login,assignedTo:r.assignedTo,
-      role:r.role,status:r.status,effective:r.effective,expiry:r.expiry,approvedBy:r.approvedBy,requestRef:r.requestRef,mfa:r.mfa})
+      role:r.role,status:r.status,effective:r.effective,expiry:r.expiry,provisionedBy:r.provisionedBy,mfa:r.mfa,notes:r.notes||''})
     :itaBlankDraft();
   itaAddOpen='';itaModalOpen=true;
   if(page!=='it-access'){page='it-access';syncSidebarDropdown(page);}
   renderADTPage();
 }
-function cancelAddItAccess(){itaDraft=null;itaEditId=null;itaAddOpen='';itaModalOpen=false;renderADTPage();}
+function cancelAddItAccess(){
+  itaDraft=null;itaEditId=null;itaAddOpen='';itaModalOpen=false;
+  axCloseCreate();
+}
 function itaSync(){
   if(!itaDraft)return;
-  [['login','ita-login'],['requestRef','ita-ref']].forEach(function(p){const el=document.getElementById(p[1]);if(el)itaDraft[p[0]]=el.value.trim();});
+  [['login','ita-login'],['notes','ita-notes']].forEach(function(p){const el=document.getElementById(p[1]);if(el)itaDraft[p[0]]=el.value.trim();});
   [['effective','ita-eff'],['expiry','ita-exp']].forEach(function(p){const el=document.getElementById(p[1]);if(el)itaDraft[p[0]]=el.value;});
   [['system','ita-sys'],['accessType','ita-type'],['assignedTo','ita-emp'],['role','ita-role'],['status','ita-status'],
-   ['approvedBy','ita-appr'],['mfa','ita-mfa']]
+   ['provisionedBy','ita-prov'],['mfa','ita-mfa']]
     .forEach(function(p){if(document.getElementById('csw-'+p[1]))itaDraft[p[0]]=getCSValue(p[1]);});
+  const n=document.getElementById('ita-new-sys-name'),u=document.getElementById('ita-new-sys-url');
+  if(n)itaSysDraft.name=n.value.trim();
+  if(u)itaSysDraft.url=u.value.trim();
 }
-function itaOpenAdd(key){itaSync();itaAddOpen=itaAddOpen===key?'':key;renderADTPage();axFocus('ita-new-'+key);}
+function itaOpenAdd(key){
+  itaSync();itaAddOpen=itaAddOpen===key?'':key;
+  if(itaAddOpen)itaSysDraft={name:'',url:'',logo:'',logoName:''};
+  renderADTPage();axFocus('ita-new-sys-name');
+}
 function itaCancelAdd(){itaSync();itaAddOpen='';renderADTPage();}
-function itaSaveAdd(key){
-  const el=document.getElementById('ita-new-'+key);
-  const val=el?el.value.trim():'';
-  if(!val){showToast('Enter a name first','error');if(el)el.focus();return;}
-  if(/['"]/.test(val)){showToast('Quotes are not allowed in a name','error');return;}
+function itaPickSysLogo(input){
+  const f=input.files&&input.files[0];input.value='';
+  if(!f)return;
+  if(!/^image\//.test(f.type)){showToast('Image files only','error',f.name+' is not an image.');return;}
+  if(f.size>2*1024*1024){showToast('Logo is over 2 MB','error');return;}
+  const rd=new FileReader();
+  rd.onload=function(){itaSync();itaSysDraft.logo=rd.result;itaSysDraft.logoName=f.name;renderADTPage();};
+  rd.readAsDataURL(f);
+}
+function itaSaveAdd(){
   itaSync();
+  const val=itaSysDraft.name;
+  if(!val){showToast('System / Application Name is required','error');axFocus('ita-new-sys-name');return;}
+  if(/['"]/.test(val)){showToast('Quotes are not allowed in a name','error');return;}
   const hit=ITA_SYSTEMS.find(function(x){return x.toLowerCase()===val.toLowerCase();});
   if(hit){itaDraft.system=hit;showToast(hit+' already exists','info','It has been selected for you.');}
-  else{ITA_SYSTEMS.push(val);itaDraft.system=val;showToast('System added','success','"'+val+'" is now an option.');}
+  else{
+    ITA_SYSTEMS.push(val);itaDraft.system=val;
+    ITA_SYSTEM_META[val]={url:itaSysDraft.url,logo:itaSysDraft.logo};
+    showToast('System added','success','"'+val+'" is now available in every System / Application dropdown.');
+  }
   itaAddOpen='';renderADTPage();
 }
-/* Picking the employee fills in the department and branch underneath, so the
-   form shows who is getting access without asking for what it already knows. */
+/* + Add System / Application: name, domain and logo, stored as master data. */
+function itaSysAddHTML(){
+  if(itaAddOpen!=='system')return '';
+  const s=itaSysDraft;
+  return '<div class="ax-sys-add">'
+    +'<input class="ep-form-input" id="ita-new-sys-name" placeholder="System / Application Name" value="'+attrSafe(s.name)+'">'
+    +'<input class="ep-form-input" id="ita-new-sys-url" placeholder="Domain URL, e.g. app.company.com" value="'+attrSafe(s.url)+'">'
+    +'<div class="ax-sys-add-row">'
+      +(s.logo?'<span class="ax-sys-add-logo"><img src="'+s.logo+'" alt="">'+attrSafe(s.logoName)+'</span>'
+        :'<label class="ep-cancel-btn ax-inline-btn ax-sys-upload"><input type="file" accept="image/*" hidden onchange="itaPickSysLogo(this)">'+AX_ICO.upload+' Logo Upload</label>')
+      +'<span style="flex:1"></span>'
+      +'<button type="button" class="ep-cancel-btn ax-inline-btn" onclick="itaCancelAdd()">Cancel</button>'
+      +'<button type="button" class="ep-save-btn ax-inline-btn" onclick="itaSaveAdd()">Add</button>'
+    +'</div></div>';
+}
+/* Picking the employee fills in the Employee ID underneath. */
 function itaEmpHook(){itaSync();renderADTPage();}
 function buildAddItAccessModalHTML(){
   if(!itaDraft)itaDraft=itaBlankDraft();
@@ -979,35 +1070,35 @@ function buildAddItAccessModalHTML(){
     return '<div class="ep-form-group">'+axAddLabel(label,req)+apCS(id,opts,val,ph,hook)+'</div>';
   };
   const statusField=edit
-    ?'<div class="ep-form-group ep-form-full"><div class="ax-locked-note">Status <b>'+d.status+'</b>. '
+    ?'<div class="ep-form-group ep-form-full"><div class="ax-locked-note">Access Status <b>'+d.status+'</b>. '
       +'Status moves in the record&rsquo;s <b>Logs</b> tab, where each move carries a comment.</div></div>'
     :sel('ita-status','Access Status',ITA_STATUSES,d.status,'Select Status',true);
-  return '<div class="ct-modal-overlay" onclick="cancelAddItAccess()">'
+  const fields='<div class="ep-form-group">'+axAddLabel('Employee Name',true)
+        +apCS('ita-emp',axEmpNames(),d.assignedTo,'Search Employee','itaEmpHook')+'</div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Employee ID</label>'
+        +'<input class="ep-form-input" readonly value="'+attrSafe(e&&e.empId?e.empId:'')+'" placeholder="Auto — from the employee"></div>'
+      +'<div class="ep-form-group">'+axAddLabel('System / Application',true,'system','itaOpenAdd')
+        +apCS('ita-sys',ITA_SYSTEMS,d.system,'Select System')+itaSysAddHTML()+'</div>'
+      +sel('ita-type','Access Type',ITA_ACCESS_TYPES,d.accessType,'Select Access Type',true)
+      +'<div class="ep-form-group"><label class="ep-form-label" for="ita-login">Work Email / Login ID <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="ita-login" value="'+attrSafe(d.login)+'" placeholder="e.g. name@company.com"></div>'
+      +sel('ita-role','Role / Permission Profile',ITA_ROLES,d.role,'Select Role',false)
+      +statusField
+      +'<div class="ep-form-group"><label class="ep-form-label">Effective Date <span class="req">*</span></label>'+apCD('ita-eff',d.effective,'dd-mm-yyyy')+'</div>'
+      +'<div class="ep-form-group"><label class="ep-form-label">Expiry / Review Date</label>'+apCD('ita-exp',d.expiry,'dd-mm-yyyy')
+        +'<div class="ea-hint">Optional. Leave empty for access with no end date.</div></div>'
+      +sel('ita-prov','Provisioned By',AX_PROVISIONERS,d.provisionedBy,'Search User',false)
+      +sel('ita-mfa','MFA Enabled',['Yes','No'],d.mfa,'Select',true)
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ita-notes">Comment / Notes</label>'
+        +'<textarea class="ep-form-input ax-notes" id="ita-notes" placeholder="Anything worth knowing about this access">'+attrSafe(d.notes||'')+'</textarea>'
+        +'<div class="ea-hint">Do not enter passwords, API tokens, secret keys or any other authentication secret — they are never stored.</div></div>';
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(edit?'Edit IT Access':'Add IT Access')+'</span>'
       +'<button class="ct-modal-close" onclick="cancelAddItAccess()">'+AX_ICO.x+'</button></div>'
     +'<p class="ct-modal-sub">'+(edit?'Update '+d.system+' access for '+d.assignedTo+'.':'Grant system access to an employee.')
       +' Fields marked <span class="req">*</span> are required.</p>'
-    +'<div class="ep-form-grid">'
-      +'<div class="ep-form-group">'+axAddLabel('System / Application',true,'system','itaOpenAdd')
-        +apCS('ita-sys',ITA_SYSTEMS,d.system,'Select System')
-        +axInlineAdd('ita','system',itaAddOpen,'New system or application','itaSaveAdd','itaCancelAdd')+'</div>'
-      +sel('ita-type','Access Type',ITA_ACCESS_TYPES,d.accessType,'Select Access Type',true)
-      +'<div class="ep-form-group"><label class="ep-form-label" for="ita-login">Login ID / Email <span class="req">*</span></label>'
-        +'<input class="ep-form-input" id="ita-login" value="'+attrSafe(d.login)+'" placeholder="e.g. name@company.com"></div>'
-      +'<div class="ep-form-group">'+axAddLabel('Assign To Employee',true)
-        +apCS('ita-emp',axEmpNames(),d.assignedTo,'Search Employee','itaEmpHook')
-        +'<div class="ea-hint">'+(e?e.desig+' · '+e.dept+' · '+e.branch:'Department and branch are taken from the employee.')+'</div></div>'
-      +sel('ita-role','Role / Permission Level',ITA_ROLES,d.role,'Select Role',false)
-      +statusField
-      +'<div class="ep-form-group"><label class="ep-form-label">Effective Date <span class="req">*</span></label>'+apCD('ita-eff',d.effective,'dd-mm-yyyy')+'</div>'
-      +'<div class="ep-form-group"><label class="ep-form-label">Expiry Date</label>'+apCD('ita-exp',d.expiry,'dd-mm-yyyy')
-        +'<div class="ea-hint">Leave empty for access with no end date.</div></div>'
-      +sel('ita-appr','Approved By',AX_APPROVERS,d.approvedBy,'Select Approver',false)
-      +'<div class="ep-form-group"><label class="ep-form-label" for="ita-ref">Request Reference / Ticket ID</label>'
-        +'<input class="ep-form-input" id="ita-ref" value="'+attrSafe(d.requestRef)+'" placeholder="e.g. REQ-1201"></div>'
-      +sel('ita-mfa','MFA Enabled',['Yes','No'],d.mfa,'Select',true)
-    +'</div>'
+    +'<div class="ep-form-grid">'+fields+'</div>'
     +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddItAccess()">Cancel</button>'
       +'<button class="ep-save-btn" onclick="submitAddItAccess()">'+(edit?'Save Changes':'Save Access')+'</button>'
@@ -1017,45 +1108,45 @@ function buildAddItAccessModalHTML(){
 function submitAddItAccess(){
   itaSync();
   const d=itaDraft,edit=!!itaEditId;
-  const need=[['system','System / Application'],['accessType','Access Type'],['login','Login ID / Email'],
-    ['assignedTo','Assign To Employee'],['effective','Effective Date'],['mfa','MFA Enabled']];
+  const need=[['assignedTo','Employee Name'],['system','System / Application'],['accessType','Access Type'],
+    ['login','Work Email / Login ID'],['effective','Effective Date'],['mfa','MFA Enabled']];
   if(!edit)need.push(['status','Access Status']);
   for(let i=0;i<need.length;i++){
     if(!String(d[need[i][0]]||'').trim()){showToast(need[i][1]+' is required','error');return;}
   }
-  if(d.expiry&&d.expiry<=d.effective){showToast('Access ends before it starts','error','Expiry Date must be after the Effective Date.');return;}
-  if(!edit&&d.status==='Active'&&!d.approvedBy){showToast('Who approved it?','error','Active access needs an approver.');return;}
+  if(d.expiry&&d.expiry<=d.effective){showToast('Access ends before it starts','error','Expiry / Review Date must be after the Effective Date.');return;}
+  if(!edit&&d.status==='Active'&&!d.provisionedBy){showToast('Who provisioned it?','error','Active access needs Provisioned By.');return;}
   const clash=itAccessData.find(function(r){
-    return r.id!==itaEditId&&r.system===d.system&&r.assignedTo===d.assignedTo&&(r.status==='Active'||r.status==='Pending');
+    return r.id!==itaEditId&&r.system===d.system&&r.assignedTo===d.assignedTo&&['Active','Pending','On Hold'].indexOf(r.status)>=0;
   });
   if(clash){showToast(d.assignedTo+' already has '+d.system+' access','error','Record '+clash.login+' is '+clash.status+'. Update that one instead.');return;}
   if(edit){
     const r=itAccessData.find(function(x){return x.id===itaEditId;});if(!r)return;
-    const fields=[['system','System'],['accessType','Access Type'],['login','Login'],['assignedTo','Employee'],['role','Role'],
-      ['effective','Effective Date'],['expiry','Expiry Date'],['approvedBy','Approver'],['requestRef','Request Reference'],['mfa','MFA']];
+    const fields=[['assignedTo','Employee'],['system','System'],['accessType','Access Type'],['login','Login'],['role','Role'],
+      ['effective','Effective Date'],['expiry','Expiry / Review Date'],['provisionedBy','Provisioned By'],['mfa','MFA'],['notes','Notes']];
     const changes=fields.filter(function(f){return String(r[f[0]]||'')!==String(d[f[0]]||'');}).map(function(f){return f[1];});
     if(!changes.length){cancelAddItAccess();showToast('No changes','info','Nothing was different.');return;}
     fields.forEach(function(f){r[f[0]]=d[f[0]];});
     itaWorkflow(r);
     wfPush(itaWorkflowData,r.id,'Access Edited','Updated: '+changes.join(', ')+'.');
     itaDraft=null;itaEditId=null;itaModalOpen=false;
-    renderADTPage();
+    axCloseCreate();
     showToast('Access updated','success',r.system+' for '+r.assignedTo+' saved.');
     return;
   }
   const id=itAccessNextId++;
   const s=stampNow();
   const r={id:id,system:d.system,accessType:d.accessType,login:d.login,assignedTo:d.assignedTo,role:d.role,status:d.status,
-    effective:d.effective,expiry:d.expiry,mfa:d.mfa,approvedBy:d.approvedBy,requestRef:d.requestRef,
+    effective:d.effective,expiry:d.expiry,mfa:d.mfa,provisionedBy:d.provisionedBy,notes:d.notes,
     createdBy:CURRENT_USER,createdAt:axStamp()};
   r.logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:r.status,
-    action:r.accessType+' on '+r.system+' '+(r.status==='Active'?'granted to ':'recorded for ')+r.assignedTo+'.'}];
-  itaWorkflowData[id]=[{title:r.status==='Active'?'Access Granted':'Access Requested',user:CURRENT_USER,date:s.date,time:s.time,
-    description:r.accessType+' on '+r.system+' for '+r.assignedTo+(r.approvedBy?', approved by '+r.approvedBy:'')+'.'}];
+    action:r.accessType+' on '+r.system+' '+(r.status==='Active'?'provisioned for ':'recorded for ')+r.assignedTo+'.'+(r.notes?' '+r.notes:'')}];
+  itaWorkflowData[id]=[{title:r.status==='Active'?'Access Provisioned':'Access Requested',user:CURRENT_USER,date:s.date,time:s.time,
+    description:r.accessType+' on '+r.system+' for '+r.assignedTo+(r.provisionedBy?', provisioned by '+r.provisionedBy:'')+'.'}];
   itAccessData.unshift(r);
   lpLanded('it-access',id);
   itaDraft=null;itaModalOpen=false;
-  renderADTPage();
+  axCloseCreate();
   showToast('Access saved','success',r.system+' access for '+r.assignedTo+' is '+r.status+'.');
 }
 
@@ -1063,6 +1154,6 @@ function submitAddItAccess(){
    getPageMeta() falls back to supportPageMeta for any page it does not name,
    so the four pages register their titles there instead of in that function. */
 Object.assign(supportPageMeta,{
-  'it-access':{title:'IT Access',context:'Admin Access',filters:[],columns:[],rows:[]},
-  'asset-allocation':{title:'Asset Allocation',context:'Admin Access',filters:[],columns:[],rows:[]}
+  'asset-allocation':{title:'Assets',context:'Admin Access',filters:[],columns:[],rows:[]},
+  'it-access':{title:'IT Access',context:'Admin Access',filters:[],columns:[],rows:[]}
 });

@@ -296,7 +296,7 @@ function csagModalHTML(){
   const a=csagFind(csagState.key);
   const st=csagState.step;
   if(st==='done'){
-    return '<div class="ct-modal-overlay" onclick="csagClose()">'
+    return '<div class="ct-modal-overlay">'
       +'<div class="ct-modal csag-done" role="dialog" aria-modal="true" aria-label="'+a.key+' generated" onclick="event.stopPropagation()">'
       +'<button class="ct-modal-close csag-done-x" onclick="csagClose()" aria-label="Close">'+CSAG_X+'</button>'
       +'<div class="csag-done-ico">'+CSAG_ICO.check+'</div>'
@@ -326,7 +326,7 @@ function csagModalHTML(){
           :'<button class="ep-save-btn" onclick="csagSubmit()">Send for Approval</button>')
       +'</div></div>';
   }
-  return '<div class="ct-modal-overlay" onclick="csagClose()">'
+  return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form csag-modal" role="dialog" aria-modal="true" aria-label="Generate '+a.key+'" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(csagState.readOnly?a.title:'Generate '+a.key)+statusChip+'</span>'
       +'<button class="ct-modal-close" onclick="csagClose()" aria-label="Close">'+CSAG_X+'</button></div>'

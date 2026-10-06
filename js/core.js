@@ -97,6 +97,7 @@ const sidebarItems=[
     {id:'contracts',label:'Overview',color:'teal',icon:sbIco.fileCheck},
     {id:'contract-templates',label:'Templates',color:'teal',icon:sbIco.fileText}
   ]},
+  {id:'hr-docs',label:'HR Docs',color:'blue',icon:sbIco.folderDoc},
 
   {section:'Time & Pay'},
   {dropdown:'Time & Attendance',color:'teal',icon:sbIco.clock,children:[
@@ -123,10 +124,9 @@ const sidebarItems=[
     {id:'all-users',label:'Users',color:'slate',icon:sbIco.userCheck}
   ]},
   {dropdown:'Admin Access',color:'slate',icon:sbIco.lock,children:[
-    {id:'it-access',label:'IT Access',color:'slate',icon:sbIco.key},
-    {id:'asset-allocation',label:'Asset Allocation',color:'slate',icon:sbIco.laptop}
+    {id:'asset-allocation',label:'Assets',color:'slate',icon:sbIco.laptop},
+    {id:'it-access',label:'IT Access',color:'slate',icon:sbIco.key}
   ]},
-  {id:'hr-docs',label:'HR Docs',color:'slate',icon:sbIco.folderDoc},
 
   {section:'Support'},
   {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},
@@ -576,7 +576,8 @@ const SB_STATUS_TONE={
   // Admin Access: asset lifecycle and condition, and IT access. Assigned is the
   // asset's working state (like Active); Available is stock on the shelf.
   assigned:'ok',available:'info','in-repair':'wait',returned:'idle',revoked:'bad',
-  good:'ok',fair:'wait',poor:'bad',damaged:'bad'
+  good:'ok',fair:'wait',poor:'bad',damaged:'bad',
+  lost:'bad',retired:'idle',disposed:'idle','under-repair':'wait',scrap:'bad'
 };
 // Contract pipeline stages get their own ordered palette so a deal's
 // position is readable at a glance. Anything not listed here falls back to
@@ -770,7 +771,10 @@ function getCustomSelectValue(id){const root=document.getElementById(id);if(!roo
    are left as they are rather than moved wholesale, since each one's menu
    items would then close before their own handlers run. */
 document.addEventListener('click',e=>{if(!e.target.closest('.cd-wrap'))cdCloseAll();},true);
-document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))closeCustomSelects();if(!e.target.closest('.cs-wrap')){document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');});}if(!e.target.closest('.ct-action-wrap'))document.querySelectorAll('.ct-action-menu.open').forEach(m=>m.classList.remove('open'));if(!e.target.closest('.se-dd-wrap')){const p=document.getElementById('se-dd-panel');if(p)p.classList.remove('open');}});
+/* Capture phase, like apCD's listener above: every popup stops clicks from
+   bubbling (onclick="event.stopPropagation()"), which kept any dropdown
+   opened inside one from ever closing on an outside click. */
+document.addEventListener('click',e=>{if(!e.target.closest('.custom-select'))closeCustomSelects();if(!e.target.closest('.cs-wrap')){document.querySelectorAll('.cs-dropdown.cs-open').forEach(d=>{d.classList.remove('cs-open');const t=d.previousElementSibling;if(t)t.classList.remove('cs-open');});}if(!e.target.closest('.ct-action-wrap'))document.querySelectorAll('.ct-action-menu.open').forEach(m=>m.classList.remove('open'));if(!e.target.closest('.se-dd-wrap')){const p=document.getElementById('se-dd-panel');if(p)p.classList.remove('open');}},true);
 const filterOptionMap={Country:['Country','Netherlands','India','Germany','Spain','United Kingdom'],Status:['Status','Active','Pending','Inactive'],Team:['Team','Engineering','Product','Finance','Operations'],Department:['Department','Finance','HR','Legal','Operations','Support'],Area:['Area','Company','Finance','Access','Workspace','Security'],Owner:['Owner','Pallavi Parate','Finance Ops','Admin','System'],Topic:['Topic','Payroll question','Contract review','Compliance rates','Payment proof'],Priority:['Priority','High','Medium','Low'],Category:['Category','Payroll','Contractor','Compliance','Benefits'],Cycle:['Cycle','May 2026','April 2026','March 2026'],Type:['Type','Earning','Deduction','EOR','PEO','Contractor'],Role:['Role','Entity Super Admin','Admin','Deal Manager','Ops Manager','Finance Approver','Employee'],'Worker Type':['Worker Type','EOR','PEO','Contractor'],'Leave Type':['Leave Type','Annual Leave','Sick Leave','Parental Leave','Holiday']};
 function getFilterOptions(label){return filterOptionMap[label]||[label,'All','Active','Pending','Inactive'];}
 function isCreateContractRequest(text){const q=String(text).toLowerCase();return q.includes('create')&&q.includes('contract');}
@@ -1208,7 +1212,7 @@ function renderNotif(){
   const list=notifShowUnread?notifData.filter(n=>n.pending):notifData;
   el.innerHTML=`<div class="np-head"><div class="np-title">Notifications</div><div class="np-actions"><button class="np-iconbtn" title="Refresh" onclick="notifRefresh()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="np-iconbtn" onclick="toggleNotif()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
   <div class="np-controls"><button class="np-mark" onclick="notifMarkAllRead()">Mark all as read</button><div class="np-toggle-row"><span>Only Show Unread</span><button class="np-switch ${notifShowUnread?'on':''}" onclick="event.stopPropagation();notifShowUnread=!notifShowUnread;renderNotif()"></button></div></div>
-  <div class="np-list">${list.map(n=>`<div class="np-item"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">Contract ID - ${n.cid}${n.pending?'<span class="np-pending">Pending</span>':''}</div></div></div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>'}</div>`;
+  <div class="np-list">${list.map(n=>`<div class="np-item"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span>':''}</div></div></div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>'}</div>`;
 }
 document.getElementById('notif-pop')?.addEventListener('click',e=>e.stopPropagation());
 document.addEventListener('click',e=>{if(notifOpen&&!e.target.closest('#notif-pop')&&!e.target.closest('#notif-trigger')){notifOpen=false;renderNotif();}});
@@ -1383,6 +1387,11 @@ function navigatePage(pg,fromDashboard){
   if(pg==='hr-docs'&&typeof hdocReset==='function')hdocReset();
   ctStatusModal=null;   // a half-made status move never follows you to another page
   empStatusModal=null;
+  if(typeof eaOpen!=='undefined'){eaOpen=false;}
+  if(typeof tmCreateOpen!=='undefined'){tmCreateOpen=false;}
+  /* Employee lifecycle redirects (Add Asset, Upload Documents...) carry a
+     return context; a plain navigation drops it. */
+  if(typeof empNavHook==='function')empNavHook(pg);
   prCreateOpen=false;pmCreateOpen=false;
   page=pg;
   syncSidebarDropdown(pg);
@@ -2441,7 +2450,7 @@ function addListingItem(pg){if(pg==='contracts'){
      would start by asking for a type again). The landing and the All band
      have no type yet and keep the chooser. */
   if(page==='contracts'&&!ctLandingOpen&&ctTypeFilter!==CT_TYPE_ALL&&ctTypeEnabled(ctTypeFilter)){aiAssistedFlow=false;aiContractPrefill=null;ctStartIntake(ctTypeFilter,'listing');return;}
-  ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){page='team-add';renderADTPage();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
+  ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){startAddTeam();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
 else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
@@ -2470,24 +2479,23 @@ function addDemoMetaRow(pg){
 }
 
 // -- DIRECT EMPLOYEE PAGE --
-/* `status` is the MAJOR STATUS - one of the eight rungs in
-   js/employee-lifecycle.js, not a separate Active/Inactive flag. Rows 5 and 8
-   of that ladder are the two that mean "employed"; the six in between are
-   onboarding and offboarding work in progress, and a listing that painted them
-   "Active" would be lying about the only column HR reads.
+/* `status` is the Employee Status - Pending, Onboarding, Active or
+   Inactive - and is settled from each record's log at load by
+   employee-lifecycle.js, which also holds the seeded histories
+   (EMP_LIFE_SEED) and the requested documents (EMP_REQ_SEED). Offboarding is
+   a phase of Active, not a status.
 
-   The log history for every row below lives in EMP_LIFE_SEED (employee-
-   lifecycle.js) so the fixture is built from the model rather than beside it. */
+   The rows cover every stage of the journey: Antar and Pallavi Active, Anika
+   Active and mid-offboarding, Rahul Inactive, Dev verified and waiting on
+   Asset & IT, Meera waiting on her documents, Karan still Pending. */
 const directEmpData=[
   {id:1,name:'Testemp Antar',empId:'EMP001',dept:'Engineering',branch:'Punjab',jobTitle:'Software Engineer',joinDate:'15 Jan 2025',desc:'Full time employee',contact:'+91 9999999996',email:'antar@testemp.com',status:'Active'},
   {id:2,name:'Pallavi Parate',empId:'EMP002',dept:'HR',branch:'Hyderabad',jobTitle:'HR Manager',joinDate:'20 Mar 2024',desc:'Full time employee',contact:'+91 8888888888',email:'pallavi@testemp.com',status:'Active'},
   {id:3,name:'Anika Shah',empId:'EMP003',dept:'Engineering',branch:'Mumbai',jobTitle:'Developer',joinDate:'05 Jun 2024',desc:'Contract employee',contact:'+91 7777777777',email:'anika@testemp.com',status:'Active'},
-  {id:4,name:'Rahul Mehta',empId:'EMP004',dept:'Product',branch:'Delhi',jobTitle:'Product Manager',joinDate:'--',desc:'--',contact:'--',email:'rahul@testemp.com',status:'Inactive'},
-  /* Two records parked mid-ladder. Without them every employee in the app is
-     already at a terminal rung and the checklist gate is never seen doing its
-     job: Dev is BLOCKED (two mandatory setup items open), Meera is CLEAR. */
-  {id:5,name:'Dev Kulkarni',empId:'EMP005',dept:'Engineering',branch:'Bangalore',jobTitle:'QA Engineer',joinDate:'10 Sep 2026',desc:'Full time employee',contact:'+91 9812345670',email:'dev@testemp.com',status:'Onboarding Setup Completed'},
+  {id:4,name:'Rahul Mehta',empId:'EMP004',dept:'Product',branch:'Delhi',jobTitle:'Product Manager',joinDate:'01 Feb 2024',desc:'--',contact:'--',email:'rahul@testemp.com',status:'Inactive'},
+  {id:5,name:'Dev Kulkarni',empId:'EMP005',dept:'Engineering',branch:'Bangalore',jobTitle:'QA Engineer',joinDate:'10 Sep 2026',desc:'Full time employee',contact:'+91 9812345670',email:'dev@testemp.com',status:'Onboarding'},
   {id:6,name:'Meera Iyer',empId:'EMP006',dept:'Design',branch:'Hyderabad',jobTitle:'UX Designer',joinDate:'15 Sep 2026',desc:'Full time employee',contact:'+91 9812345671',email:'meera@testemp.com',status:'Onboarding'},
+  {id:7,name:'Karan Verma',empId:'EMP007',dept:'Engineering',branch:'Bangalore',jobTitle:'Software Engineer',joinDate:'--',desc:'Full time employee',contact:'+91 9812345672',email:'karan@testemp.com',status:'Pending'},
 ];
 const deWorkflowData={
   1:[
@@ -2505,7 +2513,7 @@ const deWorkflowData={
     {title:'Onboarding Complete',user:'Admin',date:'01 Feb 2024',time:'09:00:00 AM',description:'Employee onboarded. Role: Product Manager.'}
   ],
   5:[
-    {title:'Onboarding Setup Started',user:'HR',date:'31 Aug 2026',time:'10:20:00 AM',description:'Payroll and leave-holiday setup completed. Asset allocation and IT access still open.'}
+    {title:'Verification Completed',user:'Tarak Swain',date:'05 Sep 2026',time:'03:05:00 PM',description:'Documents verified. Asset allocation and IT access still open.'}
   ],
   6:[
     {title:'Onboarding Initiated',user:'HR',date:'02 Sep 2026',time:'09:15:00 AM',description:'Onboarding invitation sent. Awaiting information and documents from the employee.'}
@@ -2521,8 +2529,8 @@ const globalEmpData=[
   /* Same reason as EMP005/EMP006 above: Marco is blocked on a missing
      document, Ana cleared verification with the optional re-submission item
      never needed. */
-  {id:5,name:'Marco Rossi',empId:'GEP005',dept:'Engineering',country:'Italy',jobTitle:'Backend Developer',workerType:'EOR',joinDate:'21 Sep 2026',desc:'Full time employee',contact:'+39 347 000 0002',email:'marco@testemp.com',status:'Documents & Info Submitted'},
-  {id:6,name:'Ana Silva',empId:'GEP006',dept:'Support',country:'Portugal',jobTitle:'Support Specialist',workerType:'EOR',joinDate:'14 Sep 2026',desc:'Full time employee',contact:'+351 91 000 0001',email:'ana@testemp.com',status:'Verification Completed'},
+  {id:5,name:'Marco Rossi',empId:'GEP005',dept:'Engineering',country:'Italy',jobTitle:'Backend Developer',workerType:'EOR',joinDate:'21 Sep 2026',desc:'Full time employee',contact:'+39 347 000 0002',email:'marco@testemp.com',status:'Onboarding'},
+  {id:6,name:'Ana Silva',empId:'GEP006',dept:'Support',country:'Portugal',jobTitle:'Support Specialist',workerType:'EOR',joinDate:'14 Sep 2026',desc:'Full time employee',contact:'+351 91 000 0001',email:'ana@testemp.com',status:'Onboarding'},
 ];
 let geStatusFilter='';
 const geWorkflowData={
@@ -2545,7 +2553,7 @@ const geWorkflowData={
     {title:'Documents Received',user:'System',date:'01 Sep 2026',time:'07:40:00 PM',description:'Employee submitted mandatory information. Codice Fiscale document still outstanding.'}
   ],
   6:[
-    {title:'Verification Complete',user:'Compliance',date:'01 Sep 2026',time:'12:35:00 PM',description:'Portugal document verification cleared on first pass. Onboarding Setup available.'}
+    {title:'Documents Submitted',user:'System',date:'01 Sep 2026',time:'12:35:00 PM',description:'All requested documents uploaded. Waiting for Compliance verification.'}
   ]
 };
 let geSelectedId=null,geTab='basic-details';

@@ -186,3 +186,8 @@
    that block needs its own room above the bar; without it the last row of
    fields - or the bottom of the letter preview - ran straight into it. */
 .hdoc-modal>.ep-form-grid,.hdoc-modal>.hdoc-paper-wrap,.hdoc-modal>.hdoc-tpl-table{margin-bottom:26px}
+
+/* FR-22.1: on a document type's screen, Saved Drafts sits at the top with its
+   count, above Issued Documents. */
+.hdoc-drafts-top{margin-bottom:16px}
+.hdoc-drafts-top .hdoc-rail-empty{padding:18px 16px}

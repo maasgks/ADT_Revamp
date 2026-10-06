@@ -79,3 +79,34 @@
 
 /* Same room above the footer bar as every other creation popup's last row. */
 .ax-modal>.ep-form-grid{margin-bottom:26px}
+
+/* ── FR-10 additions ──────────────────────────────────────────────────────
+   Purchase Cost carries its currency; Comment / Notes is a plain textarea;
+   + Add System / Application opens a small panel (name, domain, logo) under
+   the dropdown, in the same place the one-line + Add panels open. */
+.ax-currency{display:flex;align-items:stretch}
+.ax-currency>span{display:flex;align-items:center;padding:0 12px;border:1px solid var(--border);border-right:0;
+  border-radius:var(--r-control) 0 0 var(--r-control);background:var(--light);color:var(--gray);font-size:13px;font-weight:600}
+.ax-currency .ep-form-input{border-top-left-radius:0;border-bottom-left-radius:0;flex:1;min-width:0}
+.ax-notes{height:auto;min-height:76px;padding:10px 14px;resize:vertical;line-height:1.5;border-radius:var(--r-control)}
+.ax-sys-add{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:10px;border:1px solid var(--border);
+  border-radius:var(--r-control);background:var(--light)}
+.ax-sys-add-row{display:flex;align-items:center;gap:6px}
+.ax-sys-upload{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.ax-sys-upload svg{width:14px;height:14px}
+.ax-sys-add-logo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--gray);min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.ax-sys-add-logo img{width:22px;height:22px;object-fit:contain;border-radius:4px;background:#fff;border:1px solid var(--border)}
+.ax-sys-cell{display:inline-flex;align-items:center;gap:7px}
+.ax-sys-logo{object-fit:contain;border-radius:4px}
+.ax-sub{font-size:11px;color:var(--gray);font-weight:400;margin-left:4px}
+
+/* Listings fit their card (.lp-table-card clips, it does not scroll): paired
+   fields share a cell, main value over a grey .lp-c-sub line. */
+.ax-table{width:100%}
+.ax-table .ax-c-link{color:var(--orange)}
+.ax-table .ax-c-trunc{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+/* Two-field headings wrap to two lines rather than widening their column. */
+.ax-table thead th{white-space:normal;line-height:1.35;vertical-align:bottom}
+.ax-table .ax-sys-cell{display:flex}
+.ax-table thead th:first-child,.ax-table thead th:last-child{white-space:nowrap}

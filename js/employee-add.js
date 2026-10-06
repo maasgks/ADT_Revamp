@@ -72,12 +72,10 @@ const EA_STEPS=[
      {k:'gender',label:'Gender',type:'select',opts:EA_GENDERS,ph:'Select gender',req:true},
      {k:'dob',label:'Date of Birth',type:'date',ph:'Select date of birth',req:true},
      {k:'nationality',label:'Nationality',type:'select',opts:EA_NATIONALITIES,ph:'Select Nationality',req:true},
-     /* The source form asked the user to pick an Employee Status here. There
-        is exactly one legal answer — a record being created is at rung 1 of
-        the lifecycle in employee-lifecycle.js — so this states it instead of
-        asking. One less decision, and it cannot be answered wrongly. */
-     {k:'status',label:'Employee Status',type:'locked',
-      hint:'Set automatically. Every new employee starts at step 1 of the lifecycle and moves on from their Logs tab.'}
+     /* Where the lifecycle starts. Pending creates the record and waits;
+        Onboarding opens the onboarding activities straight away. Pending can
+        be moved on later from Logs → Add Log → Onboarding. */
+     {k:'status',label:'Employee Status',type:'lifestart',req:true,half:false}
    ]},
 
   {key:'structure',title:'Employment Structure',sub:'Job Details',
@@ -125,6 +123,7 @@ const EA_STEPS=[
    eaShowErrors is per-attempt, not per-keystroke: a field only turns red once
    Next has actually been refused, so a half-typed form is never shouting. */
 let eaStep=0,eaKind='de',eaData=null,eaShowErrors=false;
+let eaOpen=false;      // the Create New Employee popup is up
 
 function eaTeamNames(){return teamsData.map(function(t){return t.name;});}
 function eaTeamManagers(teamName){
@@ -148,20 +147,25 @@ function eaNextEmpId(kind){
 function eaDefaults(kind){
   const id=eaNextEmpId(kind);
   return {dial:'+91',phone:'',fname:'',lname:'',email:'',gender:'',dob:'',nationality:'',
-          status:'Onboarding',empId:id.prefix+id.seq,doj:'',empType:'',dept:'',designation:'',
+          status:'',empId:id.prefix+id.seq,doj:'',empType:'',dept:'',designation:'',
           location:'',country:'',workerType:'',idProofs:[],payroll:true,
           teams:[],manager:'',teamRole:'',accessRole:''};
 }
 /* Entry point. `kind` decides which listing the employee lands in and which
    step-2 fields exist; the Employees page passes whichever sub-tab is open. */
+/* It opens over the listing the employee will land in: on the Employees page
+   the matching sub-tab is brought forward; from anywhere else the Employees
+   page is opened first. */
 function startAddEmployee(kind){
   eaKind=kind==='ge'?'ge':'de';
-  eaStep=0;eaShowErrors=false;eaData=eaDefaults(eaKind);
-  page='employee-add';renderADTPage();
+  eaStep=0;eaShowErrors=false;eaData=eaDefaults(eaKind);eaOpen=true;
+  if(page!=='employees'&&page!=='direct'&&page!=='global'){page='employees';syncSidebarDropdown(page);}
+  if(page==='employees')empSubTab=eaKind==='ge'?'global':'direct';
+  renderADTPage();
 }
 function eaCancel(){
-  eaData=null;
-  page=eaKind==='ge'?'global':'direct';renderADTPage();
+  eaData=null;eaOpen=false;
+  renderADTPage();
 }
 
 /* ── Field access ──────────────────────────────────────────────────────────*/
@@ -172,6 +176,7 @@ function eaIsBlank(f){
   const v=eaData[f.k];
   if(f.type==='chips')return !v||!v.length;
   if(f.type==='toggle'||f.type==='locked')return false;   // always has a value
+  if(f.type==='lifestart')return !v;
   return !String(v||'').trim();
 }
 /* Required-but-empty, plus the two format rules worth enforcing at this stage.
@@ -215,6 +220,7 @@ function eaToggleChip(k,i){
   if(k==='teams'&&eaData.manager&&eaTeamManagers(list[0]).indexOf(eaData.manager)<0)eaData.manager='';
   renderADTPage();
 }
+function eaPickStart(v){eaData.status=v;renderADTPage();}
 function eaToggleSwitch(k){eaData[k]=!eaData[k];renderADTPage();}
 function eaPickRole(name){eaData.accessRole=name;renderADTPage();}
 function eaFindField(k){
@@ -267,26 +273,28 @@ function eaSubmit(){
   const id=list.reduce(function(m,e){return Math.max(m,e.id);},0)+1;
   const rec={id:id,name:name,empId:d.empId,dept:d.dept,jobTitle:d.designation,
     joinDate:cdLabel(d.doj)||'--',desc:d.empType,contact:d.dial+' '+d.phone,email:d.email,
-    /* Rung 1. The lifecycle owns status from here — see employee-lifecycle.js. */
-    status:'Onboarding'};
+    /* Pending or Onboarding, as HR chose. The lifecycle owns status from
+       here — see employee-lifecycle.js. */
+    status:d.status,reqDocs:[]};
   if(eaKind==='ge'){rec.country=d.country;rec.workerType=d.workerType;}
   else rec.branch=d.location;
 
   /* The record starts with a real first log entry rather than an empty Logs
      tab, and it says what the form actually collected. */
   const s=stampNow();
-  rec.logs=[{date:s.date,time:s.time,user:'HR Team',status:'Onboarding',
-    action:'Employee created. Date of Joining set to '+(cdLabel(d.doj)||'—')+'. '
+  const start=d.status==='Pending'?'pending':'onboarding';
+  rec.logs=[{type:start,status:d.status,date:s.date,time:s.time,user:CURRENT_USER,
+    action:'Employee created'+(d.status==='Pending'?' as Pending — onboarding has not started':' and onboarding started')+'. Date of Joining set to '+(cdLabel(d.doj)||'—')+'. '
       +(d.teams.length?'Assigned to '+d.teams.join(', ')+'. ':'No team assigned yet. ')
       +'Access role: '+d.accessRole+'. Payroll '+(d.payroll?'applicable':'not applicable')+'.'}];
 
   list.unshift(rec);
   if(typeof lpLanded==='function')lpLanded(eaKind==='ge'?'global-employees':'direct-employees',id);
-  eaData=null;
-  page=eaKind==='ge'?'global':'direct';
+  eaData=null;eaOpen=false;
+  if(page==='employees')empSubTab=eaKind==='ge'?'global':'direct';
   if(eaKind==='ge')geSelectedId=null;else deSelectedId=null;
   renderADTPage();
-  showToast('Employee created','success',name+' · '+rec.empId+' added at step 1 of onboarding.');
+  showToast('Employee created','success',name+' · '+rec.empId+(d.status==='Pending'?' added as Pending. Start onboarding from their Logs tab when ready.':' added and onboarding has started.'));
 }
 
 /* ── Rendering ─────────────────────────────────────────────────────────────*/
@@ -326,6 +334,17 @@ function eaFieldHTML(f){
     ctl='<div class="'+(bad?'ea-bad-wrap':'')+'">'+apCS(id,f.opts,v||'',f.ph||'Select','eaOnSelect')+'</div>';
   }else if(f.type==='date'){
     ctl='<div class="'+(bad?'ea-bad-wrap':'')+'">'+apCD(id,v||'',f.ph||'Select date','eaOnDate')+'</div>';
+  }else if(f.type==='lifestart'){
+    const opt=function(val,desc){
+      const on=v===val;
+      return '<label class="choice-card'+(on?' selected':'')+'" onclick="eaPickStart(\''+val+'\')">'
+        +'<input type="radio" name="ea-lifestart"'+(on?' checked':'')+'><div class="choice-radio"></div>'
+        +'<div class="choice-body"><div class="choice-title">'+val+'</div><div class="choice-desc">'+desc+'</div></div></label>';
+    };
+    ctl='<div class="choice-grid emp-start-grid'+bad+'">'
+      +opt('Pending','Create the record only. Start onboarding later from Logs → Add Log → Onboarding.')
+      +opt('Onboarding','Start onboarding now. Document requests, verification and setup become available.')
+      +'</div>';
   }else if(f.type==='locked'){
     ctl='<div class="ea-locked">'+EA_ICONS.lock+'<span>'+eaEsc(v)+'</span></div>';
   }
@@ -335,7 +354,7 @@ function eaFieldHTML(f){
   const foot=err&&err!=='required'?'<span class="ea-err">'+err+'</span>'
     :(err==='required'?'<span class="ea-err">This field is required</span>'
     :(f.hint?'<span class="ea-hint">'+f.hint+'</span>':''));
-  return '<div class="ep-form-group">'+label+ctl+foot+'</div>';
+  return '<div class="ep-form-group'+(f.half===false?' ep-form-full':'')+'">'+label+ctl+foot+'</div>';
 }
 
 function eaChipsHTML(f,opts){
@@ -463,45 +482,39 @@ function eaAccessBody(fields){
   return '<div class="ea-access-split">'+left+preview+'</div>';
 }
 
-function eaCreateTeam(){page='team-add';renderADTPage();}
+/* + Create New Team opens the team popup on top of this one; saving it brings
+   HR straight back here with the new team already ticked. */
+function eaCreateTeam(){if(typeof startAddTeam==='function')startAddTeam();}
 function eaRefresh(){showToast('Refreshed','info','Options reloaded from the entity.');}
 
-function buildAddEmployeeHTML(){
+/* The same popup every create form uses (.ct-modal--form): title, the type of
+   employee, the four-step stepper, the step's fields, and Back / Save as Draft
+   / Next on the sticky footer. Only the X closes it. */
+function buildAddEmployeeModalHTML(kind){
+  if(!eaOpen||eaKind!==kind)return '';
   if(!eaData)eaData=eaDefaults(eaKind);
   const step=EA_STEPS[eaStep];
   const isLast=eaStep===EA_STEPS.length-1;
   const kindLabel=eaKind==='ge'?'Global Employee':'Direct Employee';
-  /* The green line the source form showed between the stepper and the card.
-     It confirms the step just completed and names the one now open, which is
-     the only thing a person needs after pressing Next. */
+  /* Confirms the step just completed and names the one now open. */
   const banner=eaStep===0?''
     :'<div class="ea-banner">'+EA_ICONS.tick+'<span>'+EA_STEPS[eaStep-1].title
       +' saved. Now complete '+step.title.toLowerCase()+'.</span></div>';
-
-  return '<div class="ep-page ea-page">'
-    +'<div><button class="ep-back" onclick="eaCancel()">'+EA_ICONS.back+' Back to Employee listing</button></div>'
-    +'<div class="ep-header">'
-      +'<div class="ep-title-wrap" style="flex-direction:column;align-items:flex-start;gap:4px">'
-      +'<span class="ep-title">Create New Employee</span>'
-      +'<span class="ea-page-sub">Add employee details to your workforce</span></div>'
-      +'<span class="ea-kind">'+kindLabel+'</span>'
-    +'</div>'
+  const x='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  return '<div class="ct-modal-overlay">'
+    +'<div class="ct-modal ct-modal--form ea-page ea-modal" role="dialog" aria-modal="true" aria-label="Create New Employee" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Employee<span class="ea-kind">'+kindLabel+'</span></span>'
+      +'<button class="ct-modal-close" onclick="eaCancel()" aria-label="Close">'+x+'</button></div>'
+    +'<p class="ct-modal-sub">Add employee details to your workforce. Fields marked <span class="req">*</span> are required.</p>'
     +eaStepper()
     +banner
-    +'<div class="ep-form-card ea-card">'
-      +'<div class="ea-card-head">'
-        +'<div class="ea-card-title">'+step.cardTitle+'</div>'
-        +'<div class="ea-card-sub">'+step.cardSub+'</div>'
-      +'</div>'
-      +'<div class="ea-card-body">'+eaBody()+'</div>'
-    +'</div>'
-    +'<div class="ea-footer">'
-      +'<button class="ep-cancel-btn ea-btn-ghost" onclick="'+(eaStep===0?'eaCancel()':'eaBack()')+'">'
-      +(eaStep===0?'Cancel':'Back')+'</button>'
-      +'<div class="ea-footer-right">'
-        +'<button class="ep-cancel-btn ea-btn-ghost" onclick="eaSaveDraft()">Save as Draft</button>'
-        +'<button class="ep-save-btn ea-btn-primary" onclick="eaNext()">'+(isLast?'Create Employee':'Next')+'</button>'
-      +'</div>'
-    +'</div>'
-  +'</div>';
+    +'<div class="ea-step-head"><div class="ea-card-title">'+step.cardTitle+'</div><div class="ea-card-sub">'+step.cardSub+'</div></div>'
+    +'<div class="ea-step-body">'+eaBody()+'</div>'
+    +'<div class="ct-modal-foot">'
+      +'<button class="ep-cancel-btn" onclick="'+(eaStep===0?'eaCancel()':'eaBack()')+'">'+(eaStep===0?'Cancel':'Back')+'</button>'
+      +'<div class="ct-modal-btns">'
+        +'<button class="ep-cancel-btn" onclick="eaSaveDraft()">Save as Draft</button>'
+        +'<button class="ep-save-btn" onclick="eaNext()">'+(isLast?'Create Employee':'Next')+'</button>'
+      +'</div></div>'
+    +'</div></div>';
 }

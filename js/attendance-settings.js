@@ -217,7 +217,7 @@ function msCloseAll(){
 }
 document.addEventListener('click',function(e){
   if(!e.target.closest('.ms-wrap'))msCloseAll();
-});
+},true);   // capture: popups stop clicks bubbling
 // A fixed panel does not travel with its trigger, so a scroll underneath would
 // strand it — the same capture-phase listener apCD uses, for the same reason.
 document.addEventListener('scroll',function(e){
