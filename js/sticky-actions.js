@@ -36,11 +36,31 @@ function sync(el){
   el.classList.toggle('sa-cut',hidden>1);
 }
 
+/* ── PINNED HEADER ROW ─────────────────────────────────────────────────────
+   The listing's column heads are sticky against the PAGE (main.css). The
+   card's top border is not: it scrolls away with the page, leaving the pinned
+   head with no line above it. A head is pinned exactly when it has moved down
+   from its natural place at the top of its table, so that is what is
+   measured; .is-stuck then draws the head's own top and bottom lines (a
+   collapsed table border does not travel with a sticky cell either). */
+var TABLES='.lp-table,.at-table';
+function syncHeads(){
+  var root=document.getElementById('adt-content');
+  if(!root)return;
+  var ts=root.querySelectorAll(TABLES);
+  for(var i=0;i<ts.length;i++){
+    var t=ts[i],th=t.querySelector('thead th');
+    if(!th)continue;
+    t.classList.toggle('is-stuck',th.getBoundingClientRect().top-t.getBoundingClientRect().top>0.5);
+  }
+}
+
 function syncAll(){
   var root=document.getElementById('adt-content');
   if(!root)return;
   var els=root.querySelectorAll(SCROLLERS);
   for(var i=0;i<els.length;i++)sync(els[i]);
+  syncHeads();
 }
 
 var queued=false;
@@ -59,6 +79,8 @@ function settle(){schedule();setTimeout(syncAll,320);}
 document.addEventListener('scroll',function(e){
   var el=e.target;
   if(el&&el.nodeType===1&&el.matches&&el.matches(SCROLLERS))sync(el);
+  /* The page itself scrolling is what pins and unpins the heads. */
+  if(el&&el.id==='adt-content')syncHeads();
 },true);
 
 window.addEventListener('resize',schedule);
@@ -67,6 +89,11 @@ function start(){
   var root=document.getElementById('adt-content');
   if(!root){setTimeout(start,50);return;}
   new MutationObserver(settle).observe(root,{childList:true,subtree:true});
+  /* A repaint can rewrite a table's class without touching its rows, which
+     would quietly drop .is-stuck while the page is still scrolled. Watching
+     class changes catches that; this file's own toggles never change a class
+     that is already right, so they do not feed back into it. */
+  new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['class'],subtree:true});
   settle();
 }
 

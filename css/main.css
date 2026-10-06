@@ -358,6 +358,9 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .page-content{flex:1;overflow-y:auto;overflow-x:hidden;
   margin-top:0;padding:28px var(--pg-gutter,32px) 28px;min-width:0;max-width:100%;scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent}
 .page-content:has(.lp-table thead th,.at-table thead th){margin-top:28px;padding-top:0}
+/* A popup's own scrolling stays inside the popup; the page behind it is held
+   still by the wheel guard in core.js (see POPUP SCROLL LOCK). */
+.ct-modal{overscroll-behavior:contain}
 .page-content::-webkit-scrollbar{width:3px}
 .page-content::-webkit-scrollbar-track{background:transparent}
 .page-content::-webkit-scrollbar-thumb{background:rgba(0,0,0,.1);border-radius:99px}

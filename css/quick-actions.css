@@ -59,6 +59,17 @@
   transition:background var(--t-fast) ease,box-shadow var(--t-fast) ease;
 }
 
+/* -- the head row while it is pinned under the top bar ------------------
+   The card's top border scrolls away with the page and a collapsed border
+   does not travel with a sticky cell, so a pinned head had no line above or
+   below it. sticky-actions.js adds .is-stuck only while the head is actually
+   pinned; at rest the card's own border is the line, so nothing doubles. The
+   ACTION head keeps its edge shadow alongside the two lines. */
+.lp-table.is-stuck thead th,.at-table.is-stuck thead th{
+  box-shadow:inset 0 1px 0 var(--border),inset 0 -1px 0 var(--border)}
+.lp-table.is-stuck thead th:last-child,.at-table.is-stuck thead th:last-child{
+  box-shadow:inset 0 1px 0 var(--border),inset 0 -1px 0 var(--sa-rule,var(--border)),var(--sa-edge,0 0 transparent)}
+
 /* A POPOVER INSIDE A PINNED CELL HAS TO LIFT THE CELL WITH IT.
    z-index above turns every ACTION cell into a stacking context, and a
    stacking context is a ceiling: the stage menu on Contracts and Payments is

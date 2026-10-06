@@ -771,6 +771,29 @@ function getCustomSelectValue(id){const root=document.getElementById(id);if(!roo
    are left as they are rather than moved wholesale, since each one's menu
    items would then close before their own handlers run. */
 document.addEventListener('click',e=>{if(!e.target.closest('.cd-wrap'))cdCloseAll();},true);
+/* ── POPUP SCROLL LOCK ──────────────────────────────────────────────────────
+   While a popup is open the page behind it must not move. Popups live inside
+   the page's own scroller, so a wheel over the backdrop - or over a popup too
+   short to scroll, or one already at its end - fell through to the listing
+   underneath. Freezing the scroller itself (overflow:hidden) would make the
+   page jump sideways as its scrollbar went; instead the wheel is checked: it
+   goes through only when something INSIDE the popup can still scroll that way
+   (the popup body, a dropdown list, a long field), and is stopped otherwise. */
+const POPUP_OPEN_SEL='.ct-modal-overlay:not([style*="none"]),.cost-calc-overlay:not(.hidden),.oh-overlay,.ts-overlay,#emp-block-pop';
+function popupCanScroll(el,stop,dy){
+  for(;el&&el!==stop&&el.nodeType===1;el=el.parentElement){
+    const cs=getComputedStyle(el);
+    if(!/(auto|scroll)/.test(cs.overflowY)||el.scrollHeight<=el.clientHeight+1)continue;
+    if(dy<0?el.scrollTop>0:el.scrollTop+el.clientHeight<el.scrollHeight-1)return true;
+  }
+  return false;
+}
+document.addEventListener('wheel',function(e){
+  const open=[...document.querySelectorAll(POPUP_OPEN_SEL)].filter(o=>o.offsetParent!==null||getComputedStyle(o).position==='fixed');
+  if(!open.length)return;
+  const top=open[open.length-1];                        // the popup on top is the one being used
+  if(!top.contains(e.target)||!popupCanScroll(e.target,top,e.deltaY))e.preventDefault();
+},{passive:false,capture:true});
 /* Capture phase, like apCD's listener above: every popup stops clicks from
    bubbling (onclick="event.stopPropagation()"), which kept any dropdown
    opened inside one from ever closing on an outside click. */
