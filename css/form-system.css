@@ -110,7 +110,7 @@
 /* ── 4. The required mark ──────────────────────────────────────────────────
    main.css colours .req inside .ep-form-label but not on its own, and several
    modals put the asterisk outside a label. One colour for all of them. */
-.ct-modal .req,.ep-form-card .req,.ci-label .req{color:#ef4444}
+.ct-modal .req,.ep-form-card .req,.ci-label .req,.lp-sb-field .req{color:#ef4444}
 
 /* ── 5. Compound controls ──────────────────────────────────────────────────
    A few fields are a wrapper with the border and bare children inside it: the

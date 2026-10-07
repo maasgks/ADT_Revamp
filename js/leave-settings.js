@@ -107,11 +107,7 @@ function cslGroup(label,control,full,hint){
   +'</div>';
 }
 function cslSelect(id,opts,value){
-  return '<select class="ep-form-select" id="'+id+'" onchange="cslOnChange()">'
-    +opts.map(function(o){
-      return '<option value="'+attrSafe(o)+'"'+(o===value?' selected':'')+'>'+attrSafe(o)+'</option>';
-    }).join('')
-  +'</select>';
+  return sbSelect(id,opts,value,'cslOnChange');
 }
 function cslCheck(id,on,text){
   return '<label class="hd-check csa-check"><input type="checkbox" id="'+id+'"'+(on?' checked':'')
@@ -216,7 +212,7 @@ function cslEditHTML(){
   };
 
   let out='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Edit Leave Settings</span>'
-    +'<span class="csa-dirty" id="csl-dirty">Unsaved changes</span></div>';
+    +'<span class="csa-dirty'+(csLeaveDirty?' is-on':'')+'" id="csl-dirty">Unsaved changes</span></div>';
 
   out+=sec('Leave Period','<div class="lp-sb-form-grid">'
     +cslGroup('Period From',apCD('csl-from',m.periodFrom,'Start date','cslPickFrom'))

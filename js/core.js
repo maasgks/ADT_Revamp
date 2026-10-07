@@ -332,6 +332,7 @@ function prSaveLog(id){
 // which is why a listing gets a correct one without a bespoke renderer.
 let lstSelectedPg=null,lstSelectedId=null,lstTab='basic-details';
 function openLstSidebar(pg,id){
+  if(lstSelectedId!=null&&String(lstSelectedId)!==String(id)&&sbLeaveGuard('lst',function(){openLstSidebar(pg,id);}))return;
   const same=lstSelectedPg===pg&&String(lstSelectedId)===String(id);
   if(same){closeLstSidebar();return;}   // clicking the open row closes it again
   lstTab=lstSelectedPg===pg?sbKeepTab(lstSelectedId,lstTab):'basic-details';lstSelectedPg=pg;lstSelectedId=id;
@@ -339,12 +340,12 @@ function openLstSidebar(pg,id){
   markLstSelectedRow();
   refreshLstSidebar();
 }
-function closeLstSidebar(){
+function closeLstSidebar(){if(sbLeaveGuard('lst',closeLstSidebar))return;sbEditing=null;
   lstSelectedPg=null;lstSelectedId=null;
   const sb=document.getElementById('lst-split-sb');if(sb)sb.classList.remove('open');
   markLstSelectedRow();
 }
-function navLstTab(tab){lstTab=tab;isbTab('lst',renderLstSidebar);}
+function navLstTab(tab){if(!sbHasDraft('lst'))sbEditing=null;lstTab=tab;isbTab('lst',renderLstSidebar);}
 /* A different record is the same panel showing different values, so this goes
    through isbTab() too: the tab strip is left alone and only .lp-isb-body is
    replaced. isbTab falls back to the wholesale rebuild by itself whenever the
@@ -592,6 +593,32 @@ function statusTone(v){return SB_STATUS_TONE[statusClass(v)]||'idle';}
 function sbStatus(v,label){
   const text=label!=null?label:(v==null||v===''?'-':String(v));
   return '<span class="sb-status '+statusTone(v)+'">'+text+'</span>';
+}
+/* ── THE DETAIL PANEL HEADER ────────────────────────────────────────────────
+   One header for the details tab of every action-sidebar: an icon tile, the
+   record's name, a line of what identifies it, its status, and Edit - so the
+   panel says WHAT this is before the grid of fields under it. Built once here
+   (styles: .sb-hero in leaves.css) so no module grows its own version again.
+     o.icon   svg markup (or o.img, an image URL)
+     o.name   the record's name
+     o.meta   array of short identifiers, joined with dots; empties dropped
+     o.status markup on the right (sbHeroBadge for a status pill)
+     o.edit   the module's Edit button markup, or o.onEdit, an onclick string */
+const SB_PEN='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+/* While the form is open the header keeps its place and says so, in the slot
+   the Edit button held. */
+const SB_EDITING_TAG='<span class="sb-hero-editing">'+SB_PEN+' Editing</span>';
+function sbEditBtn(onclick){return '<button class="lp-sb-view-edit-btn"'+(onclick?' onclick="'+onclick+'"':'')+'>'+SB_PEN+' Edit</button>';}
+function sbHeroBadge(status){return status?'<span class="lp-status-badge tone-'+statusTone(status)+'">'+status+'</span>':'';}
+function sbHero(o){
+  const meta=(o.meta||[]).filter(function(x){return x!=null&&x!==''&&x!=='--';});
+  return '<div class="sb-hero">'
+    +(o.img?'<img class="sb-hero-img" src="'+o.img+'" alt="">':'<div class="sb-hero-ico">'+(o.icon||'')+'</div>')
+    +'<div class="sb-hero-txt"><div class="sb-hero-name">'+o.name+'</div>'
+      +(meta.length?'<div class="sb-hero-meta">'+meta.join('<span class="sb-dot">•</span>')+'</div>':'')+'</div>'
+    +'<div class="sb-hero-right">'+(o.status||'')
+      +(o.editing?SB_EDITING_TAG:(o.edit||(o.onEdit?sbEditBtn(o.onEdit):'')))+'</div>'
+    +'</div>';
 }
 function titleForAdd(pg){return pg==='dashboard'?'Dashboard':getPageTitle(pg);}
 function getSidebarActivePage(pg){if(pg==='cfg-journey-detail')return 'cfg-context-journey';if(pg==='cfg-system-detail'||pg==='cfg-system-add')return 'cfg-systems';if(pg==='cfg-model-detail'||pg==='cfg-model-add')return 'cfg-data-foundation';if(pg==='team-add')return 'teams';if(pg==='employee-add')return 'employees';if(pg==='direct'||pg==='global')return 'employees';if(pg==='at-timesheet-view'||pg==='my-timesheet'||pg==='all-timesheet')return 'timesheet';if(pg==='leave-policy-edit')return 'leave-policies';if(pg==='ai-journey-detail'||pg==='ai-automate-form'||pg==='ai-active-automation'||pg==='ai-run-detail'||pg==='ai-journey-run')return 'ai-executive';if(pg==='ai-contract-assistant'||pg==='ai-proposal-created'||pg==='ai-proposal-waiting-approval'||pg==='contract-type-select'||pg==='contract-eor'||pg==='contract-peo'||pg==='contract-immigration'||pg==='contract-contractor'||pg==='ai-employee-created'||pg==='ai-contract-document'||pg==='ai-contract-waiting-approval'||pg==='ai-onboarding-run'||pg==='ai-journey-complete')return 'contracts';return pg;}
@@ -1035,30 +1062,42 @@ const DE_EDIT_FIELDS=[
   {k:'email',    label:'Email',          type:'email'}
 ];
 function sbEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* Field types: text / email / tel / number, select (opts: a list, or a function
+   of the record), bool (a Yes/No select over true/false), date (a 'dd Mon yyyy'
+   value), isodate (a 'yyyy-mm-dd' value) and textarea. readonly shows the value
+   greyed with its hint; req marks it required; full spans both columns. */
 function buildSbEditForm(prefix,fields,rec,onCancel,onSave){
+  const call=s=>s.indexOf('(')<0?s+'()':s;
   const inputs=fields.map(f=>{
     const id=prefix+'-'+f.k;
     const raw=rec[f.k]==null||rec[f.k]==='--'?'':rec[f.k];
     let ctl;
     if(f.type==='select'){
-      const opts=f.opts.slice();
+      const opts=(typeof f.opts==='function'?f.opts(rec):f.opts).slice();
       if(raw&&opts.indexOf(raw)<0)opts.unshift(raw);   // never drop an unlisted existing value
-      ctl='<select class="ep-form-select" id="'+id+'">'
-        +opts.map(o=>'<option'+(o===raw?' selected':'')+'>'+sbEsc(o)+'</option>').join('')+'</select>';
+      ctl=sbSelect(id,opts,raw);
+    }else if(f.type==='bool'){
+      ctl=sbSelect(id,['Yes','No'],rec[f.k]?'Yes':'No');
     }else if(f.type==='date'){
       // apCD still carries the value on an <input id> — sbCollect reads .value unchanged.
       ctl=apCD(id,sbDateToISO(raw),'Select date');
+    }else if(f.type==='isodate'){
+      ctl=apCD(id,/^\d{4}-\d{2}-\d{2}$/.test(raw)?raw:'','Select date');
+    }else if(f.type==='textarea'){
+      ctl='<textarea class="ep-form-input" id="'+id+'" rows="3">'+sbEsc(raw)+'</textarea>';
     }else{
-      ctl='<input class="ep-form-input" id="'+id+'" type="'+f.type+'" value="'+sbEsc(raw)+'"'
+      ctl='<input class="ep-form-input" id="'+id+'" type="'+(f.type||'text')+'" value="'+sbEsc(raw)+'"'
         +(f.readonly?' disabled':'')+'>';
     }
-    return '<div class="lp-sb-field"><label>'+f.label+(f.readonly?' <span class="sb-field-hint">'+f.hint+'</span>':'')+'</label>'+ctl+'</div>';
+    return '<div class="lp-sb-field"'+(f.full?' style="grid-column:1/-1"':'')+'><label>'+f.label
+      +(f.req?' <span class="req">*</span>':'')
+      +(f.readonly&&f.hint?' <span class="sb-field-hint">'+f.hint+'</span>':'')+'</label>'+ctl+'</div>';
   }).join('');
   return '<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
     +inputs
     +'</div><div class="lp-sb-form-actions">'
-    +'<button class="ep-cancel-btn" onclick="'+onCancel+'()">Cancel</button>'
-    +'<button class="ep-save-btn" onclick="'+onSave+'()">Save changes</button>'
+    +'<button class="ep-cancel-btn" onclick="'+call(onCancel)+'">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="'+call(onSave)+'">Save changes</button>'
     +'</div></div></div>';
 }
 function applySbEdit(prefix,fields,rec){
@@ -1066,8 +1105,150 @@ function applySbEdit(prefix,fields,rec){
     if(f.readonly)return;
     const val=sbVal(prefix+'-'+f.k);
     if(val===null)return;
-    rec[f.k]=f.type==='date'?sbISOToDate(val):(val===''?'--':val);
+    rec[f.k]=f.type==='bool'?val==='Yes'
+      :f.type==='date'?sbISOToDate(val)
+      :f.type==='isodate'?val
+      :(val===''?'--':val);
   });
+}
+
+/* ── EDIT IN PLACE, EVERY PANEL ──
+   Edit turns a panel's Basic Details into its form right there - the listing
+   stays beside it, the header card stays on top saying Editing, and Save /
+   Cancel bring the details back. One slot holds the record being edited, so
+   opening another record, another tab or another page simply drops it.
+   A panel registers once: sbEditReg(key,{prefix,render,get,fields,noun,title}). */
+let sbEditing=null;   // {key,id}
+const SB_EDITORS={};
+function sbEditReg(key,cfg){SB_EDITORS[key]=cfg;}
+function sbIsEditing(key,id){return !!sbEditing&&sbEditing.key===key&&String(sbEditing.id)===String(id);}
+function sbEditFields(key,rec){const f=SB_EDITORS[key].fields;return typeof f==='function'?f(rec):f;}
+function sbEditFormHTML(key,rec){
+  return buildSbEditForm('sbed-'+key,sbEditFields(key,rec),rec,"sbCancelEdit('"+key+"')","sbSaveEdit('"+key+"')");
+}
+function sbRepaint(key){const ed=SB_EDITORS[key];isbTab(ed.prefix||key,ed.render);}
+function sbStartEdit(key,id){sbEditing={key:key,id:id};sbRepaint(key);}
+function sbCancelEdit(key){sbEditing=null;sbRepaint(key);}
+
+/* ── UNSAVED EDITS OUTLIVE A TAB SWITCH ──
+   A panel form that has been changed is never thrown away by moving to another
+   tab of the same record: the form is put aside as it stands (SB_STASH) and
+   put back when its tab is opened again, the tab carries a dot meanwhile, and
+   the header still says Editing. A form nobody touched just closes, as before.
+   Leaving the RECORD - another row, closing the panel, another page - with
+   changes pending asks first (sbLeaveGuard); only Discard loses them.
+
+   "Changed" is any typing, any dropdown pick (csSelect) or date pick (cdSet)
+   inside a .lp-sb-edit-form. Panels that keep their form in a draft object
+   instead (Assets, IT Access, the settings tabs) register their own dirty
+   test and reset with sbDraftReg; the rest only register how to leave edit
+   mode. Every panel is addressed by its prefix - the <prefix>-isb-inner id. */
+const SB_FORM_SEL='.lp-sb-edit-form';
+const SB_DIRTY_FORMS=new WeakSet();
+const SB_STASH={};    // prefix -> {node, tab}
+const SB_DRAFT={};    // prefix -> {drop, dirty?, tabs?}
+function sbDraftReg(prefix,o){SB_DRAFT[prefix]=o;}
+function sbMarkDirty(el){const f=el&&el.closest&&el.closest(SB_FORM_SEL);if(f)SB_DIRTY_FORMS.add(f);}
+function sbMarkPanelDirty(prefix){const f=sbFormIn(prefix);if(f)SB_DIRTY_FORMS.add(f);}
+['input','change'].forEach(function(t){document.addEventListener(t,function(e){sbMarkDirty(e.target);},true);});
+function sbFormIn(prefix){const inner=document.getElementById(prefix+'-isb-inner');return inner?inner.querySelector('.lp-isb-body '+SB_FORM_SEL):null;}
+function sbTabIdOf(btn){const m=String(btn.getAttribute('onclick')||'').match(/\(\s*'([^']+)'/);return m?m[1]:'';}
+function sbHasDraft(prefix){
+  const r=SB_DRAFT[prefix];
+  if(r&&r.dirty)return !!r.dirty();
+  if(SB_STASH[prefix])return true;
+  const f=sbFormIn(prefix);
+  return !!(f&&SB_DIRTY_FORMS.has(f));
+}
+function sbDraftTabs(prefix){
+  const r=SB_DRAFT[prefix];
+  if(r&&r.tabs)return r.tabs();
+  return SB_STASH[prefix]?[SB_STASH[prefix].tab]:(r&&r.dirty&&r.dirty()?['basic-details']:[]);
+}
+function sbDropDraft(prefix){
+  delete SB_STASH[prefix];
+  const f=sbFormIn(prefix);if(f)SB_DIRTY_FORMS.delete(f);
+  const r=SB_DRAFT[prefix];if(r&&r.drop)r.drop();
+}
+/* Called by isbTab around every body swap. */
+function sbStashBefore(prefix,oldBody,oldTab,newTab){
+  if(!oldBody||oldTab===newTab||SB_STASH[prefix])return;
+  const r=SB_DRAFT[prefix];if(r&&r.dirty)return;      // keeps its own draft
+  const f=oldBody.querySelector(SB_FORM_SEL);
+  if(f&&SB_DIRTY_FORMS.has(f))SB_STASH[prefix]={node:f,tab:oldTab||'basic-details'};
+}
+function sbRestoreAfter(prefix,inner){
+  const s=SB_STASH[prefix];if(!s)return;
+  const f=inner.querySelector('.lp-isb-body '+SB_FORM_SEL);
+  if(f&&f!==s.node){f.replaceWith(s.node);delete SB_STASH[prefix];}
+}
+/* The dot on a tab holding unsaved changes. Run after every repaint. */
+function sbMarkDraftTabs(){
+  const keys={};Object.keys(SB_STASH).forEach(function(k){keys[k]=1;});Object.keys(SB_DRAFT).forEach(function(k){keys[k]=1;});
+  Object.keys(keys).forEach(function(prefix){
+    const inner=document.getElementById(prefix+'-isb-inner');if(!inner)return;
+    const tabs=sbHasDraft(prefix)?sbDraftTabs(prefix):[];
+    inner.querySelectorAll('.lp-isb-tab').forEach(function(b){
+      b.classList.toggle('has-draft',!b.classList.contains('active')&&tabs.indexOf(sbTabIdOf(b))>=0);
+      if(b.classList.contains('has-draft'))b.title='Unsaved changes';else if(b.title==='Unsaved changes')b.removeAttribute('title');
+    });
+  });
+}
+/* The prefix of any panel on screen with changes pending. */
+function sbAnyDraft(){
+  const seen={};
+  document.querySelectorAll('[id$="-isb-inner"]').forEach(function(el){seen[el.id.slice(0,-'-isb-inner'.length)]=1;});
+  Object.keys(SB_STASH).forEach(function(k){seen[k]=1;});
+  return Object.keys(seen).find(function(p){return sbHasDraft(p);})||null;
+}
+/* true when it stopped the caller - the dialog then re-runs `retry` on Discard. */
+function sbLeaveGuard(prefix,retry){
+  if(!prefix||!sbHasDraft(prefix))return false;
+  sbConfirmDiscard(prefix,function(){sbDropDraft(prefix);retry();});
+  return true;
+}
+function sbConfirmDiscard(prefix,onDiscard){
+  sbCloseDiscard();
+  const el=document.createElement('div');
+  el.id='sb-discard-pop';el.className='ct-modal-overlay sb-discard-overlay';
+  el.innerHTML='<div class="ct-modal sb-discard" role="alertdialog" aria-modal="true" aria-label="Discard unsaved changes">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Discard unsaved changes?</span>'
+      +'<button class="ct-modal-close" onclick="sbKeepEditing(\''+prefix+'\')" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
+    +'<p class="ct-modal-sub">This record has changes that have not been saved. Discard them, or keep editing and save them first.</p>'
+    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="sbKeepEditing(\''+prefix+'\')">Keep editing</button>'
+      +'<button class="ep-save-btn" id="sb-discard-go">Discard changes</button>'
+    +'</div></div></div>';
+  document.body.appendChild(el);
+  el.querySelector('#sb-discard-go').onclick=function(){sbCloseDiscard();onDiscard();};
+}
+function sbCloseDiscard(){const el=document.getElementById('sb-discard-pop');if(el)el.remove();}
+/* Keep editing takes the reader back to the form, wherever they had wandered. */
+function sbKeepEditing(prefix){
+  sbCloseDiscard();
+  const inner=document.getElementById(prefix+'-isb-inner');
+  const b=inner&&inner.querySelector('.lp-isb-tab.has-draft');
+  if(b)b.click();
+}
+function sbEditBtnFor(key,id){return sbEditBtn("sbStartEdit('"+key+"',"+JSON.stringify(id).replace(/"/g,'&quot;')+")");}
+function sbSaveEdit(key){
+  if(!sbEditing||sbEditing.key!==key)return;
+  const ed=SB_EDITORS[key],rec=ed.get(sbEditing.id);if(!rec)return;
+  const fields=sbEditFields(key,rec);
+  for(const f of fields){
+    if(f.req&&!sbVal('sbed-'+key+'-'+f.k)){
+      showToast(f.label+' is required','error');
+      const el=document.getElementById('sbed-'+key+'-'+f.k);if(el)el.focus();
+      return;
+    }
+  }
+  const before=JSON.stringify(rec);
+  applySbEdit('sbed-'+key,fields,rec);
+  sbEditing=null;
+  if(JSON.stringify(rec)===before){sbRepaint(key);showToast('No changes','info','Nothing was different.');return;}
+  if(ed.saved)ed.saved(rec);
+  renderADTPage();          // the listing row shows the same values
+  showToast(ed.noun+' updated','success',ed.title?ed.title(rec):'');
 }
 function saveGeEdit(){
   const emp=globalEmpData.find(e=>e.id===geSelectedId);
@@ -1090,7 +1271,8 @@ function saveDeEdit(){
   showToast('Employee details updated','success',emp.name+' \u00b7 '+emp.empId);
 }
 
-function setEmpSubTab(t){if(empSubTab===t)return;empSubTab=t;deSelectedId=null;geSelectedId=null;empStatusModal=null;renderADTPage();}
+function setEmpSubTab(t){if(empSubTab===t)return;
+  if(sbLeaveGuard(sbAnyDraft(),function(){setEmpSubTab(t);}))return;empSubTab=t;deSelectedId=null;geSelectedId=null;empStatusModal=null;renderADTPage();}
 function setTsSubTab(t){if(tsSubTab===t)return;tsSubTab=t;renderADTPage();}
 function buildEmployeesHTML(){
   const tabs=[
@@ -1378,8 +1560,31 @@ function sbMarkToggling(id){
   el.classList.add('sb-toggling');
   sbToggleTimers[id]=setTimeout(function(){el.classList.remove('sb-toggling');},420);
 }
+/* ── SMALL SCREENS: THE RAIL FOLDS ITSELF ──
+   Below 1024px a 224px rail leaves the page too little room, so it folds to its
+   62px icon strip on its own, and opens back up when the window grows again -
+   unless the reader folded or opened it themselves in between, which is theirs
+   to keep. On a phone (640px and below) an opened rail lies OVER the page (CSS)
+   rather than squeezing it, so picking a page folds it away again. */
+const SB_NARROW_MQ=window.matchMedia('(max-width:1024px)');
+const SB_PHONE_MQ=window.matchMedia('(max-width:640px)');
+let sbAutoFolded=false;
+function sbFitViewport(){
+  if(SB_NARROW_MQ.matches&&!adtSidebarCollapsed){adtSidebarCollapsed=true;sbAutoFolded=true;}
+  else if(!SB_NARROW_MQ.matches&&sbAutoFolded){adtSidebarCollapsed=false;sbAutoFolded=false;}
+  else return false;
+  return true;
+}
+function sbFoldOnPhone(){
+  if(!SB_PHONE_MQ.matches||adtSidebarCollapsed)return;
+  adtSidebarCollapsed=true;sbAutoFolded=true;
+  buildSidebar('adt-sidebar',true,getSidebarActivePage(page));
+}
+SB_NARROW_MQ.addEventListener('change',function(){
+  if(sbFitViewport())buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));
+});
 function toggleSidebar(scope){
-  if(scope==='adt'){adtSidebarCollapsed=!adtSidebarCollapsed;buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));sbMarkToggling('adt-sidebar');return;}
+  if(scope==='adt'){adtSidebarCollapsed=!adtSidebarCollapsed;sbAutoFolded=false;buildSidebar('adt-sidebar',adtSidebarCollapsed,getSidebarActivePage(page));sbMarkToggling('adt-sidebar');return;}
   agentSidebarCollapsed=!agentSidebarCollapsed;buildSidebar('agent-sb',agentSidebarCollapsed,page);buildTopbar('agent-topbar-active','agent');sbMarkToggling('agent-sb');
 }
 
@@ -1400,6 +1605,7 @@ function syncSidebarDropdown(pg){
   openDropdowns.clear();openDropdowns.add(group.dropdown);
 }
 function navigatePage(pg,fromDashboard){
+  if(sbLeaveGuard(sbAnyDraft(),function(){navigatePage(pg,fromDashboard);}))return;
   /* Entering Contracts from the sidebar starts at the type chooser. Arriving
      from a dashboard tile does not: openDashCard has already applied a status
      filter and cleared this flag, and re-raising the gate here would throw
@@ -1410,6 +1616,8 @@ function navigatePage(pg,fromDashboard){
   if(pg==='hr-docs'&&typeof hdocReset==='function')hdocReset();
   ctStatusModal=null;   // a half-made status move never follows you to another page
   empStatusModal=null;
+  sbEditing=null;   // an edit left open belongs to the page being left
+  sbFoldOnPhone();  // a rail opened over the page on a phone closes once a page is picked
   if(typeof eaOpen!=='undefined'){eaOpen=false;}
   if(typeof tmCreateOpen!=='undefined'){tmCreateOpen=false;}
   /* Employee lifecycle redirects (Add Asset, Upload Documents...) carry a
@@ -1497,6 +1705,9 @@ function isbTab(prefix,render){
   tpl.innerHTML=sbRender(render,prefix);
   var newBody=tpl.querySelector('.lp-isb-body');
   var newTabs=tpl.querySelector('.lp-isb-tabs');
+  /* A changed form on the tab being left is put aside, not dropped. */
+  var actOf=function(t){var x=t&&t.querySelector('.lp-isb-tab.active');return x?sbTabIdOf(x):'';};
+  sbStashBefore(prefix,oldBody,actOf(oldTabs),actOf(newTabs));
 
   if(!oldBody||!newBody||!oldTabs||!newTabs||!sameTabs(oldTabs,newTabs)){
     inner.innerHTML=tpl.innerHTML;
@@ -1506,6 +1717,8 @@ function isbTab(prefix,render){
     var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
     for(var i=0;i<a.length;i++)a[i].classList.toggle('active',b[i].classList.contains('active'));
   }
+  sbRestoreAfter(prefix,inner);
+  sbMarkDraftTabs();
   /* The carried-over tab may not exist on this record - a ticket with no chat
      has no Conversation tab, an entity of another kind has a different strip.
      Then nothing in the strip is active, and the panel goes to its first tab
@@ -2256,8 +2469,6 @@ const lpWorkflowData={
     {title:'Workflow Initialized',user:'Admin',date:'20 Apr 2020',time:'09:00:00 AM',description:'Emergency quarantine leave workflow created with auto-approval for first 7 days.'}
   ]
 };
-function yn(v){return '<option'+(v?' selected':'')+'>Yes</option><option'+(!v?' selected':'')+'>No</option>';}
-function statusOpts(v){return '<option'+(v==='Active'?' selected':'')+'>Active</option><option'+(v==='Inactive'?' selected':'')+'>Inactive</option>';}
 /* `hook` is the name of a global function called as hook(value,id) whenever a
    selection is made — the same shape apCD's onpick already had. It exists so a
    form that has to REACT to a pick (enable a dependent field, refresh a live
@@ -2295,8 +2506,25 @@ function csToggle(btn){
   if(open)placeAnchoredMenu(drop,btn.getBoundingClientRect(),
     {alignLeft:true,width:btn.getBoundingClientRect().width});
 }
+/* The standard dropdown for a FORM that reads its values back by id.
+   apCS has no element carrying the id itself, so this pairs it with a hidden
+   input that does - kept in step on every pick - and getElementById(id).value
+   keeps working, the way apCD keeps its input. onChange (a global function
+   name) runs after the pick, for forms that track unsaved changes. */
+function sbSelect(id,opts,val,onChange){
+  return apCS(id,opts,val,'Select','sbSelSync')
+      .replace('<div class="cs-wrap"','<div class="cs-wrap"'+(onChange?' data-sbnext="'+onChange+'"':''))
+    +'<input type="hidden" id="'+id+'" value="'+attrSafe(val==null?'':val)+'">';
+}
+function sbSelSync(val,csid){
+  const inp=document.getElementById(csid);if(inp)inp.value=val;
+  const wrap=document.getElementById('csw-'+csid);
+  const next=wrap&&wrap.dataset.sbnext;
+  if(next&&typeof window[next]==='function')window[next](val,csid);
+}
 function csSelect(opt,val,csid){
   const drop=document.getElementById('csd-'+csid);if(!drop)return;
+  sbMarkDirty(opt);
   drop.querySelectorAll('.cs-option').forEach(o=>o.classList.remove('cs-selected'));
   opt.classList.add('cs-selected');
   const trigger=document.querySelector(`[data-csid="${csid}"]`);
@@ -2438,6 +2666,7 @@ function cdPaint(id){
 function cdSet(id,iso){
   const inp=document.getElementById(id);if(!inp)return;
   inp.value=iso;
+  sbMarkDirty(inp);
   const trigger=document.querySelector('[data-cdid="'+id+'"]');
   if(trigger){
     trigger.querySelector('.cd-value').textContent=cdLabel(iso)||trigger.dataset.cdph||'Select date';
@@ -3678,7 +3907,7 @@ function hdPickDocClose(e){
   if(t&&t.closest&&t.closest('.hd-bp'))return;
   hdPickClose();
 }
-function hdPickToggle(key,ev){
+function hdPickToggle(key,ev){sbMarkPanelDirty('hd');
   if(ev){ev.preventDefault();ev.stopPropagation();}
   const was=hdPickOpen;
   hdPickClose();
@@ -3724,7 +3953,7 @@ function hdPickBranch(key,name,ev){
   hdPickPaint(key);
 }
 // The create rows only: give every row in the batch the audience of this one.
-function hdPickApplyAll(key,ev){
+function hdPickApplyAll(key,ev){sbMarkPanelDirty('hd');
   if(ev){ev.preventDefault();ev.stopPropagation();}
   if(key.charAt(0)!=='r')return;
   const list=hdPickGet(key).slice();
@@ -4591,13 +4820,14 @@ const csLogsData=[
    other listing - the row highlight moves by hand, and isbTab() replaces the
    panel BODY alone, because a different record is the same tab strip. */
 function openCsSidebar(item){
+  if(csSelectedItem!=null&&csSelectedItem!==item&&sbLeaveGuard('cs',function(){openCsSidebar(item);}))return;
   if(csSelectedItem===item){closeCsSidebar();return;}   // clicking the open row closes it again
   csTab=sbKeepTab(csSelectedItem,csTab);csSelectedItem=item;
   const sb=document.getElementById('cs-isb');if(sb)sb.classList.add('open');
   markCsSelectedRow();
   isbTab('cs',renderCsSidebar);
 }
-function closeCsSidebar(){
+function closeCsSidebar(){if(sbLeaveGuard('cs',closeCsSidebar))return;
   csSelectedItem=null;
   const sb=document.getElementById('cs-isb');if(sb)sb.classList.remove('open');
   markCsSelectedRow();
@@ -4610,7 +4840,13 @@ function markCsSelectedRow(){
   });
 }
 function refreshCsSidebar(){const inner=document.getElementById('cs-isb-inner');if(inner){inner.innerHTML=renderCsSidebar();isbRevealTab('cs');}}
-function csSetTab(tab){csTab=tab;isbTab('cs',renderCsSidebar);}
+function csSetTab(tab){
+  /* The settings tabs keep their form in a draft: read it in before leaving,
+     so a changed form comes back as it was; an untouched one just closes. */
+  if(typeof csAttEdit!=='undefined'&&csAttEdit){if(document.getElementById('csa-mode'))csAttReadForm();if(!csAttDirty){csAttEdit=false;csAttDraft=null;}}
+  if(typeof csLeaveEdit!=='undefined'&&csLeaveEdit){if(document.getElementById('csl-freq'))cslReadForm();if(!csLeaveDirty){csLeaveEdit=false;csLeaveDraft=null;}}
+  csTab=tab;isbTab('cs',renderCsSidebar);
+}
 /* The structure sub-tab lives inside the body, so the body swap covers it. */
 function csSetStructureTab(tab){csStructureTab=tab;isbTab('cs',renderCsSidebar);}
 function csSaveLog(){

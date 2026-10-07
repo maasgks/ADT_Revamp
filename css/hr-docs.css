@@ -53,10 +53,9 @@
 .hdoc-row-ico.tone-ok{background:var(--st-ok-bg);border-color:var(--st-ok-bd);color:var(--st-ok-fg)}
 .hdoc-row-ico.tone-idle{background:var(--st-idle-bg);border-color:var(--st-idle-bd);color:var(--st-idle-fg)}
 .hdoc-row-ico.tone-bad{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
-.hdoc-row:hover .hdoc-row-ico.tone-info{background:var(--st-info-fg);border-color:var(--st-info-fg);color:#fff}
-.hdoc-row:hover .hdoc-row-ico.tone-ok{background:var(--st-ok-fg);border-color:var(--st-ok-fg);color:#fff}
-.hdoc-row:hover .hdoc-row-ico.tone-idle{background:var(--st-idle-fg);border-color:var(--st-idle-fg);color:#fff}
-.hdoc-row:hover .hdoc-row-ico.tone-bad{background:var(--st-bad-fg);border-color:var(--st-bad-fg);color:#fff}
+/* Hover is one colour for every row - the same ink as the Create button's
+   hover - rather than each section lighting up in its own tone. */
+.hdoc-row:hover .hdoc-row-ico{background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
 .hdoc-row-ico.is-lg{width:52px;height:52px;border-radius:12px}
 .hdoc-row-ico.is-lg svg{width:24px;height:24px}
 .hdoc-row-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -134,18 +133,28 @@
   font-size:10px;font-weight:700;letter-spacing:.2px;vertical-align:1px}
 .hdoc-auto-input{background:var(--light)!important;color:#475569}
 .ct-modal textarea.ep-form-input.hdoc-textarea{height:96px!important;min-height:72px;padding-top:10px;resize:vertical;line-height:1.5}
-.hdoc-hdr-back{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;margin-right:8px;
-  border:1px solid var(--border);border-radius:7px;background:#fff;color:#64748b;cursor:pointer;vertical-align:-6px}
+/* The popup title is a row: back button and title text centred on one line,
+   rather than the button nudged down by a fixed offset to look aligned. */
+.hdoc-modal .ct-modal-title{display:flex;align-items:center;gap:10px;min-width:0}
+.hdoc-hdr-back{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;flex-shrink:0;
+  border:1px solid var(--border);border-radius:7px;background:#fff;color:#64748b;cursor:pointer}
 .hdoc-hdr-back:hover{border-color:var(--btn-accent);color:var(--btn-accent)}
 .ct-modal-btns button svg{vertical-align:-2px;margin-right:4px}
 .hdoc-miss-note{color:var(--st-wait-fg);font-weight:600}
 
 /* ── The letter ────────────────────────────────────────────────────────── */
-.ct-modal.ct-modal--form.hdoc-modal-wide{width:min(940px,94vw)}
+/* THE PREVIEW IS THE POINT OF THIS POPUP, so it gets the room: the popup may
+   grow to 92% of the screen and the paper area takes everything the title and
+   the buttons leave (a flex column, the paper area the only part that scrolls),
+   and the letter is drawn as a page - narrower, slightly smaller type - so far
+   more of it is in view at once, the way a document viewer shows a page. */
+.ct-modal.ct-modal--form.hdoc-modal-wide{width:min(940px,94vw);max-height:92vh;display:flex;flex-direction:column}
+.hdoc-modal-wide>*{flex-shrink:0}
+.hdoc-modal-wide>.hdoc-paper-wrap{flex:1 1 auto;min-height:0;max-height:none}
 .hdoc-paper-wrap{background:#eef1f5;border-radius:12px;padding:24px;max-height:62vh;overflow:auto}
-.hdoc-paper{background:#fff;max-width:720px;margin:0 auto;padding:44px 52px 56px;border-radius:4px;
+.hdoc-paper{background:#fff;max-width:640px;margin:0 auto;padding:40px 48px 48px;border-radius:4px;
   box-shadow:0 1px 3px rgba(15,23,42,.1),0 8px 24px rgba(15,23,42,.08);
-  font-size:13px;line-height:1.7;color:#1e293b}
+  font-size:12.5px;line-height:1.65;color:#1e293b}
 .hdoc-lh{border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:16px}
 .hdoc-lh-name{font-size:19px;font-weight:800;color:var(--navy);letter-spacing:-.2px}
 .hdoc-lh-sub{font-size:11px;color:var(--gray);margin-top:2px}

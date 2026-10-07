@@ -82,3 +82,14 @@
 .csag-row-status{margin-right:6px;vertical-align:middle}
 .csag-table .csag-td{white-space:nowrap}
 .csag-bar{justify-content:flex-end}
+
+/* The document step gets the room, as the HR Docs preview does: the popup may
+   grow to 92% of the screen, the document area takes what the title, the bar
+   and the buttons leave and is the only part that scrolls, and the page is
+   drawn narrower so more of it is in view at once. */
+.ct-modal.csag-modal.is-preview{max-height:92vh;display:flex;flex-direction:column}
+.csag-modal.is-preview>*{flex-shrink:0}
+.csag-modal.is-preview>.csag-body{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.csag-modal.is-preview .csag-body>*{flex-shrink:0}
+.csag-modal.is-preview .csag-doc-wrap{flex:1 1 auto;min-height:0;max-height:none}
+.csag-modal.is-preview .adt-doc-page{max-width:620px}

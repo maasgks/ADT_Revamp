@@ -207,7 +207,10 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-field label{font-size:11.5px;font-weight:600;color:var(--navy)}
 /* read-only identifier inside an edit form */
 .sb-field-hint{font-weight:500;font-size:10px;color:#9ca3af;text-transform:none;letter-spacing:0}
-.lp-sb-form-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:4px}
+/* Cancel / Save changes sit clear of the last field - the same 20px every
+   panel form leaves, whatever that last field is (input, textarea, note). */
+.lp-sb-form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.lp-sb-form-actions .ep-cancel-btn,.lp-sb-form-actions .ep-save-btn{min-width:96px;justify-content:center}
 .lp-sb-emp-edit{display:flex;flex-direction:column;gap:14px}
 .lp-sb-emp-edit .lp-sb-view-header{margin-bottom:0}
 /* LP SIDEBAR EMPLOYEE LIST */
@@ -1046,3 +1049,33 @@ tr.lp-row-selected>td:first-child,
   font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#98a2b3}
 .tm-modal-sec-title .team-add-members{text-transform:none;letter-spacing:0}
 .tm-modal .ep-form-grid{align-items:end}
+
+/* ── DETAIL PANEL HEADER (sbHero in core.js) ──────────────────────────────
+   The one header every action-sidebar's details tab opens with: icon tile,
+   name, identifying line, status and Edit. It began as the Assets / IT Access
+   header (itself shaped on the holiday header) and is now shared, so every
+   module's panel reads the same way. */
+.sb-hero{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:16px;
+  border:1px solid var(--border);border-radius:12px;background:var(--light)}
+.sb-hero-ico{flex-shrink:0;width:46px;height:46px;border-radius:11px;background:#fff;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;color:#64748b}
+.sb-hero-ico svg{width:22px;height:22px}
+.sb-hero-img{flex-shrink:0;width:46px;height:46px;border-radius:11px;object-fit:cover;border:1px solid var(--border);background:#fff}
+.sb-hero-txt{flex:1;min-width:0}
+.sb-hero-name{font-size:15px;font-weight:700;color:var(--navy);line-height:1.3;overflow:hidden;text-overflow:ellipsis}
+.sb-hero-meta{margin-top:3px;font-size:12px;color:var(--gray);display:flex;align-items:center;flex-wrap:wrap}
+.sb-dot{margin:0 7px;color:#cbd5e1}
+.sb-hero-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.sb-hero-right .lp-sb-view-edit-btn{flex-shrink:0}
+/* Where the Edit button was, while the record is being edited. */
+.sb-hero-editing{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;padding:6px 12px;border-radius:8px;
+  font-size:12px;font-weight:600;color:var(--st-info-fg);background:var(--st-info-bg);border:1px solid var(--st-info-bd)}
+.sb-hero-editing svg{width:12px;height:12px}
+/* A tab holding unsaved edits (sbMarkDraftTabs): a small dot after its label,
+   in the same blue as the Editing tag on the header. */
+.lp-isb-tab.has-draft{position:relative}
+.lp-isb-tab.has-draft::after{content:'';display:inline-block;width:7px;height:7px;margin-left:7px;vertical-align:2px;
+  border-radius:50%;background:var(--st-info-fg);box-shadow:0 0 0 2px var(--st-info-bg)}
+/* Leaving a record with unsaved edits (sbConfirmDiscard). */
+.ct-modal.sb-discard{width:min(440px,92vw)}
+.ct-modal.sb-discard .ct-modal-foot{margin-top:22px}

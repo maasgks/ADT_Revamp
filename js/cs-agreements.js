@@ -327,7 +327,7 @@ function csagModalHTML(){
       +'</div></div>';
   }
   return '<div class="ct-modal-overlay">'
-    +'<div class="ct-modal ct-modal--form csag-modal" role="dialog" aria-modal="true" aria-label="Generate '+a.key+'" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal ct-modal--form csag-modal'+(body.indexOf('csag-doc-wrap')>=0?' is-preview':'')+'" role="dialog" aria-modal="true" aria-label="Generate '+a.key+'" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(csagState.readOnly?a.title:'Generate '+a.key)+statusChip+'</span>'
       +'<button class="ct-modal-close" onclick="csagClose()" aria-label="Close">'+CSAG_X+'</button></div>'
     +'<div class="csag-subrow"><p class="ct-modal-sub">'+(csagState.readOnly

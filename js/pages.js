@@ -162,17 +162,18 @@ function attachTabHTML(scope,id){
 }
 
 ﻿function openDeSidebar(id){
+  if(deSelectedId!=null&&String(deSelectedId)!==String(id)&&sbLeaveGuard('de',function(){openDeSidebar(id);}))return;
   deTab=sbKeepTab(deSelectedId,deTab);deSelectedId=id;deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
   isbTab('de',renderDeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.de-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='de-row-'+id));
 }
-function closeDeSidebar(){
+function closeDeSidebar(){if(sbLeaveGuard('de',closeDeSidebar))return;
   deSelectedId=null;deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.de-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navDeTab(tab){deTab=tab;deEditMode=false;isbTab('de',renderDeSidebar);}
+function navDeTab(tab){deTab=tab;if(!sbHasDraft('de'))deEditMode=false;isbTab('de',renderDeSidebar);}
 function scrollTabRow(dir,id){const el=document.getElementById(id);if(!el)return;const t=el.querySelector('.lp-isb-tab');const w=t?t.offsetWidth*2+32:160;el.scrollBy({left:dir==='right'?w:-w,behavior:'smooth'});}
 function deToggleStatFilter(v){
   deStatusFilter=deStatusFilter===v?'':v;
@@ -188,7 +189,7 @@ function applyDeFilters(){
 }
 function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';deSearchQuery='';deSelectedId=null;renderADTPage();}
 function renderDeSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -211,9 +212,10 @@ function renderDeSidebar(){
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(deTab==='basic-details'&&deEditMode){
-    body=buildSbEditForm('desb',DE_EDIT_FIELDS,emp,'cancelDeEdit','saveDeEdit');
+    body=sbHero({icon:sbIco.user,name:emp.name,meta:[emp.empId,emp.jobTitle,emp.dept],status:empLifeBadge(emp.status),editing:true})
+      +buildSbEditForm('desb',DE_EDIT_FIELDS,emp,'cancelDeEdit','saveDeEdit');
   }else if(deTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
+    body=sbHero({icon:sbIco.user,name:emp.name,meta:[emp.empId,emp.jobTitle,emp.dept],status:empLifeBadge(emp.status),edit:editBtn})
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
       +fc(iI,'Employee ID',v(emp.empId))+fc(iPin,'Branch',v(emp.branch))
@@ -398,19 +400,20 @@ function buildDirectListingHTML(){
     +buildAddTeamModalHTML();
 }
 function openGeSidebar(id){
+  if(geSelectedId!=null&&String(geSelectedId)!==String(id)&&sbLeaveGuard('ge',function(){openGeSidebar(id);}))return;
   geTab=sbKeepTab(geSelectedId,geTab);geSelectedId=id;geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.add('open');
   isbTab('ge',renderGeSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ge-row-'+id));
 }
-function closeGeSidebar(){
+function closeGeSidebar(){if(sbLeaveGuard('ge',closeGeSidebar))return;
   geSelectedId=null;geEditMode=false;
   const sb=document.getElementById('ge-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ge-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navGeTab(tab){geTab=tab;geEditMode=false;isbTab('ge',renderGeSidebar);}
+function navGeTab(tab){geTab=tab;if(!sbHasDraft('ge'))geEditMode=false;isbTab('ge',renderGeSidebar);}
 function renderGeSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -435,9 +438,10 @@ function renderGeSidebar(){
   const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   let body='';
   if(geTab==='basic-details'&&geEditMode){
-    body=buildSbEditForm('gesb',GE_EDIT_FIELDS,emp,'cancelGeEdit','saveGeEdit');
+    body=sbHero({icon:sbIco.user,name:emp.name,meta:[emp.empId,emp.jobTitle,emp.country],status:empLifeBadge(emp.status),editing:true})
+      +buildSbEditForm('gesb',GE_EDIT_FIELDS,emp,'cancelGeEdit','saveGeEdit');
   }else if(geTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+emp.name+'</span>'+editBtn+'</div>'
+    body=sbHero({icon:sbIco.user,name:emp.name,meta:[emp.empId,emp.jobTitle,emp.country],status:empLifeBadge(emp.status),edit:editBtn})
       +'<div class="lp-sb-detail-grid">'
       +fc(iP,'Name',v(emp.name))+fc(iB,'Department',v(emp.dept))
       +fc(iI,'Employee ID',v(emp.empId))+fc(iGlobe,'Country',v(emp.country))
@@ -581,19 +585,20 @@ function resetGeFilters(){
   renderADTPage();
 }
 function openTmSidebar(id){
+  if(tmSelectedId!=null&&String(tmSelectedId)!==String(id)&&sbLeaveGuard('tm',function(){openTmSidebar(id);}))return;
   tmTab=sbKeepTab(tmSelectedId,tmTab);tmSelectedId=id;
   const sb=document.getElementById('tm-split-sb');if(sb)sb.classList.add('open');
   isbTab('tm',renderTmSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.tm-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='tm-row-'+id));
 }
-function closeTmSidebar(){
+function closeTmSidebar(){if(sbLeaveGuard('tm',closeTmSidebar))return;sbEditing=null;
   tmSelectedId=null;
   const sb=document.getElementById('tm-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.tm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navTmTab(tab){tmTab=tab;isbTab('tm',renderTmSidebar);}
+function navTmTab(tab){if(!sbHasDraft('tm'))sbEditing=null;tmTab=tab;isbTab('tm',renderTmSidebar);}
 function renderTmSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const team=teamsData.find(t=>t.id===tmSelectedId);if(!team)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'team-members',label:'Team Members'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -614,7 +619,8 @@ function renderTmSidebar(){
   const statusVal=sbStatus(team.status);
   let body='';
   if(tmTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+team.name+'</span>'+editBtn+'</div>'
+    if(sbIsEditing('tm',team.id))body=sbHero({icon:sbIco.users,name:team.name,meta:['Team ID '+team.teamId,team.dept,team.country],status:sbHeroBadge(team.status),editing:true})+sbEditFormHTML('tm',team);
+    else body=sbHero({icon:sbIco.users,name:team.name,meta:['Team ID '+team.teamId,team.dept,team.country],status:sbHeroBadge(team.status),edit:sbEditBtnFor('tm',team.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Team ID',v(team.teamId))+fc(iCheck,'Status',statusVal)
       +fc(iTeam,'Team Name',v(team.name))+fc(iMail,'Team Email',v(team.email))
@@ -1274,6 +1280,7 @@ function resetAlFilters(){
 /* `tab` and `pendingStatus` are what the row's Invoice Status menu passes in -
    a plain row click still lands on Basic Details with nothing pending. */
 function openPmSidebar(id,tab,pendingStatus){
+  if(pmSelectedId!=null&&String(pmSelectedId)!==String(id)&&sbLeaveGuard('pm',function(){openPmSidebar(id,tab,pendingStatus);}))return;
   pmTab=tab||sbKeepTab(pmSelectedId,pmTab);pmSelectedId=id;pmUserSubTab='company-details';
   pmPendingStatus=pendingStatus||'';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.add('open');
@@ -1288,12 +1295,12 @@ function pmPickStatus(id,status){
   closePmMenus();
   openPmSidebar(id,'logs',status);
 }
-function closePmSidebar(){
+function closePmSidebar(){if(sbLeaveGuard('pm',closePmSidebar))return;sbEditing=null;
   pmSelectedId=null;pmPendingStatus='';
   const sb=document.getElementById('pm-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.pm-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navPmTab(tab){pmTab=tab;isbTab('pm',renderPmSidebar);}
+function navPmTab(tab){if(!sbHasDraft('pm'))sbEditing=null;pmTab=tab;isbTab('pm',renderPmSidebar);}
 /* ONE LEVEL DEEPER THAN isbTab(). The User tab has its own bar — Company
    Details / Company Concern Person — and switching it used to write the whole
    panel back with innerHTML: the outer tab bar, the sub-tab bar and the body,
@@ -1365,7 +1372,7 @@ function pmSaveLog(orderId){
     : 'Payment log saved with status "'+status+'".');
 }
 function renderPmSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'sales-details',label:'Sales Details'},{id:'taxes-details',label:'Taxes Details'},{id:'user',label:'User'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'timesheets',label:'Timesheets'},{id:'receivable',label:'Receivable'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -1389,7 +1396,8 @@ function renderPmSidebar(){
   const pmEmptyTab=(label)=>'<div style="display:flex;align-items:center;justify-content:center;padding:48px 20px;color:#9ca3af;font-size:13px">'+label+' content coming soon.</div>';
   let body='';
   if(pmTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Order #'+p.orderId+'</span>'+editBtn+'</div>'
+    if(sbIsEditing('pm',p.id))body=sbHero({icon:sbIco.receipt,name:'Order #'+p.orderId,meta:[p.name,p.type,p.amountDue],status:sbHeroBadge(p.invoiceStatus),editing:true})+sbEditFormHTML('pm',p);
+    else body=sbHero({icon:sbIco.receipt,name:'Order #'+p.orderId,meta:[p.name,p.type,p.amountDue],status:sbHeroBadge(p.invoiceStatus),edit:sbEditBtnFor('pm',p.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Key',p.key)+fc(iId,'Deal ID',p.dealId)
       +fc(iDoc,'Entity Name',p.entityName)+fc(iTag,'Added From',p.addedFrom)
@@ -1741,18 +1749,19 @@ function resetCtFilters(){
   renderADTPage();
 }
 function openCtSidebar(id,tab,pendingStatus){
+  if(ctSelectedId!=null&&String(ctSelectedId)!==String(id)&&sbLeaveGuard('ct',function(){openCtSidebar(id,tab,pendingStatus);}))return;
   ctTab=tab||sbKeepTab(ctSelectedId,ctTab);ctSelectedId=id;
   if(pendingStatus)window._ctPendingStatus=pendingStatus;else delete window._ctPendingStatus;
   const sb=document.getElementById('ct-split-sb');if(sb)sb.classList.add('open');
   isbTab('ct',renderCtSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ct-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ct-row-'+id));
 }
-function closeCtSidebar(){
+function closeCtSidebar(){if(sbLeaveGuard('ct',closeCtSidebar))return;sbEditing=null;
   ctSelectedId=null;delete window._ctPendingStatus;
   const sb=document.getElementById('ct-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ct-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navCtTab(tab){ctTab=tab;isbTab('ct',renderCtSidebar);}
+function navCtTab(tab){if(!sbHasDraft('ct'))sbEditing=null;ctTab=tab;isbTab('ct',renderCtSidebar);}
 function pmToggleStatFilter(v){
   pmInvoiceStatusFilter=pmInvoiceStatusFilter===v?'':v;
   pmSelectedId=null;
@@ -2016,7 +2025,7 @@ function ctSaveLog(id,selId,inpId){
 }
 
 function renderCtSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const c=contractsData.find(x=>x.id===ctSelectedId);if(!c)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'commercial-terms',label:'Commercial Terms'},{id:'compliance',label:'Compliance'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -2042,7 +2051,8 @@ function renderCtSidebar(){
   let body='';
   if(ctTab==='basic-details'){
     const wpVal=c.workPermit?'Yes':'No';
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+c.empName+'</span>'+editBtn+'</div>'
+    if(sbIsEditing('ct',c.id))body=sbHero({icon:sbIco.fileCheck,name:c.empName,meta:['Contract '+c.contractId,c.type,c.country],status:sbHeroBadge(c.status),editing:true})+sbEditFormHTML('ct',c);
+    else body=sbHero({icon:sbIco.fileCheck,name:c.empName,meta:['Contract '+c.contractId,c.type,c.country],status:sbHeroBadge(c.status),edit:sbEditBtnFor('ct',c.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iGlobe,'Nationality',v(c.nationality))+fc(iGlobe,'Country of Operation',v(c.countryOfOp))
       +fc(iCheck,'Work Permit',wpVal)+fc(iUser,'Name',v(c.empName))
@@ -2301,17 +2311,18 @@ function lpCreatedOn(v){return String(v==null?'':v).replace(' | ',', ');}
 
 // ── COMPLIANCE ITEM DETAIL SIDEBAR ──
 function openComplianceSidebar(id){
+  if(complianceSelectedId!=null&&String(complianceSelectedId)!==String(id)&&sbLeaveGuard('cmp',function(){openComplianceSidebar(id);}))return;
   complianceTab=sbKeepTab(complianceSelectedId,complianceTab);complianceSelectedId=id;
   const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.add('open');
   isbTab('cmp',renderComplianceSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='cmp-row-'+id));
 }
-function closeComplianceSidebar(){
+function closeComplianceSidebar(){if(sbLeaveGuard('cmp',closeComplianceSidebar))return;sbEditing=null;
   complianceSelectedId=null;
   const sb=document.getElementById('cmp-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.cmp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navComplianceTab(tab){complianceTab=tab;isbTab('cmp',renderComplianceSidebar);}
+function navComplianceTab(tab){if(!sbHasDraft('cmp'))sbEditing=null;complianceTab=tab;isbTab('cmp',renderComplianceSidebar);}
 function complianceCancelLog(){
   const inp=document.getElementById('cmp-log-comment-inp');if(inp)inp.value='';
   csClear('cmp-log-status-sel');
@@ -2326,7 +2337,7 @@ function complianceSaveLog(id){
     : 'Comment saved to "'+item.item+'".');
 }
 function renderComplianceSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=complianceItemsData.find(x=>x.id===complianceSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -2348,7 +2359,8 @@ function renderComplianceSidebar(){
     // Country / model / category / the three rules / who and when — eight fields
     // that fill the two-column grid evenly. The name leads the grid as a full-width
     // field, and the three rule flags the create form collects are shown here too.
-    body=sbActionRow(editBtn)
+    if(sbIsEditing('cmp',item.id))body=sbHero({icon:sbIco.shieldCheck,name:item.item,meta:[item.country,item.model,item.category],status:sbHeroBadge(item.status),editing:true})+sbEditFormHTML('cmp',item);
+    else body=sbHero({icon:sbIco.shieldCheck,name:item.item,meta:[item.country,item.model,item.category],status:sbHeroBadge(item.status),edit:sbEditBtnFor('cmp',item.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iClip,'Requirement',item.item)+fc(iCheck,'Status',sbStatus(item.status))
       +fc(iGlobe,'Country',item.country)+fc(iDoc,'Employment Model',item.model)
@@ -3360,17 +3372,18 @@ function renderOcaDashboard(){
 
 // ── RATES & RULES PAGE ──
 function openRatesRuleSidebar(id){
+  if(ratesRuleSelectedId!=null&&String(ratesRuleSelectedId)!==String(id)&&sbLeaveGuard('rr',function(){openRatesRuleSidebar(id);}))return;
   ratesRuleTab=sbKeepTab(ratesRuleSelectedId,ratesRuleTab);ratesRuleSelectedId=id;
   const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.add('open');
   isbTab('rr',renderRatesRuleSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='rr-row-'+id));
 }
-function closeRatesRuleSidebar(){
+function closeRatesRuleSidebar(){if(sbLeaveGuard('rr',closeRatesRuleSidebar))return;sbEditing=null;
   ratesRuleSelectedId=null;
   const sb=document.getElementById('rr-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.rr-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navRatesRuleTab(tab){ratesRuleTab=tab;isbTab('rr',renderRatesRuleSidebar);}
+function navRatesRuleTab(tab){if(!sbHasDraft('rr'))sbEditing=null;ratesRuleTab=tab;isbTab('rr',renderRatesRuleSidebar);}
 function ratesRuleCancelLog(){
   const inp=document.getElementById('rr-log-comment-inp');if(inp)inp.value='';
   csClear('rr-log-status-sel');
@@ -3385,7 +3398,7 @@ function ratesRuleSaveLog(id){
     : 'Comment saved to "'+item.ruleName+'".');
 }
 function renderRatesRuleSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=ratesRulesData.find(x=>x.id===ratesRuleSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -3406,7 +3419,8 @@ function renderRatesRuleSidebar(){
     // full-width field, and the six that follow fill the two columns evenly.
     const iTag='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>';
     const iDot='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="currentColor" stroke="none"/></svg>';
-    body=sbActionRow(editBtn)
+    if(sbIsEditing('rr',item.id))body=sbHero({icon:sbIco.sliders,name:item.ruleName,meta:[item.country,item.category,item.applicableTo],status:sbHeroBadge(item.status),editing:true})+sbEditFormHTML('rr',item);
+    else body=sbHero({icon:sbIco.sliders,name:item.ruleName,meta:[item.country,item.category,item.applicableTo],status:sbHeroBadge(item.status),edit:sbEditBtnFor('rr',item.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iTag,'Rule Name',item.ruleName)+fc(iDot,'Status',sbStatus(item.status))
       +fc(iFlag,'Country',item.country)+fc(iBars,'Category',item.category)
@@ -3641,17 +3655,18 @@ function buildRuleSuccessModalHTML(){
 
 // ── CONTRACT TEMPLATES PAGE ──
 function openCtpSidebar(id){
+  if(ctpSelectedId!=null&&String(ctpSelectedId)!==String(id)&&sbLeaveGuard('ctp',function(){openCtpSidebar(id);}))return;
   ctpTab=sbKeepTab(ctpSelectedId,ctpTab);ctpSelectedId=id;
   const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.add('open');
   isbTab('ctp',renderCtpSidebar);   // body-only swap when the panel is already open
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.toggle('lp-row-selected',r.id==='ctp-row-'+id));
 }
-function closeCtpSidebar(){
+function closeCtpSidebar(){if(sbLeaveGuard('ctp',closeCtpSidebar))return;sbEditing=null;
   ctpSelectedId=null;
   const sb=document.getElementById('ctp-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ctp-row').forEach(r=>r.classList.remove('lp-row-selected'));
 }
-function navCtpTab(tab){ctpTab=tab;isbTab('ctp',renderCtpSidebar);}
+function navCtpTab(tab){if(!sbHasDraft('ctp'))sbEditing=null;ctpTab=tab;isbTab('ctp',renderCtpSidebar);}
 function ctpCancelLog(){
   const inp=document.getElementById('ctp-log-comment-inp');if(inp)inp.value='';
   csClear('ctp-log-status-sel');
@@ -3668,7 +3683,7 @@ function ctpSaveLog(id){
     : 'Comment saved to "'+item.templateName+'".');
 }
 function renderCtpSidebar(){
-  const editBtn='<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
+  const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=contractTemplatesData.find(x=>x.id===ctpSelectedId);if(!item)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -3688,7 +3703,8 @@ function renderCtpSidebar(){
   let body='';
   if(ctpTab==='basic-details'){
     const statusVal=sbStatus(item.status);
-    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+    if(sbIsEditing('ctp',item.id))body=sbHero({icon:sbIco.fileText,name:item.templateName,meta:['Template ID '+item.templateId,item.employmentType,item.country],status:sbHeroBadge(item.status),editing:true})+sbEditFormHTML('ctp',item);
+    else body=sbHero({icon:sbIco.fileText,name:item.templateName,meta:['Template ID '+item.templateId,item.employmentType,item.country],status:sbHeroBadge(item.status),edit:sbEditBtnFor('ctp',item.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iUser,'Template Name',item.templateName)+fc(iCheck,'Status',statusVal)
       +fc(iBag,'Employment Type',item.employmentType)+fc(iId,'Template ID',item.templateId)
@@ -5210,19 +5226,20 @@ function resetHdFilters(){
 
 // ── Detail panel ──
 function openHdSidebar(id,tab){
+  if(hdSelectedId!=null&&String(hdSelectedId)!==String(id)&&sbLeaveGuard('hd',function(){openHdSidebar(id,tab);}))return;
   hdTab=tab||sbKeepTab(hdSelectedId,hdTab);hdSelectedId=id;hdEditMode=false;
   const sb=document.getElementById('hd-split-sb');if(sb)sb.classList.add('open');
   const wrap=document.getElementById('hd-split-wrap');if(wrap)wrap.classList.add('has-sb');
   isbTab('hd',renderHdSidebar);
   document.querySelectorAll('.hd-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='hd-row-'+id);});
 }
-function closeHdSidebar(){
+function closeHdSidebar(){if(sbLeaveGuard('hd',closeHdSidebar))return;
   hdSelectedId=null;hdEditMode=false;
   const sb=document.getElementById('hd-split-sb');if(sb)sb.classList.remove('open');
   const wrap=document.getElementById('hd-split-wrap');if(wrap)wrap.classList.remove('has-sb');
   document.querySelectorAll('.hd-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
-function navHdTab(tab){hdTab=tab;hdEditMode=false;isbTab('hd',renderHdSidebar);}
+function navHdTab(tab){hdTab=tab;if(!sbHasDraft('hd'))hdEditMode=false;isbTab('hd',renderHdSidebar);}
 /* The tab strip is unchanged between the two modes, so isbTab swaps only the
    body — the tabs keep their identity and the panel does not flash. */
 function hdSetEdit(on){
@@ -5335,6 +5352,29 @@ function hdSaveLog(id){
   renderADTPage();
   showToast('Log added','success','"'+h.name+'" is now '+h.status+'.');
 }
+/* The holiday's header card - the same in the details view and while editing.
+   The chip is tinted by TYPE, the same colour its badge carries, so the date
+   block and the badge across the header read as one record rather than two
+   unrelated marks. */
+function hdHeroHTML(h,editing){
+  const upcoming=hdIsUpcoming(h)&&h.status==='Active';
+  const off=h.status!=='Active';
+  const d=cdParse(h.date);
+  return '<div class="hd-sb-hero'+(upcoming?' is-next':'')+(off?' is-off':'')+'">'
+    +'<div class="hd-sb-datechip tone-'+(HD_TYPE_TONE[h.type]||'idle')+'"><span class="hd-sb-dc-day">'+(d?d.getDate():'—')+'</span>'
+      +'<span class="hd-sb-dc-mon">'+(d?CD_MON_SHORT[d.getMonth()]+' '+hdYearOf(h.date):'')+'</span></div>'
+    +'<div class="hd-sb-hero-text"><div class="hd-sb-hero-name">'+h.name+'</div>'
+    +'<div class="hd-sb-hero-meta">'+hdDayName(h.date)
+      +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')
+      +'<span class="hd-sb-dot">•</span>'+hdDaysAway(h.date)+'</div></div>'
+    +'<div class="hd-sb-hero-right">'
+      +'<div class="hd-sb-badges">'+hdTypeBadge(h.type)
+        +'<span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></div>'
+      +(editing?SB_EDITING_TAG:'<button class="lp-sb-view-edit-btn" onclick="hdSetEdit(true)">'+SB_PEN+' Edit</button>')
+    +'</div>'
+    +'</div>';
+}
+
 function renderHdSidebar(){
   const h=holidaysData.find(function(x){return x.id===hdSelectedId;});if(!h)return'';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
@@ -5354,10 +5394,9 @@ function renderHdSidebar(){
   const iBuild='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="7" x2="9.01" y2="7"/><line x1="15" y1="7" x2="15.01" y2="7"/><line x1="9" y1="12" x2="9.01" y2="12"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="9" y1="17" x2="15" y2="17"/></svg>';
   const iUser='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   const fc=function(ico,label,val){return '<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';};
-  const iPen='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
   let body='';
   if(hdTab==='basic-details'&&hdEditMode){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Edit Holiday</span></div>'
+    body=hdHeroHTML(h,true)
       +'<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
       +'<div class="lp-sb-field" style="grid-column:1/-1"><label>Holiday Name <span class="req">*</span></label>'
         +'<input class="ep-form-input" id="hdsb-name" value="'+attrSafe(h.name)+'" placeholder="e.g. Republic Day"></div>'
@@ -5374,31 +5413,14 @@ function renderHdSidebar(){
       +'<p class="hd-edit-note">Entity and status are not changed here — a status move belongs in <b>Logs</b>, where it carries a comment.</p>'
       +'<div class="lp-sb-form-actions">'
       +'<button class="ep-cancel-btn" onclick="hdSetEdit(false)">Cancel</button>'
-      +'<button class="ep-save-btn" onclick="saveHdEdit()">Save Changes</button>'
+      +'<button class="ep-save-btn" onclick="saveHdEdit()">Save changes</button>'
       +'</div></div></div>';
   }else if(hdTab==='basic-details'){
     /* The header states the date the way a calendar does — the day, the date,
        and how far off it is — because that is the whole record. The grid below
        is the metadata; this is the fact. */
-    const upcoming=hdIsUpcoming(h)&&h.status==='Active';
     const off=h.status!=='Active';
-    const d=cdParse(h.date);
-    /* The chip is tinted by TYPE, the same colour its badge carries, so the
-       date block and the badge across the header read as one record rather
-       than two unrelated marks. */
-    body='<div class="hd-sb-hero'+(upcoming?' is-next':'')+(off?' is-off':'')+'">'
-      +'<div class="hd-sb-datechip tone-'+(HD_TYPE_TONE[h.type]||'idle')+'"><span class="hd-sb-dc-day">'+(d?d.getDate():'—')+'</span>'
-        +'<span class="hd-sb-dc-mon">'+(d?CD_MON_SHORT[d.getMonth()]+' '+hdYearOf(h.date):'')+'</span></div>'
-      +'<div class="hd-sb-hero-text"><div class="hd-sb-hero-name">'+h.name+'</div>'
-      +'<div class="hd-sb-hero-meta">'+hdDayName(h.date)
-        +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')
-        +'<span class="hd-sb-dot">•</span>'+hdDaysAway(h.date)+'</div></div>'
-      +'<div class="hd-sb-hero-right">'
-        +'<div class="hd-sb-badges">'+hdTypeBadge(h.type)
-          +'<span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></div>'
-        +'<button class="lp-sb-view-edit-btn" onclick="hdSetEdit(true)">'+iPen+' Edit</button>'
-      +'</div>'
-      +'</div>'
+    body=hdHeroHTML(h,false)
       /* "Inactive" names a state without saying what it costs. A withdrawn
          holiday means people work that day, which is the part anyone reading
          this panel actually needs, so it is said rather than inferred. */
@@ -6044,6 +6066,7 @@ function markLPSelectedRow(id){
   });
 }
 function openLPSidebar(id){
+  if(lpSidebarPolicyId!=null&&String(lpSidebarPolicyId)!==String(id)&&sbLeaveGuard('lp',function(){openLPSidebar(id);}))return;
   lpSidebarTab=sbKeepTab(lpSidebarPolicyId,lpSidebarTab);lpSidebarPolicyId=id;lpSidebarEditMode=false;lpEmpEditMode=false;
   const sb=document.getElementById('lp-isb');
   if(!sb){page='leave-policies';renderADTPage();return;}
@@ -6051,7 +6074,7 @@ function openLPSidebar(id){
   isbTab('lp',renderLPSidebar);   // body-only swap when the panel is already open
   markLPSelectedRow(id);
 }
-function closeLPSidebar(){
+function closeLPSidebar(){if(sbLeaveGuard('lp',closeLPSidebar))return;
   lpSidebarPolicyId=null;lpSidebarEditMode=false;lpEmpEditMode=false;
   const sb=document.getElementById('lp-isb');
   if(!sb){renderADTPage();return;}
@@ -6071,17 +6094,18 @@ function renderLPSidebar(){
   let body='';
   if(lpSidebarTab==='basic-details'){
     if(lpSidebarEditMode){
-      body='<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
+      body=sbHero({icon:sbIco.calendar,name:p.type,meta:[p.yearly+' days a year',p.assignBy+': '+p.assignValue],status:sbHeroBadge(p.status),editing:true})
+        +'<div class="lp-sb-edit-form"><div class="lp-sb-edit-section"><div class="lp-sb-form-grid">'
         +'<div class="lp-sb-field"><label>Leave Type</label><input class="ep-form-input" id="lpsb-type" value="'+p.type+'"></div>'
-        +'<div class="lp-sb-field"><label>Status</label><select class="ep-form-select" id="lpsb-status">'+statusOpts(p.status)+'</select></div>'
+        +'<div class="lp-sb-field"><label>Status</label>'+sbSelect('lpsb-status',['Active','Inactive'],p.status)+'</div>'
         +'<div class="lp-sb-field"><label>Yearly Count</label><input class="ep-form-input" id="lpsb-yearly" type="number" value="'+p.yearly+'"></div>'
         +'<div class="lp-sb-field"><label>Monthly Limit</label><input class="ep-form-input" id="lpsb-monthly" type="number" value="'+(p.monthly||'')+'"></div>'
         +'<div class="lp-sb-field"><label>Carry Forward Limit</label><input class="ep-form-input" id="lpsb-cf" type="number" value="'+(p.carryForward||'')+'"></div>'
-        +'<div class="lp-sb-field"><label>During Probation</label><select class="ep-form-select" id="lpsb-prob">'+yn(p.probation)+'</select></div>'
-        +'<div class="lp-sb-field"><label>Prorate</label><select class="ep-form-select" id="lpsb-prorate">'+yn(p.prorate)+'</select></div>'
+        +'<div class="lp-sb-field"><label>During Probation</label>'+sbSelect('lpsb-prob',['Yes','No'],p.probation?'Yes':'No')+'</div>'
+        +'<div class="lp-sb-field"><label>Prorate</label>'+sbSelect('lpsb-prorate',['Yes','No'],p.prorate?'Yes':'No')+'</div>'
         +'</div><div class="lp-sb-form-actions">'
         +'<button class="ep-cancel-btn" onclick="lpSidebarEditMode=false;refreshLPSidebar()">Cancel</button>'
-        +'<button class="ep-save-btn" onclick="saveLPSidebarEdit()">Save</button>'
+        +'<button class="ep-save-btn" onclick="saveLPSidebarEdit()">Save changes</button>'
         +'</div></div></div>';
     }else{
       /* The em-dash here was mojibake - the file had it multiply-encoded, so an
@@ -6102,8 +6126,7 @@ function renderLPSidebar(){
       const iFilter='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
       const iLayout='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
       const fc=(ico,label,val)=>'<div class="lp-sb-field-card"><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
-      body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+p.type+'</span>'
-        +'<button class="ep-save-btn" style="padding:5px 14px;font-size:12px;display:flex;align-items:center;gap:5px" onclick="lpSidebarEditMode=true;refreshLPSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button></div>'
+      body=sbHero({icon:sbIco.calendar,name:p.type,meta:[p.yearly+' days a year',p.assignBy+': '+p.assignValue],status:sbHeroBadge(p.status),edit:'<button class="lp-sb-view-edit-btn" onclick="lpSidebarEditMode=true;refreshLPSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>'})
         +'<div class="lp-sb-detail-grid">'
         +fc(iTag,'Leave Type Name',p.type)
         +fc(iStatus,'Status',statusVal)
@@ -6193,7 +6216,7 @@ function refreshLPSidebar(){
   if(inner)inner.innerHTML=sbRender(renderLPSidebar,'leave-policy');
 }
 function navLPSidebar(tabId){
-  lpSidebarTab=tabId;lpSidebarEditMode=false;lpEmpEditMode=false;
+  lpSidebarTab=tabId;if(!sbHasDraft('lp'))lpSidebarEditMode=false;lpEmpEditMode=false;
   isbTab('lp',renderLPSidebar);
 }
 function saveLPSidebarEdit(){
@@ -7625,19 +7648,28 @@ function buildProfTabContent(){
         <button class="prof-att-dl" title="Download" onclick="profDownloadAttachment('${sbEsc(d.name)}')">${iDl}</button>
         <button class="prof-att-dl danger" title="Remove" onclick="profRemoveAttachment('${sbEsc(d.name)}')">${iTrash}</button>
       </div>`).join('');
+    /* Same card as an uploaded document, drawn as the empty slot it is: a dashed
+       outline, the name, what it still needs. The whole card is the target -
+       click it or drop a file on it - and Upload says so in words. */
     const pendingItems=pendingDocs.map(d=>`
-      <div class="prof-att-item" ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${sbEsc(d)}')">
-        <span class="prof-att-icon">${iPaperclip}</span>
-        <span class="prof-att-name">${d}</span>
-        <button class="prof-att-upload" title="Upload ${d}" onclick="profPickFile('${sbEsc(d)}')">${iUpload}</button>
+      <div class="prof-att-card is-pending" role="button" tabindex="0" title="Upload ${sbEsc(d)}"
+        onclick="profPickFile('${sbEsc(d)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();profPickFile('${sbEsc(d)}');}"
+        ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${sbEsc(d)}')">
+        <span class="prof-att-iconwrap">${iPaperclip}</span>
+        <span class="prof-att-body">
+          <span class="prof-att-name">${d}</span>
+          <span class="prof-att-meta">PDF, JPG, PNG or DOC</span>
+        </span>
+        <button class="prof-att-up-btn" tabindex="-1" onclick="event.stopPropagation();profPickFile('${sbEsc(d)}')">${iUpload} Upload</button>
       </div>`).join('');
     const uploadedCard=uploadedDocs.length?`<div class="ep-form-card" style="margin-bottom:16px">
       <div class="prof-section-hdr"><span class="policy-section-title">Uploaded</span><span class="prof-att-count ok">${tick} ${uploadedDocs.length} of ${total} uploaded</span></div>
       <div class="prof-att-cards">${uploadedItems}</div>
     </div>`:'';
     const pendingCard=pendingDocs.length?`<div class="ep-form-card">
-      <div class="prof-section-hdr"><span class="policy-section-title">Others (Not Uploaded)</span><span class="prof-att-count">${pendingDocs.length} pending</span></div>
-      <div class="prof-att-grid">${pendingItems}</div>
+      <div class="prof-section-hdr"><span class="policy-section-title">Not Uploaded</span><span class="prof-att-count is-wait">${pendingDocs.length} pending</span></div>
+      <p class="prof-att-hint">Click a document or drop a file on it to upload.</p>
+      <div class="prof-att-cards">${pendingItems}</div>
     </div>`:`<div class="ep-form-card"><div class="prof-att-empty">${tick} All ${total} documents have been uploaded.</div></div>`;
     /* Requested Docs first - it is what HR is waiting on. It renders nothing
        when nothing has been requested, so the section stays hidden. */
@@ -7672,17 +7704,18 @@ function buildProfTabContent(){
   }
 
   else if(profTab==='change-password'){
-    const inp=(id,label,ph)=>`<div><div style="font-size:12.5px;font-weight:600;color:#374151;margin-bottom:6px">${label}</div><input id="${id}" type="password" placeholder="${ph}" style="width:100%;height:40px;border:1.5px solid var(--border);border-radius:var(--r-input);padding:0 14px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);box-sizing:border-box"></div>`;
+    // The standard field: same label, height, border and corner radius as every other form.
+    const inp=(id,label,ph)=>`<div class="ep-form-group"><label class="ep-form-label" for="${id}">${label}</label><input class="ep-form-input" id="${id}" type="password" placeholder="${ph}"></div>`;
     tabContent=`<div class="ep-form-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Change Password</span></div>
       <div style="display:flex;flex-direction:column;gap:16px;max-width:480px">
         ${inp('cp-current','Current Password','Enter current password')}
         ${inp('cp-new','New Password','Enter new password')}
         ${inp('cp-confirm','Confirm New Password','Re-enter new password')}
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;font-size:12.5px;color:#15803d">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--r-control);font-size:12.5px;color:#15803d">
           ${iCheck} Password must be at least 8 characters with uppercase, number and special character.
         </div>
-        <button style="align-self:flex-start;height:38px;padding:0 28px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Update Password</button>
+        <button class="ep-save-btn" style="align-self:flex-start">Update Password</button>
       </div>
     </div>`;
   }
@@ -8029,8 +8062,16 @@ function renderLstSidebar(){
       const val=(c==='Status'||c==='status')?sbStatus(raw):raw;
       return fc(pickIco(c),c,val);
     }).join('');
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+noun+' Details</span>'+editBtn+'</div>'
-      +'<div class="lp-sb-detail-grid">'+fields+'</div>';
+    // Same header card as every bespoke panel: the row's first column names
+    // it, the next two identify it, and its Status column is the badge.
+    const txt=function(v){return String(v==null?'':v).replace(/<[^>]*>/g,'').trim();};
+    const named=cols.map(function(c,ci){return {c:c,v:txt(row[ci])};})
+      .filter(function(x){return x.v&&!/^S\.? ?No$/.test(x.c)&&!/^status$/i.test(x.c);});
+    const stIdx=cols.findIndex(function(c){return /^status$/i.test(c);});
+    const hero=function(editing){return sbHero({icon:i.doc,name:named.length?named[0].v:noun,meta:named.slice(1,3).map(function(x){return x.v;}),
+        status:stIdx>=0?sbHeroBadge(txt(row[stIdx])):'',editing:editing,edit:sbEditBtnFor('lst',lstSelectedId)});};
+    body=sbIsEditing('lst',lstSelectedId)?hero(true)+sbEditFormHTML('lst',row)
+      :hero(false)+'<div class="lp-sb-detail-grid">'+fields+'</div>';
   }
   else if(lstTab==='logs'){
     const logs=getLstLogs();
@@ -11255,3 +11296,121 @@ function aiSimulateApproval(){
     page='ai-contract-document';renderADTPage();
   },1500);
 }
+
+/* ── EDIT FORMS FOR THE DETAIL PANELS ──
+   Each panel's Edit opens these fields in place (sbEditReg, core.js). The
+   choices offered are the ones already in use across that listing, plus the
+   record's own value, so nothing can be picked that the filters do not know. */
+function sbUniq(list,key,extra){
+  const out=[];
+  (extra||[]).concat(list.map(function(x){return x[key];})).forEach(function(v){if(v&&v!=='--'&&out.indexOf(v)<0)out.push(v);});
+  return out;
+}
+const SB_ACTIVE=['Active','Inactive'];
+sbEditReg('tm',{prefix:'tm',render:renderTmSidebar,noun:'Team',
+  get:function(id){return teamsData.find(function(t){return t.id===id;});},
+  title:function(t){return t.name+' \u00b7 Team ID '+t.teamId;},
+  fields:[
+    {k:'name',label:'Team Name',req:true},
+    {k:'teamId',label:'Team ID',readonly:true,hint:'System generated'},
+    {k:'dept',label:'Department',type:'select',opts:function(){return sbUniq(teamsData,'dept');}},
+    {k:'country',label:'Country',type:'select',opts:function(){return sbUniq(teamsData,'country');}},
+    {k:'email',label:'Team Email',type:'email'},
+    {k:'status',label:'Status',type:'select',opts:SB_ACTIVE}
+  ]});
+sbEditReg('pm',{prefix:'pm',render:renderPmSidebar,noun:'Payment',
+  get:function(id){return paymentsData.find(function(p){return p.id===id;});},
+  title:function(p){return 'Order #'+p.orderId;},
+  fields:[
+    {k:'key',label:'Key',readonly:true,hint:'System generated'},
+    {k:'dealId',label:'Deal ID',readonly:true,hint:'From the deal'},
+    {k:'entityName',label:'Entity Name',req:true},
+    {k:'addedFrom',label:'Added From'},
+    {k:'courseId',label:'Course ID'},
+    {k:'courseName',label:'Course Name'},
+    {k:'startFrom',label:'Start From',type:'date'},
+    {k:'endTo',label:'End To',type:'date'},
+    {k:'workingCountry',label:'Working Country',type:'select',opts:function(){return sbUniq(paymentsData,'workingCountry');}},
+    {k:'orderCategory',label:'Order Category',type:'select',opts:function(){return sbUniq(paymentsData,'orderCategory',['domestic','international']);}}
+  ]});
+sbEditReg('ct',{prefix:'ct',render:renderCtSidebar,noun:'Contract',
+  get:function(id){return contractsData.find(function(c){return c.id===id;});},
+  title:function(c){return c.empName+' \u00b7 Contract '+c.contractId;},
+  fields:[
+    {k:'empName',label:'Name',req:true},
+    {k:'gender',label:'Gender',type:'select',opts:['MALE','FEMALE','OTHER']},
+    {k:'nationality',label:'Nationality',type:'select',opts:function(){return sbUniq(contractsData,'nationality');}},
+    {k:'countryOfOp',label:'Country of Operation',type:'select',opts:function(){return sbUniq(contractsData,'countryOfOp');}},
+    {k:'workPermit',label:'Work Permit',type:'bool'},
+    {k:'email',label:'Email ID',type:'email',req:true},
+    {k:'contact',label:'Contact Number',type:'tel'},
+    {k:'dob',label:'Date of Birth',type:'isodate'},
+    {k:'jobTitle',label:'Job Title'},
+    {k:'skill',label:'Skill'},
+    {k:'empDuration',label:'Employment Duration'},
+    {k:'empType',label:'Employment Type',type:'select',opts:function(){return sbUniq(contractsData,'empType');}},
+    {k:'workSchedule',label:'Work Schedule',type:'number'},
+    {k:'payAmount',label:'Pay Amount',type:'number'},
+    {k:'currency',label:'Currency',type:'select',opts:function(){return sbUniq(contractsData,'currency');}},
+    {k:'payFrequency',label:'Pay Frequency',type:'select',opts:function(){return sbUniq(contractsData,'payFrequency',['Monthly','Bi-weekly','Weekly']);}},
+    {k:'jobDesc',label:'Job Description',type:'textarea',full:true}
+  ]});
+sbEditReg('cmp',{prefix:'cmp',render:renderComplianceSidebar,noun:'Compliance requirement',
+  get:function(id){return complianceItemsData.find(function(x){return x.id===id;});},
+  title:function(x){return x.item+' \u00b7 '+x.country;},
+  fields:[
+    {k:'item',label:'Requirement',req:true,full:true},
+    {k:'country',label:'Country',type:'select',opts:function(){return sbUniq(complianceItemsData,'country');}},
+    {k:'model',label:'Employment Model',type:'select',opts:function(){return sbUniq(complianceItemsData,'model',['EOR','PEO']);}},
+    {k:'category',label:'Category',type:'select',opts:function(){return sbUniq(complianceItemsData,'category');}},
+    {k:'status',label:'Status',type:'select',opts:SB_ACTIVE},
+    {k:'mandatory',label:'Mandatory',type:'bool'},
+    {k:'payrollBlocking',label:'Payroll Blocking',type:'bool'},
+    {k:'evidenceRequired',label:'Evidence Required',type:'bool'}
+  ]});
+sbEditReg('rr',{prefix:'rr',render:renderRatesRuleSidebar,noun:'Rate / rule',
+  get:function(id){return ratesRulesData.find(function(x){return x.id===id;});},
+  title:function(x){return x.ruleName+' \u00b7 '+x.country;},
+  fields:[
+    {k:'ruleName',label:'Rule Name',req:true,full:true},
+    {k:'country',label:'Country',type:'select',opts:function(){return sbUniq(ratesRulesData,'country');}},
+    {k:'category',label:'Category',type:'select',opts:function(){return sbUniq(ratesRulesData,'category');}},
+    {k:'applicableTo',label:'Applicable To',type:'select',opts:function(){return sbUniq(ratesRulesData,'applicableTo');}},
+    {k:'valueRate',label:'Value / Rate',req:true},
+    {k:'status',label:'Status',type:'select',opts:SB_ACTIVE}
+  ]});
+sbEditReg('ctp',{prefix:'ctp',render:renderCtpSidebar,noun:'Contract template',
+  get:function(id){return contractTemplatesData.find(function(x){return x.id===id;});},
+  title:function(x){return x.templateName+' \u00b7 Template ID '+x.templateId;},
+  fields:[
+    {k:'templateName',label:'Template Name',req:true},
+    {k:'templateId',label:'Template ID',readonly:true,hint:'System generated'},
+    {k:'employmentType',label:'Employment Type',type:'select',opts:function(){return sbUniq(contractTemplatesData,'employmentType',['EOR','PEO']);}},
+    {k:'category',label:'Category',type:'select',opts:function(){return sbUniq(contractTemplatesData,'category');}},
+    {k:'country',label:'Country',type:'select',opts:function(){return sbUniq(contractTemplatesData,'country');}},
+    {k:'status',label:'Status',type:'select',opts:SB_ACTIVE}
+  ]});
+/* The generic panel edits the row it was built from, one field per column -
+   a cell that holds markup (a chip, a link) is shown but not offered. */
+sbEditReg('lst',{prefix:'lst',render:renderLstSidebar,
+  get:function(){return getLstSelectedRow();},
+  get noun(){const m=getPageMeta(lstSelectedPg);return lstNouns[lstSelectedPg]||String(m.title||'Record').replace(/s$/,'');},
+  title:function(row){const v=row.find(function(x,ci){const c=(getPageMeta(lstSelectedPg).columns||[])[ci];return x&&!/^S\.? ?No$/.test(c);});return String(v||'').replace(/<[^>]*>/g,'');},
+  fields:function(row){
+    const cols=getPageMeta(lstSelectedPg).columns||[];
+    return cols.map(function(c,ci){
+      if(/^S\.? ?No$/.test(c)||/^action$/i.test(c))return null;
+      const raw=String(row[ci]==null?'':row[ci]);
+      if(/</.test(raw))return {k:ci,label:c,readonly:true,hint:'Not editable here'};
+      if(/^status$/i.test(c))return {k:ci,label:c,type:'select',opts:function(){
+        return sbUniq((getPageMeta(lstSelectedPg).rows||[]).map(function(r){return {v:r[ci]};}),'v',[raw]);}};
+      return {k:ci,label:c,req:ci===cols.findIndex(function(x){return !/^S\.? ?No$/.test(x);})};
+    }).filter(Boolean);
+  }});
+
+/* How each panel leaves edit mode when its unsaved changes are discarded. */
+sbDraftReg('de',{drop:function(){deEditMode=false;}});
+sbDraftReg('ge',{drop:function(){geEditMode=false;}});
+sbDraftReg('hd',{drop:function(){hdEditMode=false;}});
+sbDraftReg('lp',{drop:function(){lpSidebarEditMode=false;}});
+['tm','pm','ct','cmp','rr','ctp','lst'].forEach(function(p){sbDraftReg(p,{drop:function(){sbEditing=null;}});});

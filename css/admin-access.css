@@ -28,21 +28,6 @@
 .ax-img-row img{width:52px;height:52px;border-radius:8px;object-fit:cover;border:1px solid var(--border);background:var(--light);flex-shrink:0}
 .ax-img-name{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ── Detail panel ─────────────────────────────────────────────────────────── */
-/* The record named the way the reader thinks of it - what it is, whose it is
-   - before the grid of fields underneath. Same shape as the holiday header. */
-.ax-hero{display:flex;align-items:center;gap:14px;padding:14px 16px;margin-bottom:16px;
-  border:1px solid var(--border);border-radius:12px;background:var(--light)}
-.ax-hero-ico{flex-shrink:0;width:46px;height:46px;border-radius:11px;background:#fff;border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;color:#64748b}
-.ax-hero-ico svg{width:22px;height:22px}
-.ax-hero-img{flex-shrink:0;width:46px;height:46px;border-radius:11px;object-fit:cover;border:1px solid var(--border);background:#fff}
-.ax-hero-txt{flex:1;min-width:0}
-.ax-hero-name{font-size:15px;font-weight:700;color:var(--navy);line-height:1.3}
-.ax-hero-meta{margin-top:3px;font-size:12px;color:var(--gray);display:flex;align-items:center;flex-wrap:wrap}
-.ax-dot{margin:0 7px;color:#cbd5e1}
-.ax-hero-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
-
 /* Who holds the asset now. */
 .ax-holder{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid #eef0f3;border-radius:10px;background:#f8f9fb}
 .ax-holder-av{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--st-info-bg);color:var(--st-info-fg);
@@ -74,7 +59,7 @@
 .ax-warranty-ends{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--gray)}
 
 @media (max-width:640px){
-  .ax-hero{flex-wrap:wrap}
+  .sb-hero{flex-wrap:wrap}
 }
 
 /* Same room above the footer bar as every other creation popup's last row. */

@@ -1054,7 +1054,7 @@ function empTimelineHTML(emp){
   return '<div class="lp-logs-timeline">'+logs.map(function(l,i){
     var moved=l.prev&&l.next&&l.prev!==l.next;
     return '<div class="lp-log-row'+(l.system?' emp-log-sys':'')+'">'
-      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar">'+(l.system?EMP_ICO.cog:EMP_ICO.person)+'</div>'
+      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar">'+EMP_ICO.person+'</div>'
         +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
       +'<div class="lp-log-card">'
       +'<div class="lp-log-status-row"><span class="lp-log-dot"></span><span class="lp-log-status-text">'+empLifeHtml(l.status)+'</span>'

@@ -144,3 +144,14 @@
 .btn-primary.on-dark:hover,.emp-support-btn:hover{background:#e2e8f0;color:#1a1a1a;border-color:#e2e8f0}
 .btn-outline.on-dark,.btn-secondary.on-dark,.emp-support-btn.ghost{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
 .btn-outline.on-dark:hover,.btn-secondary.on-dark:hover,.emp-support-btn.ghost:hover{background:rgba(255,255,255,.24);color:#fff;border-color:rgba(255,255,255,.75)}
+
+/* -- TABS: THE ACTIVE TAB IS ALREADY MARKED -------------------------------
+   A clicked tab keeps focus, and any key pressed after that (Shift is enough)
+   switches the browser into keyboard mode, so the focus ring appeared around
+   the active tab ON TOP of its own box or underline - a doubled outline.
+   The active tab is already the most visible thing in its bar, so it never
+   takes the ring. Every OTHER tab keeps it: a keyboard user tabbing along the
+   bar still sees where focus is. */
+.lp-isb-tab.active:focus-visible,.mod-tab.active:focus-visible,.tab-btn.active:focus-visible,
+.prof-tab.active:focus-visible,.seg-btn.active:focus-visible,.cs-page-tab.active:focus-visible,
+.cs-sub-tab.active:focus-visible,.pm-user-subtab.active:focus-visible{outline:none}

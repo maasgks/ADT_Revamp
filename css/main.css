@@ -2010,12 +2010,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .prof-tab:hover:not(.active){color:var(--btn-accent)}
 .prof-tab-body{width:100%}
 /* Profile attachments grid */
-.prof-att-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
-.prof-att-item{display:flex;align-items:center;gap:10px;padding:12px 4px;border-bottom:1px solid #e2e8f0;border-right:1px solid #e2e8f0}
-.prof-att-item:nth-child(3n){border-right:none}
-.prof-att-icon{color:#9ca3af;flex-shrink:0;display:flex;align-items:center}
 .prof-att-name{flex:1;font-size:13px;color:var(--navy);font-weight:500}
-.prof-att-upload{background:none;border:none;cursor:pointer;color:#9ca3af;display:flex;align-items:center;padding:4px;border-radius:6px;transition:color .15s,background .15s}
 /* uploaded attachment cards */
 .prof-att-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
 .prof-att-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;min-width:0;transition:border-color .15s,box-shadow .15s}
@@ -2030,7 +2025,6 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .prof-att-dl{background:none;border:1.5px solid var(--border);border-radius:8px;width:32px;height:32px;cursor:pointer;color:#6b7280;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:color .15s,background .15s,border-color .15s}
 .prof-att-dl:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
 .prof-att-dl.danger:hover{background:var(--card);border-color:var(--btn-accent);color:var(--btn-accent)}
-.prof-att-item.prof-att-dragging{background:#eff6ff;box-shadow:inset 0 0 0 1.5px #93c5fd;border-radius:8px}
 .prof-att-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:28px;font-size:13px;font-weight:600;color:var(--st-ok-fg)}
 .prof-att-empty svg{width:15px;height:15px}
 .prof-att-count{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#6b7280;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;padding:3px 11px}
@@ -2246,7 +2240,6 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ai-scope-mode-seg{flex:0 0 auto;width:auto;min-width:150px}
 .ai-scope-row-manual{background:#fafbfc}
 .ai-scope-manual-badge{flex:0 0 auto;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid var(--border);border-radius:var(--r-status);padding:6px 14px}
-.prof-att-upload:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 
 /* ── TOAST NOTIFICATIONS ── */
 /* Above every overlay (popups sit at 9000, search at 9999): feedback for an
@@ -2477,3 +2470,21 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .att-row-btn+.att-row-btn{margin-left:6px}
 .att-row-btn:hover{background:var(--btn-ghost-bg);border-color:var(--btn-accent);color:var(--btn-accent)}
 .att-row-btn.is-danger:hover{background:#fef2f2;border-color:var(--red);color:var(--red)}
+/* ── Profile attachments: NOT UPLOADED ──
+   The same card as an uploaded document, as an empty slot: dashed outline,
+   the name and the file types it takes (the section title already says it is
+   missing, so the card does not repeat it),
+   muted tile, and an Upload button in words. The whole card takes a click or
+   a dropped file; hover and drag both firm the outline up. */
+.prof-att-card.is-pending{border-style:dashed;background:#fcfcfd;cursor:pointer}
+.prof-att-card.is-pending:hover,.prof-att-card.is-pending:focus-visible{border-style:solid;border-color:var(--btn-accent);background:#fff;box-shadow:0 2px 10px rgba(15,23,42,.06);outline:none}
+.prof-att-card.is-pending .prof-att-iconwrap{background:#fff;border-style:dashed;color:#9ca3af}
+.prof-att-card.is-pending:hover .prof-att-iconwrap{border-style:solid;color:var(--navy)}
+.prof-att-card.is-pending .prof-att-meta{color:#9ca3af}
+.prof-att-card.is-pending.prof-att-dragging{border-style:solid;border-color:var(--st-info-fg);background:var(--st-info-bg);box-shadow:none;border-radius:12px}
+.prof-att-up-btn{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;height:32px;padding:0 12px;border:1.5px solid var(--border);
+  border-radius:var(--r-control);background:#fff;color:var(--navy);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.prof-att-up-btn svg{width:13px;height:13px}
+.prof-att-card.is-pending:hover .prof-att-up-btn{background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
+.prof-att-count.is-wait{color:var(--st-wait-fg);background:var(--st-wait-bg);border-color:var(--st-wait-bd)}
+.prof-att-hint{margin:-6px 0 14px;font-size:12px;color:var(--gray)}

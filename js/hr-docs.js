@@ -31,6 +31,13 @@
 /* ── Who may maintain templates ────────────────────────────────────────── */
 const HDOC_ADMIN_ROLES=['Entity Super Admin','Opendhi Platform Admin'];
 function hdocIsAdmin(){return HDOC_ADMIN_ROLES.indexOf(CURRENT_USER_ROLE)>=0;}
+/* TEMPLATE SETTINGS ARE HIDDEN FOR NOW. Every way into them - the gear on
+   each row, the Templates button and "Active template" line on a type's
+   screen, the template name in the Create popup - reads this one switch.
+   Documents are still made from each type's Active Template; only the UI to
+   see or change templates is off. Set to true to bring it all back. */
+const HDOC_TEMPLATES_UI=false;
+function hdocTplUI(){return HDOC_TEMPLATES_UI&&hdocIsAdmin();}
 
 /* ── Document types ────────────────────────────────────────────────────── */
 const HDOC_TYPES=[
@@ -268,7 +275,7 @@ function hdocCreate(type,ev){
   if(ev)ev.stopPropagation();
   const tpl=hdocActiveTemplate(type);
   if(!tpl){showToast('No Active Template','error',hdocTypeOf(type).label+' has no Active Template yet. '
-    +(hdocIsAdmin()?'Set one under Templates.':'Ask a Super Admin to set one.'));return;}
+    +(hdocTplUI()?'Set one under Templates.':'Ask a Super Admin to set one.'));return;}
   const values={};
   hdocFormKeys(tpl).forEach(function(k){if(hdocFieldDef(k).today)values[k]=cdISO(new Date());});
   hdocModal={view:'form',type:type,templateId:tpl.id,docId:null,values:values};
@@ -391,7 +398,7 @@ function hdocDeleteDraft(id,ev){
 /* ══ TEMPLATES (Super Admin only) ══════════════════════════════════════════ */
 function hdocOpenTemplates(type,ev){
   if(ev)ev.stopPropagation();
-  if(!hdocIsAdmin())return;
+  if(!hdocTplUI())return;
   hdocModal={view:'templates',type:type};renderADTPage();
 }
 /* FR-22.1: one Active Template per type. Making one Active retires the one
@@ -551,6 +558,7 @@ function hdocPanel(title,count,body,tone){
 }
 function hdocDraftsPanel(type){
   const list=hdocDrafts(type);
+  if(!list.length)return '';      // no drafts: the panel is not shown at all
   return hdocPanel('Saved Drafts',list.length,
     list.length?'<div class="hdoc-items">'+list.map(function(d){return hdocItemHTML(d,type?'type':'all');}).join('')+'</div>'
       :'<div class="hdoc-rail-empty">No drafts'+(type?' for this letter':'')+'. Use <b>Save as Draft</b> while creating a document to finish it later.</div>',
@@ -573,15 +581,15 @@ function hdocCardsHTML(){
       +'onkeydown="if(event.key===\'Enter\')hdocOpenType(\''+t.key+'\')">'
       +'<span class="hdoc-row-ico tone-'+hdocGroupOf(t.key).tone+'">'+HDOC_ICO[HDOC_TYPE_ICON[t.key]]+'</span>'
       +'<span class="hdoc-row-txt"><span class="hdoc-row-name">'+t.label+'</span>'
-        +'<span class="hdoc-row-desc">'+(act?t.blurb:'<span class="hdoc-warn">'+(admin?'No Active Template — set one in Templates.':'Not available yet.')+'</span>')+'</span></span>'
+        +'<span class="hdoc-row-desc">'+(act?t.blurb:'<span class="hdoc-warn">'+(hdocTplUI()?'No Active Template — set one in Templates.':'Not available yet.')+'</span>')+'</span></span>'
       /* Drafts lead when there are any - they are work waiting on someone. */
       +'<span class="hdoc-row-stats">'
         +(drafts?'<span class="hdoc-chip is-draft">'+drafts+' draft'+(drafts===1?'':'s')+'</span>':'')
         +'<span class="hdoc-chip'+(issued?'':' is-zero')+'">'+issued+' issued</span>'
       +'</span>'
       +'<span class="hdoc-row-acts">'
-        /* HR never sees a template (FR-22.1). */
-        +(admin?'<button type="button" class="hdoc-icon-btn" onclick="hdocOpenTemplates(\''+t.key+'\',event)" title="Templates" aria-label="Templates for '+attrSafe(t.label)+'">'+HDOC_ICO.cog+'</button>':'')
+        /* HR never sees a template (FR-22.1); see HDOC_TEMPLATES_UI. */
+        +(hdocTplUI()?'<button type="button" class="hdoc-icon-btn" onclick="hdocOpenTemplates(\''+t.key+'\',event)" title="Templates" aria-label="Templates for '+attrSafe(t.label)+'">'+HDOC_ICO.cog+'</button>':'')
         +'<button type="button" class="ep-cancel-btn hdoc-create" onclick="hdocCreate(\''+t.key+'\',event)"'+(act?'':' disabled')+'>'+HDOC_ICO.plus+'Create</button>'
       +'</span>'
       +'</div>';
@@ -598,7 +606,8 @@ function hdocCardsHTML(){
   return '<div class="lp-page hdoc-page">'
     +dashboardBackHTML()
     +'<header class="hdoc-head"><div><h1 class="hdoc-title">HR Docs</h1>'
-      +'<p class="hdoc-sub">Letters for employees, each made from its document type&rsquo;s Active Template.</p></div>'
+      +'<p class="hdoc-sub">'+(hdocTplUI()?'Letters for employees, each made from its document type&rsquo;s Active Template.'
+        :'Create, save and download letters for your employees.')+'</p></div>'
       /* The app's own listing-stats strip, read-only here: totals, not filters. */
       +'<div class="listing-stats hdoc-stats">'
         +'<div class="listing-stat"><div class="listing-stat-count">'+HDOC_TYPES.length+'</div><div class="listing-stat-label">Letter Types</div></div>'
@@ -644,10 +653,10 @@ function hdocTypeScreenHTML(){
       +'<span class="hdoc-row-ico is-lg tone-'+hdocGroupOf(t.key).tone+'">'+HDOC_ICO[HDOC_TYPE_ICON[t.key]]+'</span>'
       +'<div class="hdoc-type-txt"><h1 class="hdoc-title">'+t.label+'</h1>'
         +'<p class="hdoc-sub">'+t.blurb+'</p>'
-        +(hdocIsAdmin()?'<p class="hdoc-type-tpl">'+(act?'Active template · <b>'+hdocEsc(act.name)+'</b>':'<span class="hdoc-warn">No Active Template</span>')+'</p>':'')
+        +(hdocTplUI()?'<p class="hdoc-type-tpl">'+(act?'Active template · <b>'+hdocEsc(act.name)+'</b>':'<span class="hdoc-warn">No Active Template</span>')+'</p>':'')
       +'</div>'
       +'<div class="hdoc-type-btns">'
-        +(hdocIsAdmin()?'<button class="ep-cancel-btn" onclick="hdocOpenTemplates(\''+t.key+'\')">'+HDOC_ICO.cog+' Templates</button>':'')
+        +(hdocTplUI()?'<button class="ep-cancel-btn" onclick="hdocOpenTemplates(\''+t.key+'\')">'+HDOC_ICO.cog+' Templates</button>':'')
         +'<button class="ep-save-btn" onclick="hdocCreate(\''+t.key+'\')"'+(act?'':' disabled title="No Active Template"')+'>'+HDOC_ICO.plus+' Create '+t.label+'</button>'
       +'</div></header>'
     /* FR-22.1 / 22.6: Saved Drafts first, with its count, then what has been
@@ -666,6 +675,7 @@ function hdocTypeScreenHTML(){
    who started it, when, and the way back into it. */
 function hdocDraftsTableHTML(type){
   const list=hdocDrafts(type);
+  if(!list.length)return '';      // no drafts: the section is not shown at all
   const rows=list.map(function(d,i){
     const who=hdocSubject(d);
     return '<tr class="hdoc-trow" style="cursor:pointer" onclick="hdocOpenDoc('+d.id+')">'
@@ -728,8 +738,8 @@ function hdocModalHTML(){
       return '<div class="ep-form-group'+(f.type==='textarea'?' ep-form-full':'')+'">'+lbl+ctl+'</div>';
     }).join('');
     const sub=(d&&d.status==='Draft'?'Continuing a saved draft. ':d&&d.status==='Submitted'?'Editing '+d.no+'. ':'')
-      +'The fields below come from the Active Template for this document type'
-      +(hdocIsAdmin()?' (<b>'+hdocEsc(tpl.name)+'</b>)':'')+'. Fields marked <span class="req">*</span> are required to submit.';
+      +(hdocTplUI()?'The fields below come from the Active Template for this document type (<b>'+hdocEsc(tpl.name)+'</b>). '
+        :'Fill in the details for this document. ')+'Fields marked <span class="req">*</span> are required to submit.';
     return hdocModalShell((d&&d.status==='Submitted'?'Edit ':d?'':'Create ')+t.label,sub,
       '<div class="ep-form-grid">'+fields+'</div>',
       '<div class="ct-modal-btns">'

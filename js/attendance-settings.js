@@ -634,11 +634,7 @@ function csAttGroup(label,control,full,hint){
   +'</div>';
 }
 function csAttSelect(id,opts,value){
-  return '<select class="ep-form-select" id="'+id+'" onchange="csAttOnChange()">'
-    +opts.map(function(o){
-      return '<option value="'+attrSafe(o)+'"'+(o===value?' selected':'')+'>'+attrSafe(o)+'</option>';
-    }).join('')
-  +'</select>';
+  return sbSelect(id,opts,value,'csAttOnChange');
 }
 // The sanctioned in-form boolean: .hd-check, the box the Edit Holiday form
 // puts "Repeats every year" in.
@@ -736,7 +732,7 @@ function csAttEditHTML(){
   };
 
   let out='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Edit Attendance Settings</span>'
-    +'<span class="csa-dirty" id="csa-dirty">Unsaved changes</span></div>';
+    +'<span class="csa-dirty'+(csAttDirty?' is-on':'')+'" id="csa-dirty">Unsaved changes</span></div>';
 
   out+=sec('General','<div class="lp-sb-form-grid">'
     +csAttGroup('Attendance Mode',csAttSelect('csa-mode',CSA_MODES,m.mode))
@@ -936,3 +932,13 @@ function csAttRadius(i,v){
   csAttPaintMap(i);
   csAttOnChange();
 }
+
+/* Unsaved edits on the company panel's Attendance and Leaves tabs (sbDraftReg,
+   core.js) - each tab keeps its own draft and dirty flag. */
+sbDraftReg('cs',{
+  dirty:function(){return !!((csAttEdit&&csAttDirty)||(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty));},
+  tabs:function(){const t=[];if(csAttEdit&&csAttDirty)t.push('attendance');if(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty)t.push('leaves');return t;},
+  drop:function(){
+    csAttEdit=false;csAttDraft=null;csAttDirty=false;
+    if(typeof csLeaveEdit!=='undefined'){csLeaveEdit=false;csLeaveDraft=null;csLeaveDirty=false;}
+  }});

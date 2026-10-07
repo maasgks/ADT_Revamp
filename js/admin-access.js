@@ -236,7 +236,7 @@ function astDept(a){const e=axEmp(a.assignedTo);return e?e.dept:'';}
 // ── State ──
 let astSelectedId=null,astTab='basic-details';
 let astDeptF='',astBranchF='',astCatF='',astStatusF='',astQ='',astEmpF='',astCondF='';
-let astDraft=null,astEditId=null,astAddOpen='',astModalOpen=false;
+let astDraft=null,astEditId=null,astAddOpen='',astModalOpen=false,astDraftOrig='';
 let astLogAssignee='';   // the employee picked in the Logs form, when moving to Assigned
 
 function astRows(){
@@ -264,17 +264,21 @@ function resetAstFilters(){astDeptF='';astBranchF='';astCatF='';astStatusF='';as
 
 // ── Detail panel ──
 function openAstSidebar(id,tab){
+  if(astSelectedId!=null&&astSelectedId!==id&&sbLeaveGuard('ast',function(){openAstSidebar(id,tab);}))return;
+  if(astInlineEdit()&&astEditId!==id){astDraft=null;astEditId=null;}
   astTab=tab||sbKeepTab(astSelectedId,astTab);astSelectedId=id;astLogAssignee='';
   const sb=document.getElementById('ast-split-sb');if(sb)sb.classList.add('open');
   isbTab('ast',renderAstSidebar);
   document.querySelectorAll('.ast-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='ast-row-'+id);});
 }
 function closeAstSidebar(){
+  if(sbLeaveGuard('ast',closeAstSidebar))return;
+  if(astInlineEdit()){astDraft=null;astEditId=null;}
   astSelectedId=null;
   const sb=document.getElementById('ast-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ast-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
-function navAstTab(t){astTab=t;astLogAssignee='';isbTab('ast',renderAstSidebar);}
+function navAstTab(t){if(astInlineEdit()&&!sbHasDraft('ast')){astDraft=null;astEditId=null;}astTab=t;astLogAssignee='';isbTab('ast',renderAstSidebar);}
 
 /* Seeded from the record, newest first, ending on the record's own status -
    a log that ends somewhere the record is not is worse than no log at all. */
@@ -326,7 +330,9 @@ function renderAstSidebar(){
     {id:'purchase',label:'Purchase & Warranty'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar('ast',tabs,astTab,'navAstTab','closeAstSidebar');
   let body='';
-  if(astTab==='basic-details'){
+  if(astTab==='basic-details'&&astInlineEdit(a.id)){
+    body=astHeroHTML(a,'editing')+axInlineFormHTML(astFormFieldsHTML(),'cancelAddAsset()','submitAddAsset()');
+  }else if(astTab==='basic-details'){
     body=astHeroHTML(a,true)
       +'<div class="lp-sb-detail-grid">'
       +axField(AX_ICO.fTag,'Asset Category',a.category)
@@ -398,14 +404,12 @@ function renderAstSidebar(){
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
-function astHeroHTML(a,withEdit){
-  return '<div class="ax-hero">'
-    +(a.image?'<img class="ax-hero-img" src="'+a.image+'" alt="">':'<div class="ax-hero-ico">'+AX_ICO.heroAsset+'</div>')
-    +'<div class="ax-hero-txt"><div class="ax-hero-name">'+a.name+'</div>'
-      +'<div class="ax-hero-meta">'+a.code+'<span class="ax-dot">•</span>'+(a.assignedTo?'With '+a.assignedTo:'Unassigned')+'</div></div>'
-    +'<div class="ax-hero-right">'+axBadge(statusTone(a.status),a.status)
-      +(withEdit?'<button class="lp-sb-view-edit-btn" onclick="startAddAsset('+a.id+')">'+AX_ICO.pen+' Edit</button>':'')+'</div>'
-    +'</div>';
+/* The shared detail-panel header (sbHero, core.js) - this design is where it
+   started, and every module's panel now opens with it. */
+function astHeroHTML(a,mode){
+  return sbHero({img:a.image,icon:AX_ICO.heroAsset,name:a.name,
+    meta:[a.code,a.assignedTo?'With '+a.assignedTo:'Unassigned'],
+    status:axBadge(statusTone(a.status),a.status),editing:mode==='editing',onEdit:mode?'startAddAsset('+a.id+')':''});
 }
 function astLogStatusHook(val){
   const box=document.getElementById('ast-log-assignee');
@@ -512,6 +516,9 @@ function astBlankDraft(){
   return {name:'',type:'',category:'',serial:'',code:'',model:'',brand:'',cost:'',purchaseDate:'',warrantyEnd:'',
     vendor:'',condition:'',warrantyStart:'',status:'',branch:'',assignedTo:'',image:'',imageName:'',notes:''};
 }
+/* Edit opens these same fields inside the asset's panel - the listing stays in
+   view, as every other module's Edit does. "+ Add" is the popup. */
+function astInlineEdit(id){return !!astEditId&&!astModalOpen&&(id==null||astEditId===id);}
 function startAddAsset(editId){
   const a=editId?assetsData.find(function(x){return x.id===editId;}):null;
   astEditId=a?a.id:null;
@@ -520,7 +527,8 @@ function startAddAsset(editId){
       vendor:a.vendor,condition:a.condition,warrantyStart:a.warrantyStart,status:a.status,branch:a.branch,
       assignedTo:a.assignedTo,image:a.image||'',imageName:a.imageName||'',notes:a.notes||''})
     :astBlankDraft();
-  astAddOpen='';astModalOpen=true;
+  astAddOpen='';astModalOpen=!a;astDraftOrig=JSON.stringify(astDraft);
+  if(a){astSelectedId=a.id;astTab='basic-details';}
   if(page!=='asset-allocation'){page='asset-allocation';syncSidebarDropdown(page);}
   renderADTPage();
 }
@@ -587,7 +595,7 @@ function astClearImage(){astSync();astDraft.image='';astDraft.imageName='';rende
    --form, an .ep-form-grid of fields, and Cancel beside the primary action on
    one right-aligned row - so creating an asset feels like creating a payhead,
    a holiday or a rate. */
-function buildAddAssetModalHTML(){
+function astFormFieldsHTML(){
   if(!astDraft)astDraft=astBlankDraft();
   const d=astDraft,edit=!!astEditId;
   const txt=function(id,label,val,ph,req,type){
@@ -645,6 +653,11 @@ function buildAddAssetModalHTML(){
       +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Asset Image</label>'+imageBox+'</div>'
       +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ast-notes">Comment / Notes</label>'
         +'<textarea class="ep-form-input ax-notes" id="ast-notes" placeholder="Anything worth knowing about this asset">'+attrSafe(d.notes||'')+'</textarea></div>';
+  return fields;
+}
+function buildAddAssetModalHTML(){
+  const fields=astFormFieldsHTML();
+  const d=astDraft,edit=!!astEditId;
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(edit?'Edit Asset':'Add Asset')+'</span>'
@@ -660,6 +673,13 @@ function buildAddAssetModalHTML(){
 }
 /* Closing a create / edit popup. It may have been opened over an employee's
    lifecycle log, so that context is released too. */
+/* The in-panel frame for an edit form: the popup's own fields, with Cancel and
+   Save changes under them as on every other panel. */
+function axInlineFormHTML(fields,onCancel,onSave){
+  return '<div class="lp-sb-edit-form ax-sb-edit"><div class="lp-sb-edit-section"><div class="ep-form-grid">'+fields+'</div>'
+    +'<div class="lp-sb-form-actions"><button class="ep-cancel-btn" onclick="'+onCancel+'">Cancel</button>'
+    +'<button class="ep-save-btn" onclick="'+onSave+'">Save changes</button></div></div></div>';
+}
 function axCloseCreate(){
   if(typeof empAxCtx!=='undefined')empAxCtx=null;
   renderADTPage();
@@ -780,7 +800,7 @@ function itaEmpId(r){const e=axEmp(r.assignedTo);return e&&e.empId?e.empId:'';}
 // ── State ──
 let itaSelectedId=null,itaTab='basic-details';
 let itaSysF='',itaTypeF='',itaStatusF='',itaQ='';
-let itaDraft=null,itaEditId=null,itaAddOpen='',itaModalOpen=false;
+let itaDraft=null,itaEditId=null,itaAddOpen='',itaModalOpen=false,itaDraftOrig='';
 let itaSysDraft={name:'',url:'',logo:'',logoName:''};
 
 function itaRows(){
@@ -804,17 +824,21 @@ function resetItaFilters(){itaSysF='';itaTypeF='';itaStatusF='';itaQ='';itaSelec
 
 // ── Detail panel ──
 function openItaSidebar(id,tab){
+  if(itaSelectedId!=null&&itaSelectedId!==id&&sbLeaveGuard('ita',function(){openItaSidebar(id,tab);}))return;
+  if(itaInlineEdit()&&itaEditId!==id){itaDraft=null;itaEditId=null;}
   itaTab=tab||sbKeepTab(itaSelectedId,itaTab);itaSelectedId=id;
   const sb=document.getElementById('ita-split-sb');if(sb)sb.classList.add('open');
   isbTab('ita',renderItaSidebar);
   document.querySelectorAll('.ita-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='ita-row-'+id);});
 }
 function closeItaSidebar(){
+  if(sbLeaveGuard('ita',closeItaSidebar))return;
+  if(itaInlineEdit()){itaDraft=null;itaEditId=null;}
   itaSelectedId=null;
   const sb=document.getElementById('ita-split-sb');if(sb)sb.classList.remove('open');
   document.querySelectorAll('.ita-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
-function navItaTab(t){itaTab=t;isbTab('ita',renderItaSidebar);}
+function navItaTab(t){if(itaInlineEdit()&&!sbHasDraft('ita')){itaDraft=null;itaEditId=null;}itaTab=t;isbTab('ita',renderItaSidebar);}
 
 function itaSeedLogs(r){
   const p=String(r.createdAt).split(' | ');
@@ -871,12 +895,12 @@ function renderItaSidebar(){
   const e=axEmp(r.assignedTo);
   const meta=ITA_SYSTEM_META[r.system]||{};
   let body='';
-  if(itaTab==='basic-details'){
-    body='<div class="ax-hero">'+(meta.logo?'<img class="ax-hero-img" src="'+meta.logo+'" alt="">':'<div class="ax-hero-ico">'+AX_ICO.heroKey+'</div>')
-      +'<div class="ax-hero-txt"><div class="ax-hero-name">'+r.system+'</div>'
-        +'<div class="ax-hero-meta">'+r.accessType+'<span class="ax-dot">•</span>'+r.assignedTo+'</div></div>'
-      +'<div class="ax-hero-right">'+axBadge(statusTone(r.status),r.status)
-        +'<button class="lp-sb-view-edit-btn" onclick="startAddItAccess('+r.id+')">'+AX_ICO.pen+' Edit</button></div></div>'
+  const hero=function(editing){return sbHero({img:meta.logo,icon:AX_ICO.heroKey,name:r.system,meta:[r.accessType,r.assignedTo],
+    status:axBadge(statusTone(r.status),r.status),editing:editing,onEdit:'startAddItAccess('+r.id+')'});};
+  if(itaTab==='basic-details'&&itaInlineEdit(r.id)){
+    body=hero(true)+axInlineFormHTML(itaFormFieldsHTML(),'cancelAddItAccess()','submitAddItAccess()');
+  }else if(itaTab==='basic-details'){
+    body=hero(false)
       +'<div class="lp-sb-detail-grid">'
       +axField(AX_ICO.fUser,'Employee Name',r.assignedTo)
       +axField(AX_ICO.fHash,'Employee ID',itaEmpId(r))
@@ -991,13 +1015,15 @@ function buildItAccessHTML(){
 function itaBlankDraft(){
   return {system:'',accessType:'',login:'',assignedTo:'',role:'',status:'',effective:'',expiry:'',provisionedBy:'',mfa:'Yes',notes:''};
 }
+function itaInlineEdit(id){return !!itaEditId&&!itaModalOpen&&(id==null||itaEditId===id);}
 function startAddItAccess(editId){
   const r=editId?itAccessData.find(function(x){return x.id===editId;}):null;
   itaEditId=r?r.id:null;
   itaDraft=r?Object.assign(itaBlankDraft(),{system:r.system,accessType:r.accessType,login:r.login,assignedTo:r.assignedTo,
       role:r.role,status:r.status,effective:r.effective,expiry:r.expiry,provisionedBy:r.provisionedBy,mfa:r.mfa,notes:r.notes||''})
     :itaBlankDraft();
-  itaAddOpen='';itaModalOpen=true;
+  itaAddOpen='';itaModalOpen=!r;itaDraftOrig=JSON.stringify(itaDraft);
+  if(r){itaSelectedId=r.id;itaTab='basic-details';}
   if(page!=='it-access'){page='it-access';syncSidebarDropdown(page);}
   renderADTPage();
 }
@@ -1062,7 +1088,7 @@ function itaSysAddHTML(){
 }
 /* Picking the employee fills in the Employee ID underneath. */
 function itaEmpHook(){itaSync();renderADTPage();}
-function buildAddItAccessModalHTML(){
+function itaFormFieldsHTML(){
   if(!itaDraft)itaDraft=itaBlankDraft();
   const d=itaDraft,edit=!!itaEditId;
   const e=axEmp(d.assignedTo);
@@ -1092,6 +1118,11 @@ function buildAddItAccessModalHTML(){
       +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ita-notes">Comment / Notes</label>'
         +'<textarea class="ep-form-input ax-notes" id="ita-notes" placeholder="Anything worth knowing about this access">'+attrSafe(d.notes||'')+'</textarea>'
         +'<div class="ea-hint">Do not enter passwords, API tokens, secret keys or any other authentication secret — they are never stored.</div></div>';
+  return fields;
+}
+function buildAddItAccessModalHTML(){
+  const fields=itaFormFieldsHTML();
+  const d=itaDraft,edit=!!itaEditId;
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(edit?'Edit IT Access':'Add IT Access')+'</span>'
@@ -1157,3 +1188,12 @@ Object.assign(supportPageMeta,{
   'asset-allocation':{title:'Assets',context:'Admin Access',filters:[],columns:[],rows:[]},
   'it-access':{title:'IT Access',context:'Admin Access',filters:[],columns:[],rows:[]}
 });
+
+/* Unsaved edits (sbDraftReg, core.js): the draft is read in from the form and
+   compared with what the form opened with. */
+sbDraftReg('ast',{
+  dirty:function(){if(!astInlineEdit())return false;astSync();return JSON.stringify(astDraft)!==astDraftOrig;},
+  drop:function(){astDraft=null;astEditId=null;}});
+sbDraftReg('ita',{
+  dirty:function(){if(!itaInlineEdit())return false;itaSync();return JSON.stringify(itaDraft)!==itaDraftOrig;},
+  drop:function(){itaDraft=null;itaEditId=null;}});
