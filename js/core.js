@@ -125,7 +125,7 @@ const sidebarItems=[
   ]},
   {dropdown:'Admin Access',color:'slate',icon:sbIco.lock,children:[
     {id:'asset-allocation',label:'Assets',color:'slate',icon:sbIco.laptop},
-    {id:'it-access',label:'IT Access',color:'slate',icon:sbIco.key}
+    {id:'it-access',label:'IT Accesses',color:'slate',icon:sbIco.key}
   ]},
 
   {section:'Support'},
@@ -1434,6 +1434,18 @@ function toggleHdrDD(id){
     if(trigger){const chev=trigger.querySelector('.hdr-dd-chev');if(chev)chev.style.transform='rotate(180deg)';}
   }
 }
+/* ── LOGGED-IN ROLE ──
+   Who is working. The employee lifecycle reads it to decide which steps this
+   person can record (empRoleCan); Super Admin can record every step. */
+let currentRole='Super Admin';
+function setAppRole(r){
+  currentRole=r;
+  const lbl=document.getElementById('role-label');if(lbl)lbl.textContent=r;
+  document.querySelectorAll('.role-dd-item').forEach(b=>b.classList.toggle('is-current',b.dataset.role===r));
+  closeAllHdrDD();
+  renderADTPage();
+  showToast('Logged in as '+r,'info',r==='Super Admin'?'Every lifecycle step can be recorded.':'Only the steps '+r+' owns can be recorded.');
+}
 function closeAllHdrDD(){
   document.querySelectorAll('.hdr-dd-panel.open').forEach(p=>{
     p.classList.remove('open');
@@ -2705,7 +2717,7 @@ function addListingItem(pg){if(pg==='contracts'){
   ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){startAddTeam();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
-else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
+else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){if(typeof astView!=='undefined'&&astView==='types')startAddAstType();else startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
 /* addDemoEmployee() and its name pool lived here: one button that invented a
    plausible record and inserted it. It is gone, not deprecated - the four-step
    intake in js/employee-add.js is the only way an employee is created now, so

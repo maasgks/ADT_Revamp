@@ -14,11 +14,11 @@
      Pending / Onboarding / Document Request Raised     HR
      Documents Submitted                                System
      Document Rejected / Verification Completed         Compliance
-     Asset Allocation & IT Access Completed             HR / IT
+     Admin Access Completed                             HR / IT
      Active                                             System
      Cancel Onboarding / Offboarding                    HR
      KT / Handover Completed                            Reporting Manager
-     Asset Recovery & IT Access Revocation Completed    HR / IT
+     Admin Access Revoked                               HR / IT
      Compliance Clearance Completed                     Compliance
      F&F Settlement Completed                           HR / Finance
      Inactive                                           System
@@ -26,8 +26,8 @@
 
    THREE LOGS ARE NEVER PICKED BY A PERSON. Documents Submitted is written the
    moment the last outstanding requested document is uploaded (FR-07); Active
-   the moment Verification Completed and Asset Allocation & IT Access
-   Completed both exist, in either order (FR-12); Inactive the moment the
+   the moment Verification Completed and Admin Access Completed both
+   exist, in either order (FR-12); Inactive the moment the
    applicable exit activities exist AND the Last Working Date is reached
    (FR-19). Each is stamped Performed By = System, comment "Automated by
    System" (FR-01).
@@ -47,12 +47,12 @@ const EMP_LOG={
   'docs-submitted':{label:'Documents Submitted',owner:'System',system:true},
   'doc-rejected':  {label:'Document Rejected',owner:'Compliance'},
   verified:        {label:'Verification Completed',owner:'Compliance'},
-  'asset-it':      {label:'Asset Allocation & IT Access Completed',owner:'HR / IT'},
+  'asset-it':      {label:'Admin Access Completed',owner:'HR / IT'},
   active:          {label:'Active',owner:'System',system:true},
   'cancel-onb':    {label:'Cancel Onboarding',owner:'HR',cancel:true},
   offboarding:     {label:'Offboarding',owner:'HR'},
   kt:              {label:'KT / Handover Completed',owner:'Reporting Manager'},
-  'asset-rev':     {label:'Asset Recovery & IT Access Revocation Completed',owner:'HR / IT'},
+  'asset-rev':     {label:'Admin Access Revoked',owner:'HR / IT'},
   compliance:      {label:'Compliance Clearance Completed',owner:'Compliance'},
   fnf:             {label:'F&F Settlement Completed',owner:'HR / Finance'},
   inactive:        {label:'Inactive',owner:'System',system:true},
@@ -67,8 +67,8 @@ const EMP_STATUSES=['Pending','Onboarding','Active','Inactive'];
 /* One tone map for the app. Only keys nobody else owns are added here. */
 Object.assign(SB_STATUS_TONE,{
   'document-request-raised':'info','documents-submitted':'info','verification-completed':'ok',
-  'document-rejected':'bad','asset-allocation-it-access-completed':'ok','cancel-onboarding':'bad',
-  offboarding:'wait','kt-handover-completed':'ok','asset-recovery-it-access-revocation-completed':'ok',
+  'document-rejected':'bad','admin-access-completed':'ok','cancel-onboarding':'bad',
+  offboarding:'wait','kt-handover-completed':'ok','admin-access-revoked':'ok',
   'compliance-clearance-completed':'ok','f-f-settlement-completed':'ok','cancel-offboarding':'idle',
   'pending-upload':'wait',uploaded:'info',accepted:'ok'
 });
@@ -216,7 +216,7 @@ function empMilestones(emp){
       docs&&{key:'doc-request',label:'Document Request Raised',state:o.docReq?'done':'pending'},
       docs&&{key:'docs-submitted',label:'Documents Submitted',auto:true,state:o.docReq&&empDocsAllIn(emp)?'done':'pending'},
       {key:'verified',label:'Verification Completed',state:o.verified?'done':'pending'},
-      {key:'asset-it',label:'Asset Allocation & IT Access Completed',state:o.assetIt?'done':'pending'},
+      {key:'asset-it',label:'Admin Access Completed',state:o.assetIt?'done':'pending'},
       {key:'active',label:'Active',auto:true,state:'pending'}
     ];
   }else if(st.phase==='off'){
@@ -224,7 +224,7 @@ function empMilestones(emp){
     items=[
       {key:'offboarding',label:'Offboarding',state:'done'},
       {key:'kt',label:'KT / Handover Completed',state:f.kt?'done':'pending'},
-      empAssetRevApplicable(emp,st)&&{key:'asset-rev',label:'Asset Recovery & IT Access Revocation Completed',state:f.assetRev?'done':'pending'},
+      empAssetRevApplicable(emp,st)&&{key:'asset-rev',label:'Admin Access Revoked',state:f.assetRev?'done':'pending'},
       {key:'compliance',label:'Compliance Clearance Completed',state:f.compliance?'done':'pending'},
       {key:'fnf',label:'F&F Settlement Completed',state:f.fnf?'done':'pending'},
       {key:'inactive',label:'Inactive',auto:true,state:'pending',
@@ -238,9 +238,9 @@ function empMilestones(emp){
      counts only once every applicable step inside it is done. A step that
      does not apply (no documents, nothing to recover) drops out of its stage. */
   var stages=(st.phase==='onb'
-    ?[['Onboarding',['onboarding']],['Documents & Verification',['doc-request','docs-submitted','verified']],
-      ['Asset Allocation & IT Access',['asset-it']],['Active',['active']]]
-    :[['Offboarding',['offboarding']],['Exit Clearances',['kt','asset-rev','compliance']],
+    ?[['Onboarding',['onboarding']],['Document Verification',['doc-request','docs-submitted','verified']],
+      ['Admin Access',['asset-it']],['Active',['active']]]
+    :[['Offboarding Initiated',['offboarding']],['Exit Clearances',['kt','asset-rev','compliance']],
       ['F&F Settlement',['fnf']],['Inactive',['inactive']]]
   ).map(function(s){
     var subs=s[1].map(function(k){return items.find(function(x){return x.key===k;});}).filter(Boolean);
@@ -259,13 +259,13 @@ function empTrackerStatus(emp){
     if(empDocsOutstanding(emp).length)return 'Document Upload Pending';
     if(!o.docReq)return 'Onboarding';
     if(!o.verified)return (!o.noDocs&&!docs.some(function(d){return d.status==='Accepted';}))?'Documents Submitted':'Verification Pending';
-    if(!o.assetIt)return 'Asset & IT Setup Pending';
+    if(!o.assetIt)return 'Admin Access Pending';
     return 'Active';
   }
   if(st.phase==='off'){
     var f=st.off;
     if(!f.kt)return 'KT / Handover Pending';
-    if(!f.assetRev&&empAssetRevApplicable(emp,st))return 'Asset Recovery & IT Revocation Pending';
+    if(!f.assetRev&&empAssetRevApplicable(emp,st))return 'Admin Access Revocation Pending';
     if(!f.compliance)return 'Compliance Clearance Pending';
     if(!f.fnf)return 'F&F Settlement Pending';
     return 'Awaiting Last Working Date';
@@ -301,6 +301,68 @@ function empLogOptions(emp){
   return out;
 }
 function empPhaseLabel(emp){var st=empState(emp);return st.phase==='off'?'Offboarding':st.status;}
+
+/* ── The next step ────────────────────────────────────────────────────────
+   Nobody picks the next log from a list: it follows from where the record
+   stands. Each step names its own action (cta) - the popup's one button - and
+   says in a line what it involves (hint). */
+const EMP_STEP={
+  onboarding:     {cta:'Start Onboarding Process',hint:'Begin onboarding. Documents, verification and asset setup follow from here.'},
+  'doc-request':  {cta:'Send Document Request',more:'Request More Documents',hint:'Choose the documents the employee must upload. They are notified to upload them.'},
+  verified:       {cta:'Complete Verification',hint:'Review each uploaded document - accept it, or reject it with a reason.'},
+  'doc-rejected': {cta:'Reject Document',hint:'Reject an uploaded document and ask the employee for a replacement.'},
+  'asset-it':     {cta:'Complete Admin Access',hint:'Assign assets and record IT access, or skip what does not apply.'},
+  'cancel-onb':   {cta:'Cancel Onboarding',hint:'Stop onboarding. Assigned assets and IT access must be recovered first.'},
+  offboarding:    {cta:'Start Offboarding Process',hint:'Record the separation type and last working date to begin offboarding.'},
+  kt:             {cta:'Complete Handover',hint:'Record who takes over the work and what was handed over.'},
+  'asset-rev':    {cta:'Revoke Admin Access',hint:'Confirm every asset is back and all IT access is revoked.'},
+  compliance:     {cta:'Complete Compliance Clearance',hint:'Record the clearance, and any issue still outstanding.'},
+  fnf:            {cta:'Complete F&F Settlement',hint:'Record the full and final settlement and how it was paid.'},
+  'cancel-off':   {cta:'Cancel Offboarding',hint:'Withdraw the exit. The employee stays Active.'}
+};
+/* {key, wait, more, cancel}: key is the step to do now (null while the record
+   waits on someone else - then wait says on whom); more are the other steps
+   open at the same time; cancel is the way out of the running process. */
+function empNextStep(emp){
+  var opts=empLogOptions(emp),st=empState(emp);
+  var cancel=opts.filter(function(k){return EMP_LOG[k].cancel;})[0]||null;
+  var work=opts.filter(function(k){return !EMP_LOG[k].cancel&&k!=='doc-rejected';});
+  var key=null,wait=null;
+  if(st.phase==='onb'){
+    var o=st.onb,out=empDocsOutstanding(emp);
+    if(!o.verified&&!o.noDocs&&!o.docReq)key='doc-request';
+    else if(!o.verified&&!o.noDocs&&out.length)
+      wait={title:'Waiting for documents',text:out.length+' requested document'+(out.length===1?' is':'s are')+' with '+emp.name+' to upload'
+        +(out.some(function(d){return d.status==='Rejected';})?', including a replacement for a rejected one':'')+'.'};
+    else if(!o.verified)key='verified';
+    else if(!o.assetIt)key='asset-it';
+  }else if(st.phase==='off'){
+    key=work[0]||null;
+    if(!key)wait={title:'Awaiting Last Working Date',text:'Every exit activity is complete. '+emp.name+' becomes Inactive automatically'
+      +(st.off.lwd?' on '+cdLabel(st.off.lwd):'')+'.'};
+  }else key=work[0]||null;
+  return {key:key,wait:wait,cancel:cancel,more:work.filter(function(k){return k!==key;})};
+}
+/* Who may record a step: its Owner (FR-01 status table) against the role
+   logged in (header, core.js currentRole). Super Admin records every step. */
+const EMP_ROLE_OWNS={
+  'HR':['HR','HR / IT','HR / Finance'],
+  'Compliance':['Compliance'],
+  'IT':['HR / IT'],
+  'Finance':['HR / Finance'],
+  'Reporting Manager':['Reporting Manager']
+};
+function empRole(){return typeof currentRole==='string'?currentRole:'Super Admin';}
+function empRoleCan(k){
+  var r=empRole();if(r==='Super Admin')return true;
+  return (EMP_ROLE_OWNS[r]||[]).indexOf(EMP_LOG[k].owner)>=0;
+}
+/* A step named as the action it is ("Complete Verification"), for buttons,
+   links and the Super Admin step list. */
+function empStepAction(emp,k){return k==='doc-request'&&empReqDocs(emp).length?EMP_STEP[k].more:EMP_STEP[k].cta;}
+function empStepTitle(emp,k){
+  return k==='doc-request'&&empReqDocs(emp).length?EMP_STEP[k].more:EMP_LOG[k].label;
+}
 
 /* ── Badges ───────────────────────────────────────────────────────────── */
 function empLifeBadge(status){
@@ -345,15 +407,8 @@ const EMP_ICO={
   trash:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
 };
 
-/* ══ PER-TYPE FORM BLOCKS ══════════════════════════════════════════════════
-   Every available type's block is rendered up front and all but the picked
-   one is `hidden`, so switching back to a type you had started still has
-   what you entered. Only the VISIBLE block is ever read. */
-function empLogInputs(pk,emp,opts,current){
-  return '<div class="emp-log-input-wrap">'+opts.map(function(k){
-    return '<div class="emp-log-input" data-type="'+k+'"'+(k===current?'':' hidden')+'>'+empBlockHTML(pk,emp,k)+'</div>';
-  }).join('')+'</div>';
-}
+/* ══ PER-STEP FORM BLOCKS ══════════════════════════════════════════════════
+   The fields each step asks for. The popup shows exactly one (empFormHTML). */
 function empLabel(text,req){
   return '<div class="lp-logs-form-label">'+text+(req?' <span class="lp-logs-form-req">*</span>':'')+'</div>';
 }
@@ -622,16 +677,37 @@ function empDocRejectFrom(pk,docId){
   renderADTPage();
 }
 
-/* ── Asset Allocation & IT Access Completed (FR-11) ──────────────────────
+/* ── Admin Access Completed: assets and IT access (FR-11) ─────────────────
    Two sections, one below the other. Each lists what the employee already
    holds; Assets also offers Assign Existing Asset (search by name or ID) and
    + Add Asset, IT offers + Add IT Access - both the module's own popups. */
-function empAssetCard(a,mode){
-  var pairs=mode==='recover'
-    ?[['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],['Assigned Date',cdLabel(a.assignedOn)],['Condition',a.condition]]
-    :[['Asset Category',a.category],['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],
-      ['Brand / Model',[a.brand,a.model].filter(Boolean).join(' · ')],['Assigned Date',cdLabel(a.assignedOn)],['Location',a.branch],['Condition',a.condition]];
-  return empResCard(a.name,a.status,pairs);
+/* An asset in the log is named, not described: what it is (Keyboard, Mouse)
+   and its code, so two of the same kind can be told apart. Everything else
+   about it lives on the Assets page. */
+/* Each line opens on its own to the asset's details - the same label / value
+   grid as the IT Access cards - so several can be open at once. Which are
+   open is kept here, so a repaint (an asset assigned) does not fold them. */
+var empResOpen={};
+function empAssetCard(a){
+  var key='a'+a.id,open=!!empResOpen[key];
+  var pairs=[['Asset Category',a.category],['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],
+    ['Brand / Model',[a.brand,a.model].filter(Boolean).join(' · ')],['Assigned Date',cdLabel(a.assignedOn)],
+    ['Location',a.branch],['Condition',a.condition]];
+  return '<div class="emp-res-card is-line is-exp'+(open?' is-open':'')+'">'
+    +'<button type="button" class="emp-res-top emp-res-toggle" aria-expanded="'+open+'" title="'+(open?'Hide':'Show')+' details" onclick="empResToggle(this,\''+key+'\')">'
+      +'<span class="emp-res-txt"><span class="emp-res-name">'+empLifeHtml(a.name)+'</span>'
+        +(a.code?'<span class="emp-res-code">'+empLifeHtml(a.code)+'</span>':'')+'</span>'
+      +empLifeBadge(a.status)+'<span class="emp-res-chev">'+EMP_ICO.chev+'</span></button>'
+    +'<dl class="emp-res-dl emp-res-more"'+(open?'':' hidden')+'>'+pairs.map(function(p){
+      return '<div><dt>'+p[0]+'</dt><dd>'+(p[1]?empLifeHtml(p[1]):'<span class="sb-dash">—</span>')+'</dd></div>';
+    }).join('')+'</dl></div>';
+}
+function empResToggle(btn,key){
+  var card=btn.closest('.emp-res-card'),more=card&&card.querySelector('.emp-res-more');if(!more)return;
+  var open=more.hidden;
+  more.hidden=!open;card.classList.toggle('is-open',open);
+  btn.setAttribute('aria-expanded',String(open));btn.title=(open?'Hide':'Show')+' details';
+  if(open)empResOpen[key]=1;else delete empResOpen[key];
 }
 function empItCard(r,mode){
   var pairs=[['Access Type',r.accessType],['Login ID',r.login],['Role / Permission',r.role],['Effective Date',cdLabel(r.effective)]];
@@ -646,23 +722,12 @@ function empResCard(title,status,pairs){
 }
 function empAssetItHTML(pk,emp){
   var assets=empAssets(emp),its=empItAccess(emp);
-  var by='Asset Name';
   return '<div class="emp-sec">'
       +empSecHead(EMP_ICO.laptop,'Asset Allocation',empCheck(pk+'-skip-asset','Skip Asset Allocation',false,'empSkipToggle(this)'))
       +'<div class="emp-sec-body">'
         +(assets.length?'<div class="emp-res-list">'+assets.map(function(a){return empAssetCard(a);}).join('')+'</div>'
           :'<div class="emp-sec-empty">No asset assigned to '+empLifeHtml(emp.name)+' yet.</div>')
-        +'<div class="emp-assign">'
-          +'<div class="emp-assign-title">Assign Existing Asset</div>'
-          +'<div class="emp-log-fields is-grid">'
-            +'<div class="emp-log-field">'+empLabel('Search Asset By')+apCS(pk+'-asg-by',['Asset Name','Asset ID / Code'],by,'Search Asset By','empAssignByHook')+'</div>'
-            +'<div class="emp-log-field">'+empLabel('Select Asset')+'<div class="emp-assign-sel">'+empAssignSelHTML(pk,by)+'</div></div>'
-          +'</div>'
-          +'<div class="emp-sec-btns">'
-            +'<button type="button" class="emp-sec-btn" onclick="empAssignExisting(\''+pk+'\')">'+EMP_ICO.tick+'Assign</button>'
-            +'<button type="button" class="emp-sec-btn" onclick="empGoAddAsset(\''+pk+'\')">'+EMP_ICO.plus+'Add Asset</button>'
-          +'</div>'
-        +'</div>'
+        +empAssignPickHTML(pk,emp)
       +'</div></div>'
     +'<div class="emp-sec">'
       +empSecHead(EMP_ICO.key,'IT Access',empCheck(pk+'-skip-it','Skip IT Access',false,'empSkipToggle(this)'))
@@ -672,44 +737,140 @@ function empAssetItHTML(pk,emp){
         +'<div class="emp-sec-btns"><button type="button" class="emp-sec-btn" onclick="empGoAddItAccess(\''+pk+'\')">'+EMP_ICO.plus+'Add IT Access</button></div>'
       +'</div></div>';
 }
-function empAssetOptLabel(a,by){return by==='Asset ID / Code'?a.code+' — '+a.name:a.name+' ('+a.code+')';}
-function empAssignSelHTML(pk,by){
-  var av=empAvailableAssets();
-  return apCS(pk+'-asg-sel',av.map(function(a){return empAssetOptLabel(a,by);}),'',av.length?'Select Asset':'No available assets');
-}
-function empAssignByHook(val,csid){
-  var pk=String(csid).replace(/-asg-by$/,'');
-  var w=document.querySelector(empScopeSel(pk)+' .emp-log-input:not([hidden]) .emp-assign-sel');
-  if(w)w.innerHTML=empAssignSelHTML(pk,val);
-}
 function empAssignExisting(pk){
   var emp=empPkRec(pk);if(!emp)return;
-  var by=getCSValue(pk+'-asg-by')||'Asset Name',lbl=getCSValue(pk+'-asg-sel');
-  var a=empAvailableAssets().find(function(x){return empAssetOptLabel(x,by)===lbl;});
-  if(!a){showToast('Select an asset','error','Pick an available asset to assign to '+emp.name+'.');return;}
+  /* The assets are picked first in the Select Assets popup; Assign hands
+     them all over at once. */
+  var picks=empAsgPicked(pk,emp);
+  if(!picks.length){showToast('Select assets first','error','Use Select Assets to pick what to assign to '+emp.name+'.');return;}
+  picks.forEach(function(x){empAssignAsset(emp,x);});
+  delete empAsgPicks[pk];
+  renderADTPage();
+  showToast(picks.length===1?'Asset assigned':picks.length+' assets assigned','success',
+    picks.map(function(x){return x.name+' ('+x.code+')';}).join(', ')+(picks.length===1?' is':' are')+' now assigned to '+emp.name+'.');
+}
+/* Hands one available asset to the employee - its status, holder, history,
+   log and workflow, exactly as the Assets module records an assignment. */
+function empAssignAsset(emp,a){
   var today=empToday();
   if(typeof astSeedLogs==='function')astSeedLogs(a);
   a.status='Assigned';a.assignedTo=emp.name;a.assignedOn=today;a.updatedAt=empStamp();
+  if(typeof astMarkAssigned==='function')astMarkAssigned(a);
   if(emp.branch)a.branch=emp.branch;
   a.history=a.history||[];a.history.unshift({employee:emp.name,from:today,to:'',condition:a.condition});
   var s=stampNow();
   if(a.logs)a.logs.unshift({date:s.date,time:s.time,user:CURRENT_USER,status:'Assigned',action:'Assigned to '+emp.name+' from the onboarding log.'});
   if(typeof wfPush==='function'&&typeof astWorkflowData!=='undefined'){if(typeof astWorkflow==='function')astWorkflow(a);wfPush(astWorkflowData,a.id,'Asset Assigned','Handed to '+emp.name+' during onboarding.');}
+}
+
+/* ── Select Assets ────────────────────────────────────────────────────────
+   Pick first, then assign: Select Assets opens a popup of the assets that are
+   free right now - search, tick one or more, Submit - and the picks come back
+   to the log as a list, with Assign switched on. Nothing is assigned until
+   Assign is pressed. The popup is painted straight onto <body>, like the
+   Cancel Onboarding one, so the log form underneath keeps what was typed. */
+var empAsgPicks={};    // pk -> {emp:id, ids:[asset id]}
+function empAsgPicked(pk,emp){
+  var p=empAsgPicks[pk];
+  if(!p||!emp||p.emp!==emp.id)return [];
+  var av=empAvailableAssets();
+  return p.ids.map(function(id){return av.find(function(a){return a.id===id;});}).filter(Boolean);
+}
+function empAsgUnpick(pk,id){
+  var p=empAsgPicks[pk];if(!p)return;
+  p.ids=p.ids.filter(function(x){return x!==id;});
   renderADTPage();
-  showToast('Asset assigned','success',a.name+' ('+a.code+') is now assigned to '+emp.name+'.');
+}
+function empAssignPickHTML(pk,emp){
+  var picks=empAsgPicked(pk,emp);
+  /* Only what is needed at each moment: the picked assets appear (under
+     "Ready to assign") once there are some, and one row of buttons - Select
+     and Add on the left, Assign on the right, off until something is picked. */
+  return '<div class="emp-assign">'
+    +(picks.length
+      ?'<div class="emp-assign-title">Ready to assign</div>'
+        +'<div class="emp-pick-list">'+picks.map(function(a){
+          return '<div class="emp-pick-row"><span class="emp-res-txt"><span class="emp-res-name">'+empLifeHtml(a.name)+'</span>'
+            +'<span class="emp-res-code">'+empLifeHtml(a.code)+'</span></span>'
+            +'<button type="button" class="emp-pick-x" title="Remove '+empLifeHtml(a.name)+'" onclick="empAsgUnpick(\''+pk+'\','+a.id+')">'+EMP_ICO.x+'</button></div>';
+        }).join('')+'</div>'
+      :'')
+    +'<div class="emp-assign-bar">'
+      +'<div class="emp-sec-btns">'
+        +'<button type="button" class="emp-sec-btn" onclick="empAsgOpen(\''+pk+'\')">'+(picks.length?'Change Selection':'Select Assets')+'</button>'
+        +'<button type="button" class="emp-sec-btn" onclick="empGoAddAsset(\''+pk+'\')">'+EMP_ICO.plus+'Add Asset</button>'
+      +'</div>'
+      +'<button type="button" class="emp-sec-btn is-primary"'+(picks.length?'':' disabled title="Select assets first"')+' onclick="empAssignExisting(\''+pk+'\')">'
+        +(picks.length>1?'Assign '+picks.length+' Assets':'Assign')+'</button>'
+    +'</div>'
+  +'</div>';
+}
+function empAsgOpen(pk){
+  var emp=empPkRec(pk);if(!emp)return;
+  empAsgClose();
+  var av=empAvailableAssets(),on={};
+  empAsgPicked(pk,emp).forEach(function(a){on[a.id]=1;});
+  var rows=av.map(function(a){
+    var q=(a.name+' '+a.code+' '+(a.category||'')).toLowerCase();
+    return '<label class="emp-asg-row" data-q="'+empLifeHtml(q)+'">'
+      +'<input type="checkbox" value="'+a.id+'"'+(on[a.id]?' checked':'')+' onchange="empAsgCount()">'
+      +'<span class="emp-log-box">'+EMP_ICO.tick+'</span>'
+      +'<span class="emp-asg-txt"><span class="emp-res-name">'+empLifeHtml(a.name)+'</span><span class="emp-res-code">'+empLifeHtml(a.code)+'</span></span>'
+      +'<span class="emp-asg-cat">'+empLifeHtml(a.category||'')+'</span></label>';
+  }).join('');
+  var el=document.createElement('div');
+  el.id='emp-asg-pop';el.className='ct-modal-overlay emp-block-overlay';el.dataset.pk=pk;
+  el.innerHTML='<div class="ct-modal ct-modal--form emp-asg" role="dialog" aria-modal="true" aria-label="Select assets">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Select Assets</span>'
+      +'<button class="ct-modal-close" onclick="empAsgClose()" aria-label="Close">'+EMP_ICO.close+'</button></div>'
+    +'<p class="ct-modal-sub">Assets available to assign to <b>'+empLifeHtml(emp.name)+'</b>. Tick one or more, then Submit.</p>'
+    +(av.length
+      ?'<input class="ep-form-input emp-asg-search" type="text" placeholder="Search by asset name or ID" oninput="empAsgFilter(this.value)">'
+        +'<div class="emp-asg-list">'+rows+'<div class="emp-asg-none" hidden>No asset matches this search.</div></div>'
+      :'<div class="emp-sec-empty">No assets are available right now. Add one with <b>Add Asset</b> in the log.</div>')
+    +'<div class="ct-modal-foot"><span class="emp-asg-count" id="emp-asg-count"></span><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="empAsgClose()">Cancel</button>'
+      +'<button class="ep-save-btn" id="emp-asg-submit" onclick="empAsgSubmit()">Submit</button>'
+    +'</div></div></div>';
+  document.body.appendChild(el);
+  empAsgCount();
+  var s=el.querySelector('.emp-asg-search');if(s)s.focus();
+}
+function empAsgClose(){var el=document.getElementById('emp-asg-pop');if(el)el.remove();}
+function empAsgFilter(q){
+  q=String(q||'').trim().toLowerCase();
+  var any=false;
+  document.querySelectorAll('#emp-asg-pop .emp-asg-row').forEach(function(r){
+    var hit=!q||r.dataset.q.indexOf(q)>=0;r.hidden=!hit;if(hit)any=true;
+  });
+  var none=document.querySelector('#emp-asg-pop .emp-asg-none');if(none)none.hidden=any;
+}
+function empAsgCount(){
+  var n=document.querySelectorAll('#emp-asg-pop .emp-asg-row input:checked').length;
+  var c=document.getElementById('emp-asg-count');if(c)c.textContent=n?n+' selected':'';
+  var b=document.getElementById('emp-asg-submit');if(b)b.disabled=!n;
+}
+function empAsgSubmit(){
+  var pop=document.getElementById('emp-asg-pop');if(!pop)return;
+  var pk=pop.dataset.pk,emp=empPkRec(pk);
+  var ids=[].map.call(pop.querySelectorAll('.emp-asg-row input:checked'),function(i){return +i.value;});
+  if(!emp||!ids.length)return;
+  empAsgPicks[pk]={emp:emp.id,ids:ids};
+  empAsgClose();
+  renderADTPage();
 }
 function empSkipToggle(cb){var sec=cb.closest('.emp-sec');if(sec)sec.classList.toggle('is-skipped',cb.checked);}
 
-/* ── Asset Recovery & IT Access Revocation (FR-16), and the pre-check for
-   Cancel Onboarding (FR-13): what the employee still holds, with the way to
-   go and resolve each list. */
+/* ── Admin Access Revoked: asset recovery and IT access revocation (FR-16),
+   and the pre-check for Cancel Onboarding (FR-13): what the employee still
+   holds, with the way to go and resolve each list. */
 function empResourceHTML(emp,mode){
   var assets=empAssets(emp),its=empItAccess(emp),n=empJs(emp.name),rec=mode==='recover';
   return '<div class="emp-sec">'
       +empSecHead(EMP_ICO.laptop,rec?'Asset Recovery':'Assigned Assets',
         assets.length?'<button type="button" class="emp-sec-link" onclick="empGoAllAssets(\''+n+'\')">Manage Asset'+EMP_ICO.arrow+'</button>':'')
       +'<div class="emp-sec-body">'+(assets.length
-        ?'<div class="emp-res-list">'+assets.map(function(a){return empAssetCard(a,'recover');}).join('')+'</div>'
+        ?'<div class="emp-res-list">'+assets.map(function(a){return empAssetCard(a);}).join('')+'</div>'
         :'<div class="emp-sec-empty is-ok">'+EMP_ICO.tick+'No Assigned Assets</div>')+'</div></div>'
     +'<div class="emp-sec">'
       +empSecHead(EMP_ICO.key,rec?'IT Access Revocation':'Active IT Access',
@@ -765,31 +926,6 @@ function empFnfCalc(pk){
   if(out&&!out.dataset.touched)out.value=Math.round(net*100)/100;
 }
 
-/* ── Picking a type ─────────────────────────────────────────────────────── */
-function empLogTypeHook(val,csid){
-  var pk=String(csid).replace(/-log-type$/,'');
-  var k=empLogKey(val);
-  empFormType[pk]=k;
-  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
-  if(wrap)wrap.querySelectorAll('.emp-log-input').forEach(function(b){b.hidden=b.getAttribute('data-type')!==k;});
-  /* Cancel Onboarding is checked the moment it is picked (FR-13). */
-  if(k==='cancel-onb'){
-    var emp=empPkRec(pk);
-    if(emp&&(empAssets(emp).length||empItAccess(emp).length))empShowCancelBlock(pk,emp);
-  }
-}
-function empResetForm(pk){
-  empFormType[pk]='';delete empFormPre[pk];
-  if(typeof csClear==='function')csClear(pk+'-log-type');
-  var inp=document.getElementById(pk+'-log-comment-inp');if(inp)inp.value='';
-  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
-  if(wrap)wrap.querySelectorAll('.emp-log-input').forEach(function(b){b.hidden=true;});
-}
-function empCancelLog(pk){
-  var wrap=document.querySelector(empScopeSel(pk)+' .emp-log-input-wrap');
-  if(wrap)wrap.querySelectorAll('input[type=checkbox]').forEach(function(i){if(!i.disabled)i.checked=false;});
-  empResetForm(pk);
-}
 
 /* ══ READ, VALIDATE, COMMIT ════════════════════════════════════════════════ */
 function empReadFields(block,out){
@@ -817,12 +953,13 @@ function empFail(title,sub){showToast(title,'error',sub);return false;}
 
 function empCommitLog(pk){
   var emp=empPkRec(pk);if(!emp)return;
-  var k=empFormType[pk]||empLogKey(getCSValue(pk+'-log-type'));
+  var k=empFormType[pk];
   var inp=document.getElementById(pk+'-log-comment-inp');
   var comment=inp?inp.value.trim():'';
   var flash=function(el){if(el){el.classList.add('is-invalid');setTimeout(function(){el.classList.remove('is-invalid');},1600);}};
-  if(!k){flash(typeof csTrigger==='function'?csTrigger(pk+'-log-type'):null);empFail('Select a log','Pick what happened from Add Log.');return;}
+  if(!k){empFail('Nothing to log','There is no lifecycle step to record for '+emp.name+' right now.');return;}
   if(empLogOptions(emp).indexOf(k)<0){empFail('Not available now',EMP_LOG[k].label+' cannot be logged at this stage.');return;}
+  if(!empRoleCan(k)){empFail('Not your step',EMP_LOG[k].label+' is recorded by '+EMP_LOG[k].owner+'. You are logged in as '+empRole()+'.');return;}
   var block=empBlock(pk);
   var got={vals:{},details:[],missing:[]};
   if(block)empReadFields(block,got);
@@ -970,7 +1107,7 @@ const EMP_MAIL={
     body:'Hi {name}, {doc} has been rejected. Reason: {reason}. Please upload the corrected document under Profile → Attachments → Requested Docs.'},
   verified:       {to:'HR / IT',subject:'Verification Completed',
     body:'Hi Team, document verification has been completed for {name} ({id}). Please proceed with the remaining applicable onboarding activities.'},
-  'asset-it':     {to:'Employee / HR / IT',subject:'Asset & IT Access Setup Completed',
+  'asset-it':     {to:'Employee / HR / IT',subject:'Admin Access Setup Completed',
     body:'Hi {name}, your applicable Asset Allocation and IT Access setup has been completed. HR/IT may review the assigned records where required.'},
   active:         {to:'Employee',subject:'Onboarding Completed',
     body:'Hi {name}, your onboarding has been completed successfully and your Employee status is now Active.'},
@@ -980,7 +1117,7 @@ const EMP_MAIL={
     body:'Hi {name}, your offboarding process has been initiated. Last Working Date: {lwd}. Applicable exit activities will now be processed.'},
   'kt-req':       {to:'Reporting Manager',subject:'KT / Handover Required',
     body:'Hi Reporting Manager, KT / Handover is required for {name} ({id}). Please complete the applicable handover activities.'},
-  'rev-req':      {to:'HR / IT',subject:'Asset Recovery & IT Access Revocation Required',
+  'rev-req':      {to:'HR / IT',subject:'Admin Access Revocation Required',
     body:'Hi Team, please review the assigned Assets and active IT Access for {name} ({id}) and complete the applicable recovery/revocation activities.'},
   'cc-req':       {to:'Compliance',subject:'Compliance Clearance Required',
     body:'Hi Team, compliance clearance is required for {name} ({id}) as part of the offboarding process. Please complete the applicable clearance details.'},
@@ -1077,51 +1214,95 @@ function empTimelineHTML(emp){
       +'</div></div>';
   }).join('')+'</div>';
 }
-function empFormHTML(pk,emp,inModal){
-  var opts=empLogOptions(emp);
-  var cur=empFormType[pk]&&opts.indexOf(empFormType[pk])>=0?empFormType[pk]:'';
-  empFormType[pk]=cur;
+function empDocsAlertHTML(emp){
   var out=empDocsOutstanding(emp),rej=out.filter(function(d){return d.status==='Rejected';});
-  var alert=out.length&&empState(emp).phase==='onb'
+  return out.length&&empState(emp).phase==='onb'
     ?'<div class="emp-log-note">'+EMP_ICO.info+'<span><b>'+out.length+' requested document'+(out.length===1?'':'s')+'</b> waiting on the employee'
       +(rej.length?' ('+rej.length+' rejected, replacement needed)':'')+'.</span></div>':'';
-  var typeField=empLabel('Add Log',true)
-    +apCS(pk+'-log-type',opts.map(function(k){return EMP_LOG[k].label;}),cur?EMP_LOG[cur].label:'','Select Status','empLogTypeHook');
-  var blocks=empLogInputs(pk,emp,opts,cur);
-  if(inModal){
-    return '<div class="ep-form-grid">'
-      +(alert?'<div class="ep-form-group ep-form-full">'+alert+'</div>':'')
-      +'<div class="ep-form-group ep-form-full">'+typeField+'</div>'
-      +'<div class="ep-form-group ep-form-full emp-sm-inputs">'+blocks+'</div>'
-      +'<div class="ep-form-group ep-form-full">'+empLabel('Comment',true)
-        +'<textarea id="'+pk+'-log-comment-inp" class="lp-logs-form-textarea" placeholder="Enter comment"></textarea></div>'
-      +'</div>';
-  }
-  return '<div class="lp-logs-form emp-logs-form">'
+}
+/* The step's form, in the popup. No "Add Log" picker: the step was decided
+   before the popup opened (empNextStep, or the row menu's choice), so only
+   its own fields and the comment are asked. */
+function empFormHTML(pk,emp){
+  var opts=empLogOptions(emp);
+  var cur=empFormType[pk]&&opts.indexOf(empFormType[pk])>=0?empFormType[pk]:(empNextStep(emp).key||'');
+  empFormType[pk]=cur;
+  if(!cur)return '';
+  var alert=cur==='doc-request'||cur==='verified'?empDocsAlertHTML(emp):'';
+  var block=empBlockHTML(pk,emp,cur);
+  return '<div class="ep-form-grid">'
+    +(alert?'<div class="ep-form-group ep-form-full">'+alert+'</div>':'')
+    +(block?'<div class="ep-form-group ep-form-full emp-sm-inputs"><div class="emp-log-input-wrap"><div class="emp-log-input" data-type="'+cur+'">'+block+'</div></div></div>':'')
+    +'<div class="ep-form-group ep-form-full">'+empLabel('Comment',true)
+      +'<textarea id="'+pk+'-log-comment-inp" class="lp-logs-form-textarea" placeholder="Say what happened"></textarea></div>'
+    +'</div>';
+}
+/* The Logs tab's right-hand column: the NEXT STEP - what it is, what it
+   involves, who owns it - and the button for it, named for what it does
+   ("Start Offboarding Process"); the fields open in the popup.
+   What the button offers depends on who is logged in (header):
+     Super Admin   - a "Log a step" dropdown of every step open on the record,
+                     the next one picked by default, and that step's button.
+     Any other role - the button only for a step that role owns; a step owned
+                     by someone else says who it is waiting on. Other steps the
+                     role owns that are open at the same time sit below as links. */
+const empStepPick={};    // kind+id -> the step a Super Admin picked
+function empNextCardHTML(kind,emp){
+  var n=empNextStep(emp),st=empState(emp),sa=empRole()==='Super Admin';
+  var open=function(k){return 'empOpenLogModal(\''+kind+'\','+emp.id+',\''+k+'\',\'sb\')';};
+  var all=(n.key?[n.key]:[]).concat(n.more).concat(n.cancel?[n.cancel]:[]);
+  var pickKey=kind+emp.id;
+  var sel=sa?(all.indexOf(empStepPick[pickKey])>=0?empStepPick[pickKey]:(n.key||'')):(n.key&&empRoleCan(n.key)?n.key:'');
+  var show=sa&&sel?sel:n.key;     // the step the card describes
+  var main=show
+    ?'<div class="emp-next-k">'+(sa&&sel&&sel!==n.key?'Selected step':'Next step')+'</div>'
+      +'<div class="emp-next-title">'+empLifeHtml(empStepTitle(emp,show))+'</div>'
+      +'<p class="emp-next-hint">'+EMP_STEP[show].hint+'</p>'
+      +'<div class="emp-next-owner">Owner: <b>'+empLifeHtml(EMP_LOG[show].owner)+'</b>'
+        +(!sa&&!empRoleCan(show)?'<span class="emp-next-wait">Waiting on '+empLifeHtml(EMP_LOG[show].owner)+'</span>':'')+'</div>'
+    :n.wait
+      ?'<div class="emp-next-k">Next step</div>'
+        +'<div class="emp-next-title">'+empLifeHtml(n.wait.title)+'</div>'
+        +'<p class="emp-next-hint">'+empLifeHtml(n.wait.text)+'</p>'
+      :'<div class="emp-next-title">Nothing to log</div><p class="emp-next-hint">There is no step to record for '+empLifeHtml(emp.name)+' right now.</p>';
+  var picker=sa&&all.length
+    ?'<div class="emp-next-pick">'+empLabel('Log a step')
+      +apCS(kind+'-step-pick',all.map(function(k){return empStepAction(emp,k);}),sel?empStepAction(emp,sel):'','Select a step','empStepPickHook')+'</div>'
+    :'';
+  var mine=sa?[]:n.more.concat(n.cancel?[n.cancel]:[]).filter(function(k){return empRoleCan(k);});
+  var links=mine.map(function(k){
+    return '<button type="button" class="emp-next-link'+(EMP_LOG[k].cancel?' is-danger':'')+'" onclick="'+open(k)+'">'+empLifeHtml(empStepAction(emp,k))+EMP_ICO.arrow+'</button>';});
+  var btn=sel
+    ?'<div class="emp-logs-form-foot"><button class="lp-logs-save-btn'+(EMP_LOG[sel].cancel||sel==='doc-rejected'?' is-danger':'')+'" style="flex:1" onclick="'+open(sel)+'">'
+      +empLifeHtml(empStepAction(emp,sel))+'</button></div>'
+    :'';
+  return '<div class="lp-logs-form emp-logs-form emp-next">'
     +'<div class="emp-logs-form-scroll">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+empLifeHtml(emp.status)
-        +(empState(emp).phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
-      +'<p class="lp-logs-form-sub">Add a lifecycle log for this employee</p>'
-      +alert
-      +typeField
-      +blocks
-      +empLabel('Comment',true)
-      +'<textarea class="lp-logs-form-textarea" id="'+pk+'-log-comment-inp" placeholder="Enter comment"></textarea>'
+        +(st.phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
+      +'<p class="lp-logs-form-sub">Logged in as <b>'+empLifeHtml(empRole())+'</b></p>'
+      +(n.wait?empDocsAlertHTML(emp):'')
+      +picker
+      +'<div class="emp-next-card'+(show?'':' is-wait')+'">'+main+'</div>'
+      +(links.length?'<div class="emp-next-more"><div class="emp-next-k">Your other actions</div>'+links.join('')+'</div>':'')
     +'</div>'
-    +'<div class="emp-logs-form-foot">'
-      +'<button class="ep-cancel-btn" style="flex:1" onclick="empCancelLog(\''+pk+'\')">Cancel</button>'
-      +'<button class="lp-logs-save-btn" style="flex:1" onclick="empCommitLog(\''+pk+'\')">Submit</button>'
-    +'</div></div>';
+    +btn
+  +'</div>';
 }
-/* Two columns that scroll on their own: the history on the left, the form on
-   the right with Cancel / Submit always in reach - so a long form is never
-   held back until the timeline beside it has scrolled to its end. */
+function empStepPickHook(val,csid){
+  var kind=String(csid).replace(/-step-pick$/,''),emp=empLifeRec(kind);if(!emp)return;
+  var n=empNextStep(emp),all=(n.key?[n.key]:[]).concat(n.more).concat(n.cancel?[n.cancel]:[]);
+  var k=all.find(function(x){return empStepAction(emp,x)===val;});
+  if(k)empStepPick[kind+emp.id]=k;
+  renderADTPage();
+}
+/* Two columns that scroll on their own: the history on the left, the next
+   step on the right with Fill Details always in reach. */
 function renderEmpLogsTab(kind,emp){
   return '<div class="lp-logs-wrap emp-logs">'
     +'<div class="emp-logs-col">'+empTimelineHTML(emp)+'</div>'
-    +empFormHTML(kind,emp,false)+'</div>';
+    +empNextCardHTML(kind,emp)+'</div>';
 }
-function empSaveLog(kind){empCommitLog(kind);}
 
 /* ══ LISTING: STATUS TILES AND THE ACTION CELL ═════════════════════════════ */
 const EMP_STAT_GROUPS={__offboarding__:'Offboarding'};
@@ -1145,38 +1326,40 @@ function empJourneyItems(emp){
   var m=empMilestones(emp),opts=empLogOptions(emp),out=[];
   if(m){
     m.items.forEach(function(x,i){
-      var can=opts.indexOf(x.key)>=0&&x.state!=='done';
+      var can=opts.indexOf(x.key)>=0&&x.state!=='done'&&empRoleCan(x.key);
       out.push({key:x.key,label:x.label,n:i+1,state:x.state==='done'?'done':x.auto?'auto':can?'next':'wait'});
     });
     opts.forEach(function(k){
       if(m.items.some(function(x){return x.key===k;}))return;
       if(k==='doc-request')return;           // more documents: from the Logs tab
+      if(!empRoleCan(k))return;
       out.push({key:k,label:EMP_LOG[k].label,state:'next',branch:true});
     });
-  }else opts.forEach(function(k){out.push({key:k,label:EMP_LOG[k].label,state:'next'});});
+  }else opts.forEach(function(k){out.push({key:k,label:EMP_LOG[k].label,state:empRoleCan(k)?'next':'wait'});});
   return out;
 }
 function empActionCellHTML(kind,emp){
-  var label=empPhaseLabel(emp),m=empMilestones(emp);
-  var cog=EMP_ICO.cog.replace(/width="14" height="14"/,'width="10" height="10"');
+  /* Where the record is, in the tracker's words - "Verification Pending",
+     "KT / Handover Pending" - rather than the bare status beside it. */
+  var label=empTrackerStatus(emp);
   var items=empJourneyItems(emp).map(function(x){
     var cls=x.state+(x.branch?' branch':'');
-    var ico=x.state==='done'?EMP_ICO.tick:x.branch?EMP_ICO.x:x.state==='auto'?cog:(x.n||EMP_ICO.plus);
     var click=x.state==='next'?' onclick="empOpenLogModal(\''+kind+'\','+emp.id+',\''+x.key+'\')"':'';
     var tag=x.state==='auto'?'<em>Automatic</em>':'';
-    return '<div class="ct-act-item emp-act-item '+cls+'"'+click+'><span class="ct-act-step '+cls+'">'+ico+'</span><span class="emp-act-label">'+empLifeHtml(x.label)+'</span>'+tag+'</div>';
+    // Plain text rows - the state is carried by the text colour alone.
+    return '<div class="ct-act-item emp-act-item '+cls+'"'+click+'><span class="emp-act-label">'+empLifeHtml(x.label)+'</span>'+tag+'</div>';
   }).join('');
   var open=kind==='de'?'openDeSidebar':'openGeSidebar';
   return '<div class="ct-action-wrap">'
-    /* The Contracts row button, as is: same 80px button, label cut at 12
-       characters the way Contracts cuts it, full text on the title. */
-    +'<button class="ct-action-btn" title="'+empLifeHtml(label)+'" onclick="toggleEmpAction(\''+kind+'\','+emp.id+',event)"><span>'
-      +empLifeHtml(label.length>12?label.slice(0,10)+'…':label)+'</span>'+EMP_ICO.chev+'</button>'
+    /* The Contracts row button, wider here (.emp-act-btn) so the step reads
+       in full; anything longer still ends in "…" with the whole on the title. */
+    +'<button class="ct-action-btn emp-act-btn" title="'+empLifeHtml(label)+'" onclick="toggleEmpAction(\''+kind+'\','+emp.id+',event)"><span>'
+      +empLifeHtml(label)+'</span>'+EMP_ICO.chev+'</button>'
     +'<button class="ct-dots-btn" title="View details" onclick="'+open+'('+emp.id+');event.stopPropagation()">'+EMP_ICO.dots+'</button>'
+    /* Just the steps - no heading, no View Logs (the row's ☰ opens the
+       panel, and its Logs tab, already). */
     +'<div class="ct-action-menu emp-act-menu" id="empm-'+kind+'-'+emp.id+'">'
-      +'<div class="emp-act-head">'+(m?m.title+' · '+m.pct+'% completed':'Employee Status: '+empLifeHtml(emp.status))+'</div>'
       +items
-      +'<div class="ct-act-item emp-act-item emp-act-logs" onclick="empOpenLogsTab(\''+kind+'\','+emp.id+')"><span class="ct-act-step next">'+EMP_ICO.arrow+'</span>View Logs</div>'
     +'</div></div>';
 }
 function toggleEmpAction(kind,id,e){
@@ -1195,9 +1378,12 @@ function empOpenLogsTab(kind,id){
 
 /* ── The Add Log popup ─────────────────────────────────────────────────── */
 let empStatusModal=null;     // legacy name, still cleared by navigatePage
-function empOpenLogModal(kind,id,key){
+/* from: 'sb' when Fill Details (or an Other action) in the panel's Logs tab
+   opened it - the log is already on screen, so the popup does not offer it. */
+function empOpenLogModal(kind,id,key,from){
   document.querySelectorAll('.ct-action-menu').forEach(function(m){m.classList.remove('open');});
-  empLogModal={kind:kind,id:id};
+  delete empFormPre[kind+'sm'];
+  empLogModal={kind:kind,id:id,from:from||''};
   empFormType[kind+'sm']=key;
   renderADTPage();
   if(key==='cancel-onb'){var emp=empFind(kind,id);if(emp&&(empAssets(emp).length||empItAccess(emp).length))empShowCancelBlock(kind+'sm',emp);}
@@ -1206,7 +1392,6 @@ function closeEmpStatusModal(){empLogModal=null;renderADTPage();}
 function empModalToLog(){
   var m=empLogModal;empLogModal=null;
   if(!m){renderADTPage();return;}
-  empFormType[m.kind]=empFormType[m.kind+'sm']||'';
   empOpenLogsTab(m.kind,m.id);
   renderADTPage();
 }
@@ -1219,18 +1404,22 @@ function empLogModalHTML(kind){
   var emp=empFind(kind,empLogModal.id);
   if(!emp){empLogModal=null;return '';}
   var pk=kind+'sm';
+  var form=empFormHTML(pk,emp),k=empFormType[pk];
+  /* Titled with the step itself, and its one button named for what it does -
+     "Start Offboarding Process", not Submit. The x closes it. */
+  var title=k?empStepTitle(emp,k):'Lifecycle';
   return '<div class="ct-modal-overlay">'
-    +'<div class="ct-modal ct-sm emp-sm" id="'+pk+'-body" style="width:min(600px,92vw)" role="dialog" aria-modal="true" aria-label="Add log" onclick="event.stopPropagation()">'
-    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Log</span><button class="ct-modal-close" onclick="closeEmpStatusModal()" aria-label="Close">'+EMP_ICO.close+'</button></div>'
+    +'<div class="ct-modal ct-sm emp-sm" id="'+pk+'-body" style="width:min(600px,92vw)" role="dialog" aria-modal="true" aria-label="'+empLifeHtml(title)+'" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+empLifeHtml(title)+'</span><button class="ct-modal-close" onclick="closeEmpStatusModal()" aria-label="Close">'+EMP_ICO.close+'</button></div>'
     +'<p class="ct-modal-sub">'+empLifeHtml(emp.empId||'')+' &middot; '+empLifeHtml(emp.name)+' &middot; '+EMP_LIFE_SCOPES[kind].label+'</p>'
     +'<div class="ct-sm-move">'+empLifeBadge(emp.status)+(empState(emp).phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
-    +empFormHTML(pk,emp,true)
+    +(k?'<p class="emp-sm-hint">'+EMP_STEP[k].hint+'</p>'+form
+      :'<p class="emp-sm-hint">There is no step to record for '+empLifeHtml(emp.name)+' right now.</p>')
     +'<div class="ct-modal-foot">'
-      +'<button class="add-link" onclick="empModalToLog()">View full log</button>'
-      +'<div class="ct-modal-btns">'
-        +'<button class="ep-cancel-btn" onclick="closeEmpStatusModal()">Cancel</button>'
-        +'<button class="ep-save-btn" onclick="empCommitLog(\''+pk+'\')">Submit</button>'
-      +'</div></div>'
+      +(empLogModal.from==='sb'?'<span></span>':'<button class="add-link" onclick="empModalToLog()">View full log</button>')
+      +(k&&empRoleCan(k)?'<div class="ct-modal-btns"><button class="ep-save-btn'+(EMP_LOG[k].cancel||k==='doc-rejected'?' is-danger':'')+'" onclick="empCommitLog(\''+pk+'\')">'+EMP_STEP[k].cta+'</button></div>'
+        :k?'<span class="emp-next-wait">Recorded by '+empLifeHtml(EMP_LOG[k].owner)+'</span>':'')
+    +'</div>'
     +'</div></div>';
 }
 
@@ -1259,7 +1448,7 @@ function empShowCancelBlock(pk,emp){
   document.body.appendChild(el);
 }
 function empCloseCancelBlock(){var el=document.getElementById('emp-block-pop');if(el)el.remove();}
-function empBlockContinue(pk){empCloseCancelBlock();empResetForm(pk);}
+function empBlockContinue(pk){empCloseCancelBlock();if(empLogModal)closeEmpStatusModal();}
 function empBlockGo(name,assets){
   empCloseCancelBlock();
   if(assets)empGoAllAssets(name);else empGoAllItAccess(name);
@@ -1299,7 +1488,7 @@ function empSetReturnFor(name){
   var emp=directEmpData.concat(globalEmpData).find(function(e){return e.name===name;});
   if(emp&&!empReturn){var kind=empKindOf(emp);
     empReturn={kind:kind,id:emp.id,page:page,sub:typeof empSubTab!=='undefined'?empSubTab:'',name:emp.name,
-      type:empFormType[kind+'sm']||empFormType[kind]||''};}
+      type:empLogModal?empFormType[kind+'sm']||'':''};}
   empLogModal=null;
 }
 function empGoAllAssets(name){
@@ -1327,9 +1516,9 @@ function empReturnTo(){
   empReturn=null;
   if(r.page==='employees'&&r.sub)empSubTab=r.sub;
   if(r.kind==='de'){deSelectedId=r.id;deTab='logs';}else{geSelectedId=r.id;geTab='logs';}
-  empFormType[r.kind]=r.type||'';
   empNavKeep=true;
   navigatePage(r.page==='direct'||r.page==='global'||r.page==='employees'?r.page:'employees');
+  if(r.type)empOpenLogModal(r.kind,r.id,r.type,'sb');
 }
 /* Called by navigatePage. A redirect we started keeps its context; a plain
    sidebar click drops it. Also the moment to catch an LWD that has passed. */

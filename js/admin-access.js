@@ -162,7 +162,32 @@ const AST_STATUSES=['Available','Assigned','In Repair','Returned','Lost','Damage
 const AST_TILES=['Assigned','Available','In Repair','Returned'];
 const AST_CONDITIONS=['New','Good','Fair','Damaged','Under Repair','Scrap'];
 let AST_CATEGORIES=['Laptop','Monitor','Mobile','Accessories','Furniture','Networking'];
-let AST_TYPES=['Hardware','Peripheral','Furniture','Network Device'];
+/* ASSET TYPES. As in the Assets system: a type is created from its name
+   alone - its Key ID, Create Time, Create By and Active status are set on
+   their own. A deleted type leaves every dropdown but can be restored, and
+   assets already of that type keep it. */
+let astTypeRecs=[
+  {id:1,keyId:221,name:'Hardware',createdAt:'12 Jan 2023 | 10:00:00 AM',createdBy:'Pallavi Parate',status:'Active'},
+  {id:2,keyId:222,name:'Peripheral',createdAt:'12 Jan 2023 | 10:05:00 AM',createdBy:'Pallavi Parate',status:'Active'},
+  {id:3,keyId:223,name:'Furniture',createdAt:'20 Jan 2023 | 03:30:00 PM',createdBy:'Shaun Test1',status:'Active'},
+  {id:4,keyId:224,name:'Network Device',createdAt:'23 Jan 2023 | 11:15:00 AM',createdBy:'Shaun Test1',status:'Active'},
+  {id:5,keyId:225,name:'Keyboard (old)',createdAt:'10 Jan 2023 | 09:40:00 AM',createdBy:'Pallavi Parate',status:'Deleted'}
+];
+let astTypeNextId=6,astTypeNextKey=226;
+function astTypeNames(){return astTypeRecs.filter(function(t){return t.status==='Active';}).map(function(t){return t.name;});}
+/* The one way a type is created - from the popup, or + Add on the Asset form.
+   Returns the type's name, or '' when the name was refused. */
+function astCreateType(name){
+  name=String(name||'').trim();
+  if(!name){showToast('Asset Type Name is required','error');return '';}
+  if(/['"]/.test(name)){showToast('Quotes are not allowed in a name','error');return '';}
+  const hit=astTypeRecs.find(function(t){return t.name.toLowerCase()===name.toLowerCase();});
+  if(hit&&hit.status==='Active'){showToast(hit.name+' already exists','info','It has been selected for you.');return hit.name;}
+  if(hit){hit.status='Active';showToast(hit.name+' restored','success','The deleted type is active again.');return hit.name;}
+  astTypeRecs.unshift({id:astTypeNextId++,keyId:astTypeNextKey++,name:name,createdAt:axStamp(),createdBy:CURRENT_USER,status:'Active'});
+  showToast('Asset Type added','success','"'+name+'" - Key ID '+(astTypeNextKey-1)+', created by '+CURRENT_USER+'.');
+  return name;
+}
 let AST_VENDORS=['Dell India','Apple Store','HP World','Logitech Distributors','Croma Business'];
 
 const assetsData=[
@@ -227,7 +252,23 @@ assetsData.forEach(function(a){
   const last=(a.history||[]).reduce(function(m,x){return [x.from,x.to,m].filter(Boolean).sort().pop()||'';},'');
   a.updatedAt=a.updatedAt||(last?cdLabel(last):String(a.createdAt).split(' | ')[0]);
   a.notes=a.notes||'';
+  /* Key ID: the record's number in the Assets system. Employee Confirmation:
+     whether the employee holding it has confirmed receiving it. */
+  a.keyId=a.keyId||1250+a.id;
+  if(a.empConfirm===undefined)a.empConfirm=a.status==='Assigned'?([1,2,5,8].indexOf(a.id)>=0?'Confirmed':'Not Confirmed'):'';
 });
+let assetNextKey=1250+assetNextId;
+/* Handing an asset over always starts unconfirmed; taking it back clears it. */
+function astMarkAssigned(a){a.empConfirm='Not Confirmed';}
+function astMarkUnassigned(a){a.empConfirm='';}
+function astConfirmReceipt(id){
+  const a=assetsData.find(function(x){return x.id===id;});if(!a||a.status!=='Assigned')return;
+  a.empConfirm='Confirmed';astTouch(a);
+  const s=stampNow();astSeedLogs(a);
+  if(a.logs)a.logs.unshift({date:s.date,time:s.time,user:CURRENT_USER,status:'Assigned',action:a.assignedTo+' confirmed receiving '+a.name+' ('+a.code+').'});
+  renderADTPage();
+  showToast('Receipt confirmed','success',a.assignedTo+' has confirmed '+a.name+' ('+a.code+').');
+}
 function astTouch(a){a.updatedAt=stampNow().date;}
 /* The employee's department is read through the person rather than stored on
    the asset, so a transfer moves every asset they hold with them. */
@@ -326,8 +367,8 @@ function astWarranty(a){
 }
 function renderAstSidebar(){
   const a=assetsData.find(function(x){return x.id===astSelectedId;});if(!a)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'assignment',label:'Assignment'},
-    {id:'purchase',label:'Purchase & Warranty'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'assignment',label:'Assignment'},
+    {id:'purchase',label:'Purchase & Warranty'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar('ast',tabs,astTab,'navAstTab','closeAstSidebar');
   let body='';
   if(astTab==='basic-details'&&astInlineEdit(a.id)){
@@ -335,17 +376,22 @@ function renderAstSidebar(){
   }else if(astTab==='basic-details'){
     body=astHeroHTML(a,true)
       +'<div class="lp-sb-detail-grid">'
+      +axField(AX_ICO.fHash,'Key ID',String(a.keyId))
+      +axField(AX_ICO.fHash,'Asset ID / Code',a.code)
       +axField(AX_ICO.fTag,'Asset Category',a.category)
       +axField(AX_ICO.fBox,'Asset Type',a.type)
-      +axField(AX_ICO.fHash,'Asset ID / Code',a.code)
-      +axField(AX_ICO.fBarcode,'Barcode / Serial Number',a.serial)
+      +axField(AX_ICO.fBarcode,'Asset Barcode / Serial Number',a.serial)
+      +axField(AX_ICO.fHeart,'Condition',axBadge(statusTone(a.condition),a.condition))
       +axField(AX_ICO.fMonitor,'Brand',a.brand)
       +axField(AX_ICO.fMonitor,'Model',a.model)
-      +axField(AX_ICO.fHeart,'Condition',axBadge(statusTone(a.condition),a.condition))
-      +axField(AX_ICO.fPin,'Branch / Location',a.branch)
-      +axField(AX_ICO.fUser,'Created By',a.createdBy)
-      +axField(AX_ICO.fCal,'Created At',a.createdAt)
-      +axField(AX_ICO.fCal,'Updated Date',a.updatedAt)
+      +axField(AX_ICO.fPin,'Admin Branch / Location',a.branch)
+      +axField(AX_ICO.fCheck,'Employee Confirmation',a.empConfirm
+        ?axBadge(a.empConfirm==='Confirmed'?'ok':'wait',a.empConfirm)
+          +(a.empConfirm!=='Confirmed'?' <button type="button" class="ax-confirm-btn" onclick="astConfirmReceipt('+a.id+')">Mark Confirmed</button>':'')
+        :'')
+      +axField(AX_ICO.fUser,'Create By',a.createdBy)
+      +axField(AX_ICO.fCal,'Create Time',a.createdAt)
+      +axField(AX_ICO.fCal,'Update Time',a.updatedAt)
       +axField(AX_ICO.fTicket,'Comment / Notes',a.notes,true)
       +'</div>';
   }else if(astTab==='assignment'){
@@ -390,6 +436,8 @@ function renderAstSidebar(){
       +axField(AX_ICO.fShield,'Warranty Start Date',axDate(a.warrantyStart))
       +axField(AX_ICO.fShield,'Warranty End Date',axDate(a.warrantyEnd))
       +'</div>';
+  }else if(astTab==='history'){
+    body=sbHistoryHTML(a);
   }else if(astTab==='logs'){
     /* Moving to Assigned needs a person, so the form grows that one field
        only when Assigned is the status picked. */
@@ -435,12 +483,12 @@ function astSaveLog(id){
   /* Leaving Assigned closes the current hand-over; arriving at it opens one. */
   if(was==='Assigned'&&a.status!=='Assigned'){
     if(open)open.to=today;
-    a.assignedTo='';a.assignedOn='';
+    a.assignedTo='';a.assignedOn='';astMarkUnassigned(a);
   }
   if(a.status==='Assigned'&&was!=='Assigned'){
     a.history=a.history||[];
     a.history.unshift({employee:emp,from:today,to:'',condition:a.condition});
-    a.assignedTo=emp;a.assignedOn=today;
+    a.assignedTo=emp;a.assignedOn=today;astMarkAssigned(a);
     const e=axEmp(emp);if(e)a.branch=e.branch;
   }
   astTouch(a);
@@ -456,7 +504,86 @@ function astSaveLog(id){
 }
 
 // ── Listing ──
+/* The Assets page has two tabs: the assets, and the Asset Types they are
+   filed under. The page's + adds to whichever tab is open. */
+let astView='assets';
+function setAstView(v){if(astView===v)return;astView=v;astSelectedId=null;renderADTPage();}
+function astTabsHTML(){
+  return buildModuleTabsHTML([{id:'assets',label:'Assets',icon:AX_ICO.fBox},{id:'types',label:'Asset Types',icon:AX_ICO.fTag}],astView,'setAstView');
+}
+let astTypeQ='',astTypeStatusF='',astTypeModalOpen=false;
+function astTypeToggleStat(v){astTypeStatusF=astTypeStatusF===v?'':v;renderADTPage();}
+function applyAstTypeFilters(){astTypeQ=lpSearchValue('astt-f-q');renderADTPage();}
+function resetAstTypeFilters(){astTypeQ='';astTypeStatusF='';renderADTPage();}
+function astTypeSetStatus(id,st){
+  const t=astTypeRecs.find(function(x){return x.id===id;});if(!t)return;
+  t.status=st;renderADTPage();
+  showToast(st==='Active'?'Asset Type restored':'Asset Type deleted',st==='Active'?'success':'info',
+    '"'+t.name+'" '+(st==='Active'?'is available in the Asset Type dropdown again.':'no longer appears in the Asset Type dropdown. Assets of this type keep it.'));
+}
+function buildAssetTypesHTML(){
+  const inUse=function(n){return assetsData.filter(function(a){return a.type===n;}).length;};
+  const rows=astTypeRecs.filter(function(t){return !astTypeStatusF||t.status===astTypeStatusF;});
+  const shown=lpSearchRows(rows,astTypeQ);
+  const pgn=listPage('asset-types',[astTypeStatusF,astTypeQ].join('|'),shown.map(function(t,i){
+    const n=inUse(t.name);
+    return '<tr class="'+(t.status==='Deleted'?'ax-row-off':'')+'">'
+      +'<td class="lp-c-n">'+(i+1)+'</td>'
+      +'<td><div class="lp-c-main">'+t.name+'</div><div class="lp-c-sub">Key ID '+t.keyId+'</div></td>'
+      +'<td><div class="lp-c-plain">'+n+' asset'+(n===1?'':'s')+'</div></td>'
+      +'<td><div class="lp-c-plain">'+String(t.createdAt).split(' | ')[0]+'</div><div class="lp-c-sub">by '+t.createdBy+'</div></td>'
+      +'<td>'+axBadge(t.status==='Active'?'ok':'bad',t.status)+'</td>'
+      +'<td>'+(t.status==='Active'
+        ?'<button type="button" class="ax-type-act is-danger" onclick="astTypeSetStatus('+t.id+',\'Deleted\')">'+AX_ICO.trash+'Delete</button>'
+        :'<button type="button" class="ax-type-act" onclick="astTypeSetStatus('+t.id+',\'Active\')">'+AX_ICO.back+'Restore</button>')+'</td>'
+      +'</tr>';
+  }),'<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray)">No asset types match this filter.</td></tr>');
+  const stat=function(s,tone){const c=astTypeRecs.filter(function(t){return t.status===s;}).length;
+    return '<div class="listing-stat'+(astTypeStatusF===s?' stat-selected':'')+'" onclick="astTypeToggleStat(\''+s+'\')">'
+      +'<div class="listing-stat-count" style="color:var(--st-'+tone+'-fg)">'+c+'</div><div class="listing-stat-label">'+s+'</div></div>';};
+  return '<div class="lp-page">'
+    +'<div class="mod-page">'+astTabsHTML()+'</div>'
+    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    +'<div class="lp-filter-bar-row">'
+    +lpSearchField('astt-f-q',astTypeQ,'Search type name or Key ID','applyAstTypeFilters()')
+    +clearFiltersBtn([astTypeStatusF,astTypeQ],'resetAstTypeFilters()')
+    +'<button class="lp-pill-search" onclick="applyAstTypeFilters()">Search</button>'
+    +'</div></div>'
+    +'<div class="listing-stats">'+stat('Active','ok')+stat('Deleted','bad')+'</div></div>'
+    +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset Type / Key ID</th><th>Used By</th><th>Created / By</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<tbody>'+pgn.rows+'</tbody></table>'
+    +pgn.pager
+    +'</div></div></div></div>'
+    +(astTypeModalOpen?buildAddAstTypeModalHTML():'');
+}
+/* Add Asset Type: the name, nothing else - the rest is set on save. */
+function startAddAstType(){astTypeModalOpen=true;renderADTPage();axFocus('astt-name');}
+function cancelAddAstType(){astTypeModalOpen=false;renderADTPage();}
+function submitAddAstType(){
+  const el=document.getElementById('astt-name');
+  const made=astCreateType(el?el.value:'');
+  if(!made){if(el)el.focus();return;}
+  astTypeModalOpen=false;astTypeStatusF='';astTypeQ='';
+  renderADTPage();
+}
+function buildAddAstTypeModalHTML(){
+  return '<div class="ct-modal-overlay">'
+    +'<div class="ct-modal ct-modal--form ax-modal ax-type-modal" onclick="event.stopPropagation()">'
+    +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Asset Type</span>'
+      +'<button class="ct-modal-close" onclick="cancelAddAstType()">'+AX_ICO.x+'</button></div>'
+    +'<p class="ct-modal-sub">Only the name is needed. Key ID, Create Time, Create By and Status are set automatically.</p>'
+    +'<div class="ep-form-grid"><div class="ep-form-group ep-form-full"><label class="ep-form-label" for="astt-name">Asset Type Name <span class="req">*</span></label>'
+      +'<input class="ep-form-input" id="astt-name" type="text" placeholder="e.g. Computer" onkeydown="if(event.key===\'Enter\')submitAddAstType()"></div></div>'
+    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="cancelAddAstType()">Cancel</button>'
+      +'<button class="ep-save-btn" onclick="submitAddAstType()">Add Asset Type</button>'
+    +'</div></div></div></div>';
+}
 function buildAssetAllocationHTML(){
+  if(astView==='types')return buildAssetTypesHTML();
   const count=function(s){return assetsData.filter(function(a){return a.status===s;}).length;};
   const rows=astRows();
   const shown=lpSearchRows(rows,astQ);
@@ -464,11 +591,12 @@ function buildAssetAllocationHTML(){
   const pgn=listPage('asset-allocation',[astEmpF,astBranchF,astCondF,astStatusF,astQ].join('|'),shown.map(function(a,i){
     return '<tr class="ast-row'+(astSelectedId===a.id?' lp-row-selected':'')+'" id="ast-row-'+a.id+'" style="cursor:pointer" onclick="openAstSidebar('+a.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
-      +'<td><div class="lp-c-main ax-c-link">'+a.name+'</div><div class="lp-c-sub">'+a.code+(a.serial?' · '+a.serial:'')+'</div></td>'
+      +'<td><div class="ax-asset-cell">'+(a.image?'<img class="ax-thumb" src="'+a.image+'" alt="">':'<span class="ax-thumb">'+AX_ICO.fBox+'</span>')
+        +'<div class="ax-asset-txt"><div class="lp-c-main ax-c-link">'+a.name+'</div><div class="lp-c-sub">Key ID '+a.keyId+' · '+a.code+(a.serial?' · '+a.serial:'')+'</div></div></div></td>'
       +'<td><div class="lp-c-plain">'+a.category+'</div><div class="lp-c-sub">'+(a.type||'—')+'</div></td>'
       +'<td><div class="lp-c-plain'+(a.assignedTo?'':' is-none')+'">'+(a.assignedTo||'Unassigned')+'</div><div class="lp-c-sub">'+a.branch+'</div></td>'
-      +'<td>'+axBadge(statusTone(a.condition),a.condition)+'</td>'
-      +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
+      +'<td>'+axBadge(statusTone(a.status),a.status)+'<div class="lp-c-sub">'+a.condition+'</div></td>'
+      +'<td>'+(a.empConfirm?axBadge(a.empConfirm==='Confirmed'?'ok':'wait',a.empConfirm):'<span class="sb-dash">—</span>')+'</td>'
       +'<td><div class="lp-c-plain">'+String(a.createdAt).split(' | ')[0]+'</div><div class="lp-c-sub">Updated '+(a.updatedAt||'—')+'</div></td>'
       +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAstSidebar('+a.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
       +'</tr>';
@@ -480,11 +608,12 @@ function buildAssetAllocationHTML(){
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +(typeof empReturnBarHTML==='function'?empReturnBarHTML():'')
+    +'<div class="mod-page">'+astTabsHTML()+'</div>'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +lpSearchField('ast-f-q',astQ,'Search asset name, ID, employee','applyAstFilters()')
+    +lpSearchField('ast-f-q',astQ,'Search asset name, Key ID, code, employee','applyAstFilters()')
     +apCS('ast-f-emp',axEmpNames(),astEmpF,'All Employees')
     +apCS('ast-f-branch',AX_BRANCHES,astBranchF,'All Branches')
     +apCS('ast-f-cond',AST_CONDITIONS,astCondF,'All Conditions')
@@ -498,8 +627,8 @@ function buildAssetAllocationHTML(){
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="ast-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     /* Fits the card: the app's listing card clips rather than scrolls, so
        paired fields share a cell - the main value with the second under it. */
-    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset Name / ID / Serial No.</th><th>Category / Type</th>'
-      +'<th>Assigned Employee / Location</th><th>Condition</th><th>Status</th><th>Created / Updated</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset / Key ID / Serial No.</th><th>Category / Type</th>'
+      +'<th>Assigned To / Admin Branch</th><th>Asset Status / Condition</th><th>Employee Confirmation</th><th>Created / Updated</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -555,8 +684,9 @@ function astSaveAdd(key){
   const val=el?el.value.trim():'';
   if(!val){showToast('Enter a name first','error');if(el)el.focus();return;}
   if(/['"]/.test(val)){showToast('Quotes are not allowed in a name','error');return;}
-  const list=key==='type'?AST_TYPES:key==='category'?AST_CATEGORIES:AST_VENDORS;
   astSync();
+  if(key==='type'){const made=astCreateType(val);if(made){astDraft.type=made;astAddOpen='';}renderADTPage();return;}
+  const list=key==='category'?AST_CATEGORIES:AST_VENDORS;
   if(list.some(function(x){return x.toLowerCase()===val.toLowerCase();})){
     showToast(val+' already exists','info','It has been selected for you.');
     astDraft[key]=list.find(function(x){return x.toLowerCase()===val.toLowerCase();});
@@ -644,7 +774,7 @@ function astFormFieldsHTML(){
       +'<div class="ep-form-group"><label class="ep-form-label" for="ast-cost">Purchase Cost</label>'
         +'<div class="ax-currency"><span>₹</span><input class="ep-form-input" id="ast-cost" type="number" min="0" step="1" value="'+attrSafe(d.cost||'')+'" placeholder="e.g. 75000"></div></div>'
       +sel('vendor','ast-vendor','Vendor / Supplier',AST_VENDORS,d.vendor,'Select Vendor / Supplier',false)
-      +sel('','ast-type','Asset Type',AST_TYPES,d.type,'Select Type',true)
+      +sel('type','ast-type','Asset Type',astTypeNames(),d.type,'Select Type',true)
       +date('ast-wstart','Warranty Start Date',d.warrantyStart)
       +date('ast-wend','Warranty End Date',d.warrantyEnd)
       +sel('','ast-branch','Branch / Location',AX_BRANCHES,d.branch,'Select Branch',false)
@@ -726,7 +856,7 @@ function submitAddAsset(){
   }
   const id=assetNextId++;
   const today=axToday();
-  const a={id:id,name:d.name,category:d.category,type:d.type,code:d.code,serial:d.serial,brand:d.brand,model:d.model,
+  const a={id:id,keyId:assetNextKey++,empConfirm:d.status==='Assigned'?'Not Confirmed':'',name:d.name,category:d.category,type:d.type,code:d.code,serial:d.serial,brand:d.brand,model:d.model,
     assignedTo:d.status==='Assigned'?d.assignedTo:'',assignedOn:d.status==='Assigned'?today:'',branch:branch,
     status:d.status,condition:d.condition,purchaseDate:d.purchaseDate,cost:d.cost===''?'':parseFloat(d.cost),vendor:d.vendor,
     warrantyStart:d.warrantyStart,warrantyEnd:d.warrantyEnd,image:d.image,imageName:d.imageName,notes:d.notes,
@@ -889,8 +1019,8 @@ function itaSysLogo(name,size){
 }
 function renderItaSidebar(){
   const r=itAccessData.find(function(x){return x.id===itaSelectedId;});if(!r)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'validity',label:'Validity'},
-    {id:'provisioning',label:'Provisioning'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'validity',label:'Validity'},
+    {id:'provisioning',label:'Provisioning'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar('ita',tabs,itaTab,'navItaTab','closeItaSidebar');
   const e=axEmp(r.assignedTo);
   const meta=ITA_SYSTEM_META[r.system]||{};
@@ -933,6 +1063,8 @@ function renderItaSidebar(){
       +axField(AX_ICO.fCal,'Requested On',String(r.createdAt).split(' | ')[0])
       +axField(AX_ICO.fLock,'Credentials','Not stored — no passwords, tokens or secrets are kept here.')
       +'</div>';
+  }else if(itaTab==='history'){
+    body=sbHistoryHTML(r);
   }else if(itaTab==='logs'){
     body=axLogsHTML(itaSeedLogs(r),r.status,ITA_STATUSES,
       {sel:'ita-log-status-sel',inp:'ita-log-comment-inp',sub:'Move this access on and say why',
@@ -1186,7 +1318,7 @@ function submitAddItAccess(){
    so the four pages register their titles there instead of in that function. */
 Object.assign(supportPageMeta,{
   'asset-allocation':{title:'Assets',context:'Admin Access',filters:[],columns:[],rows:[]},
-  'it-access':{title:'IT Access',context:'Admin Access',filters:[],columns:[],rows:[]}
+  'it-access':{title:'IT Accesses',context:'Admin Access',filters:[],columns:[],rows:[]}
 });
 
 /* Unsaved edits (sbDraftReg, core.js): the draft is read in from the form and

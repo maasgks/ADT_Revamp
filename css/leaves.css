@@ -1079,3 +1079,13 @@ tr.lp-row-selected>td:first-child,
 /* Leaving a record with unsaved edits (sbConfirmDiscard). */
 .ct-modal.sb-discard{width:min(440px,92vw)}
 .ct-modal.sb-discard .ct-modal-foot{margin-top:22px}
+/* ── History tab (js/history.js) ──
+   The Assets assignment-history table (.ax-hist), one row per changed field.
+   Six columns can be wider than the panel: the table scrolls sideways in its
+   own box, and a long value is cut with its whole text on the hover title. */
+.sb-hist-wrap{overflow-x:auto;overscroll-behavior-x:contain;border-radius:10px}
+.sb-hist td{max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.sb-hist .sb-hist-n{color:var(--gray);width:44px}
+.sb-hist .sb-hist-time{color:var(--gray)}
+.sb-hist .sb-hist-old{color:#94a3b8}
+.sb-hist .sb-hist-new{font-weight:600}

@@ -191,7 +191,7 @@ function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';de
 function renderDeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'de-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="de-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(deTab===t.id?' active':'')+'" onclick="navDeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -315,6 +315,8 @@ function renderDeSidebar(){
         +'<button class="ep-cancel-btn">Cancel</button>'
         +'<button class="ep-save-btn">Save</button>'
       +'</div>';
+  }else if(deTab==='history'){
+    body=sbHistoryHTML(emp);
   }else if(deTab==='logs'){
     body=renderEmpLogsTab('de',emp);
   }else if(deTab==='workflow'){
@@ -361,14 +363,13 @@ function buildDirectListingHTML(){
   if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
   const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery].join('|'),lpSearchRows(deRows,deSearchQuery).map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
-    +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
-    +'<td>'+(e.empId||d)+'</td>'
+    +'<td><div class="lp-c-main">'+e.name+'</div><div class="lp-c-sub">'+(e.empId||'—')+'</div></td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+(e.dept||d)+'</td>'
     +'<td>'+(e.branch||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td onclick="event.stopPropagation()">'+empActionCellHTML('de',e)+'</td>'
-    +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
+    +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=deSelectedId?renderDeSidebar():'';
   return '<div class="lp-page">'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -389,7 +390,7 @@ function buildDirectListingHTML(){
     +'</div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
-    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>JOB TITLE</th><th>DEPARTMENT</th><th>BRANCH</th><th>STATUS</th><th>ACTION</th>'
+    +'<th>SR. NO</th><th>NAME / EMPLOYEE ID</th><th>JOB TITLE</th><th>DEPARTMENT</th><th>BRANCH</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -415,7 +416,7 @@ function navGeTab(tab){geTab=tab;if(!sbHasDraft('ge'))geEditMode=false;isbTab('g
 function renderGeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ge-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="ge-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(geTab===t.id?' active':'')+'" onclick="navGeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -508,6 +509,8 @@ function renderGeSidebar(){
         +'</tr></thead><tbody><tr><td colspan="4" style="padding:22px 8px;text-align:center;font-size:12px;color:#9ca3af">No salary history</td></tr></tbody></table>'
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:10px"><button class="ep-cancel-btn">Cancel</button><button class="ep-save-btn">Save</button></div>';
+  }else if(geTab==='history'){
+    body=sbHistoryHTML(emp);
   }else if(geTab==='logs'){
     /* Same renderer as the Direct Employee panel above — see
        employee-lifecycle.js. */
@@ -533,14 +536,13 @@ function buildGlobalListingHTML(){
   if(geSelectedId&&!filtered.some(e=>e.id===geSelectedId))geSelectedId=null;
   const pgn=listPage('global-employees',geStatusFilter+'|'+geSearchQuery,lpSearchRows(filtered,geSearchQuery).map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
-    +'<td style="font-weight:600;color:var(--navy)">'+e.name+'</td>'
-    +'<td>'+(e.empId||d)+'</td>'
+    +'<td><div class="lp-c-main">'+e.name+'</div><div class="lp-c-sub">'+(e.empId||'—')+'</div></td>'
     +'<td>'+(e.country||d)+'</td>'
     +'<td>'+(e.jobTitle||d)+'</td>'
     +'<td>'+(e.workerType||d)+'</td>'
     +'<td>'+empLifeBadge(e.status)+'</td>'
     +'<td onclick="event.stopPropagation()">'+empActionCellHTML('ge',e)+'</td>'
-    +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
+    +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No employees match this filter.</td></tr>');
   const sbInner=geSelectedId?renderGeSidebar():'';
   return '<div class="lp-page">'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -558,7 +560,7 @@ function buildGlobalListingHTML(){
     +'</div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
-    +'<th>SR. NO</th><th>NAME</th><th>EMPLOYEE ID</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
+    +'<th>SR. NO</th><th>NAME / EMPLOYEE ID</th><th>COUNTRY</th><th>JOB TITLE</th><th>WORKER TYPE</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -600,7 +602,7 @@ function navTmTab(tab){if(!sbHasDraft('tm'))sbEditing=null;tmTab=tab;isbTab('tm'
 function renderTmSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const team=teamsData.find(t=>t.id===tmSelectedId);if(!team)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'team-members',label:'Team Members'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'team-members',label:'Team Members'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'tm-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="tm-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(tmTab===t.id?' active':'')+'" onclick="navTmTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -651,6 +653,8 @@ function renderTmSidebar(){
           +'</tr>').join('')
         :'<tr><td colspan="5" style="padding:28px 10px;text-align:center;font-size:13px;color:#9ca3af">No members assigned</td></tr>')
       +'</tbody></table>';
+  }else if(tmTab==='history'){
+    body=sbHistoryHTML(team);
   }else if(tmTab==='logs'){
     const logs=tmLogsData[team.id]||[];
     const tmLogKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
@@ -823,7 +827,7 @@ function navAlTab(tab){alTab=tab;isbTab('al',renderAlSidebar);}
 // listing. Tabs mirror the other listing sidebars so the pattern is consistent.
 function renderPrSidebar(){
   const r=payrollRecords[prSelectedId];if(!r)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'pay-summary',label:'Pay Summary'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'pay-summary',label:'Pay Summary'},{id:'workflow',label:'Workflow'}];
   const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
   const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
   const xIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -875,6 +879,8 @@ function renderPrSidebar(){
       +'<div class="lp-sb-detail-grid">'
       +fc(iCheck,'Approved By',r.approver)+fc(iCal,'Approved On',r.approvedOn)
       +'</div>';
+  }else if(prTab==='history'){
+    body=sbHistoryHTML(r);
   }else if(prTab==='logs'){
     // seedLogs copies the fixture onto the record once, then reads only
     // r.logs - otherwise the fixture wins on every repaint and an entry the
@@ -942,7 +948,7 @@ function wfTimelineHTML(wf){
 }
 function renderAlSidebar(){
   const l=allLeavesData.find(x=>x.id===alSelectedId);if(!l)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'al-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="al-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(alTab===t.id?' active':'')+'" onclick="navAlTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -971,6 +977,8 @@ function renderAlSidebar(){
       +fc(iDoc,'Description',l.description)+fc(iMail,'Email Address','<span style="color:var(--orange)">'+l.email+'</span>')
       +fc(iClock,'Applied on Date',l.appliedDate)+fc(iUser,'Created by',l.createdBy)
       +'</div>';
+  }else if(alTab==='history'){
+    body=sbHistoryHTML(l);
   }else if(alTab==='logs'){
     const logs=alLogsData[l.id]||[];
     const alLogKey=(s)=>({Approved:'active',Unapproved:'inactive',Rejected:'inactive',Pending:'default'}[s]||'default');
@@ -1374,7 +1382,7 @@ function pmSaveLog(orderId){
 function renderPmSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'sales-details',label:'Sales Details'},{id:'taxes-details',label:'Taxes Details'},{id:'user',label:'User'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'timesheets',label:'Timesheets'},{id:'receivable',label:'Receivable'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'sales-details',label:'Sales Details'},{id:'taxes-details',label:'Taxes Details'},{id:'user',label:'User'},{id:'employee',label:'Employee'},{id:'attachments',label:'Attachments'},{id:'timesheets',label:'Timesheets'},{id:'receivable',label:'Receivable'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'pm-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="pm-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(pmTab===t.id?' active':'')+'" onclick="navPmTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -1479,6 +1487,8 @@ function renderPmSidebar(){
       +'<button onclick="startAddInvoice()" style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Create Invoice</button>'
       +'</div>'
       +'<p style="font-size:13px;color:#9ca3af">No receivables found.</p>';
+  }else if(pmTab==='history'){
+    body=sbHistoryHTML(p);
   }else if(pmTab==='logs'){
     const logs=pmLogsData[p.id]||[];
     const pmLogKey=(st)=>({Active:'active',Paid:'active',Closed:'active',Inactive:'inactive',Unpaid:'inactive'}[st]||'default');
@@ -2027,7 +2037,7 @@ function ctSaveLog(id,selId,inpId){
 function renderCtSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const c=contractsData.find(x=>x.id===ctSelectedId);if(!c)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'commercial-terms',label:'Commercial Terms'},{id:'compliance',label:'Compliance'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'commercial-terms',label:'Commercial Terms'},{id:'compliance',label:'Compliance'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ct-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="ct-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(ctTab===t.id?' active':'')+'" onclick="navCtTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -2094,6 +2104,8 @@ function renderCtSidebar(){
         +'<td style="'+tdS+'"><button style="border:none;background:none;cursor:pointer;color:var(--navy);padding:0" title="Upload">'+upIco+'</button></td>'
         +'</tr>').join('')
       +'</tbody></table>';
+  }else if(ctTab==='history'){
+    body=sbHistoryHTML(c);
   }else if(ctTab==='logs'){
     body=ctLogsTabHTML(c);
   }else if(ctTab==='workflow'){
@@ -2339,7 +2351,7 @@ function complianceSaveLog(id){
 function renderComplianceSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=complianceItemsData.find(x=>x.id===complianceSelectedId);if(!item)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'attachments',label:'Attachments'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="cmp-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(complianceTab===t.id?' active':'')+'" onclick="navComplianceTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
     +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'cmp-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
@@ -2370,6 +2382,8 @@ function renderComplianceSidebar(){
       +'</div>';
   }else if(complianceTab==='attachments'){
     body=attachTabHTML('cmp',complianceSelectedId);
+  }else if(complianceTab==='history'){
+    body=sbHistoryHTML(item);
   }else if(complianceTab==='logs'){
     const logs=seedLogs(item,complianceLogsData[item.id]);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -3200,8 +3214,8 @@ function ocaSaveLog(id){
 function renderOcaSidebar(){
   const item=ocaItems.find(function(x){return x.id===ocaSelectedId;});if(!item)return'';
   const cat=ocaCat(item.cat);
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},
-              {id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'attachments',label:'Attachments'},
+              {id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="oca-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(ocaTab===t.id?' active':'')+'" onclick="navOcaTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -3232,6 +3246,8 @@ function renderOcaSidebar(){
       +fc(iCal,ocaDateLabel(item),'<span class="oca-due'+(dateVal==='Today'?' is-now':'')+'">'+dateVal+'</span>')
       +fc(iCheck,'What to do next',OCA_NEXT[item.status]||'—')
       +'</div>';
+  }else if(ocaTab==='history'){
+    body=sbHistoryHTML(item);
   }else if(ocaTab==='logs'){
     const logs=ocaSeedLogs(item);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -3400,7 +3416,7 @@ function ratesRuleSaveLog(id){
 function renderRatesRuleSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=ratesRulesData.find(x=>x.id===ratesRuleSelectedId);if(!item)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="rr-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(ratesRuleTab===t.id?' active':'')+'" onclick="navRatesRuleTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
     +'<button class="lp-isb-nav-btn nav-right" onclick="scrollTabRow(\'right\',\'rr-isb-tabs\')" title="Scroll right"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
@@ -3427,6 +3443,8 @@ function renderRatesRuleSidebar(){
       +fc(iId,'Applicable To',item.applicableTo)+fc(iDollar,'Value / Rate',item.valueRate)
       +fc(iUser,'Created By',item.createdBy)+fc(iCal,'Created On',lpCreatedOn(item.createdAt))
       +'</div>';
+  }else if(ratesRuleTab==='history'){
+    body=sbHistoryHTML(item);
   }else if(ratesRuleTab==='logs'){
     const logs=seedLogs(item,ratesRulesLogsData[item.id]);
     const personSvg=iUser;
@@ -3685,7 +3703,7 @@ function ctpSaveLog(id){
 function renderCtpSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const item=contractTemplatesData.find(x=>x.id===ctpSelectedId);if(!item)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'attachments',label:'Attachments'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'attachments',label:'Attachments'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ctp-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="ctp-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(ctpTab===t.id?' active':'')+'" onclick="navCtpTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -3712,6 +3730,8 @@ function renderCtpSidebar(){
       +'</div>';
   }else if(ctpTab==='attachments'){
     body=attachTabHTML('ctp',ctpSelectedId);
+  }else if(ctpTab==='history'){
+    body=sbHistoryHTML(item);
   }else if(ctpTab==='logs'){
     const logs=seedLogs(item,ctpLogsData[item.id]);
     const personSvg=iUser;
@@ -4909,7 +4929,7 @@ function phSlabTableHTML(slabs,calcOn){
 }
 function renderPhSidebar(){
   const p=payheadsData.find(function(x){return x.id===phSelectedId;});if(!p)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'slabs',label:'Slab Configuration'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'slabs',label:'Slab Configuration'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="ph-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(phTab===t.id?' active':'')+'" onclick="navPhTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -4933,6 +4953,8 @@ function renderPhSidebar(){
   }else if(phTab==='slabs'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Slab Configuration</span></div>'
       +phSlabTableHTML(p.slabs,p.calcOn);
+  }else if(phTab==='history'){
+    body=sbHistoryHTML(p);
   }else if(phTab==='logs'){
     const logs=phSeedLogs(p);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -5377,7 +5399,7 @@ function hdHeroHTML(h,editing){
 
 function renderHdSidebar(){
   const h=holidaysData.find(function(x){return x.id===hdSelectedId;});if(!h)return'';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
   const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
   const tabBar='<div class="lp-isb-tabbar">'
@@ -5432,6 +5454,8 @@ function renderHdSidebar(){
       +fc(iUser,'Created By',h.createdBy)
       +fc(iCal,'Created At',h.createdAt)
       +'</div>';
+  }else if(hdTab==='history'){
+    body=sbHistoryHTML(h);
   }else if(hdTab==='logs'){
     const logs=hdSeedLogs(h);
     const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -6084,7 +6108,7 @@ function closeLPSidebar(){if(sbLeaveGuard('lp',closeLPSidebar))return;
 function renderLPSidebar(){
   const p=leavePoliciesData.find(x=>x.id===lpSidebarPolicyId);
   if(!p)return '<div class="lp-tab-placeholder">Policy not found.</div>';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'employees',label:'Employees'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'employees',label:'Employees'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'lp-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="lp-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(lpSidebarTab===t.id?' active':'')+'" onclick="navLPSidebar(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -6153,6 +6177,8 @@ function renderLPSidebar(){
           return '<div class="lp-sb-emp-item"><div class="lp-sb-emp-avatar">'+initials+'</div><span class="lp-sb-emp-name">'+name+'</span><button class="lp-sb-emp-remove" onclick="removeLPEmployee(\''+name.replace(/'/g,"\\'")+'\')">&times;</button></div>';
         }).join('')+'</div>':'<div class="lp-sb-empty">No employees assigned yet.</div>');
     }
+  }else if(lpSidebarTab==='history'){
+    body=sbHistoryHTML(p);
   }else if(lpSidebarTab==='logs'){
     const logs=lpLogsData[p.id]||[];
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
@@ -7774,10 +7800,11 @@ function renderCsSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn">'+editIcoSvg+' Edit</button>';
   const tabs=[
     {id:'basic-details',label:'Basic Details'},
+    {id:'logs',label:'Logs'},{id:'history',label:'History'},          // the record's history, straight after its details
     {id:'attachments',label:'Attachments'},
     /* E-Sign sits beside Attachments because the documents it governs are
-       there. Its own changes are recorded in Logs and Workflow, further
-       along this same bar, rather than in an audit table of its own. */
+       there. Its own changes are recorded in Logs and Workflow on this same
+       bar, rather than in an audit table of its own. */
     {id:'esign',label:'E-Sign'},
     {id:'banking-details',label:'Banking Details'},
     {id:'company-structure',label:'Company Structure'},
@@ -7785,7 +7812,6 @@ function renderCsSidebar(){
     {id:'payroll',label:'Payroll'},
     {id:'leaves',label:'Leaves'},
     {id:'attendance',label:'Attendance'},
-    {id:'logs',label:'Logs'},
     {id:'workflow',label:'Workflow'}
   ];
   const tabBar='<div class="lp-isb-tabbar">'
@@ -7956,6 +7982,7 @@ function renderCsSidebar(){
        absconding flow and the geofence — with a working edit mode. */
     body=csAttendanceTabHTML();
   }
+  else if(csTab==='history'){body=sbHistoryHTML(csHistRec(csSelectedItem));}
   else if(csTab==='logs'){
     const lsk=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
     const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
@@ -8007,7 +8034,7 @@ function renderLstSidebar(){
   const meta=getPageMeta(lstSelectedPg);
   const cols=meta.columns||[];
   const noun=lstNouns[lstSelectedPg]||String(meta.title||'Record').replace(/s$/,'');
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const chevL='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>';
   const chevR='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>';
   const xIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
@@ -8073,6 +8100,7 @@ function renderLstSidebar(){
     body=sbIsEditing('lst',lstSelectedId)?hero(true)+sbEditFormHTML('lst',row)
       :hero(false)+'<div class="lp-sb-detail-grid">'+fields+'</div>';
   }
+  else if(lstTab==='history'){body=sbHistoryHTML(row);}
   else if(lstTab==='logs'){
     const logs=getLstLogs();
     // Only these have styled variants; anything else falls back to grey rather
@@ -8134,9 +8162,9 @@ function renderTkSidebar(){
      on it falls back to Basic Details. */
   const hasChat=tkIsChat(t);
   if(!hasChat&&tkTab==='conversation')tkTab='basic-details';
-  const tabs=[{id:'basic-details',label:'Basic Details'}]
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'}]
     .concat(hasChat?[{id:'conversation',label:'Conversation'}]:[])
-    .concat([{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}]);
+    .concat([{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'workflow',label:'Workflow'}]);
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'tk-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="tk-isb-tabs">'+tabs.map(tb=>'<button class="lp-isb-tab'+(tkTab===tb.id?' active':'')+'" onclick="navTkTab(\''+tb.id+'\')">'+tb.label+'</button>').join('')+'</div>'
@@ -8228,6 +8256,8 @@ function renderTkSidebar(){
       +'<div><div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:5px">Reason <span class="lp-logs-form-req">*</span></div><textarea id="tk-reassign-note" style="width:100%;height:72px;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);resize:none;box-sizing:border-box" placeholder="Why is this moving, and what does the new assignee need to know?"></textarea></div>'
       +'<button onclick="tkReassign('+t.id+')" style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
       +'</div>';
+  }else if(tkTab==='history'){
+    body=sbHistoryHTML(t);
   }else if(tkTab==='logs'){
     body=tkLogsTabHTML(t);
   }else if(tkTab==='workflow'){
@@ -8736,7 +8766,7 @@ function renderCsmDashCards(){
 // ── CHATS PAGE ──
 function renderChatSidebar(){
   const c=chatsData.find(x=>x.id===chatSelectedId);if(!c)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'tickets',label:'Tickets'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'logs',label:'Logs'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'tickets',label:'Tickets'},{id:'attachments',label:'Attachments'},{id:'assignment',label:'Assignment'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'chat-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="chat-isb-tabs">'+tabs.map(tb=>'<button class="lp-isb-tab'+(chatTab===tb.id?' active':'')+'" onclick="navChatTab(\''+tb.id+'\')">'+tb.label+'</button>').join('')+'</div>'
@@ -8786,6 +8816,8 @@ function renderChatSidebar(){
       +'<select style="width:100%;height:38px;border:1.5px solid var(--border);border-radius:8px;padding:0 12px;font-size:13px;font-family:inherit;outline:none;color:var(--navy);background:#fff"><option value="">Choose assignee…</option><option>Pallavi Parate</option><option>Rahul Mehta</option><option>Aman Singh</option><option>Neha Sharma</option><option>Olivia Clark</option></select></div>'
       +'<button style="align-self:flex-start;height:34px;padding:0 20px;background:var(--orange);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Reassign</button>'
       +'</div>';
+  }else if(chatTab==='history'){
+    body=sbHistoryHTML(c);
   }else if(chatTab==='logs'){
     /* The same two-column Logs tab every other module has: history on the left,
        the move that writes the next entry on the right. It was a read-only

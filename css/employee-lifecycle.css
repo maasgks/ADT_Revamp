@@ -156,9 +156,37 @@
 .emp-res-dl div{min-width:0}
 .emp-res-dl dt{font-size:10.5px;color:#94a3b8;font-weight:500}
 .emp-res-dl dd{margin:0;font-size:12px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-/* Assign Existing Asset */
-.emp-assign{border-top:1px dashed #e5e7eb;padding-top:10px;display:flex;flex-direction:column;gap:10px}
-.emp-assign-title{font-size:11.5px;font-weight:700;color:var(--navy)}
+/* Assign Existing Asset: the picked list, then one row of buttons. */
+.emp-assign{display:flex;flex-direction:column;gap:8px}
+.emp-assign-title{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-top:2px}
+.emp-assign-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.emp-pick-list{display:flex;flex-direction:column;gap:6px}
+.emp-pick-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px 7px 11px;border:1px dashed #cbd5e1;border-radius:8px;background:#fcfcfd}
+.emp-pick-row .emp-res-txt{display:flex;align-items:baseline;gap:8px;min-width:0}
+.emp-pick-x{width:24px;height:24px;flex-shrink:0;border:none;border-radius:6px;background:none;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.emp-pick-x:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+.emp-pick-x svg{width:12px;height:12px}
+/* Assign: the step's one primary action - solid once something is picked. */
+.emp-sec-btn.is-primary{margin-left:auto;background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
+.emp-sec-btn.is-primary:hover{background:#000;border-color:#000}
+.emp-sec-btn.is-primary:disabled{background:#f1f5f9;border-color:#e2e8f0;color:#94a3b8;cursor:not-allowed}
+/* Select Assets popup */
+.ct-modal.emp-asg{width:min(520px,92vw)}
+.emp-asg-search{margin:4px 0 10px;border-radius:var(--r-control)!important}
+.emp-asg>.emp-sec-empty{margin-bottom:22px}
+.emp-asg-list{max-height:min(320px,46vh);overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--border);border-radius:10px;margin-bottom:22px}
+.emp-asg-row{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;position:relative}
+.emp-asg-row:last-of-type{border-bottom:none}
+.emp-asg-row:hover{background:#f8fafc}
+.emp-asg-row[hidden]{display:none}
+.emp-asg-row input{position:absolute;opacity:0;width:0;height:0}
+.emp-asg-row input:checked+.emp-log-box{background:var(--orange);border-color:var(--orange);color:#fff}
+.emp-asg-row input:focus-visible+.emp-log-box{box-shadow:0 0 0 3px rgba(148,163,184,.35)}
+.emp-asg-txt{flex:1;min-width:0;display:flex;align-items:baseline;gap:8px}
+.emp-asg-cat{font-size:11.5px;color:#94a3b8;white-space:nowrap}
+.emp-asg-none{padding:18px;text-align:center;font-size:12.5px;color:var(--gray)}
+.emp-asg-count{font-size:12px;font-weight:600;color:var(--gray)}
+.emp-asg .ct-modal-foot{justify-content:space-between}
 /* Document Review rows: name, status, Accept / Reject */
 .emp-rev-row{display:flex;flex-direction:column;gap:5px;padding:9px 11px;border-bottom:1px solid #f1f5f9}
 .emp-rev-row:last-child{border-bottom:none}
@@ -178,17 +206,17 @@
 .emp-pair-del:hover{color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
 
 /* ── Row menu ──────────────────────────────────────────────────────────── */
-.emp-act-menu{min-width:300px}
-.emp-act-head{padding:9px 14px;font-size:10.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#94a3b8;
-  border-bottom:1px solid #f1f5f9;background:#fcfcfd}
+/* A plain menu: just the steps, as text rows on one even rhythm - no heading,
+   no step icons, no rule under every row. Steps that can be taken now read in
+   ink, the rest in grey. */
+.emp-act-menu{min-width:220px;padding:6px 0}
+.emp-act-menu .ct-act-item{padding:8px 14px;font-size:13px;border-bottom:none}
 .emp-act-item .emp-act-label{flex:1;min-width:0}
 .emp-act-item em{font-style:normal;font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap}
 .ct-act-item.wait,.ct-act-item.auto,.ct-act-item.skipped{color:#94a3b8;cursor:default}
 .ct-act-item.wait:hover,.ct-act-item.auto:hover,.ct-act-item.skipped:hover{background:none;color:#94a3b8}
-.ct-act-step.wait,.ct-act-step.auto,.ct-act-step.skipped{background:#f1f5f9;color:#94a3b8}
 .ct-act-item.branch.next{color:var(--st-bad-fg)}
-.ct-act-step.branch{background:var(--st-bad-bg);color:var(--st-bad-fg)}
-.emp-act-logs{color:#64748b;font-weight:600;background:#fcfcfd}
+.emp-act-menu .ct-act-item.done{color:#94a3b8}
 
 /* ── Add Log popup ────────────────────────────────────────────────────── */
 .emp-sm .lp-logs-form-label{font-size:12px;color:var(--navy);margin-bottom:6px}
@@ -278,3 +306,60 @@
 .emp-trk-subs li svg{color:var(--st-ok-fg);flex-shrink:0}
 .emp-trk-subs li.is-done{color:var(--navy)}
 .emp-trk-subdot{width:6px;height:6px;border-radius:50%;background:#cbd5e1;flex-shrink:0;margin:0 2px}
+/* An asset in the log: one line - name, code, status. */
+.emp-res-card.is-line .emp-res-top{margin-bottom:0}
+.emp-res-card.is-line .emp-res-txt{display:flex;align-items:baseline;gap:8px;min-width:0}
+.emp-res-code{font-size:11px;color:#94a3b8;white-space:nowrap}
+
+/* ── Logs tab: the NEXT STEP card ───────────────────────────────────────
+   In place of a form: the step to do next, what it involves and who owns it,
+   with Fill Details under it (the popup holds the fields). Steps open at the
+   same time, and the way out of the process, are plain links below. */
+.emp-next .emp-logs-form-scroll{padding-bottom:14px}
+.emp-next-card{border:1px solid var(--border);border-radius:10px;padding:14px 14px 12px;background:#fff}
+.emp-next-card.is-wait{background:#fcfcfd;border-style:dashed}
+.emp-next-k{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8;margin-bottom:6px}
+.emp-next-title{font-size:15px;font-weight:700;color:var(--navy);line-height:1.35}
+.emp-next-hint{margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--gray)}
+.emp-next-owner{margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:var(--gray)}
+.emp-next-owner b{color:var(--navy);font-weight:600}
+.emp-next-more{margin-top:16px}
+.emp-next-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 2px;border:none;
+  border-bottom:1px solid #f1f5f9;background:none;font:inherit;font-size:13px;font-weight:500;color:var(--navy);cursor:pointer;text-align:left}
+.emp-next-link:last-child{border-bottom:none}
+.emp-next-link svg{color:#94a3b8;flex-shrink:0;transition:transform .15s}
+.emp-next-link:hover{color:var(--btn-accent)}
+.emp-next-link:hover svg{transform:translateX(2px);color:var(--btn-accent)}
+.emp-next-link.is-danger,.emp-next-link.is-danger svg{color:var(--st-bad-fg)}
+.emp-logs .emp-log-note{margin-bottom:12px}
+/* The step popup: one line on what the step involves, under its title. */
+.emp-sm-hint{margin:-4px 0 16px;font-size:12.5px;line-height:1.55;color:var(--gray)}
+/* Cancel Onboarding / Offboarding and Reject Document: the one button is in
+   the soft red of a status badge - pale fill, red text - rather than a solid
+   red block; it deepens a step on hover. */
+.ep-save-btn.is-danger{background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
+.ep-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#b91c1c}
+/* The row button on the employee listings: a little wider than the Contracts
+   one: a status reads in full (Active, Onboarding); a longer step name ends
+   in "…" and the whole name is on the hover title. Same colour, height
+   and radius as the Contracts button. */
+.ct-action-btn.emp-act-btn{width:126px;justify-content:space-between}
+.ct-action-btn.emp-act-btn span{flex:1;min-width:0;max-width:none;text-align:left}
+/* An asset line that opens to its details: the whole line is the toggle, the
+   arrow turns when open, and the details sit under a hairline. */
+.emp-res-toggle{width:100%;border:none;background:none;padding:0;margin:0;font:inherit;text-align:left;cursor:pointer;gap:10px}
+.emp-res-toggle .emp-res-txt{flex:1}
+.emp-res-chev{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;color:#94a3b8;flex-shrink:0;transition:transform .18s,background .15s,color .15s}
+.emp-res-toggle:hover .emp-res-chev{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+.emp-res-card.is-open .emp-res-chev{transform:rotate(180deg);color:var(--navy)}
+.emp-res-toggle:focus-visible{outline:2px solid var(--navy);outline-offset:4px;border-radius:4px}
+.emp-res-more{margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9}
+.emp-res-more[hidden]{display:none}
+/* Super Admin's step dropdown above the card, and the "waiting on" note a
+   role sees on a step owned by someone else. */
+.emp-next-pick{margin-bottom:12px}
+.emp-next-wait{display:inline-flex;align-items:center;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;
+  background:var(--st-wait-bg);color:var(--st-wait-fg);border:1px solid var(--st-wait-bd)}
+.emp-sm .ct-modal-foot>.emp-next-wait{margin-left:auto}
+.lp-logs-save-btn.is-danger{background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
+.lp-logs-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#b91c1c}

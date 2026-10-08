@@ -2488,3 +2488,13 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .prof-att-card.is-pending:hover .prof-att-up-btn{background:var(--btn-accent);border-color:var(--btn-accent);color:#fff}
 .prof-att-count.is-wait{color:var(--st-wait-fg);background:var(--st-wait-bg);border-color:var(--st-wait-bd)}
 .prof-att-hint{margin:-6px 0 14px;font-size:12px;color:var(--gray)}
+/* Logged-in role (header): same shape as the entity and user selectors. */
+.role-sel{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;cursor:pointer;color:var(--navy);padding:5px 10px;border-radius:8px;
+  background:var(--light);border:1px solid var(--border);white-space:nowrap;flex-shrink:0;transition:background .15s,border-color .15s}
+.role-sel:hover{background:#fff;border-color:#cbd5e1}
+.role-sel svg{width:15px;height:15px;color:var(--gray)}
+.role-dd{min-width:260px}
+.role-dd-head{padding:8px 10px 6px;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#94a3b8}
+.role-dd-item{flex-direction:column;align-items:flex-start;gap:1px}
+.role-dd-item span{font-size:11px;font-weight:500;color:var(--gray)}
+.role-dd-item.is-current{background:var(--light);font-weight:700}
