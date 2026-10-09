@@ -4651,7 +4651,9 @@ function tsSaveEntry(){
   }
   const inEl=document.getElementById('ts-ed-in');
   const outEl=document.getElementById('ts-ed-out');
-  const locEl=document.getElementById('ts-ed-loc');
+  const locEl=document.querySelector('[data-csid="ts-ed-loc"] .cs-value');
+  const locLbl=locEl?locEl.textContent:'';
+  const locKey=Object.keys(TS_PLACES).find(function(k){return TS_PLACES[k].label===locLbl;});
   const iv=inEl?inEl.value:'',ov=outEl?outEl.value:'';
   const fail=function(msg){
     const e=document.getElementById('ts-ed-err');
@@ -4666,7 +4668,7 @@ function tsSaveEntry(){
   const had=tsAttendance[date]&&tsAttendance[date].status==='present';
   tsAttendance[date]={
     in:tsTo12(iv),out:tsTo12(ov),
-    loc:(locEl&&locEl.value)||'Hyderabad',
+    loc:locKey||'Hyderabad',
     hours:(mins/60).toFixed(2)+'h',
     src:'Manual',                       // typed in, and the grid says so
     status:'present'

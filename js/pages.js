@@ -6406,6 +6406,61 @@ const TS_ICO={
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
 };
+/* ── Time field ──
+   The standard dropdown (.cs-wrap / .cs-trigger / .cs-dropdown) holding an
+   hour column and a minute column, in place of the browser's own time popup,
+   which looked like nothing else in the app. The value lives in a hidden input
+   carrying the id, so tsEditPreview / tsSaveEntry still read it by
+   getElementById(id).value, as HH:MM in 24-hour time. Minutes step by 5; a
+   saved value off that step keeps its own minute in the list. */
+const TS_TP_CLOCK='<svg class="cs-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+function tsTimeField(id,val){
+  const p=(val||'').split(':'),h=p[0]||'',m=p[1]||'';
+  const pad=function(n){return String(n).padStart(2,'0');};
+  const hrs=[],mins=[];
+  for(let i=0;i<24;i++)hrs.push(pad(i));
+  for(let i=0;i<60;i+=5)mins.push(pad(i));
+  if(m&&mins.indexOf(m)<0){mins.push(m);mins.sort();}
+  const col=function(part,list,cur,head){
+    return '<div class="ts-tp-col"><div class="ts-tp-head">'+head+'</div>'
+      +list.map(function(v){
+        return '<div class="cs-option'+(v===cur?' cs-selected':'')+'" data-v="'+v+'" onclick="tsTpPick(this,\''+id+'\',\''+part+'\')">'+v+'</div>';
+      }).join('')+'</div>';
+  };
+  return '<div class="cs-wrap ts-tp" id="csw-'+id+'">'
+    +'<button type="button" class="cs-trigger'+(val?'':' cs-placeholder')+'" data-csid="'+id+'" onclick="tsTpToggle(this)">'
+      +'<span class="cs-value">'+(val||'--:--')+'</span>'+TS_TP_CLOCK+'</button>'
+    +'<div class="cs-dropdown ts-tp-drop" id="csd-'+id+'">'
+      +col('h',hrs,h,'Hr')+col('m',mins,m,'Min')
+    +'</div></div>'
+    +'<input type="hidden" id="'+id+'" value="'+(val||'')+'">';
+}
+function tsTpToggle(btn){
+  csToggle(btn);
+  // Open on the chosen time, not on midnight.
+  const drop=document.getElementById('csd-'+btn.dataset.csid);
+  if(drop&&drop.classList.contains('cs-open'))drop.querySelectorAll('.ts-tp-col').forEach(function(c){
+    const s=c.querySelector('.cs-selected');
+    if(s)c.scrollTop=s.offsetTop-c.clientHeight/2+s.offsetHeight/2;
+  });
+}
+function tsTpPick(opt,id,part){
+  const inp=document.getElementById(id);if(!inp)return;
+  const p=(inp.value||'09:00').split(':');
+  if(part==='h')p[0]=opt.dataset.v;else p[1]=opt.dataset.v;
+  inp.value=p[0]+':'+p[1];
+  const drop=document.getElementById('csd-'+id);
+  // Picking an hour fills the minute too, so the field is never half a time.
+  drop.querySelectorAll('.ts-tp-col').forEach(function(c,i){
+    const want=p[i];
+    c.querySelectorAll('.cs-option').forEach(function(o){o.classList.toggle('cs-selected',o.dataset.v===want);});
+  });
+  const trig=document.querySelector('[data-csid="'+id+'"]');
+  if(trig){trig.querySelector('.cs-value').textContent=inp.value;trig.classList.remove('cs-placeholder');}
+  // The minute is the second and last choice, so it closes the list.
+  if(part==='m'){drop.classList.remove('cs-open');if(trig)trig.classList.remove('cs-open');}
+  tsEditPreview();
+}
 /* The form. Two times and a place — the same three facts the panel reads back
    above it, so entering a day and reading one are visibly the same record.
    The total under them is not a field: it is the arithmetic, shown live, so a
@@ -6414,19 +6469,19 @@ function buildTsEditHTML(dateStr){
   const att=tsAttendance[dateStr]||{};
   const inV=tsTo24(att.in),outV=tsTo24(att.out);
   const mins=(inV&&outV)?tsMins(outV)-tsMins(inV):0;
-  const locOpts=Object.keys(TS_PLACES).map(function(k){
-    const on=(att.loc||'Hyderabad')===k;
-    return '<option value="'+k+'"'+(on?' selected':'')+'>'+TS_PLACES[k].label+'</option>';
-  }).join('');
+  // The app's standard dropdown (apCS), not a native <select>. It works in
+  // labels, so tsSaveEdit maps the chosen label back to its TS_PLACES key.
+  const locLabels=Object.keys(TS_PLACES).map(function(k){return TS_PLACES[k].label;});
+  const locCur=(TS_PLACES[att.loc||'Hyderabad']||TS_PLACES.Hyderabad).label;
   return '<div class="ts-ed">'
     +'<div class="ts-ed-row">'
-    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Clock in</span>'
-      +'<input type="time" class="ts-ed-inp" id="ts-ed-in" value="'+inV+'" oninput="tsEditPreview()"></label>'
-    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Clock out</span>'
-      +'<input type="time" class="ts-ed-inp" id="ts-ed-out" value="'+outV+'" oninput="tsEditPreview()"></label>'
+    +'<div class="ts-ed-f"><span class="ts-ed-lbl">Clock in</span>'+tsTimeField('ts-ed-in',inV)+'</div>'
+    +'<div class="ts-ed-f"><span class="ts-ed-lbl">Clock out</span>'+tsTimeField('ts-ed-out',outV)+'</div>'
     +'</div>'
-    +'<label class="ts-ed-f"><span class="ts-ed-lbl">Location</span>'
-      +'<select class="ts-ed-sel" id="ts-ed-loc">'+locOpts+'</select></label>'
+    // A <div>, not a <label>: a label forwards every click inside it to the
+    // trigger button, which would reopen the list as an option is picked.
+    +'<div class="ts-ed-f"><span class="ts-ed-lbl">Location</span>'
+      +apCS('ts-ed-loc',locLabels,locCur,'Select location')+'</div>'
     +'<div class="ts-ed-total"><span>Total</span><span id="ts-ed-total">'
       +(mins>0?(mins/60).toFixed(2):'0.00')+'h</span></div>'
     +'<div class="ts-ed-err" id="ts-ed-err"></div>'
@@ -6759,7 +6814,14 @@ function buildMyTimesheetHTML(viewingOther) {
         } else {
           // Only the exception is labelled — "Auto" on every present day is
           // sixteen repetitions of the default.
+          /* The rail colour alone says "something was off" without saying
+             what — the flag names it. See css/timesheet-calendar.css. */
+          const dsc = dsClassify(dateStr);
+          const flag = dsc.key === 'late-login' ? 'Late in · '+dsDur(dsc.late)
+            : dsc.key === 'early-logout' ? 'Early out · '+dsDur(dsc.early)
+            : dsc.key === 'late-early' ? 'Late in + Early out' : '';
           body = '<span class="ts-day-hrs">'+att.hours+'</span>'
+            + (flag ? '<span class="ts-day-flag tone-'+dsc.tone+'">'+flag+'</span>' : '')
             + (att.src === 'Manual' ? '<span class="ts-day-src">Manual</span>' : '');
         }
       } else if (isWe) {

@@ -340,14 +340,19 @@
 .emp-next-hint{margin:5px 0 0;font-size:12.5px;line-height:1.55;color:var(--gray)}
 .emp-next-owner{margin-top:10px;padding-top:10px;border-top:1px solid #f1f5f9;font-size:12px;color:var(--gray)}
 .emp-next-owner b{color:var(--navy);font-weight:600}
-.emp-next-more{margin-top:16px}
-.emp-next-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 2px;border:none;
-  border-bottom:1px solid #f1f5f9;background:none;font:inherit;font-size:13px;font-weight:500;color:var(--navy);cursor:pointer;text-align:left}
-.emp-next-link:last-child{border-bottom:none}
+.emp-next-more{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.emp-next-more .emp-next-k{margin-bottom:0}
+.emp-next-link{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:9px 12px;
+  border:1px solid #e2e8f0;border-radius:8px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.04);
+  font:inherit;font-size:13px;font-weight:500;color:var(--navy);cursor:pointer;text-align:left;
+  transition:background .15s,border-color .15s,color .15s}
 .emp-next-link svg{color:#94a3b8;flex-shrink:0;transition:transform .15s}
-.emp-next-link:hover{color:var(--btn-accent)}
+.emp-next-link:hover{color:var(--btn-accent);border-color:var(--btn-accent);background:#f8fafc}
 .emp-next-link:hover svg{transform:translateX(2px);color:var(--btn-accent)}
+.emp-next-link:focus-visible{outline:2px solid var(--btn-accent);outline-offset:2px}
+.emp-next-link.is-danger{border-color:var(--st-bad-bd)}
 .emp-next-link.is-danger,.emp-next-link.is-danger svg{color:var(--st-bad-fg)}
+.emp-next-link.is-danger:hover{background:var(--st-bad-bg);border-color:var(--st-bad-fg)}
 .emp-logs .emp-log-note{margin-bottom:12px}
 /* The step popup: one line on what the step involves, under its title. */
 .emp-sm-hint{margin:-4px 0 16px;font-size:12.5px;line-height:1.55;color:var(--gray)}
