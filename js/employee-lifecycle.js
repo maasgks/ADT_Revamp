@@ -56,7 +56,10 @@ const EMP_LOG={
   compliance:      {label:'Compliance Clearance Completed',owner:'Compliance'},
   fnf:             {label:'F&F Settlement Completed',owner:'HR / Finance'},
   inactive:        {label:'Inactive',owner:'System',system:true},
-  'cancel-off':    {label:'Cancel Offboarding',owner:'HR',cancel:true}
+  'cancel-off':    {label:'Cancel Offboarding',owner:'HR',cancel:true},
+  /* Mark Inactive: HR / Super Admin set the employee Inactive directly, from
+     any status but Inactive, outside the onboarding / offboarding process. */
+  'mark-inactive': {label:'Mark Inactive',owner:'HR',cancel:true}
 };
 function empLogKey(label){
   for(var k in EMP_LOG)if(EMP_LOG[k].label===label)return k;
@@ -66,6 +69,7 @@ const EMP_STATUSES=['Pending','Onboarding','Active','Inactive'];
 
 /* One tone map for the app. Only keys nobody else owns are added here. */
 Object.assign(SB_STATUS_TONE,{
+  'mark-inactive':'bad',
   'document-request-raised':'info','documents-submitted':'info','verification-completed':'ok',
   'document-rejected':'bad','admin-access-completed':'ok','cancel-onboarding':'bad',
   offboarding:'wait','kt-handover-completed':'ok','admin-access-revoked':'ok',
@@ -100,6 +104,7 @@ const EMP_DOC_REJECT_REASONS=['Incorrect / Invalid Document','Illegible / Unread
   'Information Mismatch','Incomplete / Missing Pages','Incorrect Document Type','Other'];
 const EMP_SEPARATION_TYPES=['Voluntary','Involuntary','Contract End','Retirement','Other'];
 const EMP_CANCEL_REASONS=['Candidate Declined','No Show on Joining Date','Offer Withdrawn','Background Check Failed','Other'];
+const EMP_INACTIVE_REASONS=['Resigned','Terminated','Absconding','Contract Ended','Duplicate Record','Long Leave / Sabbatical','Other'];
 const EMP_PAY_MODES=['Bank Transfer','Cheque','Cash'];
 const EMP_HANDOVER_TYPES=['Project(s)','Client(s)'];
 /* Access Revocation time, in the app's own dropdown (there is no native time
@@ -156,6 +161,7 @@ function empState(emp){
   var logs=empLogs(emp);
   for(var i=logs.length-1;i>=0;i--){
     var l=logs[i],k=l.type||empLogKey(l.status);
+    if(k==='mark-inactive'){st.status='Inactive';st.phase='none';st.onb=null;st.off=null;continue;}
     if(k==='pending'){st.status='Pending';st.phase='pending';}
     else if(k==='onboarding'){st.status='Onboarding';st.phase='onb';st.off=null;
       st.onb={docReq:false,noDocs:false,verified:false,assetIt:false};}
@@ -275,7 +281,12 @@ function empTrackerStatus(emp){
 
 /* ── What can be logged right now ──────────────────────────────────────── */
 function empLogOptions(emp){
-  var st=empState(emp),out=[];
+  var st=empState(emp),out=empLogOptionsBase(emp,st);
+  if(st.status!=='Inactive')out.push('mark-inactive');
+  return out;
+}
+function empLogOptionsBase(emp,st){
+  var out=[];
   if(st.status==='Pending'||st.status==='Inactive')return ['onboarding'];
   if(st.phase==='onb'){
     var o=st.onb;
@@ -318,14 +329,19 @@ const EMP_STEP={
   'asset-rev':    {cta:'Revoke Admin Access',hint:'Confirm every asset is back and all IT access is revoked.'},
   compliance:     {cta:'Complete Compliance Clearance',hint:'Record the clearance, and any issue still outstanding.'},
   fnf:            {cta:'Complete F&F Settlement',hint:'Record the full and final settlement and how it was paid.'},
-  'cancel-off':   {cta:'Cancel Offboarding',hint:'Withdraw the exit. The employee stays Active.'}
+  'cancel-off':   {cta:'Cancel Offboarding',hint:'Withdraw the exit. The employee stays Active.'},
+  pending:        {cta:'Pending',hint:'Chosen when the employee is created; onboarding starts later.'},
+  'docs-submitted':{cta:'Documents Submitted',hint:'Recorded automatically when the employee has uploaded every requested document.'},
+  active:         {cta:'Active',hint:'Set automatically once Verification Completed and Admin Access Completed both exist.'},
+  inactive:       {cta:'Inactive',hint:'Set automatically once every exit activity is complete and the Last Working Date is reached.'},
+  'mark-inactive':{cta:'Mark Inactive',hint:'Set this employee to Inactive now, outside the onboarding / offboarding process. Assets must be recovered and IT access revoked first.'}
 };
 /* {key, wait, more, cancel}: key is the step to do now (null while the record
    waits on someone else - then wait says on whom); more are the other steps
    open at the same time; cancel is the way out of the running process. */
 function empNextStep(emp){
   var opts=empLogOptions(emp),st=empState(emp);
-  var cancel=opts.filter(function(k){return EMP_LOG[k].cancel;})[0]||null;
+  var exits=opts.filter(function(k){return EMP_LOG[k].cancel;});
   var work=opts.filter(function(k){return !EMP_LOG[k].cancel&&k!=='doc-rejected';});
   var key=null,wait=null;
   if(st.phase==='onb'){
@@ -341,7 +357,7 @@ function empNextStep(emp){
     if(!key)wait={title:'Awaiting Last Working Date',text:'Every exit activity is complete. '+emp.name+' becomes Inactive automatically'
       +(st.off.lwd?' on '+cdLabel(st.off.lwd):'')+'.'};
   }else key=work[0]||null;
-  return {key:key,wait:wait,cancel:cancel,more:work.filter(function(k){return k!==key;})};
+  return {key:key,wait:wait,exits:exits,more:work.filter(function(k){return k!==key;})};
 }
 /* Who may record a step: its Owner (FR-01 status table) against the role
    logged in (header, core.js currentRole). Super Admin records every step. */
@@ -360,6 +376,38 @@ function empRoleCan(k){
 /* A step named as the action it is ("Complete Verification"), for buttons,
    links and the Super Admin step list. */
 function empStepAction(emp,k){return k==='doc-request'&&empReqDocs(emp).length?EMP_STEP[k].more:EMP_STEP[k].cta;}
+/* Why a log cannot be recorded on this record right now - '' when it can.
+   Super Admin sees every log; the ones not open yet say when they will be. */
+const EMP_ONB_KEYS=['doc-request','doc-rejected','verified','asset-it','cancel-onb'];
+const EMP_OFF_KEYS=['kt','asset-rev','compliance','fnf','cancel-off'];
+function empStepWhyNot(emp,k){
+  if(empLogOptions(emp).indexOf(k)>=0)return '';
+  var st=empState(emp);
+  if(EMP_LOG[k].system)return k==='pending'?'Set when the employee is created.':'Recorded automatically by the system - it cannot be logged by hand.';
+  if(k==='pending')return 'Set when the employee is created.';
+  if(k==='onboarding')return 'Available for Pending or Inactive employees.';
+  if(k==='offboarding')return st.phase==='off'?'Offboarding is already in progress.':'Available for Active employees.';
+  if(k==='mark-inactive')return 'The employee is already Inactive.';
+  if(EMP_ONB_KEYS.indexOf(k)>=0){
+    if(st.phase!=='onb')return 'Available while Onboarding is in progress.';
+    if(k==='doc-rejected')return 'Available once the employee has uploaded a requested document.';
+    return 'Already completed in this onboarding.';
+  }
+  if(EMP_OFF_KEYS.indexOf(k)>=0){
+    if(st.phase!=='off')return 'Available once Offboarding has started.';
+    return 'Already completed in this offboarding.';
+  }
+  return 'Not available at this stage.';
+}
+/* The Super Admin step list: every log, the ones open now first. */
+function empAllSteps(emp){
+  var open=[],rest=[];
+  Object.keys(EMP_LOG).forEach(function(k){(empStepWhyNot(emp,k)?rest:open).push(k);});
+  var n=empNextStep(emp);
+  open.sort(function(a,b){return (a===n.key?-1:0)-(b===n.key?-1:0);});
+  return open.concat(rest);
+}
+function empStepPickLabel(emp,k){return empStepAction(emp,k)+(empStepWhyNot(emp,k)?' — Not available':'');}
 function empStepTitle(emp,k){
   return k==='doc-request'&&empReqDocs(emp).length?EMP_STEP[k].more:EMP_LOG[k].label;
 }
@@ -390,6 +438,7 @@ const EMP_ICO={
   warn:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.6"/></svg>',
   info:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="11"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></svg>',
   plus:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  back:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>',
   arrow:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
   x:'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
   laptop:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="11" rx="1.5"/><path d="M2 19h20"/></svg>',
@@ -450,6 +499,9 @@ function empBlockHTML(pk,emp,k){
       +empFields(pk,k,[{k:'reason',label:'Rejection Reason',type:'select',req:true,opts:EMP_DOC_REJECT_REASONS}]);
   }
   if(k==='asset-it')return empAssetItHTML(pk,emp);
+  if(k==='mark-inactive')return empResourceHTML(emp,'cancel')
+    +empFields(pk,k,[{k:'reason',label:'Reason',type:'select',req:true,opts:EMP_INACTIVE_REASONS},
+      {k:'date',label:'Effective Date',type:'date',req:true,val:empToday()}]);
   if(k==='cancel-onb')return empResourceHTML(emp,'cancel')
     +empFields(pk,k,[{k:'reason',label:'Cancellation Reason',type:'select',req:true,opts:EMP_CANCEL_REASONS}]);
   if(k==='offboarding')return empFields(pk,k,[
@@ -1009,6 +1061,11 @@ function empCommitLog(pk){
     if(!skI&&!is.length){empFail('IT Access is not complete','Add IT access for '+emp.name+', or tick Skip IT Access.');return;}
     entry.details=[{label:'Asset Allocation',value:skA?'Skipped':as.map(function(a){return a.code;}).join(', ')},
                    {label:'IT Access',value:skI?'Skipped':is.map(function(r){return r.system;}).join(', ')}];
+  }else if(k==='mark-inactive'){
+    var ma=empAssets(emp).length,mi=empItAccess(emp).length;
+    if(ma||mi){empFail('Recover assets and revoke access first',(ma?ma+' asset'+(ma===1?'':'s')+' still assigned':'')+(ma&&mi?' and ':'')
+      +(mi?mi+' IT access record'+(mi===1?'':'s')+' still active':'')+'. Use Manage Asset / Manage IT Access above.');return;}
+    entry.status='Inactive';
   }else if(k==='cancel-onb'){
     if(empAssets(emp).length||empItAccess(emp).length){empShowCancelBlock(pk,emp);return;}
   }else if(k==='asset-rev'){
@@ -1125,6 +1182,8 @@ const EMP_MAIL={
     body:'Hi Team, Full & Final Settlement is required for {name} ({id}). Please complete the applicable settlement details.'},
   inactive:       {to:'Employee',subject:'Offboarding Completed',
     body:'Hi {name}, your offboarding has been completed and your Employee status is now Inactive.'},
+  'mark-inactive':{to:'Employee / HR',subject:'Employee Status Set to Inactive',
+    body:'Hi {name}, your Employee status has been set to Inactive by HR.'},
   'cancel-off':   {to:'Employee / HR',subject:'Offboarding Cancelled',
     body:'Hi {name}, your offboarding process has been cancelled. Your Employee status has been restored to Active.'}
 };
@@ -1250,14 +1309,16 @@ const empStepPick={};    // kind+id -> the step a Super Admin picked
 function empNextCardHTML(kind,emp){
   var n=empNextStep(emp),st=empState(emp),sa=empRole()==='Super Admin';
   var open=function(k){return 'empOpenLogModal(\''+kind+'\','+emp.id+',\''+k+'\',\'sb\')';};
-  var all=(n.key?[n.key]:[]).concat(n.more).concat(n.cancel?[n.cancel]:[]);
+  var all=sa?empAllSteps(emp):(n.key?[n.key]:[]).concat(n.more).concat(n.exits);
   var pickKey=kind+emp.id;
-  var sel=sa?(all.indexOf(empStepPick[pickKey])>=0?empStepPick[pickKey]:(n.key||'')):(n.key&&empRoleCan(n.key)?n.key:'');
+  var sel=sa?(all.indexOf(empStepPick[pickKey])>=0?empStepPick[pickKey]:(n.key||n.exits[0]||'')):(n.key&&empRoleCan(n.key)?n.key:'');
   var show=sa&&sel?sel:n.key;     // the step the card describes
+  var why=sa&&sel?empStepWhyNot(emp,sel):'';   // a Super Admin pick that is not open yet
   var main=show
     ?'<div class="emp-next-k">'+(sa&&sel&&sel!==n.key?'Selected step':'Next step')+'</div>'
       +'<div class="emp-next-title">'+empLifeHtml(empStepTitle(emp,show))+'</div>'
       +'<p class="emp-next-hint">'+EMP_STEP[show].hint+'</p>'
+      +(why?'<div class="emp-log-note emp-next-why">'+EMP_ICO.info+'<span>'+empLifeHtml(why)+'</span></div>':'')
       +'<div class="emp-next-owner">Owner: <b>'+empLifeHtml(EMP_LOG[show].owner)+'</b>'
         +(!sa&&!empRoleCan(show)?'<span class="emp-next-wait">Waiting on '+empLifeHtml(EMP_LOG[show].owner)+'</span>':'')+'</div>'
     :n.wait
@@ -1267,13 +1328,14 @@ function empNextCardHTML(kind,emp){
       :'<div class="emp-next-title">Nothing to log</div><p class="emp-next-hint">There is no step to record for '+empLifeHtml(emp.name)+' right now.</p>';
   var picker=sa&&all.length
     ?'<div class="emp-next-pick">'+empLabel('Log a step')
-      +apCS(kind+'-step-pick',all.map(function(k){return empStepAction(emp,k);}),sel?empStepAction(emp,sel):'','Select a step','empStepPickHook')+'</div>'
+      +apCS(kind+'-step-pick',all.map(function(k){return empStepPickLabel(emp,k);}),sel?empStepPickLabel(emp,sel):'','Select a step','empStepPickHook')+'</div>'
     :'';
-  var mine=sa?[]:n.more.concat(n.cancel?[n.cancel]:[]).filter(function(k){return empRoleCan(k);});
+  var mine=sa?[]:n.more.concat(n.exits).filter(function(k){return empRoleCan(k);});
   var links=mine.map(function(k){
     return '<button type="button" class="emp-next-link'+(EMP_LOG[k].cancel?' is-danger':'')+'" onclick="'+open(k)+'">'+empLifeHtml(empStepAction(emp,k))+EMP_ICO.arrow+'</button>';});
   var btn=sel
-    ?'<div class="emp-logs-form-foot"><button class="lp-logs-save-btn'+(EMP_LOG[sel].cancel||sel==='doc-rejected'?' is-danger':'')+'" style="flex:1" onclick="'+open(sel)+'">'
+    ?'<div class="emp-logs-form-foot"><button class="lp-logs-save-btn'+(EMP_LOG[sel].cancel||sel==='doc-rejected'?' is-danger':'')+'" style="flex:1"'
+      +(why?' disabled title="'+empLifeHtml(why)+'"':' onclick="'+open(sel)+'"')+'>'
       +empLifeHtml(empStepAction(emp,sel))+'</button></div>'
     :'';
   return '<div class="lp-logs-form emp-logs-form emp-next">'
@@ -1291,8 +1353,8 @@ function empNextCardHTML(kind,emp){
 }
 function empStepPickHook(val,csid){
   var kind=String(csid).replace(/-step-pick$/,''),emp=empLifeRec(kind);if(!emp)return;
-  var n=empNextStep(emp),all=(n.key?[n.key]:[]).concat(n.more).concat(n.cancel?[n.cancel]:[]);
-  var k=all.find(function(x){return empStepAction(emp,x)===val;});
+  var all=empAllSteps(emp);
+  var k=all.find(function(x){return empStepPickLabel(emp,x)===val;});
   if(k)empStepPick[kind+emp.id]=k;
   renderADTPage();
 }
@@ -1302,6 +1364,30 @@ function renderEmpLogsTab(kind,emp){
   return '<div class="lp-logs-wrap emp-logs">'
     +'<div class="emp-logs-col">'+empTimelineHTML(emp)+'</div>'
     +empNextCardHTML(kind,emp)+'</div>';
+}
+
+/* ── The Workflow tab: every step of the running process ─────────────────
+   Done steps carry who recorded them, when, and the comment, from the step's
+   latest log. The first step not yet done is the one in progress, pending
+   with its owner (an employee upload is pending with the Employee); every
+   step after it has not started. Null when no process is running. */
+function empWorkflowSteps(emp){
+  var m=empMilestones(emp);if(!m)return null;
+  var logs=empLogs(emp),current=false;
+  var ownerOf=function(x){
+    if(x.key==='docs-submitted')return 'Employee';
+    return (EMP_LOG[x.key]||{}).owner||'System';
+  };
+  return m.items.map(function(x){
+    if(x.state==='done'){
+      var l=logs.find(function(e){return e.type===x.key;})||{};
+      return {title:x.label,user:l.user||'System',date:l.date||'',time:l.time||'',description:empLifeHtml(l.action||'Completed.')};
+    }
+    var owner=ownerOf(x);
+    if(!current){current=true;return {title:x.label,state:'current',owner:owner,
+      description:x.auto&&owner==='System'?'Set automatically once the steps before it are complete.':'Awaiting <b>'+empLifeHtml(owner)+'</b>.'};}
+    return {title:x.label,state:'todo',owner:owner};
+  });
 }
 
 /* ══ LISTING: STATUS TILES AND THE ACTION CELL ═════════════════════════════ */
@@ -1335,7 +1421,7 @@ function empJourneyItems(emp){
       if(!empRoleCan(k))return;
       out.push({key:k,label:EMP_LOG[k].label,state:'next',branch:true});
     });
-  }else opts.forEach(function(k){out.push({key:k,label:EMP_LOG[k].label,state:empRoleCan(k)?'next':'wait'});});
+  }else opts.forEach(function(k){out.push({key:k,label:EMP_LOG[k].label,state:empRoleCan(k)?'next':'wait',branch:!!EMP_LOG[k].cancel});});
   return out;
 }
 function empActionCellHTML(kind,emp){
@@ -1506,10 +1592,19 @@ function empGoAllItAccess(name){
   itaQ=name;
   empNavKeep=true;navigatePage('it-access');
 }
+/* The way back, when a lifecycle step sent HR to Assets / IT Accesses: a card
+   at the top of the page - whose log, which step - with a solid button home,
+   so it cannot be missed among the filters and tiles under it. */
 function empReturnBarHTML(){
   if(!empReturn)return '';
-  return '<div class="emp-return-bar">'+EMP_ICO.info+'<span>Working on <b>'+empLifeHtml(empReturn.name)+'</b>’s lifecycle log.</span>'
-    +'<button type="button" class="emp-sec-link" onclick="empReturnTo()">Back to '+empLifeHtml(empReturn.name.split(' ')[0])+'’s log'+EMP_ICO.arrow+'</button></div>';
+  var emp=empFind(empReturn.kind,empReturn.id),first=empReturn.name.split(' ')[0];
+  var step=empReturn.type&&EMP_LOG[empReturn.type]?EMP_LOG[empReturn.type].label:'';
+  return '<div class="emp-return-bar">'
+    +'<span class="emp-return-av">'+empLifeHtml(empInitials(empReturn.name))+'</span>'
+    +'<span class="emp-return-txt"><span class="emp-return-title">Working on <b>'+empLifeHtml(empReturn.name)+'</b>’s lifecycle log'
+        +(emp&&emp.empId?' <span class="emp-return-id">'+empLifeHtml(emp.empId)+'</span>':'')+'</span>'
+      +'<span class="emp-return-sub">'+(step?'Step: <b>'+empLifeHtml(step)+'</b> · ':'')+'Make the changes here, then go back to record the step.</span></span>'
+    +'<button type="button" class="emp-return-btn" onclick="empReturnTo()">'+EMP_ICO.back+'Back to '+empLifeHtml(first)+'’s log</button></div>';
 }
 function empReturnTo(){
   var r=empReturn;if(!r)return;

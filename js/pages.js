@@ -320,23 +320,9 @@ function renderDeSidebar(){
   }else if(deTab==='logs'){
     body=renderEmpLogsTab('de',emp);
   }else if(deTab==='workflow'){
-    const wf=deWorkflowData[emp.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card">'
-          +'<div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row">'
-          +'<span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'
-          +(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')
-          +(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')
-          +'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div>'
-          +'</div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    /* While onboarding or offboarding runs, every step of it - done, in
+       progress, still to come (empWorkflowSteps); otherwise the record's history. */
+    body=wfTimelineHTML(empWorkflowSteps(emp)||deWorkflowData[emp.id]||[]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -516,17 +502,9 @@ function renderGeSidebar(){
        employee-lifecycle.js. */
     body=renderEmpLogsTab('ge',emp);
   }else if(geTab==='workflow'){
-    const wf=geWorkflowData[emp.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'+(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')+(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')+'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div></div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    /* While onboarding or offboarding runs, every step of it - done, in
+       progress, still to come (empWorkflowSteps); otherwise the record's history. */
+    body=wfTimelineHTML(empWorkflowSteps(emp)||geWorkflowData[emp.id]||[]);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -926,26 +904,46 @@ function renderPrSidebar(){
 // Standard workflow timeline. Same markup the existing workflow tabs emit -
 // used by the sidebars that previously had no workflow, so every Workflow tab
 // in the app renders identically.
+/* THE WORKFLOW TAB - every step of the process, in order.
+   An entry with no state is a step already done: who did it, when, and the
+   remarks. Done steps read oldest first (sorted by their own date and time,
+   whatever order a module keeps them in). After them, where a module knows
+   its process, come the step in progress ({state:'current', owner} - "In
+   progress", "Pending with <owner>") and the steps still to come
+   ({state:'todo', owner} - "Not started yet"). */
+function wfStepTime(w,i){
+  const t=Date.parse(String(w.date||'').replace(/(\d+) (\w+) (\d{4})/,'$2 $1, $3')+' '+String(w.time||'').replace(/^(\d+:\d+)(:\d+)? ?([AP]M)$/i,'$1 $3'));
+  return isNaN(t)?null:t;
+}
 function wfTimelineHTML(wf){
   const pSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   if(!wf||!wf.length)return '<div class="lp-wf-empty">No workflow activity yet.</div>';
-  return '<div class="lp-wf-wrap">'+wf.map(function(w,i){
-    return '<div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-      +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
-      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+pSvg+'<span>'+w.user+'</span></span>'
-      +(w.date?'<span class="lp-wf-meta-item">'+cSvg+'<span>'+w.date+'</span></span>':'')
-      +(w.time?'<span class="lp-wf-meta-sep">|</span><span class="lp-wf-meta-item"><span>'+w.time+'</span></span>':'')
-      +'</div>'
-      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-      // Optional per-stage footer, for timelines whose stages have something to
-      // open — the compliance document viewer is the only one so far. Entries
-      // without it render exactly as they always have.
+  const done=wf.filter(function(w){return !w.state;}).map(function(w,i){return {w:w,i:i,t:wfStepTime(w,i)};});
+  const dated=done.every(function(x){return x.t!==null;});
+  done.sort(function(x,y){return dated?(x.t-y.t)||(y.i-x.i):(y.i-x.i);});   // undated: stored newest first
+  const steps=done.map(function(x){return x.w;}).concat(wf.filter(function(w){return w.state;}));
+  return '<div class="lp-wf-wrap">'+steps.map(function(w,i){
+    const st=w.state||'done';
+    const meta=st==='done'
+      ?'<span class="lp-wf-meta-item">'+pSvg+'<span>'+w.user+'</span></span>'
+        +(w.date?'<span class="lp-wf-meta-item">'+cSvg+'<span>'+w.date+'</span></span>':'')
+        +(w.time?'<span class="lp-wf-meta-sep">|</span><span class="lp-wf-meta-item"><span>'+w.time+'</span></span>':'')
+      :st==='current'
+        ?'<span class="lp-wf-meta-item">'+pSvg+'<span>Pending with '+w.owner+'</span></span>'
+        :'<span class="lp-wf-meta-item">'+pSvg+'<span>'+w.owner+'</span></span><span class="lp-wf-not-started">Not started yet</span>';
+    const remarks=st==='todo'?'':(w.description||(st==='current'?'Awaiting <b>'+w.owner+'</b>.':''));
+    return '<div class="lp-wf-row is-'+st+'">'
+      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<steps.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
+      +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+(st==='current'?'<span class="lp-wf-chip">In progress</span>':'')+'</div>'
+      +'<div class="lp-wf-meta-row">'+meta+'</div>'
+      +(remarks?'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Remarks:</span><span class="lp-wf-desc-text">'+remarks+'</span></div>':'')
+      // Optional per-stage footer (the compliance document viewer).
       +(w.extra||'')
       +'</div></div>';
   }).join('')+'</div>';
 }
+
 function renderAlSidebar(){
   const l=allLeavesData.find(x=>x.id===alSelectedId);if(!l)return '';
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];

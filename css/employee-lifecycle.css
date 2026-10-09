@@ -242,10 +242,27 @@
 .emp-block .ct-modal-foot{margin-top:26px}
 
 /* Return-to-employee bar on the Assets / IT Access listings */
-.emp-return-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:#475569;
-  background:var(--st-info-bg);border:1px solid var(--st-info-bd);border-radius:var(--r-control);padding:9px 14px;margin-bottom:12px}
-.emp-return-bar svg{color:var(--st-info-fg);flex-shrink:0}
-.emp-return-bar .emp-sec-link{margin-left:auto}
+/* The way back to the employee's log: a card at the top of Assets / IT
+   Accesses - whose log and which step on the left, a solid button home on the
+   right - with a blue edge so it reads apart from the filters under it. */
+.emp-return-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:#fff;border:1px solid var(--st-info-bd);
+  border-left:4px solid var(--st-info-fg);border-radius:12px;padding:12px 14px 12px 16px;margin-bottom:16px;
+  box-shadow:0 2px 10px rgba(37,99,235,.08)}
+.emp-return-av{flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--st-info-bg);color:var(--st-info-fg);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.emp-return-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.emp-return-title{font-size:14px;color:var(--navy)}
+.emp-return-title b{font-weight:700}
+.emp-return-id{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:999px;background:var(--light);border:1px solid var(--border);
+  font-size:11px;font-weight:600;color:var(--gray);vertical-align:1px}
+.emp-return-sub{font-size:12.5px;color:var(--gray)}
+.emp-return-sub b{color:var(--navy);font-weight:600}
+.emp-return-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;height:38px;padding:0 18px;border:none;border-radius:var(--r-control);
+  background:var(--btn-accent);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.emp-return-btn:hover{background:#000}
+.emp-return-btn svg{flex-shrink:0}
+/* Super Admin picked a log that is not open yet: the note says when it will be. */
+.emp-next-why{margin:10px 0 0}
 
 /* ── Employee Dashboard tracker ────────────────────────────────────────── */
 #emp-life-dash:empty{display:none}

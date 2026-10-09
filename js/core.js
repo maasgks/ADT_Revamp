@@ -806,7 +806,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.cd-wrap'))cdCloseAl
    page jump sideways as its scrollbar went; instead the wheel is checked: it
    goes through only when something INSIDE the popup can still scroll that way
    (the popup body, a dropdown list, a long field), and is stopped otherwise. */
-const POPUP_OPEN_SEL='.ct-modal-overlay:not([style*="none"]),.cost-calc-overlay:not(.hidden),.oh-overlay,.ts-overlay,#emp-block-pop';
+const POPUP_OPEN_SEL='.lp-split-sb.open.is-popup,.ct-modal-overlay:not([style*="none"]),.cost-calc-overlay:not(.hidden),.oh-overlay,.ts-overlay,#emp-block-pop';
 function popupCanScroll(el,stop,dy){
   for(;el&&el!==stop&&el.nodeType===1;el=el.parentElement){
     const cs=getComputedStyle(el);
@@ -1194,6 +1194,89 @@ function sbMarkDraftTabs(){
     });
   });
 }
+/* ── EDIT AND ENLARGE, ON EVERY TAB ──
+   Two icon buttons beside the close x of every panel's tab bar, whatever tab
+   is open: Enlarge opens the panel as a popup over the page - every tab and
+   its details at full size - and pressed again puts it back, and Edit - on panels that have an edit
+   form - goes to Basic Details and opens it. The tab bars are written by
+   twenty renderers; rather than touch each, the buttons are added to any bar
+   that lacks them whenever the page changes (one MutationObserver). */
+const SB_WIDE={};
+const SB_PEN_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const SB_GROW_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+const SB_SHRINK_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>';
+/* How each panel opens its edit form, from any tab. The shared edit form
+   (sbEditReg) needs only its nav function and selected id. */
+function sbGenEdit(key,nav,id){return function(){window[nav]('basic-details');if(!sbIsEditing(key,id()))sbStartEdit(key,id());};}
+const SB_TOOL_EDIT={
+  de:function(){navDeTab('basic-details');if(!deEditMode)startDeEdit();},
+  ge:function(){navGeTab('basic-details');if(!geEditMode)startGeEdit();},
+  tm:sbGenEdit('tm','navTmTab',function(){return tmSelectedId;}),
+  pm:sbGenEdit('pm','navPmTab',function(){return pmSelectedId;}),
+  ct:sbGenEdit('ct','navCtTab',function(){return ctSelectedId;}),
+  cmp:sbGenEdit('cmp','navComplianceTab',function(){return complianceSelectedId;}),
+  rr:sbGenEdit('rr','navRatesRuleTab',function(){return ratesRuleSelectedId;}),
+  ctp:sbGenEdit('ctp','navCtpTab',function(){return ctpSelectedId;}),
+  lst:sbGenEdit('lst','navLstTab',function(){return lstSelectedId;}),
+  hd:function(){navHdTab('basic-details');if(!hdEditMode)hdSetEdit(true);},
+  lp:function(){navLPSidebar('basic-details');if(!lpSidebarEditMode){lpSidebarEditMode=true;refreshLPSidebar();}},
+  ast:function(){navAstTab('basic-details');if(!astInlineEdit())startAddAsset(astSelectedId);},
+  ita:function(){navItaTab('basic-details');if(!itaInlineEdit())startAddItAccess(itaSelectedId);}
+};
+function sbToolPrefix(el){const inner=el.closest('[id$="-isb-inner"]');return inner?inner.id.slice(0,-'-isb-inner'.length):'';}
+function sbToolEdit(btn){const f=SB_TOOL_EDIT[sbToolPrefix(btn)];if(f)f();}
+function sbToolWide(btn){
+  const p=sbToolPrefix(btn);if(!p)return;
+  SB_WIDE[p]=!SB_WIDE[p];
+  sbDecorateTabbars();
+}
+/* Placed INSIDE the open tab, on the row of its heading: beside the header
+   card's own Edit on Basic Details (only Enlarge is added there), at the end
+   of a section heading row where the tab starts with one, and otherwise on a
+   slim row of their own at the top of the tab. Edit is left out while the
+   form is already open. */
+function sbDecorateTabbars(){
+  document.querySelectorAll('[id$="-isb-inner"]').forEach(function(inner){
+    const p=inner.id.slice(0,-'-isb-inner'.length);
+    const panel=inner.closest('.lp-split-sb');
+    if(panel&&!panel.classList.contains('open'))SB_WIDE[p]=false;   // a closed panel leaves the popup
+    if(panel)panel.classList.toggle('is-popup',!!SB_WIDE[p]);
+    const body=inner.querySelector('.lp-isb-body');if(!body)return;
+    let tools=body.querySelector('.sb-tools');
+    if(!tools){
+      const first=body.firstElementChild;
+      const hero=first&&first.matches('.sb-hero,.hd-sb-hero')?first:null;
+      const head=!hero&&first&&first.matches('.lp-sb-view-header')?first:null;
+      const host=hero?hero.querySelector('.sb-hero-right,.hd-sb-hero-right'):head;
+      const hasEdit=!!(host&&host.querySelector('.lp-sb-view-edit-btn,.sb-hero-editing'))||!!body.querySelector('.lp-sb-edit-form');
+      tools=document.createElement('span');tools.className='sb-tools';
+      tools.innerHTML=(SB_TOOL_EDIT[p]&&!hasEdit?'<button type="button" class="sb-tool" title="Edit" aria-label="Edit" onclick="sbToolEdit(this)">'+SB_PEN_ICO+'</button>':'')
+        +'<button type="button" class="sb-tool sb-tool-wide" onclick="sbToolWide(this)"></button>';
+      if(host)host.appendChild(tools);
+      else{const row=document.createElement('div');row.className='sb-body-tools';row.appendChild(tools);body.insertBefore(row,body.firstChild);}
+    }
+    const wide=tools.querySelector('.sb-tool-wide');
+    if(wide&&wide.dataset.on!==String(!!SB_WIDE[p])){
+      wide.dataset.on=String(!!SB_WIDE[p]);
+      wide.innerHTML=SB_WIDE[p]?SB_SHRINK_ICO:SB_GROW_ICO;
+      wide.title=wide.ariaLabel=SB_WIDE[p]?'Close popup':'Open in popup';
+    }
+  });
+  /* One dimmed backdrop under whichever panel is open as a popup. Clicking it
+     does nothing - like every popup, it closes from its own button or x. */
+  const any=document.querySelector('.lp-split-sb.open.is-popup');
+  let bd=document.getElementById('sb-popup-backdrop');
+  if(any&&!bd){bd=document.createElement('div');bd.id='sb-popup-backdrop';document.body.appendChild(bd);}
+  else if(!any&&bd)bd.remove();
+}
+let sbDecorateQueued=false;
+new MutationObserver(function(){
+  if(sbDecorateQueued)return;sbDecorateQueued=true;
+  requestAnimationFrame(function(){sbDecorateQueued=false;sbDecorateTabbars();});
+/* Class changes too: closing a panel only takes its "open" class away, and
+   that has to take the popup and its backdrop with it. */
+}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["class"]});
+
 /* The prefix of any panel on screen with changes pending. */
 function sbAnyDraft(){
   const seen={};

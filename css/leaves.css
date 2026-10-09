@@ -1089,3 +1089,43 @@ tr.lp-row-selected>td:first-child,
 .sb-hist .sb-hist-time{color:var(--gray)}
 .sb-hist .sb-hist-old{color:#94a3b8}
 .sb-hist .sb-hist-new{font-weight:600}
+/* ── Workflow step states (wfTimelineHTML) ──
+   Done: the green dot and a green line on to the next step. In progress: the
+   blue dot, a blue card edge and an "In progress" chip. Not started: a hollow
+   grey dot, a dashed line, and a faded dashed card. */
+.lp-wf-row.is-done .lp-wf-dot{background:var(--st-ok-fg);border-color:#bbf7d0;box-shadow:0 0 0 3px #f0fdf4}
+.lp-wf-row.is-done .lp-wf-connector{background:#bbf7d0}
+.lp-wf-row.is-current .lp-wf-card{border-color:#bfdbfe;box-shadow:0 0 0 3px #eff6ff}
+.lp-wf-row.is-current .lp-wf-connector{background:repeating-linear-gradient(#cbd5e1 0 4px,transparent 4px 8px)}
+.lp-wf-chip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;
+  background:var(--st-info-bg);color:var(--st-info-fg);border:1px solid var(--st-info-bd);vertical-align:2px}
+.lp-wf-row.is-todo .lp-wf-dot{background:#fff;border-color:#cbd5e1;box-shadow:none}
+.lp-wf-row.is-todo .lp-wf-connector{background:repeating-linear-gradient(#cbd5e1 0 4px,transparent 4px 8px)}
+.lp-wf-row.is-todo .lp-wf-card{background:#fafbfc;border-style:dashed;box-shadow:none}
+.lp-wf-row.is-todo .lp-wf-card:hover{border-color:#d1d5db;box-shadow:none}
+.lp-wf-row.is-todo .lp-wf-title{color:#94a3b8}
+.lp-wf-row.is-todo .lp-wf-meta-row{margin-bottom:0}
+.lp-wf-not-started{font-style:italic;color:#94a3b8}
+.lp-wf-desc-text b{font-weight:700}
+/* Edit / Enlarge beside the close x (sbDecorateTabbars, core.js): the same
+   26px square as the x, with the icon in ink. */
+.sb-tools{display:flex;align-items:center;gap:5px}
+.sb-tool{width:26px;height:26px;border:none;background:#f1f5f9;border-radius:6px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;color:var(--navy);padding:0;transition:.15s}
+.sb-tool svg{width:13px;height:13px}
+.sb-tool:hover{background:var(--btn-accent);color:#fff}
+/* Enlarge: the panel opens as a popup over the page - the same panel, so
+   its tabs, its Edit and anything typed in it stay as they are - centred,
+   above a dimmed backdrop, its body scrolling inside. */
+/* Centred by offsets, not transform: a transformed box would become the
+   reference for the dropdowns and date pickers inside it, which sit fixed. */
+.lp-split-sb.open.is-popup{position:fixed;top:calc((100vh - min(86vh,920px)) / 2);left:calc((100vw - min(1100px,92vw)) / 2);right:auto;bottom:auto;
+  width:min(1100px,92vw);height:min(86vh,920px);min-height:0;z-index:1200;border-radius:16px;
+  box-shadow:0 24px 70px rgba(15,23,42,.28);transition:none}
+#sb-popup-backdrop{position:fixed;inset:0;z-index:1190;background:rgba(15,23,42,.45);animation:fadeIn .15s ease}
+/* Edit / Enlarge inside the tab: at the end of the heading row, or on a slim
+   row of their own at the top of a tab that starts without one. */
+/* the heading stays left; anything else on the row (a count) sits with the buttons */
+.lp-sb-view-header:has(>.sb-tools){justify-content:flex-start;gap:10px}
+.lp-sb-view-header:has(>.sb-tools)>:first-child{margin-right:auto}
+.sb-body-tools{display:flex;justify-content:flex-end;margin:-4px 0 10px}
