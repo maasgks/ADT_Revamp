@@ -636,21 +636,6 @@ function renderTmSidebar(){
   }else if(tmTab==='logs'){
     const logs=tmLogsData[team.id]||[];
     const tmLogKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-          const sk=tmLogKey(l.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,l.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'+(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')+(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')+'</div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=tmLogKey(team.status||'Active');
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+team.status+'</div>'
@@ -658,21 +643,11 @@ function renderTmSidebar(){
       +'<div class="lp-logs-form-label">Status <span class="lp-logs-form-req">*</span></div>'
       +apCS('tm-log-status-sel',['Active','Inactive'],team.status||'','Select Status')
       +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
-      +'<textarea class="lp-logs-form-textarea" placeholder="Enter comment"></textarea>'
-      +'<button class="lp-logs-save-btn">Save</button></div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+      +'<textarea class="lp-logs-form-textarea" id="tm-log-comment-inp" placeholder="Enter comment"></textarea>'
+      +'<button class="lp-logs-save-btn" onclick="tmSaveLog('+team.id+')">Save</button></div>';
+    body=lpLogsView(logs,formHTML);
   }else if(tmTab==='workflow'){
-    const wf=tmWorkflowData[team.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'+(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')+(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')+'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div></div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    body=wfTimelineHTML(wfApproval(team,tmWorkflowData[team.id]||[],'Admin'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -745,10 +720,38 @@ function buildTeamsListingHTML(){
     +'</div></div>'
     +buildAddTeamModalHTML();
 }
+/* The team Logs form had a Save button with nothing behind it. Same commit as
+   the leave log below: validate, stamp, move the status, and put a real move
+   on the Workflow too. */
+function tmSaveLog(id){
+  const team=teamsData.find(function(x){return x.id===id;});if(!team)return;
+  const sel=csTrigger('tm-log-status-sel');
+  const inp=document.getElementById('tm-log-comment-inp');
+  const to=getCSValue('tm-log-status-sel'),comment=inp?inp.value.trim():'';
+  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  if(!to){flash(sel);return;}
+  if(!comment){flash(inp);return;}
+  const was=team.status;
+  const s=stampNow();
+  if(!tmLogsData[id])tmLogsData[id]=[];
+  tmLogsData[id].unshift({date:s.date,time:s.time,user:CURRENT_USER,status:to,action:comment});
+  team.status=to;
+  if(to!==was)wfPush(tmWorkflowData,id,'Team '+to,'Moved from '+was+' to '+to+'. '+comment);
+  renderADTPage();
+  showToast('Log added','success',to!==was?team.name+' moved to '+to+'.':'Comment saved to '+team.name+'.');
+}
 /* The decision carried in from the dashboard's Approve / Reject, held only
    until the form it pre-fills is submitted or dismissed. It describes one
    click, not a state the leave is in. */
 let alPendingStatus='';
+/* The moves a leave can make from its Logs tab, and who may make them.
+   Statuses are what the record stores; the labels are what the action is
+   called in the dropdown and on the submit button. */
+const AL_ADMIN_ROLES=['Super Admin','HR','Admin'];
+const AL_MOVES=['Follow Up','Cancelled','Approved','Unapproved'];
+const AL_MOVE_LABEL={'Follow Up':'Follow Up','Cancelled':'Cancel','Approved':'Approve','Unapproved':'Unapprove'};
+// An employee may withdraw a request only while it still stands.
+const AL_CANCELLABLE=['Pending','Follow Up','Approved'];
 function alCancelLog(){alPendingStatus='';isbTab('al',renderAlSidebar);}
 function alSaveLog(id){
   const l=allLeavesData.find(function(x){return x.id===id;});if(!l)return;
@@ -761,14 +764,16 @@ function alSaveLog(id){
   const was=l.status;
   const s=stampNow();
   if(!alLogsData[id])alLogsData[id]=[];
-  alLogsData[id].unshift({date:s.date,time:s.time,user:CURRENT_USER,status:to,action:comment});
+  // An employee cancelling their own leave signs the entry themselves.
+  const self=currentRole==='Employee';
+  alLogsData[id].unshift({date:s.date,time:s.time,user:self?l.name:CURRENT_USER,role:currentRole,status:to,action:comment});
   l.status=to;
   // A decision is a stage, so it goes on the Workflow too — a comment that
   // moves nothing is a log entry only.
   if(to!==was)wfPush(alWorkflowData,id,'Leave '+to,'Moved from '+was+' to '+to+'. '+comment);
   alPendingStatus='';
   renderADTPage();
-  showToast('Leave '+to.toLowerCase(),'success',l.name+' · '+l.leaveType+' '+l.leaveFrom+'.');
+  showToast(to==='Follow Up'?'Follow-up recorded':'Leave '+to.toLowerCase(),'success',l.name+' · '+l.leaveType+' '+l.leaveFrom+'.');
 }
 /* From the Reporting Manager dashboard. Navigates to the listing, opens THIS
    row's panel on Logs, and pre-selects the decision — the manager still has to
@@ -865,21 +870,6 @@ function renderPrSidebar(){
     // user just submitted disappears the moment they switch tabs.
     const logs=seedLogs(r,prLogsData[r.id]);
     const prLogKey=(st)=>({Active:'active',Inactive:'inactive',Pending:'default'}[st]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((entry,i,_all)=>{
-          const sk=prLogKey(entry.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,entry.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     // The log action the tab was missing. Same markup Rates & Rules, Compliance
     // and Contract Templates use, so a Pay Runs log reads and behaves exactly
     // like a log anywhere else.
@@ -895,9 +885,9 @@ function renderPrSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="prSaveLog('+r.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML);
   }else if(prTab==='workflow'){
-    body=wfTimelineHTML(prWorkflowData[r.id]);
+    body=wfTimelineHTML(wfPayroll(r));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -979,22 +969,6 @@ function renderAlSidebar(){
     body=sbHistoryHTML(l);
   }else if(alTab==='logs'){
     const logs=alLogsData[l.id]||[];
-    const alLogKey=(s)=>({Approved:'active',Unapproved:'inactive',Rejected:'inactive',Pending:'default'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((entry,i,_all)=>{
-          const sk=alLogKey(entry.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,entry.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+entry.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+entry.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+entry.time+'</span></span></div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+entry.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     /* Arriving from the dashboard's Approve / Reject the decision is already
        made, so the form opens on it and asks only for the reason. The buttons
        there cannot collect one, which is why they hand off here rather than
@@ -1004,7 +978,22 @@ function renderAlSidebar(){
     /* A preset arrives when the form was opened from a row's Approve/Reject;
        opened from the tab it starts empty, where the native control used to
        default to whatever was first in the list. */
-    const statusOps=['Approved','Unapproved','Pending'];
+    /* WHO MAY MOVE A LEAVE, AND WHERE TO. HR and admins decide it: four
+       moves, offered as one "Select action" dropdown. The employee can only
+       withdraw their own request, and only while it still stands. Everyone
+       else reads the log. */
+    const admin=AL_ADMIN_ROLES.indexOf(currentRole)>=0;
+    const statusOps=admin?AL_MOVES
+      :currentRole==='Employee'&&AL_CANCELLABLE.indexOf(l.status)>=0?['Cancelled']:[];
+    if(!statusOps.length){
+      // A closed leave gets the log's own closed card; an open one says who acts.
+      const closed=l.status==='Cancelled'||l.status==='Unapproved';
+      body=lpLogsView(logs,'',{current:l.status,statusLabel:'Leave Status',
+        noAction:closed?null:currentRole==='Employee'
+          ?{title:'Nothing to change',sub:'A leave can be cancelled while it is pending, in follow-up or approved.'}
+          :{title:'Pending with HR',sub:'Leave requests are approved, followed up or cancelled by HR or an admin.'}});
+      return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+    }
     const decided=alPendingStatus&&alPendingStatus!==l.status;
     const actionPanel='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+String(preset||'').toLowerCase()+'"></span>'+(decided?preset:'Update Status')+'</div>'
@@ -1020,9 +1009,10 @@ function renderAlSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="alSaveLog('+l.id+')">Update</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+actionPanel+'</div>';
+    body=lpLogsView(logs,actionPanel,{current:l.status,open:decided?preset:'',statusLabel:'Leave Status',
+      labels:admin?AL_MOVE_LABEL:{Cancelled:'Cancel Leave'},select:admin});
   }else if(alTab==='workflow'){
-    body=wfTimelineHTML(alWorkflowData[l.id]);
+    body=wfTimelineHTML(wfLeave(l));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -1212,9 +1202,42 @@ function buildAddLeaveModalHTML(){
     +'</div>'
     +'</div></div>';
 }
+/* ── LEAVE BALANCE TILE (Leave Requests) ─────────────────────────────────
+   The signed-in person's own leave left, as one figure, between the filters
+   and the status tiles - drawn as a status tile so it reads as one of the
+   page's figures, but in its own box and with no hover or press, because it
+   filters nothing.
+
+   Everyone who works here has a balance, so every role sees their own - except
+   HR and admins, whose view of this page is the whole team's requests; they
+   read balances in Leave Balance → All Leave Balance.
+
+   The figure is the Leave Balance module's (lbRows in js/leave-balance.js),
+   summed across the person's leave types: what is left after approved and
+   pending days, carried-forward days included. */
+function alBalanceOf(name){
+  return lbRows(name).map(function(r){
+    return {type:r.type,entitled:r.yearly+r.cfOpen,taken:r.yAvailed+r.cfUsed,pending:r.yPending,available:r.yAvailable+r.cfBalance};
+  });
+}
+function alBalCardHTML(){
+  if(typeof currentRole==='undefined'||AL_ADMIN_ROLES.indexOf(currentRole)>=0)return '';
+  const rows=alBalanceOf(LB_ME);
+  const fmt=function(n){return String(+n.toFixed(1));};
+  const tot=rows.reduce(function(s,r){s.entitled+=r.entitled;s.available+=r.available;return s;},{entitled:0,available:0});
+  // The split by leave type is on hover, and in full on the Leave Balance page.
+  const tip=rows.length
+    ?rows.map(function(r){return r.type+': '+fmt(r.available)+' of '+r.entitled+' left';}).join('\n')
+    :'No active leave policy is assigned to you yet.';
+  const tone=!rows.length?'var(--gray)':tot.available<=0?'var(--st-bad-fg)':'var(--st-ok-fg)';
+  return '<div class="listing-stats al-bal-stat" id="al-bal" title="'+sbEsc(tip)+'">'
+    +'<div class="listing-stat"><div class="listing-stat-count" style="color:'+tone+'">'+(rows.length?fmt(tot.available):'—')+'</div>'
+      +'<div class="listing-stat-label">Leave Balance</div></div>'
+  +'</div>';
+}
 function buildAllLeavesHTML(){
   const hamburger='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const stClass={Approved:'approved',Pending:'pending',Unapproved:'inactive',Rejected:'inactive'};
+  const stClass={Approved:'approved',Pending:'pending','Follow Up':'follow-up',Unapproved:'inactive',Rejected:'inactive',Cancelled:'cancelled'};
   const filtered=alStatusFilter?allLeavesData.filter(l=>l.status===alStatusFilter):allLeavesData;
   if(alSelectedId&&!filtered.some(l=>l.id===alSelectedId))alSelectedId=null;
   const pgn=listPage('all-leaves',alStatusFilter+'|'+alSearchQuery,lpSearchRows(filtered,alSearchQuery).map((l,i)=>'<tr class="al-row'+(alSelectedId===l.id?' lp-row-selected':'')+'" id="al-row-'+l.id+'" style="cursor:pointer" onclick="openAlSidebar('+l.id+')">'
@@ -1237,9 +1260,10 @@ function buildAllLeavesHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('al-f-q',alSearchQuery,'Search name, ID','applyAlFilters()')
     +apCS('al-f-type',['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave'],'','Leave Type')
-    +apCS('al-f-status',['Approved','Pending','Unapproved'],alStatusFilter,'Status')
+    +apCS('al-f-status',['Approved','Pending','Follow Up','Unapproved','Cancelled'],alStatusFilter,'Status')
     +clearFiltersBtn([alStatusFilter,alSearchQuery],'resetAlFilters()')+'<button class="lp-pill-search" onclick="applyAlFilters()">Search</button>'
     +'</div></div>'
+    +alBalCardHTML()
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat approved'+(alStatusFilter==='Approved'?' stat-selected':'')+'" onclick="alToggleStatFilter(\'Approved\')"><div class="listing-stat-count">'+approvedCount+'</div><div class="listing-stat-label">Approved</div></div>'
     +'<div class="listing-stat inactive'+(alStatusFilter==='Unapproved'?' stat-selected':'')+'" onclick="alToggleStatFilter(\'Unapproved\')"><div class="listing-stat-count">'+unapprovedCount+'</div><div class="listing-stat-label">Unapproved</div></div>'
@@ -1490,18 +1514,6 @@ function renderPmSidebar(){
   }else if(pmTab==='logs'){
     const logs=pmLogsData[p.id]||[];
     const pmLogKey=(st)=>({Active:'active',Paid:'active',Closed:'active',Inactive:'inactive',Unpaid:'inactive'}[st]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>'<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,pmLogKey(l.status))+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,pmLogKey(l.status),l.status)
-          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +'</div></div>').join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     /* The invoice flow and the free-form log statuses are two different lists,
        and a step picked from the row menu comes from the first one - so the
        select has to offer both or the pre-selection would match nothing. The
@@ -1526,19 +1538,9 @@ function renderPmSidebar(){
       +'<button class="lp-logs-save-btn" style="background:var(--navy)" onclick="pmSaveLog('+p.id+')">Save</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||''});
   }else if(pmTab==='workflow'){
-    const wf=pmWorkflowData[p.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'+(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')+(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')+'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div></div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    body=wfTimelineHTML(wfPayment(p));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -1864,64 +1866,16 @@ const CT_LOG_ICO={
    six months has to see that a stage was walked back without hunting for it. */
 function ctIsOverrideRow(r){return r.family==='Overrides';}
 
-/* Did this entry MOVE the record, or only add to it? The shared timeline
-   colours the ring and the headline on a real move and greys them otherwise,
-   and logIsChange() decides that by comparing a row's status with the one
-   before it. Registry rows can answer it outright — they carry prev and new —
-   so they do; the fixture rows that predate the registry fall back to the
-   shared comparison. Note that the HEADLINE is always the event's own label
-   either way: unlike the other modules, an entry here can be real content
-   without moving anything ("Quote viewed"), and calling that "Updated" would
-   throw away the only thing the row says. */
-function ctLogMoved(rows,i){
-  const r=rows[i];
-  if(r.prevStatus&&r.newStatus)return r.prevStatus!==r.newStatus;
-  return logIsChange(rows,i);
-}
-
 function ctLogsTabHTML(c){
   const raw=ctLogsData[c.id]||[];
   const rows=raw.map(function(l){return ctLogRow(l,c.type);});
-
-  /* Entries only, newest first, and the shared empty state when there are
-     none - exactly what every other module's timeline is. A row for the step
-     that has NOT happened yet was tried here and taken out again: it is a
-     kind of row no other Logs tab has, so it made this one different from
-     the rest of the system, which is the opposite of the point. */
-  const timelineHTML=rows.length
-    ? '<div class="lp-logs-timeline">'+rows.map(function(r,i){return ctLogRowHTML(rows,i);}).join('')+'</div>'
-    : '<div class="lp-logs-empty">No activity logs yet.</div>';
-
-  /* .lp-logs-wrap is a TWO-COLUMN grid and every module gives it exactly two
-     children, so the form goes in its own column wrapper. */
-  return '<div class="lp-logs-wrap">'+timelineHTML
-    +'<div class="lp-logs-side">'+ctLogFormHTML(c)+'</div>'
-    +'</div>';
-}
-
-/* One card, in the exact shape every other module's log card has: dot +
-   headline, a person/date/time meta row, and the comment. No family tag and no
-   prev -> new badge pair - those were contracts-only ornaments, and a Logs tab
-   that carries chrome nothing else has is not the same tab twice. */
-function ctLogRowHTML(rows,i){
-  const r=rows[i];
-  /* An override keeps the bad tone whatever stage it landed on - it is the
-     move that is exceptional, not the destination. */
-  const k=ctIsOverrideRow(r)?'bad':(ctLogMoved(rows,i)?statusTone(r.status):'event');
-  const meta=function(ico,txt){return '<span class="lp-log-meta-item">'+ico+'<span>'+txt+'</span></span>';};
-  return '<div class="lp-log-row">'
-    +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+k+'">'+CT_LOG_ICO.person+'</div>'
-      +(i<rows.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-    +'<div class="lp-log-card">'
-    +'<div class="lp-log-status-row"><span class="lp-log-dot lp-log-dot--'+k+'"></span>'
-      +'<span class="lp-log-status-text lp-log-status-text--'+k+'">'+r.label+'</span></div>'
-    +'<div class="lp-log-meta-row">'
-      +meta(CT_LOG_ICO.person,r.user+(r.actorType==='SYSTEM'?' · system':''))
-      +(r.date?meta(CT_LOG_ICO.cal,r.date):'')
-      +(r.time?meta(CT_LOG_ICO.clk,r.time):'')
-    +'</div>'
-    +(r.comment?'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+r.comment+'</div>':'')
-    +'</div></div>';
+  /* A move to a stage BEHIND the current one is an override (ctSaveLog decides
+     that from the stages), so those moves read as the amber "back" kind. */
+  const flow=ctFlowFor(c.type),idx=flow.indexOf(c.status);
+  return lpLogsView(rows,ctLogFormHTML(c),{
+    isBack:function(v){const j=flow.indexOf(v);return idx>=0&&j>=0&&j<idx;},
+    rowClass:function(r){return ctIsOverrideRow(r)?'is-bad':'';}
+  });
 }
 
 /* ── The form ──────────────────────────────────────────────────────────────
@@ -2107,17 +2061,7 @@ function renderCtSidebar(){
   }else if(ctTab==='logs'){
     body=ctLogsTabHTML(c);
   }else if(ctTab==='workflow'){
-    const wf=ctWorkflowData[c.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card"><div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'+(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')+(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')+'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div></div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    body=wfTimelineHTML(wfContract(c));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -2384,22 +2328,7 @@ function renderComplianceSidebar(){
     body=sbHistoryHTML(item);
   }else if(complianceTab==='logs'){
     const logs=seedLogs(item,complianceLogsData[item.id]);
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-        const sk=logStatusKey(l.status);
-        return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,sk,l.status)
-          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +'</div></div>';
-      }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -2412,14 +2341,9 @@ function renderComplianceSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="complianceSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML);
   }else if(complianceTab==='workflow'){
-    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
-      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
-      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>'+item.createdAt+'</span></span></div>'
-      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Compliance item created.</span></div>'
-      +'</div></div></div>';
+    body=wfTimelineHTML(wfApproval(item,wfDoneFromLogs(seedLogs(item,complianceLogsData[item.id])),'Compliance Admin'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -2570,20 +2494,6 @@ const OCA_NEXT_DONE={
   'Approved':'Reviewed, accepted and in force. Nothing further is required.',
   'Closed':  'Out of force — lapsed, superseded or withdrawn. Nothing further is required.'
 };
-function ocaNextStepHTML(item){
-  const pending=ocaNeedsAction(item);
-  const clk='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-  const done='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
-  return '<div class="lp-log-row oca-next-row">'
-    +'<div class="lp-log-avatar-col"><div class="lp-log-avatar oca-next-avatar">'+(pending?clk:done)+'</div>'
-    +'<div class="lp-log-connector"></div></div>'
-    +'<div class="lp-log-card oca-next-card">'
-    +'<div class="lp-log-status-row"><span class="lp-log-dot oca-next-dot"></span>'
-    +'<span class="oca-next-title">'+(OCA_NEXT_STEP[item.status]||'Next step')+'</span>'
-    +'<span class="oca-next-tag">'+(pending?'Pending':'Complete')+'</span></div>'
-    +'<div class="oca-next-text">'+(pending?(OCA_NEXT[item.status]||''):(OCA_NEXT_DONE[item.status]||''))+'</div>'
-    +'</div></div>';
-}
 function ocaSeedLogs(r){
   const due=ocaDueObj(r);
   return seedLogs(r,[
@@ -3248,26 +3158,10 @@ function renderOcaSidebar(){
     body=sbHistoryHTML(item);
   }else if(ocaTab==='logs'){
     const logs=ocaSeedLogs(item);
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     // These four statuses are not the Active/Inactive pair the other panels use,
     // so the timeline colours come from the shared tone map instead.
     const tone=function(s){return statusTone(s);};
     // Newest first, so the step still outstanding sits above the newest entry.
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+ocaNextStepHTML(item)+logs.map(function(l,i,_all){
-        const sk=tone(l.status);
-        return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,sk,l.status)
-          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +ocaLogViewHTML(item,l,i)
-          +'</div></div>';
-      }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+tone(item.status)+'"></span>'+item.status+'</div>'
       +'<p class="lp-logs-form-sub">'+(OCA_MOVE_PROMPT[item.status]||'Move this document on and say why')+'</p>'
@@ -3280,15 +3174,17 @@ function renderOcaSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ocaSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    /* .lp-logs-wrap is a TWO-COLUMN grid — timeline, then form — and every
-       other module gives it exactly those two children. Passing the decision
-       bar as a third made it a grid item in its own right: it took column one,
-       shoved the timeline into column two, and dropped the form onto a second
-       row. The bar belongs WITH the form, not beside it, so both go in one
-       column wrapper and the grid keeps the two children it expects. */
-    body='<div class="lp-logs-wrap">'+timelineHTML
-      +'<div class="lp-logs-side">'+ocaDocStripHTML(item)+ocaActionsHTML(item)+formHTML+'</div>'
-      +'</div>';
+    /* The document strip and the decision bar sit between the status bar and
+       the table: they are about the move being made, not about the history. */
+    body=lpLogsView(logs,formHTML,{
+      /* The step still outstanding used to head the timeline; it is the bar's
+         sub-line now. */
+      sub:ocaNeedsAction(item)
+        ?(OCA_NEXT_STEP[item.status]?'Next step: <b>'+OCA_NEXT_STEP[item.status]+'</b>. ':'')+(OCA_MOVE_PROMPT[item.status]||'')
+        :(OCA_NEXT_DONE[item.status]||''),
+      side:'<div class="lpl-side">'+ocaDocStripHTML(item)+ocaActionsHTML(item)+'</div>',
+      rowExtra:function(l,i){return ocaLogViewHTML(item,l,i);}
+    });
   }else if(ocaTab==='attachments'){
     /* Two different kinds of file, and they are not interchangeable. The
        compliance document is the record itself — derived, never uploaded here,
@@ -3305,7 +3201,7 @@ function renderOcaSidebar(){
       +attachTabHTML('oca',item.id)
       +'</div>';
   }else if(ocaTab==='workflow'){
-    body=wfTimelineHTML(ocaWorkflowRows(item));   // shared renderer, so it reads like every other Workflow tab
+    body=wfTimelineHTML(wfOca(item));   // shared renderer, so it reads like every other Workflow tab
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -3445,22 +3341,7 @@ function renderRatesRuleSidebar(){
     body=sbHistoryHTML(item);
   }else if(ratesRuleTab==='logs'){
     const logs=seedLogs(item,ratesRulesLogsData[item.id]);
-    const personSvg=iUser;
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-        const sk=logStatusKey(l.status);
-        return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,sk,l.status)
-          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +'</div></div>';
-      }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -3473,14 +3354,9 @@ function renderRatesRuleSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ratesRuleSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML);
   }else if(ratesRuleTab==='workflow'){
-    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
-      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
-      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
-      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Rate rule created.</span></div>'
-      +'</div></div></div>';
+    body=wfTimelineHTML(wfApproval(item,wfDoneFromLogs(seedLogs(item,ratesRulesLogsData[item.id])),'Admin'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -3732,22 +3608,7 @@ function renderCtpSidebar(){
     body=sbHistoryHTML(item);
   }else if(ctpTab==='logs'){
     const logs=seedLogs(item,ctpLogsData[item.id]);
-    const personSvg=iUser;
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-        const sk=logStatusKey(l.status);
-        return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,sk,l.status)
-          +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +'</div></div>';
-      }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(item.status);
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+item.status+'</div>'
@@ -3760,14 +3621,9 @@ function renderCtpSidebar(){
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="ctpSaveLog('+item.id+')">Submit</button>'
       +'</div>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML);
   }else if(ctpTab==='workflow'){
-    body='<div class="lp-wf-wrap"><div class="lp-wf-row">'
-      +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div></div>'
-      +'<div class="lp-wf-card"><div class="lp-wf-title">Added</div>'
-      +'<div class="lp-wf-meta-row"><span class="lp-wf-meta-item">'+iUser+'<span>'+item.createdBy+'</span></span><span class="lp-wf-meta-item">'+iCal+'<span>'+item.createdAt+'</span></span></div>'
-      +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">Contract template created.</span></div>'
-      +'</div></div></div>';
+    body=wfTimelineHTML(wfApproval(item,wfDoneFromLogs(seedLogs(item,ctpLogsData[item.id])),'Legal'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -4763,7 +4619,7 @@ function buildAddTeamModalHTML(){
       +'</div></div>'
     +'<div class="tm-modal-sec"><div class="tm-modal-sec-title">Role Assignment<button type="button" class="team-add-members">+ Add Members</button></div>'
       +'<div class="ep-form-grid">'
-        +'<div class="ep-form-group"><label class="ep-form-label">Member Role <span class="team-help-dot">!</span></label>'+apCS('team-role',roles,'','Select')+'</div>'
+        +'<div class="ep-form-group"><label class="ep-form-label">Member Role <span class="team-help-dot" tabindex="0" role="img" aria-label="About Member Role" data-tip="The role the selected members will hold in this team. It decides what they can see and approve: Team Lead and Manager run the team, HR Partner handles its people matters, Approver signs off requests, and Member takes part only.">!</span></label>'+apCS('team-role',roles,'','Select')+'</div>'
         +'<div class="ep-form-group"><label class="ep-form-label tm-label">Members Name <span class="team-form-links"><button type="button" class="team-form-link">+ Add Employee</button><button type="button" class="team-form-link muted">Refresh</button></span></label>'
           +apCS('team-member',members,'','Select')+'</div>'
       +'</div></div>'
@@ -4955,18 +4811,6 @@ function renderPhSidebar(){
     body=sbHistoryHTML(p);
   }else if(phTab==='logs'){
     const logs=phSeedLogs(p);
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timeline=logs.length?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
-      const sk=statusTone(l.status);
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'+logHeadRow(_all,i,sk,l.status)
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>':'<div class="lp-logs-empty">No activity logs yet.</div>';
     const form='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(p.status)+'"></span>'+p.status+'</div>'
       +'<p class="lp-logs-form-sub">Move this payhead on and say why</p>'
@@ -4977,10 +4821,10 @@ function renderPhSidebar(){
       +'<button class="ep-cancel-btn" style="flex:1" onclick="phCancelLog()">Cancel</button>'
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="phSaveLog('+p.id+')">Submit</button>'
       +'</div></div>';
-    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+    body=lpLogsView(logs,form);
   }else{
     // Shared renderer, so it reads like every other Workflow tab.
-    body=wfTimelineHTML(phWorkflow(p));
+    body=wfTimelineHTML(wfApproval(p,phWorkflow(p),'Payroll Admin'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -5456,18 +5300,6 @@ function renderHdSidebar(){
     body=sbHistoryHTML(h);
   }else if(hdTab==='logs'){
     const logs=hdSeedLogs(h);
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timeline=logs.length?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
-      const sk=statusTone(l.status);
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'+logHeadRow(_all,i,sk,l.status)
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>':'<div class="lp-logs-empty">No activity logs yet.</div>';
     const form='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+statusTone(h.status)+'"></span>'+h.status+'</div>'
       +'<p class="lp-logs-form-sub">Move this holiday on and say why</p>'
@@ -5478,10 +5310,10 @@ function renderHdSidebar(){
       +'<button class="ep-cancel-btn" style="flex:1" onclick="hdCancelLog()">Cancel</button>'
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="hdSaveLog('+h.id+')">Submit</button>'
       +'</div></div>';
-    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+    body=lpLogsView(logs,form);
   }else{
     // Shared renderer, so it reads like every other Workflow tab.
-    body=wfTimelineHTML(hdWorkflow(h));
+    body=wfTimelineHTML(wfApproval(h,hdWorkflow(h),'HR'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -6180,29 +6012,6 @@ function renderLPSidebar(){
   }else if(lpSidebarTab==='logs'){
     const logs=lpLogsData[p.id]||[];
     const logStatusKey=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const personSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timelineHTML=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-        const sk=logStatusKey(l.status||'Updated');
-        return '<div class="lp-log-row">'
-          +'<div class="lp-log-avatar-col">'
-          +'<div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+personSvg+'</div>'
-          +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')
-          +'</div>'
-          +'<div class="lp-log-card">'
-          +logHeadRow(_all,i,sk,(l.status||'Updated'))
-          +'<div class="lp-log-meta-row">'
-          +'<span class="lp-log-meta-item">'+personSvg+'<span>'+l.user+'</span></span>'
-          +(l.date?'<span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span>':'')
-          +(l.time?'<span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span>':'')
-          +'</div>'
-          +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-          +'</div>'
-          +'</div>';
-      }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     const csk=logStatusKey(p.status||'Active');
     const formHTML='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+(p.status||'Active')+'</div>'
@@ -6213,25 +6022,10 @@ function renderLPSidebar(){
       +'<textarea class="lp-logs-form-textarea" id="lp-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="lpSaveLog('+p.id+')">Save</button>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timelineHTML+formHTML+'</div>';
+    body=lpLogsView(logs,formHTML);
   }else if(lpSidebarTab==='workflow'){
-    const wf=lpWorkflowData[p.id]||[];
-    const wfPersonSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const wfCalSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    body=wf.length
-      ?'<div class="lp-wf-wrap">'+wf.map((w,i)=>'<div class="lp-wf-row">'
-          +'<div class="lp-wf-dot-col"><div class="lp-wf-dot"></div>'+(i<wf.length-1?'<div class="lp-wf-connector"></div>':'')+'</div>'
-          +'<div class="lp-wf-card">'
-          +'<div class="lp-wf-title">'+w.title+'</div>'
-          +'<div class="lp-wf-meta-row">'
-          +'<span class="lp-wf-meta-item">'+wfPersonSvg+'<span>'+w.user+'</span></span>'
-          +(w.date?'<span class="lp-wf-meta-item">'+wfCalSvg+'<span>'+w.date+'</span></span>':'')
-          +(w.time?'<span class="lp-wf-meta-sep">|</span><span>'+w.time+'</span>':'')
-          +'</div>'
-          +'<div class="lp-wf-desc"><span class="lp-wf-desc-label">Description:</span><span class="lp-wf-desc-text">'+w.description+'</span></div>'
-          +'</div>'
-          +'</div>').join('')+'</div>'
-      :'<div class="lp-wf-empty">No workflow configured.</div>';
+    const lpDone=wfDoneFromLogs(lpLogsData[p.id]);
+    body=wfTimelineHTML(wfApproval(p,lpDone.length?lpDone:(lpWorkflowData[p.id]||[]),'HR'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -6404,7 +6198,8 @@ const TS_ICO={
   lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   unlock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',
   pen:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
 };
 /* ── Time field ──
    The standard dropdown (.cs-wrap / .cs-trigger / .cs-dropdown) holding an
@@ -6482,6 +6277,12 @@ function buildTsEditHTML(dateStr){
     // trigger button, which would reopen the list as an option is picked.
     +'<div class="ts-ed-f"><span class="ts-ed-lbl">Location</span>'
       +apCS('ts-ed-loc',locLabels,locCur,'Select location')+'</div>'
+    /* What the day was spent on. Optional - it never blocks a save - and kept
+       with the times because it is part of the same record. */
+    +'<div class="ts-ed-f"><span class="ts-ed-lbl">Work Description</span>'
+      +'<textarea id="ts-ed-desc" class="ts-ed-desc" maxlength="'+TS_DESC_MAX+'" oninput="tsDescCount()"'
+        +' placeholder="What did you work on today? e.g. Built the export API, reviewed two pull requests">'+sbEsc(att.desc||'')+'</textarea>'
+      +'<span class="ts-ed-count" id="ts-ed-count">'+(att.desc||'').length+' / '+TS_DESC_MAX+'</span></div>'
     +'<div class="ts-ed-total"><span>Total</span><span id="ts-ed-total">'
       +(mins>0?(mins/60).toFixed(2):'0.00')+'h</span></div>'
     +'<div class="ts-ed-err" id="ts-ed-err"></div>'
@@ -6529,6 +6330,16 @@ function buildTsSidebarHTML(dateStr) {
     ? '<span class="ts-wk-chip is-sent">Submitted</span>'
     : wkStatus === 'locked' ? '<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>' : '';
 
+  /* WORK DESCRIPTION, only on a day with work on it. A leave day or an empty
+     day has nothing to describe, so it is not invited to. */
+  const worked = att && (att.status === 'present' || att.status === 'inprog');
+  const workBlock = worked
+    ? '<div class="ts-sb-work"><div class="ts-sb-work-title">'+TS_ICO.note+'Work Description</div>'
+      + (att.desc
+        ? '<div class="ts-sb-work-text">'+sbEsc(att.desc)+'</div>'
+        : '<div class="ts-sb-work-text is-empty">No description added for this day.</div>')
+      + '</div>'
+    : '';
   const readBody = '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot in"></div>Check In</div>'
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+ci+'</span></div>'
     + locRow('in',ci)
@@ -6538,7 +6349,8 @@ function buildTsSidebarHTML(dateStr) {
     + locRow('out',co)
     + '</div>'
     + '<div class="ts-sb-total"><span class="ts-sb-total-label">Total Hours</span><span class="ts-sb-total-val">'+(hrs==='--'?'0.00h':hrs)+'</span></div>'
-    + (src ? '<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '');
+    + workBlock
+    + (src ?'<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '');
 
   let actions = '';
   if (editing) {
@@ -8044,23 +7856,6 @@ function renderCsSidebar(){
   }
   else if(csTab==='history'){body=sbHistoryHTML(csHistRec(csSelectedItem));}
   else if(csTab==='logs'){
-    const lsk=(s)=>({Active:'active',Inactive:'inactive'}[s]||'default');
-    const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timeline='<div class="lp-logs-timeline">'+csLogsData.map((l,i,_all)=>{
-      const sk=lsk(l.status||'Active');
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<csLogsData.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'
-        +logHeadRow(_all,i,sk,(l.status||'Active'))
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span>'
-        +(l.date?'<span class="lp-log-meta-item">'+cSvg+'<span>'+l.date+'</span></span>':'')
-        +(l.time?'<span class="lp-log-meta-item">'+tSvg+'<span>'+l.time+'</span></span>':'')
-        +'</div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>';
     const form='<div class="lp-logs-form">'
       +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--active"></span>Active</div>'
       +'<p class="lp-logs-form-sub">Update entity status and add a comment</p>'
@@ -8070,7 +7865,7 @@ function renderCsSidebar(){
       +'<textarea class="lp-logs-form-textarea" id="cs-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="csSaveLog()">Save</button>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+    body=lpLogsView(csLogsData,form);
   }
   else if(csTab==='workflow'){
     body=wfTimelineHTML(csWorkflowData);
@@ -8167,22 +7962,6 @@ function renderLstSidebar(){
     // than rendering an invisible dot and a transparent avatar.
     const styled={active:1,inactive:1,pending:1,approved:1,unapproved:1};
     const lsk=function(s){const k=statusClass(s||'Active');return styled[k]?k:'default';};
-    const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const cSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const tSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    const timeline='<div class="lp-logs-timeline">'+logs.map(function(l,n,_all){
-      const sk=lsk(l.status);
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,n,sk)+'">'+pSvg+'</div>'+(n<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'
-        +logHeadRow(_all,n,sk,(l.status||'Active'))
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span>'
-        +(l.date?'<span class="lp-log-meta-item">'+cSvg+'<span>'+l.date+'</span></span>':'')
-        +(l.time?'<span class="lp-log-meta-item">'+tSvg+'<span>'+l.time+'</span></span>':'')
-        +'</div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>';
     // Offer the states this listing actually uses — Leaves are Approved /
     // Unapproved, everything else is Active / Inactive.
     const opts=(lstSelectedPg==='leaves'||lstSelectedPg==='all-leaves')
@@ -8198,16 +7977,11 @@ function renderLstSidebar(){
       +'<textarea class="lp-logs-form-textarea" id="lst-log-comment-inp" placeholder="Enter comment"></textarea>'
       +'<button class="lp-logs-save-btn" onclick="lstSaveLog()">Save</button>'
       +'</div>';
-    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+    body=lpLogsView(logs,form);
   }
   else if(lstTab==='workflow'){
-    const who=cols.indexOf('Owner')>=0?row[cols.indexOf('Owner')]:'Pallavi Parate';
-    body=wfTimelineHTML([
-      {title:'Current Status — '+(lstRowStatus(row)||'Active'),user:who,date:'22 Apr 2026',time:'05:44:07 PM',description:'Latest reviewed state for this '+noun.toLowerCase()+'.'},
-      {title:'Reviewed',user:'Shaun Test1',date:'14 Apr 2026',time:'11:28:08 PM',description:'Checked against policy and approved to proceed.'},
-      {title:'Submitted',user:who,date:'12 Apr 2026',time:'04:10:22 PM',description:'Sent into the approval queue.'},
-      {title:'Created',user:'System',date:'10 Apr 2026',time:'09:00:00 AM',description:noun+' record created in the workspace.'}
-    ]);
+    const lstDone=wfDoneFromLogs(getLstLogs());
+    body=wfTimelineHTML(wfApproval({status:lstRowStatus(row)},lstDone,'Admin'));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -8321,7 +8095,7 @@ function renderTkSidebar(){
   }else if(tkTab==='logs'){
     body=tkLogsTabHTML(t);
   }else if(tkTab==='workflow'){
-    body=wfTimelineHTML(tkWorkflowData[t.id]);
+    body=wfTimelineHTML(wfTicket(t));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -8340,25 +8114,9 @@ function tkLogStatusKey(s){
 }
 function tkLogsTabHTML(t){
   const logs=seedLogs(t,tkLogsData[t.id]);
-  const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-  const timeline=logs.length
-    ?'<div class="lp-logs-timeline">'+logs.map((l,i,_all)=>{
-      const sk=tkLogStatusKey(l.status);
-      return '<div class="lp-log-row">'
-        +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-        +'<div class="lp-log-card">'
-        +logHeadRow(_all,i,sk,l.status)
-        +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-        +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-        +'</div></div>';
-    }).join('')+'</div>'
-    :'<div class="lp-logs-empty">No activity logs yet.</div>';
-
   const moves=tkMoves(t);
   const csk=tkLogStatusKey(tkStatusLabel(t.status));
-  if(!moves.length)return '<div class="lp-logs-wrap">'+timeline+'</div>';
+  if(!moves.length)return lpLogsView(logs,'',{current:tkStatusLabel(t.status)});
   const form='<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot lp-log-dot--'+csk+'"></span>'+tkStatusLabel(t.status)+'</div>'
     +'<p class="lp-logs-form-sub">Next action on <strong>'+tkOwner(t)+'</strong></p>'
@@ -8377,7 +8135,7 @@ function tkLogsTabHTML(t){
     +'<button class="ep-cancel-btn" style="flex:1" onclick="tkCancelLog()">Cancel</button>'
     +'<button class="lp-logs-save-btn" style="flex:1" onclick="tkSaveLog('+t.id+')">Submit</button>'
     +'</div></div>';
-  return '<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  return lpLogsView(logs,form,{owner:tkOwner(t)});
 }
 /* The dropdown shows a move's label; the record stores its target status, so
    one builder writes the label and one lookup reads it back. */
@@ -8418,13 +8176,15 @@ function tkSaveLog(id){
   if(!mv){flash(sel);return;}
   const to=mv.to;
   const vals={comment:inp?inp.value.trim():''};
+  /* Both are apCS dropdowns, so they are read by id - `asg` and `wait` were
+     never declared, and any move needing them threw instead of saving. */
   if(mv.needs.indexOf('assignee')>=0){
-    vals.assignee=asg?asg.value:'';
-    if(!vals.assignee){flash(asg);return;}
+    vals.assignee=getCSValue('tk-log-assignee-sel');
+    if(!vals.assignee){flash(csTrigger('tk-log-assignee-sel'));return;}
   }
   if(mv.needs.indexOf('waitingOn')>=0){
-    vals.waitingOn=wait?wait.value:'';
-    if(!vals.waitingOn){flash(wait);return;}
+    vals.waitingOn=getCSValue('tk-log-waiting-sel');
+    if(!vals.waitingOn){flash(csTrigger('tk-log-waiting-sel'));return;}
   }
   if(!vals.comment){flash(inp);return;}
   tkTab='logs';                       // stay where the user was working
@@ -8883,22 +8643,7 @@ function renderChatSidebar(){
        the move that writes the next entry on the right. It was a read-only
        timeline of two hard-coded lines, which is why nothing here could be
        acted on. */
-    const pSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-    const calSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    const clkSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
     const logs=chatSeedLogs(c);
-    const timeline=logs.length
-      ?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
-          const sk=statusTone(l.status);
-          return '<div class="lp-log-row">'
-            +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+pSvg+'</div>'+(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-            +'<div class="lp-log-card">'
-            +logHeadRow(_all,i,sk,l.status)
-            +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+pSvg+'<span>'+l.user+'</span></span><span class="lp-log-meta-item">'+calSvg+'<span>'+l.date+'</span></span><span class="lp-log-meta-item">'+clkSvg+'<span>'+l.time+'</span></span></div>'
-            +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-            +'</div></div>';
-        }).join('')+'</div>'
-      :'<div class="lp-logs-empty">No activity logs yet.</div>';
     /* WHO OWES THE NEXT MESSAGE is the whole question a chat queue asks, so it
        is stated above the form rather than left to be inferred from a status
        word. The options are only the moves legal from where the chat is. */
@@ -8914,9 +8659,9 @@ function renderChatSidebar(){
       +'<button class="ep-cancel-btn" style="flex:1" onclick="chatCancelLog()">Cancel</button>'
       +'<button class="lp-logs-save-btn" style="flex:1" onclick="chatSaveLog('+c.id+')">Submit</button>'
       +'</div></div>';
-    body='<div class="lp-logs-wrap">'+timeline+form+'</div>';
+    body=lpLogsView(logs,form,{owner:chatOwner(c)});
   }else if(chatTab==='workflow'){
-    body=wfTimelineHTML(chatWorkflowData[c.id]);
+    body=wfTimelineHTML(wfChat(c));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }

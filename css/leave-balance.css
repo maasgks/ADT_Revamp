@@ -1,0 +1,67 @@
+/* ══ LEAVE BALANCE (js/leave-balance.js) ═════════════════════════════════
+   My Leave Balance borrows the timesheet's stat cards (.ts-stats) so the
+   two "my" pages read as one product; All
+   Leave Balance is the shared listing (.lp-filter-bar, .lp-table, the split
+   panel). What is here: the section cards, the two balance tables, and the
+   three tones a balance is read in - green with room, amber when two days or
+   fewer are left, red at none. */
+
+.lb-page{display:flex;flex-direction:column;gap:16px;min-width:0}
+.lb-page .ts-stats{margin:0}
+.lb-stat-unit{font-size:var(--ds-caption);font-weight:600;color:var(--gray);margin-left:5px;letter-spacing:0}
+.ts-stat-val.lb-stat-ok{color:var(--st-ok-fg)}
+.ts-stat-val.lb-stat-wait{color:var(--st-wait-fg)}
+
+/* ── Section cards ───────────────────────────────────────────────────── */
+.lb-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:18px;min-width:0}
+.lb-card-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.lb-card-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
+.lb-card-sub{font-size:var(--ds-caption);color:var(--gray);margin-top:3px;line-height:1.45}
+.lb-card-tools .cs-wrap{width:180px;margin:0}
+.lb-card-tools .cs-trigger,.lb-sb-tools .cs-trigger{height:34px;border-width:1px;font-size:12.5px}
+.lb-foot{margin:-4px 2px 0;font-size:var(--ds-caption);color:var(--gray);line-height:1.5}
+
+/* ── The balance tables ──────────────────────────────────────────────── */
+.lb-table-wrap{border:1px solid var(--border);border-radius:10px;overflow:auto}
+.lb-table{width:100%;border-collapse:collapse;min-width:560px}
+.lb-table th{padding:9px 12px;text-align:left;font-size:var(--ds-micro);font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;
+  background:#fafbfc;border-bottom:1px solid var(--border);white-space:nowrap}
+.lb-table td{padding:10px 12px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f3f5;white-space:nowrap}
+.lb-table tbody tr:last-child td{border-bottom:none}
+.lb-table tbody tr:hover td{background:#fafbfc}
+.lb-table .n{text-align:right;font-variant-numeric:tabular-nums}
+.lb-table td.lb-type{font-weight:600}
+.lb-table tfoot td{font-weight:700;background:#fafbfc;border-top:1px solid var(--border);border-bottom:none}
+.lb-of{font-size:var(--ds-caption);font-weight:500;color:#94a3b8}
+.lb-na{color:#b0b8c4}
+.lb-pend{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-status);
+  background:var(--st-wait-bg);color:var(--st-wait-fg);font-weight:600;font-size:12px}
+.lb-avail{font-weight:700}
+.lb-avail.is-ok{color:var(--st-ok-fg)}
+.lb-avail.is-low{color:var(--st-wait-fg)}
+.lb-avail.is-out{color:var(--st-bad-fg)}
+.lb-empty{padding:22px 16px;border:1px dashed var(--border);border-radius:10px;background:#f9fafb;text-align:center;font-size:12.5px;color:var(--gray);line-height:1.5}
+.lb-empty b{color:var(--navy)}
+
+/* ── All Leave Balance ───────────────────────────────────────────────── */
+.lb-note{margin-top:10px;font-size:var(--ds-caption);color:var(--gray)}
+.lb-emp-name{font-weight:600;color:var(--navy)}
+.lb-sb-head{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--border);border-radius:12px;background:var(--light)}
+.lb-sb-txt{flex:1;min-width:0}
+.lb-sb-name{font-size:14px;font-weight:700;color:var(--navy)}
+.lb-sb-meta{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
+.lb-sb-fig{display:flex;flex-direction:column;align-items:flex-end;font-size:var(--ds-caption);color:var(--gray)}
+.lb-sb-fig .lb-avail{font-size:20px;line-height:1.1}
+.lb-view-head{display:flex;align-items:center;gap:12px;margin:2px 0 16px}
+.lb-sb-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.lb-sb-tools .cs-wrap{width:170px;margin:0}
+/* In the side panel the tables fit the panel instead of scrolling: tighter
+   cells, and headings allowed onto two lines. */
+.lp-isb .lb-table{min-width:0}
+.lp-isb .lb-table th{white-space:normal;line-height:1.3;padding:8px 8px;vertical-align:bottom}
+.lp-isb .lb-table td{padding:9px 8px}
+.lp-isb .lb-table th:first-child,.lp-isb .lb-table td:first-child{padding-left:12px}
+
+@media (max-width:720px){
+  .lb-card-hd{flex-direction:column}
+}

@@ -47,6 +47,7 @@ function renderPageContent(target){
   if(page==='leave-policies'){el.innerHTML=buildLeavePoliciesHTML();return;}
   if(page==='employees'){el.innerHTML=buildEmployeesHTML();return;}
   if(page==='timesheet'){el.innerHTML=buildTimesheetHTML();return;}
+  if(page==='leave-balance'){el.innerHTML=buildLeaveBalanceHTML();return;}
   if(page==='direct'){el.innerHTML=buildDirectListingHTML();return;}
   if(page==='global'){el.innerHTML=buildGlobalListingHTML();return;}
   if(page==='teams'){el.innerHTML=buildTeamsListingHTML();return;}
@@ -81,6 +82,8 @@ function renderPageContent(target){
     if(typeof syncDashCardCounts==='function')syncDashCardCounts(el);
     // The employee's lifecycle tracker is drawn from the live record.
     if(typeof empDashRender==='function')empDashRender(el);
+    // So are the announcements under Key Metrics.
+    if(typeof annRender==='function')annRender(el);
     // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
     _attRestore();   // ...and the snapshot is always the idle clock — see _attRestore
@@ -228,7 +231,7 @@ function renderADTPage(){
   // Show/hide + button in topbar based on current page
   const addBtn=document.getElementById('tb-page-add-btn');
   if(addBtn){
-    const noAddPages=['dashboard','cost-calculator','leave-policy-edit','team-add','employee-add','hr-docs','contract-type-select','contract-eor','contract-peo','contract-immigration','contract-contractor','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
+    const noAddPages=['dashboard','leave-balance','cost-calculator','leave-policy-edit','team-add','employee-add','hr-docs','contract-type-select','contract-eor','contract-peo','contract-immigration','contract-contractor','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){

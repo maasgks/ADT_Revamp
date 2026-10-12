@@ -108,23 +108,11 @@ function axTabBar(prefix,tabs,cur,navFn,closeFn){
     +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="'+closeFn+'()" title="Close">'+AX_ICO.x+'</button></div>'
     +'</div>';
 }
-/* The Logs tab, in the exact shape every other module's has: timeline on the
-   left, "move it on and say why" on the right. `extra` is markup that sits
+/* The Logs tab, in the exact shape every other module's has (lpLogsView):
+   current status and its moves, then the log table. `extra` is markup that sits
    between the status and the comment - the asset log uses it for the
    employee an asset is being assigned to. */
 function axLogsHTML(logs,status,statusOpts,ids,extra,hook){
-  const timeline=logs.length?'<div class="lp-logs-timeline">'+logs.map(function(l,i,_all){
-    const sk=statusTone(l.status);
-    return '<div class="lp-log-row">'
-      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar lp-log-avatar--'+logDotKey(_all,i,sk)+'">'+AX_ICO.person+'</div>'
-        +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-      +'<div class="lp-log-card">'+logHeadRow(_all,i,sk,l.status)
-      +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+AX_ICO.person+'<span>'+l.user+'</span></span>'
-        +'<span class="lp-log-meta-item">'+AX_ICO.cal+'<span>'+l.date+'</span></span>'
-        +'<span class="lp-log-meta-item">'+AX_ICO.clk+'<span>'+l.time+'</span></span></div>'
-      +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+l.action+'</div>'
-      +'</div></div>';
-  }).join('')+'</div>':'<div class="lp-logs-empty">No activity logs yet.</div>';
   const form='<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+status+'</div>'
     +'<p class="lp-logs-form-sub">'+ids.sub+'</p>'
@@ -136,7 +124,7 @@ function axLogsHTML(logs,status,statusOpts,ids,extra,hook){
     +'<button class="ep-cancel-btn" style="flex:1" onclick="'+ids.cancel+'">Cancel</button>'
     +'<button class="lp-logs-save-btn" style="flex:1" onclick="'+ids.save+'">Submit</button>'
     +'</div></div>';
-  return '<div class="lp-logs-wrap">'+timeline+form+'</div>';
+  return lpLogsView(logs,form);
 }
 /* A label with "+ Add" on its right, and - once clicked - a one-line input
    under it that adds a new option to that list without leaving the form. */
@@ -448,7 +436,7 @@ function renderAstSidebar(){
       {sel:'ast-log-status-sel',inp:'ast-log-comment-inp',sub:'Move this asset on and say why',
        cancel:'navAstTab(\'logs\')',save:'astSaveLog('+a.id+')'},extra,'astLogStatusHook');
   }else{
-    body=wfTimelineHTML(astWorkflow(a));
+    body=wfTimelineHTML(wfAsset(a));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }
@@ -1070,7 +1058,7 @@ function renderItaSidebar(){
       {sel:'ita-log-status-sel',inp:'ita-log-comment-inp',sub:'Move this access on and say why',
        cancel:'navItaTab(\'logs\')',save:'itaSaveLog('+r.id+')'},'');
   }else{
-    body=wfTimelineHTML(itaWorkflow(r));
+    body=wfTimelineHTML(wfItAccess(r));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
 }

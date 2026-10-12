@@ -1243,35 +1243,32 @@ function empPickRequested(kind,id,reqId){
   inp.click();
 }
 
-/* ══ THE LOGS TAB ══════════════════════════════════════════════════════════ */
+/* ══ THE LOGS TAB ══════════════════════════════════════════════════════════
+   The shared Logs layout (js/logs-view.js): the next step on top, the log
+   table under it. What the lifecycle adds to a row - the documents asked
+   for, the details recorded, issues, rejections, the emails sent - goes in
+   its Remarks cell, under the comment. */
+function empLogExtraHTML(l){
+  var x=function(label,html,bad){return '<span class="lpl-rem-extra'+(bad?' is-bad':'')+'"><b>'+label+':</b> '+html+'</span>';};
+  var moved=l.prev&&l.next&&l.prev!==l.next;
+  return (moved?'<span class="lpl-rem-extra">'+empLifeHtml(l.prev)+' &rarr; <b>'+empLifeHtml(l.next)+'</b></span>':'')
+    +(l.docs&&l.docs.length?x('Requested',l.docs.map(empLifeHtml).join(' · ')):'')
+    +(l.details&&l.details.length?x('Recorded',l.details.map(function(d){
+        return empLifeHtml(String(d.label).replace(/\?$/,''))+': <b>'+empLifeHtml(d.value)+'</b>';}).join(' · ')):'')
+    +(l.issues&&l.issues.length?x('Issues',l.issues.map(function(p,n){
+        return (n+1)+'. '+empLifeHtml(p.issue)+(p.res?' — <b>'+empLifeHtml(p.res)+'</b>':'');}).join('<br>')):'')
+    +(l.rejected&&l.rejected.length?x('Rejected',l.rejected.map(function(d){
+        return empLifeHtml(d.name)+(d.reason?' ('+empLifeHtml(d.reason)+')':'');}).join(' · '),true):'')
+    +(l.notified&&l.notified.length?'<div class="emp-log-mail">'+l.notified.map(function(n){
+        return '<span title="'+empLifeHtml(n.body)+'">'+EMP_ICO.mail+'<b>'+empLifeHtml(n.to)+'</b> · '+empLifeHtml(n.subject.split(' – ')[0])+(n.status==='Failed'?' (failed)':'')+'</span>';
+      }).join('')+'</div>':'');
+}
 function empTimelineHTML(emp){
-  var logs=empLogs(emp);
-  if(!logs.length)return '<div class="lp-logs-empty">No activity logs yet.</div>';
-  return '<div class="lp-logs-timeline">'+logs.map(function(l,i){
-    var moved=l.prev&&l.next&&l.prev!==l.next;
-    return '<div class="lp-log-row'+(l.system?' emp-log-sys':'')+'">'
-      +'<div class="lp-log-avatar-col"><div class="lp-log-avatar">'+EMP_ICO.person+'</div>'
-        +(i<logs.length-1?'<div class="lp-log-connector"></div>':'')+'</div>'
-      +'<div class="lp-log-card">'
-      +'<div class="lp-log-status-row"><span class="lp-log-dot"></span><span class="lp-log-status-text">'+empLifeHtml(l.status)+'</span>'
-        +(l.system?'<span class="emp-sys-chip">System</span>':'')+'</div>'
-      +'<div class="lp-log-meta-row"><span class="lp-log-meta-item">'+EMP_ICO.person+'<span>'+empLifeHtml(l.user)+'</span></span>'
-        +'<span class="lp-log-meta-item">'+EMP_ICO.cal+'<span>'+l.date+'</span></span>'
-        +'<span class="lp-log-meta-item">'+EMP_ICO.clk+'<span>'+l.time+'</span></span>'
-        +(moved?'<span class="emp-log-move">'+empLifeHtml(l.prev)+EMP_ICO.arrow+empLifeHtml(l.next)+'</span>':'')+'</div>'
-      +'<div class="lp-log-comment-row"><span class="lp-log-comment-label">Comment:</span>'+empLifeHtml(l.action)+'</div>'
-      +(l.docs&&l.docs.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Requested:</span>'+l.docs.map(empLifeHtml).join(' · ')+'</div>':'')
-      +(l.details&&l.details.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Recorded:</span>'
-        +l.details.map(function(d){return empLifeHtml(String(d.label).replace(/\?$/,''))+': <b>'+empLifeHtml(d.value)+'</b>';}).join(' · ')+'</div>':'')
-      +(l.issues&&l.issues.length?'<div class="lp-log-comment-row emp-log-extra"><span class="lp-log-comment-label">Issues:</span>'
-        +l.issues.map(function(p,n){return (n+1)+'. '+empLifeHtml(p.issue)+(p.res?' — <b>'+empLifeHtml(p.res)+'</b>':'');}).join('<br>')+'</div>':'')
-      +(l.rejected&&l.rejected.length?'<div class="lp-log-comment-row is-bad"><span class="lp-log-comment-label">Rejected:</span>'
-        +l.rejected.map(function(d){return empLifeHtml(d.name)+(d.reason?' ('+empLifeHtml(d.reason)+')':'');}).join(' · ')+'</div>':'')
-      +(l.notified&&l.notified.length?'<div class="emp-log-mail">'+l.notified.map(function(n){
-          return '<span title="'+empLifeHtml(n.body)+'">'+EMP_ICO.mail+'<b>'+empLifeHtml(n.to)+'</b> · '+empLifeHtml(n.subject.split(' – ')[0])+(n.status==='Failed'?' (failed)':'')+'</span>';
-        }).join('')+'</div>':'')
-      +'</div></div>';
-  }).join('')+'</div>';
+  var logs=empLogs(emp).map(function(l){
+    return {status:empLifeHtml(l.status),user:empLifeHtml(l.user),role:l.system?'System':'',
+      date:l.date,time:l.time,action:empLifeHtml(l.action),src:l};
+  });
+  return lplTableHTML(logs,{rowExtra:function(r){return empLogExtraHTML(r.src);}});
 }
 function empDocsAlertHTML(emp){
   var out=empDocsOutstanding(emp),rej=out.filter(function(d){return d.status==='Rejected';});
@@ -1296,74 +1293,60 @@ function empFormHTML(pk,emp){
       +'<textarea id="'+pk+'-log-comment-inp" class="lp-logs-form-textarea" placeholder="Say what happened"></textarea></div>'
     +'</div>';
 }
-/* The Logs tab's right-hand column: the NEXT STEP - what it is, what it
-   involves, who owns it - and the button for it, named for what it does
-   ("Start Offboarding Process"); the fields open in the popup.
-   What the button offers depends on who is logged in (header):
-     Super Admin   - a "Log a step" dropdown of every step open on the record,
-                     the next one picked by default, and that step's button.
-     Any other role - the button only for a step that role owns; a step owned
-                     by someone else says who it is waiting on. Other steps the
-                     role owns that are open at the same time sit below as links. */
-const empStepPick={};    // kind+id -> the step a Super Admin picked
+/* The head of the Logs tab: the NEXT STEP and the button for it, named for
+   what it does ("Start Offboarding Process"); the fields open in the popup.
+   What it offers depends on who is logged in (header):
+     Super Admin   - the button for the step that is due.
+     Any other role - the button only for a step that role owns, plus the
+                     other steps it owns that are open at the same time. A step
+                     owned by someone else is a "Pending with" card, with a
+                     button to switch to that role. */
+/* The header role that can record a step with this owner, for "Switch to". */
+function empRoleFor(owner){
+  return Object.keys(EMP_ROLE_OWNS).find(function(r){return EMP_ROLE_OWNS[r].indexOf(owner)>=0;})||'';
+}
 function empNextCardHTML(kind,emp){
   var n=empNextStep(emp),st=empState(emp),sa=empRole()==='Super Admin';
   var open=function(k){return 'empOpenLogModal(\''+kind+'\','+emp.id+',\''+k+'\',\'sb\')';};
-  var all=sa?empAllSteps(emp):(n.key?[n.key]:[]).concat(n.more).concat(n.exits);
-  var pickKey=kind+emp.id;
-  var sel=sa?(all.indexOf(empStepPick[pickKey])>=0?empStepPick[pickKey]:(n.key||n.exits[0]||'')):(n.key&&empRoleCan(n.key)?n.key:'');
-  var show=sa&&sel?sel:n.key;     // the step the card describes
-  var why=sa&&sel?empStepWhyNot(emp,sel):'';   // a Super Admin pick that is not open yet
-  var main=show
-    ?'<div class="emp-next-k">'+(sa&&sel&&sel!==n.key?'Selected step':'Next step')+'</div>'
-      +'<div class="emp-next-title">'+empLifeHtml(empStepTitle(emp,show))+'</div>'
-      +'<p class="emp-next-hint">'+EMP_STEP[show].hint+'</p>'
-      +(why?'<div class="emp-log-note emp-next-why">'+EMP_ICO.info+'<span>'+empLifeHtml(why)+'</span></div>':'')
-      +'<div class="emp-next-owner">Owner: <b>'+empLifeHtml(EMP_LOG[show].owner)+'</b>'
-        +(!sa&&!empRoleCan(show)?'<span class="emp-next-wait">Waiting on '+empLifeHtml(EMP_LOG[show].owner)+'</span>':'')+'</div>'
-    :n.wait
-      ?'<div class="emp-next-k">Next step</div>'
-        +'<div class="emp-next-title">'+empLifeHtml(n.wait.title)+'</div>'
-        +'<p class="emp-next-hint">'+empLifeHtml(n.wait.text)+'</p>'
-      :'<div class="emp-next-title">Nothing to log</div><p class="emp-next-hint">There is no step to record for '+empLifeHtml(emp.name)+' right now.</p>';
-  var picker=sa&&all.length
-    ?'<div class="emp-next-pick">'+empLabel('Log a step')
-      +apCS(kind+'-step-pick',all.map(function(k){return empStepPickLabel(emp,k);}),sel?empStepPickLabel(emp,sel):'','Select a step','empStepPickHook')+'</div>'
-    :'';
+  var sel=sa?(n.key||n.exits[0]||''):(n.key&&empRoleCan(n.key)?n.key:'');
+  var why=sa&&sel?empStepWhyNot(emp,sel):'';   // a step due but not open yet
+  var status=empLifeHtml(emp.status);
+  var chip=st.phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'';
+  var alert=n.wait?empDocsAlertHTML(emp):'';
   var mine=sa?[]:n.more.concat(n.exits).filter(function(k){return empRoleCan(k);});
-  var links=mine.map(function(k){
-    return '<button type="button" class="emp-next-link'+(EMP_LOG[k].cancel?' is-danger':'')+'" onclick="'+open(k)+'">'+empLifeHtml(empStepAction(emp,k))+EMP_ICO.arrow+'</button>';});
-  var btn=sel
-    ?'<div class="emp-logs-form-foot"><button class="lp-logs-save-btn'+(EMP_LOG[sel].cancel||sel==='doc-rejected'?' is-danger':'')+'" style="flex:1"'
-      +(why?' disabled title="'+empLifeHtml(why)+'"':' onclick="'+open(sel)+'"')+'>'
-      +empLifeHtml(empStepAction(emp,sel))+'</button></div>'
-    :'';
-  return '<div class="lp-logs-form emp-logs-form emp-next">'
-    +'<div class="emp-logs-form-scroll">'
-      +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+empLifeHtml(emp.status)
-        +(st.phase==='off'?'<span class="emp-phase-chip">Offboarding</span>':'')+'</div>'
-      +'<p class="lp-logs-form-sub">Logged in as <b>'+empLifeHtml(empRole())+'</b></p>'
-      +(n.wait?empDocsAlertHTML(emp):'')
-      +picker
-      +'<div class="emp-next-card'+(show?'':' is-wait')+'">'+main+'</div>'
-      +(links.length?'<div class="emp-next-more"><div class="emp-next-k">Your other actions</div>'+links.join('')+'</div>':'')
-    +'</div>'
-    +btn
-  +'</div>';
+
+  /* Nothing this role can record here: say who it is with instead. */
+  if(!sel&&!mine.length){
+    if(n.key){
+      var owner=EMP_LOG[n.key].owner,to=empRoleFor(owner);
+      return alert+lplCardHTML('wait','Pending with '+empLifeHtml(owner),
+        'Next step: <b>'+empLifeHtml(empStepTitle(emp,n.key))+'</b>. Nothing for '+empLifeHtml(empRole())+' to do here yet.',
+        {current:status,button:to?'<button type="button" class="btn-outline lpl-btn" onclick="setAppRole(\''+to+'\')">Switch to '+empLifeHtml(to)+'</button>':''});
+    }
+    if(n.wait)return alert+lplCardHTML('wait',empLifeHtml(n.wait.title),empLifeHtml(n.wait.text),{current:status});
+    return st.phase==='off'||emp.status==='Inactive'
+      ?lplCardHTML('done','Nothing to log','There is no step to record for '+empLifeHtml(emp.name)+' right now.',{current:status})
+      :lplCardHTML('wait','Nothing to log','There is no step to record for '+empLifeHtml(emp.name)+' right now.',{current:status});
+  }
+
+  var show=sel||mine[0];
+  var sub='Next step: '+'<b>'+empLifeHtml(empStepTitle(emp,show))+'</b>'
+    +' &middot; Owner <b>'+empLifeHtml(EMP_LOG[show].owner)+'</b>. '+EMP_STEP[show].hint;
+  var actions=[];
+  if(sel)actions.push({label:empLifeHtml(empStepAction(emp,sel)),onclick:open(sel),
+    danger:!!(EMP_LOG[sel].cancel||sel==='doc-rejected'),disabled:!!why,title:why});
+  /* The role's other steps open at the same time sit beside it as outlined
+     buttons - the same actions the log always offered, nothing more. Only the
+     step that is due is solid; a cancel is outlined in red. */
+  mine.forEach(function(k){
+    if(k!==sel)actions.push({label:empLifeHtml(empStepAction(emp,k)),onclick:open(k),quiet:true,danger:!!EMP_LOG[k].cancel});
+  });
+  return alert
+    +(why?'<div class="emp-log-note">'+EMP_ICO.info+'<span>'+empLifeHtml(why)+'</span></div>':'')
+    +lplBarHTML(status,sub,actions,{chip:chip,maxBtns:actions.length});
 }
-function empStepPickHook(val,csid){
-  var kind=String(csid).replace(/-step-pick$/,''),emp=empLifeRec(kind);if(!emp)return;
-  var all=empAllSteps(emp);
-  var k=all.find(function(x){return empStepPickLabel(emp,x)===val;});
-  if(k)empStepPick[kind+emp.id]=k;
-  renderADTPage();
-}
-/* Two columns that scroll on their own: the history on the left, the next
-   step on the right with Fill Details always in reach. */
 function renderEmpLogsTab(kind,emp){
-  return '<div class="lp-logs-wrap emp-logs">'
-    +'<div class="emp-logs-col">'+empTimelineHTML(emp)+'</div>'
-    +empNextCardHTML(kind,emp)+'</div>';
+  return '<div class="lpl emp-lpl">'+empNextCardHTML(kind,emp)+'<div class="lpl-log-list">'+empTimelineHTML(emp)+'</div></div>';
 }
 
 /* ── The Workflow tab: every step of the running process ─────────────────

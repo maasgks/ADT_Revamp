@@ -324,6 +324,23 @@
 .hr-action-text{flex:1}
 .hr-action-name{font-size:var(--ds-title);font-weight:700;color:var(--navy);margin-bottom:2px}
 .hr-action-desc{font-size:var(--ds-caption);color:var(--gray);font-weight:400}
+/* ── QUICK LINKS (Employee Dashboard) ──────────────────────────────────────
+   Where an employee goes next: one compact button per destination, in a row
+   that wraps. Lighter than an action card - a name and an icon, no line of
+   description - because each is a door, not a task. The icon tile is the
+   action card's, scaled down, so the two read as one family. */
+.hr-links{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0 0}
+.hr-link{display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 16px 0 8px;
+  background:var(--card);border:1px solid var(--border);border-radius:12px;cursor:pointer;
+  font-family:inherit;font-size:var(--ds-title);font-weight:500;color:var(--navy);
+  box-shadow:0 1px 2px rgba(15,23,42,.04);
+  transition:border-color var(--t-fast) var(--e-out),background-color var(--t-fast) var(--e-out),transform var(--t-fast) var(--e-out)}
+.hr-link:hover{background:#f8fafc;border-color:#cbd5e1;transform:translateY(-1px)}
+.hr-link:active{transform:none}
+.hr-link:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(148,163,184,.35)}
+.hr-link-ico{width:30px;height:30px;border-radius:8px;background:#f1f3f5;display:flex;align-items:center;justify-content:center;color:var(--gray);flex-shrink:0}
+.hr-link-ico svg{width:15px;height:15px}
+@media (prefers-reduced-motion:reduce){.hr-link,.hr-link:hover{transition:none;transform:none}}
 .hr-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:0}
 .hr-section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .hr-section-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}

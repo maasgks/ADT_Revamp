@@ -1,0 +1,89 @@
+/* ══ EMPLOYEE DASHBOARD: ANNOUNCEMENTS (js/announcements.js) ═════════════
+   The band and the panel are the dashboard's own (.hr-band, .hr-section).
+   What is here is the list rows, the tags, and the caught-up state.
+
+   Colours are the --st-* tones: a manager is "info" blue, Pinned is the "wait"
+   amber, New the "ok" green, a category the neutral "idle" grey. HR is the one
+   addition - violet, because no status tone means "HR" and borrowing one would
+   make an HR post read as a status. */
+
+/* The host stands where a band after the metric grid would, so it takes the
+   gap .hr-stat-grid+.hr-band would have given it. */
+#emp-ann-dash{margin:26px 0 14px}
+#emp-ann-dash:empty{display:none}
+
+.ann-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;margin-left:8px;
+  border-radius:var(--r-status);background:var(--st-idle-bg);color:var(--st-idle-fg);font-size:var(--ds-micro);font-weight:700;
+  letter-spacing:0;vertical-align:1px}
+
+/* ── The list ─────────────────────────────────────────────────────────── */
+.ann-list{list-style:none;margin:0;padding:0}
+.ann-row{display:flex;gap:12px;align-items:flex-start;padding:12px 4px}
+.ann-row+.ann-row{border-top:1px solid var(--border)}
+.ann-row:first-child{padding-top:2px}
+.ann-row:last-child{padding-bottom:2px}
+.ann-av{width:36px;height:36px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:var(--ds-body);font-weight:700}
+.ann-av.is-hr{background:#ede9fe;color:#6d28d9}
+.ann-av.is-manager{background:var(--st-info-bg);color:var(--st-info-fg)}
+.ann-body{flex:1;min-width:0}
+.ann-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:3px}
+.ann-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);margin-right:2px}
+.ann-tag{display:inline-flex;align-items:center;height:18px;padding:0 8px;border-radius:var(--r-status);
+  font-size:var(--ds-micro);font-weight:600;line-height:1;
+  background:var(--st-idle-bg);color:var(--st-idle-fg);border:1px solid var(--st-idle-bd)}
+.ann-tag.is-pinned{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.ann-tag.is-new{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.ann-text{margin:0 0 6px;font-size:var(--ds-body);line-height:1.5;color:#475569;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.ann-meta{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:var(--ds-caption);color:var(--gray)}
+.ann-meta b{font-weight:600;color:var(--navy)}
+.ann-dot{width:3px;height:3px;border-radius:50%;background:#cbd5e1}
+
+/* ── Caught up ────────────────────────────────────────────────────────────
+   A faint dot grid that fades out from the middle, over a near-white wash. */
+.ann-empty{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:34px 20px 30px;border-radius:var(--r-control);overflow:hidden;
+  background:linear-gradient(180deg,#fbfcfd 0%,#fff 100%)}
+.ann-empty::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(#dfe4ea 1px,transparent 1.2px);background-size:14px 14px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 70% at 50% 42%,#000 20%,transparent 75%);
+          mask-image:radial-gradient(ellipse 60% 70% at 50% 42%,#000 20%,transparent 75%)}
+.ann-empty>*{position:relative}
+
+.ann-art{width:132px;height:132px;margin-bottom:16px}
+.ann-art>span{position:absolute;border-radius:50%}
+.ann-ring-out{inset:0;border:1.5px dashed #dbe1e8}
+.ann-ring-in{inset:16px;border:1px solid #e5e9ef;background:#f6f8fa}
+.ann-disc{inset:30px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.06);
+  display:flex;align-items:center;justify-content:center;color:var(--navy)}
+.ann-mega{display:flex;animation:ann-bob 3.2s ease-in-out infinite}
+.ann-mega svg{width:26px;height:26px}
+/* The sound leaving the megaphone: two rings, the second half a beat behind. */
+.ann-wave{inset:30px;border:1.5px solid rgba(37,99,235,.28);opacity:0;animation:ann-wave 2.8s var(--e-out) infinite}
+.ann-wave.is-late{animation-delay:1.4s}
+.ann-badge{top:26px;right:26px;width:22px;height:22px;background:#fff;color:var(--st-ok-fg);
+  box-shadow:0 1px 4px rgba(15,23,42,.14);display:flex;align-items:center;justify-content:center}
+.ann-badge svg{width:11px;height:11px}
+.ann-fx{width:8px;height:8px;animation:ann-float 5s ease-in-out infinite}
+.ann-fx.is-amber{top:6px;right:18px;background:#f59e0b}
+.ann-fx.is-blue{bottom:22px;left:4px;width:6px;height:6px;background:#3b82f6;animation-delay:-1.2s}
+.ann-fx.is-violet{top:20px;left:2px;width:5px;height:5px;background:#8b5cf6;animation-delay:-2.4s}
+.ann-fx.is-ring{bottom:6px;right:22px;width:10px;height:10px;border:2px solid var(--st-ok-fg);background:#fff;animation-delay:-3.6s}
+
+.ann-empty-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.ann-empty-sub{margin:0 0 14px;max-width:340px;font-size:var(--ds-body);line-height:1.6;color:var(--gray)}
+.ann-empty-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.ann-chip{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:var(--r-status);
+  background:#fff;border:1px solid var(--border);font-size:var(--ds-caption);font-weight:500;color:var(--navy)}
+.ann-chip::before{content:'';width:6px;height:6px;border-radius:50%}
+.ann-chip.is-hr::before{background:#8b5cf6}
+.ann-chip.is-manager::before{background:var(--st-info-fg)}
+
+@keyframes ann-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes ann-wave{0%{transform:scale(1);opacity:.9}100%{transform:scale(1.55);opacity:0}}
+@keyframes ann-float{0%,100%{transform:translate(0,0)}50%{transform:translate(2px,-5px)}}
+@media (prefers-reduced-motion:reduce){
+  .ann-mega,.ann-wave,.ann-fx{animation:none}
+  .ann-wave{opacity:0}
+}

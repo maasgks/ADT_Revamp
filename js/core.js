@@ -103,6 +103,7 @@ const sidebarItems=[
   {dropdown:'Time & Attendance',color:'teal',icon:sbIco.clock,children:[
     {id:'timesheet',label:'Timesheets',color:'teal',icon:sbIco.clock},
     {id:'all-leaves',label:'Leave Requests',color:'teal',icon:sbIco.calendar},
+    {id:'leave-balance',label:'Leave Balance',color:'teal',icon:sbIco.wallet},
     {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText},
     {id:'holidays',label:'Holidays',color:'teal',icon:sbIco.calStar}
   ]},
@@ -543,7 +544,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-immigration')return{title:'New Immigration Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-contractor')return{title:'New Contractor Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employee-add')return{title:'Create New Employee',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-immigration')return{title:'New Immigration Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-contractor')return{title:'New Contractor Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-balance')return{title:'Leave Balance',context:'Leave Balance',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employee-add')return{title:'Create New Employee',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){
   /* Inside one type's listing the header names that type, so "Contracts"
      only ever means the mixed list or the type cards. */
@@ -563,7 +564,7 @@ const SB_STATUS_TONE={
   inactive:'bad',unapproved:'bad',rejected:'bad','expiring-soon':'bad',blocked:'bad',failed:'bad',expired:'bad',terminated:'bad',cancelled:'bad',canceled:'bad',overdue:'bad',
   disconnected:'bad',exception:'bad',absent:'bad',escalated:'bad',
   // wait — in flight, someone owes an action
-  pending:'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','pending-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait','waiting-for-client':'wait','waiting-for-csm':'wait',
+  pending:'wait','follow-up':'wait',draft:'wait',submitted:'wait','in-progress':'wait','on-hold':'wait','under-review':'wait','pending-review':'wait','needs-review':'wait','waiting-client':'wait','waiting-csm':'wait','waiting-for-client':'wait','waiting-for-csm':'wait',
   'proposal-sent':'wait','contract-sent':'wait','waiting-for-approval':'wait','pending-onboarding':'wait',onboarding:'wait',inprog:'wait',unfilled:'wait',unpaid:'wait',
   // info — informational, nothing owed
   open:'info','awaiting-upload':'info','new':'info',scheduled:'info',created:'info',updated:'info',
@@ -806,7 +807,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.cd-wrap'))cdCloseAl
    page jump sideways as its scrollbar went; instead the wheel is checked: it
    goes through only when something INSIDE the popup can still scroll that way
    (the popup body, a dropdown list, a long field), and is stopped otherwise. */
-const POPUP_OPEN_SEL='.lp-split-sb.open.is-popup,.ct-modal-overlay:not([style*="none"]),.cost-calc-overlay:not(.hidden),.oh-overlay,.ts-overlay,#emp-block-pop';
+const POPUP_OPEN_SEL='.lp-split-sb.open.is-popup,.ct-modal-overlay:not([style*="none"]):not(.fp-page),.cost-calc-overlay:not(.hidden),.oh-overlay,.ts-overlay,#emp-block-pop';
 function popupCanScroll(el,stop,dy){
   for(;el&&el!==stop&&el.nodeType===1;el=el.parentElement){
     const cs=getComputedStyle(el);
@@ -1527,7 +1528,9 @@ function setAppRole(r){
   document.querySelectorAll('.role-dd-item').forEach(b=>b.classList.toggle('is-current',b.dataset.role===r));
   closeAllHdrDD();
   renderADTPage();
-  showToast('Logged in as '+r,'info',r==='Super Admin'?'Every lifecycle step can be recorded.':'Only the steps '+r+' owns can be recorded.');
+  showToast('Logged in as '+r,'info',r==='Super Admin'?'Every lifecycle step can be recorded.'
+    :r==='Employee'?'You can cancel your own leave requests from their Logs.'
+    :'Only the steps '+r+' owns can be recorded.');
 }
 function closeAllHdrDD(){
   document.querySelectorAll('.hdr-dd-panel.open').forEach(p=>{
@@ -1983,6 +1986,31 @@ var DASH_CARD_COUNT={
   'teams':           function(){return teamsData.length;},
   'employees':       function(){return empPool.length;}
 };
+/* ── EMPLOYEE DASHBOARD: ANNOUNCEMENTS ─────────────────────────────────────
+   What HR and the employee's manager have posted, read by js/announcements.js
+   into the Latest Updates panel under Key Metrics. One post:
+     from      'hr' | 'manager'   - decides the avatar colour and the role word
+     author    who posted it
+     title, text
+     category  optional neutral tag ('Holiday', 'Policy', 'Team'…)
+     pinned    optional - an amber "Pinned" tag
+     isNew     optional - a green "New" tag
+     when      ISO date-time it was posted; sorted on, and shown as
+               "2 hours ago" against the clock
+   An empty list is a real state, not an error: the panel says the employee is
+   caught up. */
+const empAnnouncements=[
+  {from:'hr',author:'Priya Sharma',title:'Diwali holiday announced',category:'Holiday',pinned:true,isNew:true,when:'2026-10-12T09:30:00',
+   text:'The office will remain closed on 8 Nov for Diwali. Please plan your deliverables and update your timesheets before the break.'},
+  {from:'manager',author:'Rajan Kumar',title:'Sprint planning moved to Thursday',category:'Team',isNew:true,when:'2026-10-11T16:10:00',
+   text:'This week’s sprint planning is moving to Thursday at 11:00 AM. Bring your estimates for the open tickets on the board.'},
+  {from:'hr',author:'Priya Sharma',title:'Updated leave policy for 2027',category:'Policy',when:'2026-10-09T11:00:00',
+   text:'We’ve revised the carry-forward rules for earned leave. Read the updated policy under Leave Policies before the end of the quarter.'},
+  {from:'manager',author:'Rajan Kumar',title:'Great work on the October release',category:'Team',when:'2026-10-07T18:20:00',
+   text:'Thanks, everyone, for the push on the October release — it shipped on time with zero rollbacks. Team lunch is on Friday at 1:00 PM.'},
+  {from:'hr',author:'Priya Sharma',title:'Annual health check-up camp',category:'Wellness',when:'2026-10-05T10:00:00',
+   text:'A free health check-up camp will be held in the Hyderabad office on 20 Oct. Register through the HR desk by 17 Oct to book your slot.'}
+];
 /* Runs after the dashboard paints. Writes only where a counter exists and the
    tile currently holds something that looks like a plain count, so a value
    tile is never clobbered by a row total. */
@@ -2383,9 +2411,9 @@ function toggleListingStatFilter(pg,value){
 
 // -- LEAVE POLICIES DATA & PAGES --
 const leavePoliciesData=[
-  {id:1, type:'Casual Leave',        yearly:24, monthly:5,    carryForward:10,  probation:true,  prorate:false, status:'Active',   assignBy:'Department',  assignValue:'Engineering', employees:['Anika Shah','Shaun J']},
-  {id:2, type:'Sick Leave',          yearly:12, monthly:2,    carryForward:5,   probation:true,  prorate:true,  status:'Active',   assignBy:'Designation', assignValue:'Developer',   employees:['Rahul Mehta','Pallavi P']},
-  {id:3, type:'Earned Leave',        yearly:18, monthly:1,    carryForward:15,  probation:false, prorate:true,  status:'Active',   assignBy:'Branch',      assignValue:'Hyderabad',   employees:['Nora Kim']},
+  {id:1, type:'Casual Leave',        yearly:24, monthly:5,    carryForward:10,  probation:true,  prorate:false, status:'Active',   assignBy:'Department',  assignValue:'Engineering', employees:['Anika Shah','Shaun J','Utkarsh Shukla','Ashneet Kaur','Sneha Kulkarni','Diksha Kumari','Pardeep Verga']},
+  {id:2, type:'Sick Leave',          yearly:12, monthly:2,    carryForward:5,   probation:true,  prorate:true,  status:'Active',   assignBy:'Designation', assignValue:'Developer',   employees:['Rahul Mehta','Pallavi P','Shaun J','Utkarsh Shukla','Ashneet Kaur','Sneha Kulkarni','Diksha Kumari','Pardeep Verga']},
+  {id:3, type:'Earned Leave',        yearly:18, monthly:1,    carryForward:15,  probation:false, prorate:true,  status:'Active',   assignBy:'Branch',      assignValue:'Hyderabad',   employees:['Nora Kim','Sneha Kulkarni']},
   {id:4, type:'Maternity Leave',     yearly:26, monthly:null, carryForward:null,probation:true,  prorate:false, status:'Inactive', assignBy:'Department',  assignValue:'HR',          employees:['Luis Martin']},
   {id:5, type:'Paternity Leave',     yearly:10, monthly:null, carryForward:null,probation:false, prorate:false, status:'Active',   assignBy:'Department',  assignValue:'Engineering', employees:['Shaun J','Rahul Mehta']},
   {id:6, type:'Bereavement Leave',   yearly:5,  monthly:null, carryForward:null,probation:true,  prorate:false, status:'Active',   assignBy:'Branch',      assignValue:'Mumbai',      employees:['Pallavi P']},
@@ -4492,15 +4520,15 @@ let tsMonth={year:2026,month:5}; // 0-indexed (5=June)
 let tsEmp={name:'Shaun Test1',initials:'ST',role:'Entity Super Admin'};
 const tsAttendance={
   '2026-06-01':{in:'09:00 AM',out:'06:15 PM',loc:'Hyderabad',hours:'9.25h',src:'Auto',status:'present'},
-  '2026-06-02':{in:'09:15 AM',out:'06:30 PM',loc:'Hyderabad',hours:'9.25h',src:'Manual',status:'present'},
-  '2026-06-03':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present'},
+  '2026-06-02':{in:'09:15 AM',out:'06:30 PM',loc:'Hyderabad',hours:'9.25h',src:'Manual',status:'present',desc:'Built the week-lock API endpoint and its unit tests.'},
+  '2026-06-03':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present',desc:'Code review for the leave policy module; fixed two carry-forward edge cases.'},
   '2026-06-04':{in:'08:55 AM',out:'06:00 PM',loc:'Remote',hours:'9.08h',src:'Auto',status:'present'},
   '2026-06-05':{in:'09:30 AM',out:'07:00 PM',loc:'Hyderabad',hours:'9.50h',src:'Manual',status:'present'},
   '2026-06-09':{in:'09:10 AM',out:'06:20 PM',loc:'Hyderabad',hours:'9.17h',src:'Auto',status:'present'},
-  '2026-06-10':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present'},
+  '2026-06-10':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present',desc:'Designed the Work Description field with product.\nStarted on the API contract.'},
   '2026-06-11':{in:'09:45 AM',out:'06:30 PM',loc:'Hyderabad',hours:'8.75h',src:'Manual',status:'present'},
   '2026-06-12':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present'},
-  '2026-06-13':{in:'10:00 AM',out:'04:00 PM',loc:'Hyderabad',hours:'6.00h',src:'Manual',status:'present'},
+  '2026-06-13':{in:'10:00 AM',out:'04:00 PM',loc:'Hyderabad',hours:'6.00h',src:'Manual',status:'present',desc:'Saturday cover for the quarter-end payroll run.'},
   '2026-06-16':{in:'09:15 AM',out:'06:30 PM',loc:'Hyderabad',hours:'9.25h',src:'Auto',status:'present'},
   '2026-06-17':{in:'09:00 AM',out:'06:00 PM',loc:'Remote',hours:'9.00h',src:'Auto',status:'present'},
   '2026-06-18':{in:'09:30 AM',out:'06:45 PM',loc:'Hyderabad',hours:'9.25h',src:'Manual',status:'present'},
@@ -4544,6 +4572,10 @@ function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage(
    is a constant rather than a live clock - otherwise every day of the fixture
    month would read as the future and none of it could be edited. */
 const TS_TODAY='2026-06-24';
+/* A day's Work Description - what was done, in the employee's words. Optional,
+   stored on the attendance record as `desc` beside the times, and capped so a
+   day stays a summary rather than a report. */
+const TS_DESC_MAX=500;
 let tsEdit=null;            // {date} while the day panel is in edit mode
 let tsWeekState={};         // 'YYYY-MM-W<n>' -> 'locked' | 'submitted'
 let tsReadOnly=false;       // true while looking at somebody else's timesheet
@@ -4624,8 +4656,18 @@ function tsStartEdit(dateStr){
     return;
   }
   tsEdit={date:dateStr};tsMapOpen='';renderADTPage();
+  // A day with nothing written yet opens on the description - the times are
+  // usually already right, the words are what is missing.
+  const desc=document.getElementById('ts-ed-desc');
+  if(desc&&!desc.value)desc.focus();
 }
 function tsCancelEdit(){tsEdit=null;renderADTPage();}
+// The description's "N / 500", written straight into the node for the same
+// reason as tsEditPreview: a repaint per keystroke would take the focus away.
+function tsDescCount(){
+  const t=document.getElementById('ts-ed-desc'),c=document.getElementById('ts-ed-count');
+  if(t&&c)c.textContent=t.value.length+' / '+TS_DESC_MAX;
+}
 /* The running total under the two fields, updated straight into the node. The
    rest of this page repaints through renderADTPage(), which would be wrong
    here: a repaint on every keystroke would take the focus out of the field
@@ -4666,17 +4708,20 @@ function tsSaveEntry(){
   // the clock-in would silently belong to a day this row cannot represent.
   if(mins<=0)return fail('Clock-out has to be later than clock-in.');
   const had=tsAttendance[date]&&tsAttendance[date].status==='present';
+  const descEl=document.getElementById('ts-ed-desc');
+  const desc=descEl?descEl.value.trim().slice(0,TS_DESC_MAX):'';
   tsAttendance[date]={
     in:tsTo12(iv),out:tsTo12(ov),
     loc:locKey||'Hyderabad',
     hours:(mins/60).toFixed(2)+'h',
     src:'Manual',                       // typed in, and the grid says so
-    status:'present'
+    status:'present',
+    desc:desc                           // optional; never blocks the save
   };
   tsEdit=null;
   renderADTPage();
   showToast(had?'Entry updated':'Entry added','success',
-    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged.');
+    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged'+(desc?' · description saved':'')+'.');
 }
 
 // ── Locking, unlocking, submitting ────────────────────────────────────────

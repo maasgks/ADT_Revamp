@@ -371,6 +371,22 @@ tr.lp-row-selected>td:first-child,
 .team-section-head .policy-section-title{margin-bottom:0}
 .team-add-members{font-size:13px;font-weight:600;color:var(--navy);background:none;border:none;padding:0;cursor:pointer;font-family:inherit}
 .team-help-dot{display:inline-flex;align-items:center;justify-content:center;width:13px;height:13px;border:1.5px solid var(--orange);border-radius:50%;font-size:9px;font-weight:800;color:var(--orange);line-height:1;margin-left:3px}
+/* Hover / focus help: any element with data-tip shows it in a dark bubble
+   above it - the field explained where the field is, without a modal. The
+   bubble starts at the icon and runs right, so an icon near a form's left
+   edge never has its text cut off. */
+[data-tip]{position:relative;cursor:help;outline:none}
+[data-tip]::after{content:attr(data-tip);position:absolute;left:-10px;bottom:calc(100% + 8px);transform:translateY(4px);
+  width:max-content;max-width:260px;padding:8px 11px;border-radius:8px;background:var(--navy);color:#fff;
+  font:500 11.5px/1.5 Inter,sans-serif;letter-spacing:0;text-transform:none;text-align:left;white-space:normal;
+  box-shadow:0 8px 20px rgba(15,23,42,.18);opacity:0;visibility:hidden;pointer-events:none;z-index:50;
+  transition:opacity .15s ease,transform .15s ease,visibility .15s}
+[data-tip]::before{content:'';position:absolute;left:50%;bottom:calc(100% + 3px);transform:translate(-50%,4px);
+  border:5px solid transparent;border-top-color:var(--navy);border-bottom:0;opacity:0;visibility:hidden;z-index:50;
+  transition:opacity .15s ease,transform .15s ease,visibility .15s}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;visibility:visible;transform:none}
+[data-tip]:hover::before,[data-tip]:focus-visible::before{opacity:1;visibility:visible;transform:translate(-50%,0)}
+[data-tip]:focus-visible{box-shadow:0 0 0 3px rgba(148,163,184,.4)}
 .team-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
 @media (max-width:720px){
   .policy-form-grid.team-form-row{grid-template-columns:1fr}
@@ -1095,15 +1111,15 @@ tr.lp-row-selected>td:first-child,
    grey dot, a dashed line, and a faded dashed card. */
 .lp-wf-row.is-done .lp-wf-dot{background:var(--st-ok-fg);border-color:#bbf7d0;box-shadow:0 0 0 3px #f0fdf4}
 .lp-wf-row.is-done .lp-wf-connector{background:#bbf7d0}
-.lp-wf-row.is-current .lp-wf-card{border-color:#bfdbfe;box-shadow:0 0 0 3px #eff6ff}
-.lp-wf-row.is-current .lp-wf-connector{background:repeating-linear-gradient(#cbd5e1 0 4px,transparent 4px 8px)}
+.lp-wf-row.is-current .lp-wf-card{border-color:#93c5fd;box-shadow:0 1px 4px rgba(37,99,235,.06)}
+.lp-wf-row.is-current .lp-wf-connector{background:#93c5fd}
 .lp-wf-chip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;
-  background:var(--st-info-bg);color:var(--st-info-fg);border:1px solid var(--st-info-bd);vertical-align:2px}
+  background:var(--st-info-bg);color:var(--st-info-fg);vertical-align:2px}
 .lp-wf-row.is-todo .lp-wf-dot{background:#fff;border-color:#cbd5e1;box-shadow:none}
 .lp-wf-row.is-todo .lp-wf-connector{background:repeating-linear-gradient(#cbd5e1 0 4px,transparent 4px 8px)}
-.lp-wf-row.is-todo .lp-wf-card{background:#fafbfc;border-style:dashed;box-shadow:none}
+.lp-wf-row.is-todo .lp-wf-card{background:#fafbfc;border-style:dashed;box-shadow:none;padding:12px 16px}
 .lp-wf-row.is-todo .lp-wf-card:hover{border-color:#d1d5db;box-shadow:none}
-.lp-wf-row.is-todo .lp-wf-title{color:#94a3b8}
+.lp-wf-row.is-todo .lp-wf-title{color:#64748b;font-weight:600;margin-bottom:5px}
 .lp-wf-row.is-todo .lp-wf-meta-row{margin-bottom:0}
 .lp-wf-not-started{font-style:italic;color:#94a3b8}
 .lp-wf-desc-text b{font-weight:700}
@@ -1129,3 +1145,10 @@ tr.lp-row-selected>td:first-child,
 .lp-sb-view-header:has(>.sb-tools){justify-content:flex-start;gap:10px}
 .lp-sb-view-header:has(>.sb-tools)>:first-child{margin-right:auto}
 .sb-body-tools{display:flex;justify-content:flex-end;margin:-4px 0 10px}
+
+/* ── LEAVE BALANCE TILE (Leave Requests, js/pages.js alBalCardHTML) ────────
+   A status tile in its own box, beside the real ones - but it filters
+   nothing, so it has no pointer, no hover fill and no press. */
+.al-bal-stat .listing-stat{cursor:default;min-width:110px}
+.al-bal-stat .listing-stat:hover{background:transparent}
+.al-bal-stat .listing-stat:active{transform:none}

@@ -1290,7 +1290,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
      p1..p8   contract pipeline, cool -> warm in stage order
    ═════════════════════════════════════════════════════════════════════ */
 .lp-status-badge.active,.ct-sb-badge.active,.lp-status-badge.approved,.ct-sb-badge.approved,.lp-status-badge.complete,.ct-sb-badge.complete,.lp-status-badge.completed,.ct-sb-badge.completed,.lp-status-badge.connected,.ct-sb-badge.connected,.lp-status-badge.paid,.ct-sb-badge.paid,.lp-status-badge.present,.ct-sb-badge.present,.lp-status-badge.resolved,.ct-sb-badge.resolved,.lp-status-badge.signed,.ct-sb-badge.signed,.lp-status-badge.success,.ct-sb-badge.success,.lp-status-badge.verified,.ct-sb-badge.verified{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
-.lp-status-badge.draft,.ct-sb-badge.draft,.lp-status-badge.in-progress,.ct-sb-badge.in-progress,.lp-status-badge.inprog,.ct-sb-badge.inprog,.lp-status-badge.on-hold,.ct-sb-badge.on-hold,.lp-status-badge.pending,.ct-sb-badge.pending,.lp-status-badge.pending-onboarding,.ct-sb-badge.pending-onboarding,.lp-status-badge.under-review,.ct-sb-badge.under-review,.lp-status-badge.unfilled,.ct-sb-badge.unfilled,.lp-status-badge.unpaid,.ct-sb-badge.unpaid,.lp-status-badge.waiting-client,.ct-sb-badge.waiting-client,.lp-status-badge.waiting-csm,.ct-sb-badge.waiting-csm,.lp-status-badge.waiting-for-approval,.ct-sb-badge.waiting-for-approval{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.lp-status-badge.follow-up,.ct-sb-badge.follow-up,.lp-status-badge.draft,.ct-sb-badge.draft,.lp-status-badge.in-progress,.ct-sb-badge.in-progress,.lp-status-badge.inprog,.ct-sb-badge.inprog,.lp-status-badge.on-hold,.ct-sb-badge.on-hold,.lp-status-badge.pending,.ct-sb-badge.pending,.lp-status-badge.pending-onboarding,.ct-sb-badge.pending-onboarding,.lp-status-badge.under-review,.ct-sb-badge.under-review,.lp-status-badge.unfilled,.ct-sb-badge.unfilled,.lp-status-badge.unpaid,.ct-sb-badge.unpaid,.lp-status-badge.waiting-client,.ct-sb-badge.waiting-client,.lp-status-badge.waiting-csm,.ct-sb-badge.waiting-csm,.lp-status-badge.waiting-for-approval,.ct-sb-badge.waiting-for-approval{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
 .lp-status-badge.absent,.ct-sb-badge.absent,.lp-status-badge.blocked,.ct-sb-badge.blocked,.lp-status-badge.canceled,.ct-sb-badge.canceled,.lp-status-badge.cancelled,.ct-sb-badge.cancelled,.lp-status-badge.disconnected,.ct-sb-badge.disconnected,.lp-status-badge.exception,.ct-sb-badge.exception,.lp-status-badge.expired,.ct-sb-badge.expired,.lp-status-badge.failed,.ct-sb-badge.failed,.lp-status-badge.inactive,.ct-sb-badge.inactive,.lp-status-badge.overdue,.ct-sb-badge.overdue,.lp-status-badge.rejected,.ct-sb-badge.rejected,.lp-status-badge.terminated,.ct-sb-badge.terminated,.lp-status-badge.unapproved,.ct-sb-badge.unapproved{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
 .lp-status-badge.created,.ct-sb-badge.created,.lp-status-badge.new,.ct-sb-badge.new,.lp-status-badge.open,.ct-sb-badge.open,.lp-status-badge.scheduled,.ct-sb-badge.scheduled,.lp-status-badge.updated,.ct-sb-badge.updated{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
 .lp-status-badge.archived,.ct-sb-badge.archived,.lp-status-badge.closed,.ct-sb-badge.closed{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
@@ -1537,7 +1537,9 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .ts-rp-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px}
 .ts-rp-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ts-rp-fld{display:flex;flex-direction:column;gap:5px;min-width:0}
-.ts-rp-fld span{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
+/* The FROM / TO label only - a descendant selector also caught the date
+   picker's own .cd-value span and drew the picked date as a grey caption. */
+.ts-rp-fld>span{font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
 .ts-rp-fld input{width:100%;min-width:0;height:34px;border:1px solid var(--border);border-radius:var(--r-control);padding:0 8px;font-family:inherit;font-size:12.5px;color:var(--navy);background:#fff;outline:none;box-sizing:border-box}
 .ts-rp-fld input:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(15,23,42,.08)}
 .ts-rp-presets{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
@@ -1800,6 +1802,16 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-ed-err.is-on{display:block}
 .ts-ed-note{font-size:10.5px;color:var(--gray);line-height:1.5}
 .ts-ed-note b{color:var(--navy)}
+/* Work Description: read in the day panel, written in its form. */
+.ts-sb-work{background:#f8fafc;border-radius:10px;padding:12px 14px}
+.ts-sb-work-title{display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:var(--ds-micro);font-weight:700;color:var(--gray);letter-spacing:.5px;text-transform:uppercase}
+.ts-sb-work-title svg{flex-shrink:0;color:#94a3b8}
+.ts-sb-work-text{font-size:13px;line-height:1.55;color:var(--navy);white-space:pre-wrap;overflow-wrap:anywhere}
+.ts-sb-work-text.is-empty{color:#94a3b8;font-style:italic}
+.ts-ed-desc{width:100%;min-height:96px;resize:vertical;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-control);background:#fff;font-family:inherit;font-size:13px;line-height:1.5;color:var(--navy);outline:none;transition:border-color var(--t-fast) var(--e-out)}
+.ts-ed-desc:focus{border-color:#94a3b8}
+.ts-ed-desc::placeholder{color:#b0b8c4}
+.ts-ed-count{align-self:flex-end;font-size:var(--ds-caption);color:#94a3b8}
 /* Why this day cannot be edited, in the place the Edit button would have been. */
 .ts-sb-lockmsg{
   display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:9px;
