@@ -57,6 +57,7 @@
   .company-sel svg.hdr-dd-chev,.user-sel svg.hdr-dd-chev{display:none}
   /* Header menus open inside the screen, not off its right edge. */
   .hdr-dd-panel{position:fixed;top:60px;left:12px;right:12px;min-width:0}
+  .notif-wrap .notif-pop{position:fixed;top:60px;left:12px;right:12px;width:auto;max-width:none}
   .hdr-dd-panel-right{left:12px;right:12px}
   /* Page actions beside the title keep their icon, drop their label. */
   .tb-cost-calc,.tb-opt-hol{font-size:0;gap:0;padding:0 9px}

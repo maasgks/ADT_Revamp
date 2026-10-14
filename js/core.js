@@ -550,6 +550,7 @@ function getPageTitle(pg){
      only ever means the mixed list or the type cards. */
   if(pg==='contracts'&&!ctLandingOpen&&ctTypeFilter!==CT_TYPE_ALL&&CT_TYPES[ctTypeFilter])return CT_TYPES[ctTypeFilter].label+' Contracts';
   if(pg==='contract-eor'||pg==='contract-peo')return 'New '+(pg==='contract-peo'?'PEO':'EOR')+' Contract';
+  if(pg==='apply-application')return 'Apply Application';
   return getPageMeta(pg).title;
 }
 function statusClass(v){return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'-');}
@@ -918,6 +919,12 @@ function sidebarSig(id,collapsed,activePg){
   return id+'|'+(collapsed?1:0)+'|'+activePg+'|'+Array.from(openDropdowns).sort().join(',');
 }
 let lastSidebarSig=null;
+/* The key a sidebar icon's hover animation is chosen by (css/sidebar-icons.css):
+   the page id for an item, "grp-" plus the group name for a dropdown parent. */
+function sbIcoKey(name,isGroup){
+  const k=String(name||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  return isGroup?'grp-'+k:k;
+}
 
 function buildSidebar(id,collapsed,activePg){
   const el=document.getElementById(id);if(!el)return;
@@ -951,13 +958,13 @@ function buildSidebar(id,collapsed,activePg){
       if(!collapsed){
         const parentBtn=document.createElement('button');parentBtn.type='button';
         parentBtn.className='sb-parent'+(isOpen?' open':'')+(hasActiveChild?' has-active':'');
-        parentBtn.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div><span>'+item.dropdown+'</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
+        parentBtn.innerHTML='<div class="sb-ico-wrap" data-ico="'+sbIcoKey(item.dropdown,true)+'">'+(item.icon||'')+'</div><span>'+item.dropdown+'</span><svg class="sb-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
         parentBtn.title=item.dropdown;
         const childrenDiv=document.createElement('div');childrenDiv.className='sb-children';childrenDiv.style.maxHeight=isOpen?'600px':'0';
         (item.children||[]).forEach(child=>{
           const cd=document.createElement('button');cd.type='button';
           cd.className='sb-item'+(child.id===activePg?' active':'');
-          cd.innerHTML='<div class="sb-ico-wrap">'+(child.icon||'')+'</div><span>'+child.label+'</span>';
+          cd.innerHTML='<div class="sb-ico-wrap" data-ico="'+sbIcoKey(child.id)+'">'+(child.icon||'')+'</div><span>'+child.label+'</span>';
           cd.title=child.label;
           cd.onclick=()=>{activeSidebarItem=child.id;navigatePage(child.id);};
           childrenDiv.appendChild(cd);
@@ -970,7 +977,7 @@ function buildSidebar(id,collapsed,activePg){
         el.appendChild(parentBtn);el.appendChild(childrenDiv);
       }else{
         const d=document.createElement('button');d.type='button';d.className='sb-parent'+(hasActiveChild?' has-active':'');
-        d.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div>';
+        d.innerHTML='<div class="sb-ico-wrap" data-ico="'+sbIcoKey(item.dropdown,true)+'">'+(item.icon||'')+'</div>';
         d.title=item.dropdown;
         // Opening a group from the collapsed rail expands the rail too, so it is
         // the same move as the toggle button and animates the same way.
@@ -982,7 +989,7 @@ function buildSidebar(id,collapsed,activePg){
     const d=document.createElement('button');
     d.type='button';
     d.className='sb-item'+(item.id===activePg?' active':'')+(item.id==='ai-executive'?' sb-item-ai':'');
-    d.innerHTML='<div class="sb-ico-wrap">'+(item.icon||'')+'</div><span>'+item.label+'</span>';
+    d.innerHTML='<div class="sb-ico-wrap" data-ico="'+sbIcoKey(item.id)+'">'+(item.icon||'')+'</div><span>'+item.label+'</span>';
     d.title=item.label;
     d.onclick=item.placeholder?()=>{}:()=>{activeSidebarItem=item.id;navigatePage(item.id);};
     el.appendChild(d);
@@ -1491,11 +1498,22 @@ const notifData=[
   {name:'Your contract is created',cid:'321',time:'5 hrs ago',pending:false},
   {name:'Your Invoice is ready for review',cid:'675',time:'1 day ago',pending:true}
 ];
-function toggleNotif(e){if(e)e.stopPropagation();notifOpen=!notifOpen;renderNotif();}
+function toggleNotif(e){if(e)e.stopPropagation();closeAllHdrDD();notifOpen=!notifOpen;renderNotif();}
 function notifMarkAllRead(){notifData.forEach(function(n){n.pending=false;});renderNotif();showToast('All notifications marked as read');}
 function notifRefresh(){renderNotif();showToast('Notifications refreshed','info');}
+/* The bell carries the unread count and says whether its panel is open, so
+   the panel always reads as belonging to the button under it. */
+function notifSyncBell(){
+  const n=notifData.filter(x=>x.pending).length;
+  const b=document.getElementById('notif-badge');
+  if(b)b.hidden=!n;
+  const t=document.getElementById('notif-trigger');
+  if(t){t.classList.toggle('is-open',!!notifOpen);t.setAttribute('aria-expanded',notifOpen?'true':'false');
+    t.title=n?'Notifications ('+n+' unread)':'Notifications';}
+}
 function renderNotif(){
   const el=document.getElementById('notif-pop');if(!el)return;
+  notifSyncBell();
   if(!notifOpen){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
   const list=notifShowUnread?notifData.filter(n=>n.pending):notifData;
@@ -1504,6 +1522,7 @@ function renderNotif(){
   <div class="np-list">${list.map(n=>`<div class="np-item"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span>':''}</div></div></div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>'}</div>`;
 }
 document.getElementById('notif-pop')?.addEventListener('click',e=>e.stopPropagation());
+notifSyncBell();
 document.addEventListener('click',e=>{if(notifOpen&&!e.target.closest('#notif-pop')&&!e.target.closest('#notif-trigger')){notifOpen=false;renderNotif();}});
 
 // ── HEADER DROPDOWNS ──
@@ -2647,6 +2666,19 @@ function sbSelSync(val,csid){
 }
 function csSelect(opt,val,csid){
   const drop=document.getElementById('csd-'+csid);if(!drop)return;
+  /* Opt-in un-pick: on a select marked data-csclear, choosing the option that
+     is already selected clears the field back to its placeholder. getCSValue
+     then reads '' and any hook is told the value is now ''. */
+  const cwrap=document.getElementById('csw-'+csid);
+  if(cwrap&&cwrap.dataset.csclear&&opt.classList.contains('cs-selected')){
+    sbMarkDirty(opt);
+    opt.classList.remove('cs-selected');
+    const t=document.querySelector(`[data-csid="${csid}"]`);
+    if(t){t.querySelector('.cs-value').textContent=t.dataset.csph||'Select';t.classList.add('cs-placeholder');t.classList.remove('cs-open');}
+    drop.classList.remove('cs-open');
+    const h=cwrap.dataset.cshook;if(h&&typeof window[h]==='function')window[h]('',csid);
+    return;
+  }
   sbMarkDirty(opt);
   drop.querySelectorAll('.cs-option').forEach(o=>o.classList.remove('cs-selected'));
   opt.classList.add('cs-selected');
@@ -2828,7 +2860,7 @@ function addListingItem(pg){if(pg==='contracts'){
   ctIntakeFrom='chooser';const j=aiJourneys.find(x=>x.id==='contract-creation');aiAssistedFlow=false;aiContractPrefill=null;aiCtAnimatedStage=-1;aiCtPendingEmpType='';aiCtJourneyEmployee=null;page=(j&&j.status==='Active')?'ai-contract-assistant':'contract-type-select';renderADTPage();}else if(pg==='teams'){startAddTeam();}else if(pg==='all-leaves'){startAddLeave();}else if(pg==='compliance'){complianceModalOpen=true;renderADTPage();}else if(pg==='rates-rules'){ratesRuleModalOpen=true;renderADTPage();}else if(pg==='contract-templates'){ctpModalOpen=true;renderADTPage();}else if(pg==='payheads'){startAddPayhead();}else if(pg==='holidays'){startAddHoliday();}else if(pg==='support-tickets'){openCreateTicket();}/* Direct, Global and the Employees tab all open the same four-step intake;
    the sub-tab decides which listing it lands in and which step-2 fields
    exist. See js/employee-add.js. */
-else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){if(typeof astView!=='undefined'&&astView==='types')startAddAstType();else startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
+else if(pg==='employees'||pg==='direct'||pg==='global'){startAddEmployee(pg==='global'||(pg==='employees'&&empSubTab==='global')?'ge':'de');}else if(pg==='payments'){startAddInvoice();}else if(pg==='payroll'){startAddPayRun();}else if(pg==='asset-allocation'){startAddAsset();}else if(pg==='it-access'){startAddItAccess();}else{addDemoMetaRow(pg);}}
 /* addDemoEmployee() and its name pool lived here: one button that invented a
    plausible record and inserted it. It is gone, not deprecated - the four-step
    intake in js/employee-add.js is the only way an employee is created now, so

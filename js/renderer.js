@@ -73,6 +73,7 @@ function renderPageContent(target){
   if(page==='at-timesheet-view'){el.innerHTML=buildMyTimesheetHTML(true);return;}
   if(page==='settings'){el.innerHTML=buildCompanySettingsHTML();return;}
   if(page==='my-profile'){el.innerHTML=buildMyProfileHTML();return;}
+  if(page==='apply-application'){el.innerHTML=buildApplyApplicationHTML();return;}
   if(page==='switch-entity'){el.innerHTML=buildSwitchEntityHTML();return;}
   if(page==='support-tickets'){el.innerHTML=buildTicketsPageHTML();return;}
   if(page==='chats'){el.innerHTML=buildChatsPageHTML();return;}
@@ -231,7 +232,7 @@ function renderADTPage(){
   // Show/hide + button in topbar based on current page
   const addBtn=document.getElementById('tb-page-add-btn');
   if(addBtn){
-    const noAddPages=['dashboard','leave-balance','cost-calculator','leave-policy-edit','team-add','employee-add','hr-docs','contract-type-select','contract-eor','contract-peo','contract-immigration','contract-contractor','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
+    const noAddPages=['dashboard','leave-balance','cost-calculator','leave-policy-edit','team-add','employee-add','hr-docs','contract-type-select','contract-eor','contract-peo','contract-immigration','contract-contractor','timesheet','my-timesheet','all-timesheet','at-timesheet-view','settings','my-profile','apply-application','chats','switch-entity','ai-executive','ai-journey-detail','ai-automate-form','ai-active-automation','ai-run-detail','ai-journey-run','ai-contract-assistant','ai-proposal-created','ai-proposal-waiting-approval','ai-employee-created','ai-contract-document','ai-contract-waiting-approval','ai-onboarding-run','ai-journey-complete','cfg-overview','cfg-systems','cfg-system-detail','cfg-system-add','cfg-data-foundation','cfg-model-detail','cfg-model-add','cfg-context-journey','cfg-journey-detail','cfg-agents'];
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){

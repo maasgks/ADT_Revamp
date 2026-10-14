@@ -317,6 +317,23 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 /* NOTIFICATION POPOVER */
 .notif-pop{position:absolute;top:52px;right:16px;width:380px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 40px rgba(15,23,42,.12);z-index:100;animation:fadeUp .2s ease;overflow:hidden}
 .notif-pop.hidden{display:none}
+/* Anchored to the bell that opens it, the same way the header dropdowns hang
+   off their triggers - not pinned to the far edge of the header. */
+.notif-wrap .notif-pop{top:calc(100% + 10px);right:-8px;max-width:calc(100vw - 24px);transform-origin:top right}
+.notif-wrap .np-list{max-height:min(380px,calc(100vh - 190px))}
+#notif-trigger{position:relative}
+#notif-trigger.is-open{background:var(--btn-ghost-bg);color:var(--btn-accent)}
+/* Unread marker: a dot, not a count. It sits on the bell's shoulder and is
+   ringed in the header's own white so it reads as cut out of the icon. */
+.tb-badge{position:absolute;top:7px;right:7px;width:7px;height:7px;box-sizing:content-box;border-radius:50%;
+  background:var(--st-bad-fg);border:2px solid var(--card);pointer-events:none}
+/* The bell swings once on hover, from the top where it hangs. */
+.tb-bell{transform-origin:50% 2px;transition:transform var(--t-fast,170ms) var(--e-out,ease)}
+#notif-trigger:hover .tb-bell{animation:tb-bell-ring .6s var(--e-out,ease) 1}
+@keyframes tb-bell-ring{0%,100%{transform:rotate(0)}20%{transform:rotate(14deg)}45%{transform:rotate(-10deg)}70%{transform:rotate(5deg)}}
+@media (prefers-reduced-motion:reduce){#notif-trigger:hover .tb-bell{animation:none}}
+#notif-trigger.is-open .tb-badge,#notif-trigger:hover .tb-badge{border-color:var(--btn-ghost-bg)}
+.tb-badge[hidden]{display:none}
 .np-head{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
 .np-title{font-size:15px;font-weight:700;color:var(--navy)}
 .np-actions{display:flex;align-items:center;gap:6px}

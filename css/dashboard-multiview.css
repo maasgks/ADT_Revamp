@@ -329,7 +329,7 @@
    that wraps. Lighter than an action card - a name and an icon, no line of
    description - because each is a door, not a task. The icon tile is the
    action card's, scaled down, so the two read as one family. */
-.hr-links{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0 0}
+.hr-links{display:flex;flex-wrap:wrap;gap:12px;margin:0 0 22px}
 .hr-link{display:inline-flex;align-items:center;gap:10px;height:46px;padding:0 16px 0 8px;
   background:var(--card);border:1px solid var(--border);border-radius:12px;cursor:pointer;
   font-family:inherit;font-size:var(--ds-title);font-weight:500;color:var(--navy);

@@ -209,8 +209,12 @@
 /* A plain menu: just the steps, as text rows on one even rhythm - no heading,
    no step icons, no rule under every row. Steps that can be taken now read in
    ink, the rest in grey. */
-.emp-act-menu{min-width:220px;padding:6px 0}
-.emp-act-menu .ct-act-item{padding:8px 14px;font-size:13px;border-bottom:none}
+/* Sized to its longest row, so the gap on the right matches the 16px on the
+   left - no wide empty tail after short lists like "Offboarding / Mark Inactive". */
+.emp-act-menu{min-width:0;width:max-content;max-width:calc(100vw - 32px);padding:6px 0}
+.emp-act-menu .ct-act-item{padding:8px 16px;font-size:13px;border-bottom:none;gap:16px;white-space:nowrap}
+/* Keep both sides even on hover too (motion.css nudges the left padding). */
+.emp-act-menu .ct-act-item:hover{padding-left:16px}
 .emp-act-item .emp-act-label{flex:1;min-width:0}
 .emp-act-item em{font-style:normal;font-size:10.5px;color:#94a3b8;font-weight:500;white-space:nowrap}
 .ct-act-item.wait,.ct-act-item.auto,.ct-act-item.skipped{color:#94a3b8;cursor:default}
@@ -266,7 +270,7 @@
 
 /* ── Employee Dashboard tracker ────────────────────────────────────────── */
 #emp-life-dash:empty{display:none}
-#emp-life-dash{margin-bottom:14px}
+#emp-life-dash{margin-bottom:22px}
 .emp-trk-status{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);font-weight:500}
 .emp-trk-top{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
 .emp-trk-pct{font-size:28px;font-weight:700;color:var(--navy);letter-spacing:-.5px;line-height:1}

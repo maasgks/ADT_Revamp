@@ -18,6 +18,7 @@
      on top of the finished component set; neither redefines a colour or a
      size, so order only matters for the transitions they layer on. -->
 <link rel="stylesheet" href="css/motion.css">
+<link rel="stylesheet" href="css/sidebar-icons.css">
 <link rel="stylesheet" href="css/quick-actions.css">
 <!-- The timesheet's export drawer. Additive: it defines only .tsx-* selectors
      and reuses the shared tokens, so it can load anywhere after main.css. -->
@@ -52,9 +53,11 @@
      row-menu rules it extends. -->
 <link rel="stylesheet" href="css/employee-lifecycle.css">
 <link rel="stylesheet" href="css/announcements.css">
+<link rel="stylesheet" href="css/dash-preview.css">
 <link rel="stylesheet" href="css/leave-balance.css">
 <link rel="stylesheet" href="css/logs-view.css">
 <link rel="stylesheet" href="css/form-page.css">
+<link rel="stylesheet" href="css/apply-application.css">
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
 <link rel="stylesheet" href="css/timesheet-calendar.css">
@@ -79,8 +82,6 @@
       <button class="tb-opt-hol" id="tb-opt-hol-btn" style="display:none" onclick="openOptionalHolidays()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="1.6" fill="currentColor" stroke="none"/></svg> Calendar</button>
     </div>
     <div class="topbar-right" style="position:relative">
-      <button class="tb-icon" onclick="openSearch()" title="Search (Ctrl+K)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
-      <button class="tb-icon" onclick="toggleNotif(event)" id="notif-trigger"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button>
       <!-- Logged-in role: who is working decides which lifecycle steps they can
            record (core.js setAppRole). Switchable here to see each role's view. -->
       <div class="hdr-dd-wrap" id="role-dd-wrap">
@@ -99,6 +100,11 @@
           <button class="hdr-dd-item role-dd-item" data-role="Reporting Manager" onclick="setAppRole('Reporting Manager')">Reporting Manager<span>KT / Handover</span></button>
           <button class="hdr-dd-item role-dd-item" data-role="Employee" onclick="setAppRole('Employee')">Employee<span>Own leave: cancel</span></button>
         </div>
+      </div>
+      <button class="tb-icon" onclick="openSearch()" title="Search (Ctrl+K)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button>
+      <div class="hdr-dd-wrap notif-wrap" id="notif-wrap">
+        <button class="tb-icon" onclick="toggleNotif(event)" id="notif-trigger" title="Notifications" aria-haspopup="true" aria-expanded="false"><svg class="tb-bell" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4.5 1.4 6 2.74 7.33A1 1 0 0 1 20 17H4a1 1 0 0 1-.74-1.67C4.6 14 6 12.5 6 8"/><path d="M10.27 21a2 2 0 0 0 3.46 0"/></svg><span class="tb-badge" id="notif-badge" hidden></span></button>
+        <div id="notif-pop" class="notif-pop hidden"></div>
       </div>
       <!-- Entity dropdown -->
       <div class="hdr-dd-wrap" id="entity-dd-wrap">
@@ -142,10 +148,31 @@
           </div>
           <div class="hdr-dd-info-row"><span class="hdr-dd-info-label">Role</span><span class="hdr-dd-info-val">Admin</span></div>
           <div class="hdr-dd-info-row"><span class="hdr-dd-info-label">Last login</span><span class="hdr-dd-info-val">Today, 9:41 AM</span></div>
+          <!-- Demo switches for the employee dashboard's states - see
+               js/dash-preview.js. Each row is one switch button. -->
+          <div class="dp-group" onclick="event.stopPropagation()">
+            <div class="dp-head"><span class="dp-head-title">Dashboard preview</span><span class="dp-head-tag">Demo</span></div>
+            <button type="button" class="dp-row is-on" id="dp-tracker" role="switch" aria-checked="true" onclick="dpToggle('tracker',event)">
+              <span class="dp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.33 2q2 0 3.67-.82a.5.5 0 0 1 .7.46v9.73a1 1 0 0 1-.5.86A7 7 0 0 1 16 15c-2.33 0-4.33-2-7.33-2q-2.06 0-3.67.82"/></svg></span>
+              <span class="dp-txt"><span class="dp-lbl">Onboarding tracker</span>
+                <span class="dp-sub"><span class="dp-when-on"><b>In progress</b> · on dashboard</span><span class="dp-when-off"><b>Completed</b> · tracker hidden</span></span></span>
+              <span class="dp-switch" aria-hidden="true"><span class="dp-knob"></span></span>
+            </button>
+            <button type="button" class="dp-row is-on" id="dp-announcements" role="switch" aria-checked="true" onclick="dpToggle('announcements',event)">
+              <span class="dp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
+              <span class="dp-txt"><span class="dp-lbl">Announcements</span>
+                <span class="dp-sub"><span class="dp-when-on"><b>Posts</b> from HR &amp; manager</span><span class="dp-when-off"><b>None</b> · all caught up</span></span></span>
+              <span class="dp-switch" aria-hidden="true"><span class="dp-knob"></span></span>
+            </button>
+          </div>
           <div class="hdr-dd-divider"></div>
           <button class="hdr-dd-item" onclick="closeAllHdrDD();navigatePage('my-profile')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             My Profile
+          </button>
+          <button class="hdr-dd-item" onclick="closeAllHdrDD();openApplyApplication()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            Apply Application
           </button>
           <button class="hdr-dd-item" onclick="closeAllHdrDD();raiseTicketFromHelp()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -158,7 +185,6 @@
           </button>
         </div>
       </div>
-      <div id="notif-pop" class="notif-pop hidden"></div>
     </div>
   </div>
   <div class="content-area">
@@ -190,6 +216,19 @@
           <div class="hr-header-desc">Welcome back, John Doe. Here's your workspace overview.</div>
         </div>
 
+        <!-- Quick links: where an employee goes next. Each opens the module it
+             names; Expense and Sign out have no module behind them yet, so they
+             say so rather than doing nothing. -->
+        <div class="hr-links">
+          <button type="button" class="hr-link" onclick="navigatePage('my-profile',true)"><span class="hr-link-ico" data-ql="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>My Profile</button>
+          <button type="button" class="hr-link" onclick="navigatePage('leave-policies',true)"><span class="hr-link-ico" data-ql="policies"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg></span>Policies</button>
+          <button type="button" class="hr-link" onclick="openOptionalHolidays()"><span class="hr-link-ico" data-ql="calendar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Calendar</button>
+          <button type="button" class="hr-link" onclick="navigatePage('all-leaves',true)"><span class="hr-link-ico" data-ql="leaves"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>Leaves &amp; Application</button>
+          <button type="button" class="hr-link" onclick="navigatePage('holidays',true)"><span class="hr-link-ico" data-ql="holidays"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35z"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></svg></span>Holidays</button>
+          <button type="button" class="hr-link" onclick="showToast('Expenses','info','Expense claims are not available yet.')"><span class="hr-link-ico" data-ql="expense"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M14.5 8.5c-.4-.9-1.4-1.5-2.5-1.5-1.4 0-2.5.9-2.5 2s1.1 1.7 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2c-1.1 0-2.1-.6-2.5-1.5"/><line x1="12" y1="5.5" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="18.5"/></svg></span>Expense</button>
+          <button type="button" class="hr-link" onclick="showToast('Sign out','info','Signing out is not connected in this prototype.')"><span class="hr-link-ico" data-ql="signout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Signout</button>
+        </div>
+
         <!-- Onboarding / Offboarding tracker. Filled from the employee's own
              record by empDashRender() (js/employee-lifecycle.js); empty while
              no lifecycle is running, which hides it. -->
@@ -208,30 +247,16 @@
              Admin, Ops and Entity Owner, and Latest Payslip here, which is the
              only payroll fact an employee acts on.
 
-             This row is 2 tiles + a wide attendance card. It used to buy that
-             width with its own column count (repeat(2,1fr) 1.6fr), which made
-             its tiles 324px against every other dashboard's 289px. It now sits
-             in the standard 4-col track and the attendance card spans two
-             columns, so the tiles measure the same here as everywhere else and
-             the row still ends flush. -->
-        <div class="hr-band"><span class="hr-band-title">Key Metrics</span><span class="hr-band-rule"></span></div>
-        <div class="hr-stat-grid">
-          <div class="hr-stat-card is-link" role="button" tabindex="0">
-            <div class="hr-stat-head">
-              <div class="hr-stat-label">Leave Balance</div>
-              <span class="hr-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
-            </div>
-            <div class="hr-stat-number">12</div>
-            <div class="hr-stat-sub green">&#x2191; 3 days remaining this month</div>
-          </div>
-          <div class="hr-stat-card is-link" role="button" tabindex="0">
-            <div class="hr-stat-head">
-              <div class="hr-stat-label">Latest Payslip</div>
-              <span class="hr-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-            </div>
-            <div class="hr-stat-number">Apr</div>
-            <div class="hr-stat-sub">April 2025 available</div>
-          </div>
+             The grid stays on the standard track, so the two tiles measure the
+             same here as on every other dashboard; see the placement note in
+             css/announcements.css. -->
+        <div class="hr-band"><span class="hr-band-title">Overview</span><span class="hr-band-rule"></span><span class="hr-band-meta" id="emp-today"></span></div>
+        <!-- Announcements take the left half, two rows tall; Attendance sits top-right
+             and Leave Balance + Latest Payslip share the row under it. The panel is
+             filled by annRender() (js/announcements.js) and scrolls inside its cell,
+             so the row height is set by the cards beside it, not by the posts. -->
+        <div class="hr-stat-grid emp-metrics">
+          <div class="emp-ann-cell" id="emp-ann-dash"></div>
           <!-- ATTENDANCE — see the "ATTENDANCE CLOCK" blocks in main.css and renderer.js.
                Three resting states (idle / clocked in / done for the day) share one
                card, with an animation stage layered over them that only exists while
@@ -309,24 +334,23 @@
             </div>
             <p class="sr-only" id="att-live" role="status" aria-live="polite"></p>
           </div>
+          <div class="hr-stat-card is-link" role="button" tabindex="0">
+            <div class="hr-stat-head">
+              <div class="hr-stat-label">Leave Balance</div>
+              <span class="hr-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+            </div>
+            <div class="hr-stat-number">12</div>
+            <div class="hr-stat-sub green">&#x2191; 3 days remaining this month</div>
+          </div>
+          <div class="hr-stat-card is-link" role="button" tabindex="0">
+            <div class="hr-stat-head">
+              <div class="hr-stat-label">Latest Payslip</div>
+              <span class="hr-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            </div>
+            <div class="hr-stat-number">Apr</div>
+            <div class="hr-stat-sub">April 2025 available</div>
+          </div>
         </div>
-
-        <!-- Quick links: where an employee goes next. Each opens the module it
-             names; Expense and Sign out have no module behind them yet, so they
-             say so rather than doing nothing. -->
-        <div class="hr-links">
-          <button type="button" class="hr-link" onclick="navigatePage('my-profile',true)"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>My Profile</button>
-          <button type="button" class="hr-link" onclick="navigatePage('leave-policies',true)"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="16" y2="7"/><line x1="9" y1="11" x2="14" y2="11"/></svg></span>Policies</button>
-          <button type="button" class="hr-link" onclick="openOptionalHolidays()"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Calendar</button>
-          <button type="button" class="hr-link" onclick="navigatePage('all-leaves',true)"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></span>Leaves &amp; Application</button>
-          <button type="button" class="hr-link" onclick="navigatePage('holidays',true)"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/><path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/><path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35z"/><path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></svg></span>Holidays</button>
-          <button type="button" class="hr-link" onclick="showToast('Expenses','info','Expense claims are not available yet.')"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M14.5 8.5c-.4-.9-1.4-1.5-2.5-1.5-1.4 0-2.5.9-2.5 2s1.1 1.7 2.5 2 2.5.9 2.5 2-1.1 2-2.5 2c-1.1 0-2.1-.6-2.5-1.5"/><line x1="12" y1="5.5" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="18.5"/></svg></span>Expense</button>
-          <button type="button" class="hr-link" onclick="showToast('Sign out','info','Signing out is not connected in this prototype.')"><span class="hr-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>Signout</button>
-        </div>
-
-        <!-- Announcements from HR and the manager. Filled by annRender()
-             (js/announcements.js) on every visit to the dashboard. -->
-        <div id="emp-ann-dash"></div>
 
         <!-- Action Required -->
         <div class="hr-section" style="margin-bottom:14px">
@@ -2257,6 +2281,7 @@
      both employee Logs tabs through renderEmpLogsTab(). -->
 <script src="js/employee-lifecycle.js"></script>
 <script src="js/announcements.js"></script>
+<script src="js/dash-preview.js"></script>
 <script src="js/leave-balance.js"></script>
 <!-- After core.js for apCS/apCD and teamsData. The Create New Employee popup;
      the employee listings in pages.js paint it with buildAddEmployeeModalHTML(). -->
@@ -2278,6 +2303,7 @@
 <!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
 <script src="js/day-status.js"></script>
 <script src="js/pages.js"></script>
+<script src="js/apply-application.js"></script>
 <!-- After pages.js (it calls apCD, showToast and aiGenCommercial) and before
      renderer.js, which dispatches contract-immigration and contract-contractor
      to the two builders in here. -->

@@ -742,7 +742,7 @@ function empDocRejectFrom(pk,docId){
 var empResOpen={};
 function empAssetCard(a){
   var key='a'+a.id,open=!!empResOpen[key];
-  var pairs=[['Asset Category',a.category],['Asset Type',a.type],['Asset ID / Code',a.code],['Serial Number',a.serial],
+  var pairs=[['Asset Category',a.category],['Asset ID / Code',a.code],['Serial Number',a.serial],
     ['Brand / Model',[a.brand,a.model].filter(Boolean).join(' · ')],['Assigned Date',cdLabel(a.assignedOn)],
     ['Location',a.branch],['Condition',a.condition]];
   return '<div class="emp-res-card is-line is-exp'+(open?' is-open':'')+'">'
@@ -1564,7 +1564,6 @@ function empGoAllAssets(name){
   empSetReturnFor(name);
   astDeptF='';astBranchF='';astCatF='';astStatusF='';astSelectedId=null;
   if(typeof astEmpF!=='undefined')astEmpF='';
-  if(typeof astCondF!=='undefined')astCondF='';
   astQ=name;
   empNavKeep=true;navigatePage('asset-allocation');
 }
@@ -1680,25 +1679,48 @@ function empActionRowsHTML(emp){
       +'<td>'+(r.btn||'')+'</td></tr>';
   }).join('');
 }
+/* Demo switch in the profile menu (js/dash-preview.js): off shows the
+   dashboard as it is once the lifecycle has finished - no tracker, and no
+   lifecycle rows in Action Required. */
+var empTrackerShow=true;
 function empDashRender(root){
   var scope=(root||document);
   var host=scope.querySelector?scope.querySelector('#emp-life-dash'):null;
   if(!host)return;
-  host.innerHTML=empDashTrackerHTML();
+  /* The clip wrapper is what lets the tracker collapse smoothly: the host
+     animates its one grid row from 1fr to 0fr and the wrapper (no padding of
+     its own) shrinks to nothing with it. */
+  var html=empDashTrackerHTML();
+  host.innerHTML=html?'<div class="emp-life-clip">'+html+'</div>':'';
+  host.classList.toggle('is-off',!empTrackerShow);
   var emp=empSelfRec();
   var view=host.closest('#employee-view');
   var desc=view&&view.querySelector('.hr-header-desc');
   if(desc&&emp)desc.textContent='Welcome back, '+emp.name.split(' ')[0]+'. Here’s your workspace overview.';
-  /* Action Required: the employee's lifecycle rows sit above the seeded ones. */
-  if(view&&emp){
-    var sec=Array.prototype.find.call(view.querySelectorAll('.hr-section'),function(s){
-      var t=s.querySelector('.hr-section-title');return t&&t.textContent.trim()==='Action Required';});
-    var tb=sec&&sec.querySelector('tbody');
-    if(tb){
-      tb.querySelectorAll('tr[data-emp-life]').forEach(function(r){r.remove();});
-      tb.insertAdjacentHTML('afterbegin',empActionRowsHTML(emp));
-    }
+  empDashActionRows(view,false);
+}
+/* Action Required: the employee's lifecycle rows sit above the seeded ones,
+   while the lifecycle is running. `animate` fades them in or out when the
+   demo switch flips; a plain render just places them. */
+function empDashActionRows(view,animate){
+  var emp=empSelfRec();
+  if(!view||!emp)return;
+  var sec=Array.prototype.find.call(view.querySelectorAll('.hr-section'),function(s){
+    var t=s.querySelector('.hr-section-title');return t&&t.textContent.trim()==='Action Required';});
+  var tb=sec&&sec.querySelector('tbody');
+  if(!tb)return;
+  var old=tb.querySelectorAll('tr[data-emp-life]');
+  if(!empTrackerShow){
+    if(!animate){old.forEach(function(r){r.remove();});return;}
+    old.forEach(function(r){r.classList.add('dp-row-out');});
+    setTimeout(function(){old.forEach(function(r){r.remove();});},260);
+    return;
   }
+  old.forEach(function(r){r.remove();});
+  tb.insertAdjacentHTML('afterbegin',empActionRowsHTML(emp));
+  if(animate)tb.querySelectorAll('tr[data-emp-life]').forEach(function(r,i){
+    r.classList.add('dp-row-in');r.style.animationDelay=(120+i*45)+'ms';
+  });
 }
 function empGoRequestedDocs(){
   empProfPersona={kind:empSelf.kind,id:empSelf.id};
