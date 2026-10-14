@@ -38,6 +38,15 @@ function annAgo(iso){
   if(days<31){const w=Math.floor(days/7);return w+' week'+(w===1?'':'s')+' ago';}
   return cdLabel(iso.slice(0,10));
 }
+/* A soft tint per person, worked out from the name - nobody assigns or keeps
+   track of colours. The same name always lands on the same tint, so a poster
+   is recognisable at a glance on the card and in the drawer alike. Six muted
+   tints, all light, so the avatars stay quiet next to the status colours. */
+const ANN_TONES=6;
+function annTone(name){
+  let h=0;String(name||'').split('').forEach(function(c){h=(h*31+c.charCodeAt(0))>>>0;});
+  return h%ANN_TONES;
+}
 function annInitials(name){
   return String(name||'').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0);}).join('').toUpperCase();
 }
@@ -66,8 +75,8 @@ function annSorted(){
     .sort(function(a,b){return (Date.parse(b.when)||0)-(Date.parse(a.when)||0);});
 }
 
-/* The card shows the newest few, each on three lines: the title, the first
-   line of what was said, then who said it and when. Clicking one opens the
+/* The card shows the newest few, each on two lines: the title, then who
+   said it and when. The text itself is read in the drawer. Clicking one opens the
    reading drawer at that post; "View all" opens it at the top.
 
    NO COLOUR PER PERSON. Every avatar is the same neutral chip; who someone is
@@ -89,10 +98,9 @@ function annListHTML(list){
   return '<ul class="ann-list">'+list.slice(0,ANN_VISIBLE).map(function(a){
     const from=a.from==='manager'?'manager':'hr';
     return '<li><button type="button" class="ann-row'+(a.isNew?' is-new':'')+'" onclick="annOpen('+annId(a)+')">'
-      +'<span class="ann-av" aria-hidden="true">'+sbEsc(annInitials(a.author))+'</span>'
+      +'<span class="ann-av tone-'+annTone(a.author)+'" aria-hidden="true">'+sbEsc(annInitials(a.author))+'</span>'
       +'<span class="ann-body">'
         +'<span class="ann-head">'+annMarks(a)+'<span class="ann-title">'+sbEsc(a.title)+'</span></span>'
-        +'<span class="ann-text">'+sbEsc(a.text)+'</span>'
         +'<span class="ann-meta"><b>'+sbEsc(a.author)+'</b><span>'+ANN_ROLE[from]+'</span>'
           +'<span class="ann-dot" aria-hidden="true"></span><time datetime="'+sbEsc(a.when)+'">'+annAgo(a.when)+'</time></span>'
       +'</span>'
@@ -203,7 +211,7 @@ function annCardHTML(a,i){
   const full=isNaN(d)?'':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
   return '<article class="ann-card'+(id===annFocus?' is-focus':'')+(a.pinned?' is-pinned':'')+'" style="animation-delay:'+Math.min(i,6)*45+'ms">'
     +'<div class="ann-card-top">'
-      +'<span class="ann-av" aria-hidden="true">'+sbEsc(annInitials(a.author))+'</span>'
+      +'<span class="ann-av tone-'+annTone(a.author)+'" aria-hidden="true">'+sbEsc(annInitials(a.author))+'</span>'
       +'<div class="ann-card-who"><b>'+sbEsc(a.author)+'</b><span>'+ANN_ROLE[annFromKey(a)]+'</span></div>'
       +'<time class="ann-card-when" datetime="'+sbEsc(a.when)+'">'+annAgo(a.when)+'</time>'
     +'</div>'
