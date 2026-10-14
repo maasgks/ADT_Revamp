@@ -153,56 +153,56 @@ let AST_CATEGORIES=['Laptop','Monitor','Mobile','Accessories','Furniture','Netwo
 let AST_VENDORS=['Dell India','Apple Store','HP World','Logitech Distributors','Croma Business'];
 
 const assetsData=[
-  {id:1,name:'Laptop Dell',category:'Laptop',type:'Hardware',code:'LT-001',serial:'SN123456',brand:'Dell',model:'Latitude 7420',
+  {id:1,name:'Laptop Dell',category:'Laptop',type:'Hardware',code:'LT-001',serial:'NFA123456',brand:'Dell',model:'Latitude 7420',
    assignedTo:'Pallavi Parate',assignedOn:'2026-02-10',branch:'Hyderabad',status:'Assigned',condition:'Good',
    purchaseDate:'2025-12-18',cost:78000,vendor:'Dell India',warrantyStart:'2025-12-18',warrantyEnd:'2028-12-17',
    createdBy:'Shaun Test1',createdAt:'18 Dec 2025 | 11:20:00 AM',
    history:[{employee:'Pallavi Parate',from:'2026-02-10',to:'',condition:'New'}]},
-  {id:2,name:'HP Monitor',category:'Monitor',type:'Peripheral',code:'MN-002',serial:'SN654321',brand:'HP',model:'E24 G5',
+  {id:2,name:'HP Monitor',category:'Monitor',type:'Peripheral',code:'MN-002',serial:'NFA654321',brand:'HP',model:'E24 G5',
    assignedTo:'Rajan Kumar',assignedOn:'2026-03-04',branch:'Punjab',status:'Assigned',condition:'New',
    purchaseDate:'2026-02-26',cost:16500,vendor:'HP World',warrantyStart:'2026-02-26',warrantyEnd:'2029-02-25',
    createdBy:'Shaun Test1',createdAt:'26 Feb 2026 | 03:05:00 PM',
    history:[{employee:'Rajan Kumar',from:'2026-03-04',to:'',condition:'New'}]},
-  {id:3,name:'Wireless Mouse',category:'Accessories',type:'Peripheral',code:'AC-003',serial:'SN789456',brand:'Logitech',model:'M650',
+  {id:3,name:'Wireless Mouse',category:'Accessories',type:'Peripheral',code:'AC-003',serial:'NFA789456',brand:'Logitech',model:'M650',
    assignedTo:'',assignedOn:'',branch:'Mumbai',status:'Available',condition:'Good',
    purchaseDate:'2025-08-12',cost:2400,vendor:'Logitech Distributors',warrantyStart:'2025-08-12',warrantyEnd:'2026-11-11',
    createdBy:'Pallavi Parate',createdAt:'12 Aug 2025 | 10:00:00 AM',
    history:[{employee:'Anika Shah',from:'2025-08-20',to:'2026-07-30',condition:'Good'}]},
-  {id:4,name:'iPhone 14',category:'Mobile',type:'Hardware',code:'MB-004',serial:'SN321654',brand:'Apple',model:'iPhone 14 128GB',
+  {id:4,name:'iPhone 14',category:'Mobile',type:'Hardware',code:'MB-004',serial:'NFA321654',brand:'Apple',model:'iPhone 14 128GB',
    assignedTo:'',assignedOn:'',branch:'Delhi',status:'In Repair',condition:'Fair',
    purchaseDate:'2024-11-05',cost:69900,vendor:'Apple Store',warrantyStart:'2024-11-05',warrantyEnd:'2025-11-04',
    createdBy:'Shaun Test1',createdAt:'05 Nov 2024 | 04:40:00 PM',
    history:[{employee:'Rahul Mehta',from:'2024-11-10',to:'2026-09-18',condition:'Fair'}]},
-  {id:5,name:'Keyboard',category:'Accessories',type:'Peripheral',code:'AC-005',serial:'SN147852',brand:'Logitech',model:'K380',
+  {id:5,name:'Keyboard',category:'Accessories',type:'Peripheral',code:'AC-005',serial:'NFA147852',brand:'Logitech',model:'K380',
    assignedTo:'Dev Kulkarni',assignedOn:'2026-05-02',branch:'Bangalore',status:'Assigned',condition:'Good',
    purchaseDate:'2026-04-20',cost:3200,vendor:'Logitech Distributors',warrantyStart:'2026-04-20',warrantyEnd:'2027-04-19',
    createdBy:'Pallavi Parate',createdAt:'20 Apr 2026 | 12:15:00 PM',
    history:[{employee:'Dev Kulkarni',from:'2026-05-02',to:'',condition:'New'}]},
-  {id:6,name:'MacBook Pro 14',category:'Laptop',type:'Hardware',code:'LT-006',serial:'SN963852',brand:'Apple',model:'M3 Pro 18GB',
+  {id:6,name:'MacBook Pro 14',category:'Laptop',type:'Hardware',code:'LT-006',serial:'NFA963852',brand:'Apple',model:'M3 Pro 18GB',
    assignedTo:'Anika Shah',assignedOn:'2026-07-31',branch:'Mumbai',status:'Assigned',condition:'New',
    purchaseDate:'2026-07-22',cost:199900,vendor:'Apple Store',warrantyStart:'2026-07-22',warrantyEnd:'2027-07-21',
    createdBy:'Shaun Test1',createdAt:'22 Jul 2026 | 09:45:00 AM',
    history:[{employee:'Anika Shah',from:'2026-07-31',to:'',condition:'New'}]},
-  {id:7,name:'Dell UltraSharp 27',category:'Monitor',type:'Peripheral',code:'MN-007',serial:'SN258147',brand:'Dell',model:'U2723QE',
+  {id:7,name:'Dell UltraSharp 27',category:'Monitor',type:'Peripheral',code:'MN-007',serial:'NFA258147',brand:'Dell',model:'U2723QE',
    assignedTo:'',assignedOn:'',branch:'Hyderabad',status:'Returned',condition:'Good',
    purchaseDate:'2025-03-15',cost:42000,vendor:'Dell India',warrantyStart:'2025-03-15',warrantyEnd:'2028-03-14',
    createdBy:'Pallavi Parate',createdAt:'15 Mar 2025 | 02:30:00 PM',
    history:[{employee:'Neha Sharma',from:'2025-03-20',to:'2026-09-30',condition:'Good'}]},
-  {id:8,name:'Office Chair',category:'Furniture',type:'Furniture',code:'FN-008',serial:'',brand:'Featherlite',model:'Astra Mesh',
+  {id:8,name:'Office Chair',category:'Furniture',type:'Furniture',code:'FN-008',serial:'NFA000439',brand:'Featherlite',model:'Astra Mesh',
    assignedTo:'Shaun Test1',assignedOn:'2026-01-12',branch:'Hyderabad',status:'Assigned',condition:'Good',
    purchaseDate:'2026-01-08',cost:14500,vendor:'Croma Business',warrantyStart:'2026-01-08',warrantyEnd:'2027-01-07',
    createdBy:'Shaun Test1',createdAt:'08 Jan 2026 | 10:10:00 AM',
    history:[{employee:'Shaun Test1',from:'2026-01-12',to:'',condition:'New'}]},
-  {id:9,name:'Wi-Fi Router',category:'Networking',type:'Network Device',code:'NW-009',serial:'SN741963',brand:'TP-Link',model:'Archer AX55',
+  {id:9,name:'Wi-Fi Router',category:'Networking',type:'Network Device',code:'NW-009',serial:'NFA741963',brand:'TP-Link',model:'Archer AX55',
    assignedTo:'',assignedOn:'',branch:'Bangalore',status:'Available',condition:'New',
    purchaseDate:'2026-09-02',cost:6800,vendor:'Croma Business',warrantyStart:'2026-09-02',warrantyEnd:'2029-09-01',
    createdBy:'Shaun Test1',createdAt:'02 Sep 2026 | 05:20:00 PM',history:[]},
-  {id:10,name:'ThinkPad E14',category:'Laptop',type:'Hardware',code:'LT-010',serial:'SN852741',brand:'Lenovo',model:'E14 Gen 5',
+  {id:10,name:'ThinkPad E14',category:'Laptop',type:'Hardware',code:'LT-010',serial:'NFA852741',brand:'Lenovo',model:'E14 Gen 5',
    assignedTo:'Aman Singh',assignedOn:'2026-06-15',branch:'Bangalore',status:'Assigned',condition:'Good',
    purchaseDate:'2026-06-01',cost:64000,vendor:'Croma Business',warrantyStart:'2026-06-01',warrantyEnd:'2027-05-31',
    createdBy:'Pallavi Parate',createdAt:'01 Jun 2026 | 11:00:00 AM',
    history:[{employee:'Aman Singh',from:'2026-06-15',to:'',condition:'New'}]},
-  {id:11,name:'Samsung Galaxy S23',category:'Mobile',type:'Hardware',code:'MB-011',serial:'SN369258',brand:'Samsung',model:'S23 256GB',
+  {id:11,name:'Samsung Galaxy S23',category:'Mobile',type:'Hardware',code:'MB-011',serial:'NFA369258',brand:'Samsung',model:'S23 256GB',
    assignedTo:'',assignedOn:'',branch:'Mumbai',status:'In Repair',condition:'Damaged',
    purchaseDate:'2025-05-10',cost:74999,vendor:'Croma Business',warrantyStart:'2025-05-10',warrantyEnd:'2026-05-09',
    createdBy:'Shaun Test1',createdAt:'10 May 2025 | 01:45:00 PM',
@@ -238,7 +238,7 @@ function astDept(a){const e=axEmp(a.assignedTo);return e?e.dept:'';}
 
 // ── State ──
 let astSelectedId=null,astTab='basic-details';
-let astDeptF='',astBranchF='',astCatF='',astStatusF='',astQ='',astEmpF='';
+let astDeptF='',astBranchF='',astCatF='',astStatusF='',astEmpF='';
 let astDraft=null,astEditId=null,astAddOpen='',astModalOpen=false,astDraftOrig='';
 let astLogAssignee='';   // the employee picked in the Logs form, when moving to Assigned
 
@@ -258,10 +258,98 @@ function applyAstFilters(){
   astEmpF=e&&e!=='All Employees'?e:'';
   astBranchF=b&&b!=='All Branches'?b:'';
   astStatusF=s&&s!=='All Statuses'?s:'';
-  astQ=lpSearchValue('ast-f-q');
   astSelectedId=null;renderADTPage();
 }
-function resetAstFilters(){astDeptF='';astBranchF='';astCatF='';astStatusF='';astQ='';astEmpF='';astSelectedId=null;renderADTPage();}
+/* ── SEARCH AS A TYPE-AHEAD ──
+   The search box does not filter the table. As the user types, matching
+   assets drop down under the box; picking one opens its detail panel. The
+   table, its filters and its paging stay exactly as they were.
+
+   Matched against name, Key ID, barcode, code, category, holder and branch.
+   Up / Down move the highlight, Enter opens it, Escape closes the list. */
+const AST_SUGGEST_MAX=6;
+let astSugHits=[],astSugIdx=0;
+function astSugEsc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+/* The matched part of a value, marked - escaped first, so a query can never
+   inject markup. */
+function astSugMark(v,q){
+  const s=String(v==null?'':v),i=q?s.toLowerCase().indexOf(q):-1;
+  if(i<0)return astSugEsc(s);
+  return astSugEsc(s.slice(0,i))+'<mark>'+astSugEsc(s.slice(i,i+q.length))+'</mark>'+astSugEsc(s.slice(i+q.length));
+}
+function astSuggest(q){
+  const box=document.getElementById('ast-f-q');if(!box)return;
+  q=String(q||'').trim().toLowerCase();
+  if(!q){astSugClose();return;}
+  const fields=function(a){return [a.name,String(a.keyId),a.serial,a.code,a.category,a.assignedTo,a.branch];};
+  const all=assetsData.filter(function(a){return fields(a).some(function(f){return f&&String(f).toLowerCase().indexOf(q)>=0;});});
+  /* Name matches first - that is what most people type. */
+  all.sort(function(x,y){return (y.name.toLowerCase().indexOf(q)>=0?1:0)-(x.name.toLowerCase().indexOf(q)>=0?1:0);});
+  astSugHits=all.slice(0,AST_SUGGEST_MAX);astSugIdx=0;
+  let pop=document.getElementById('ast-suggest');
+  if(!pop){
+    pop=document.createElement('div');pop.id='ast-suggest';pop.className='ax-suggest';pop.setAttribute('role','listbox');
+    document.body.appendChild(pop);
+  }
+  pop.innerHTML=astSugHits.length
+    ?astSugHits.map(function(a,i){
+        return '<button type="button" role="option" class="ax-sug-row'+(i===0?' is-on':'')+'" data-i="'+i+'"'
+          +' onmousedown="event.preventDefault()" onmouseenter="astSugHover('+i+')" onclick="astSugPick('+i+')">'
+          +'<span class="ax-sug-main"><span class="ax-sug-name">'+astSugMark(a.name,q)+'</span>'
+          +'<span class="ax-sug-sub">Key ID: '+astSugMark(a.keyId,q)+(a.serial?' · '+astSugMark(a.serial,q):'')+' · '+astSugMark(a.category,q)+'</span></span>'
+          +'<span class="ax-sug-side"><span class="ax-sug-who">'+(a.assignedTo?astSugMark(a.assignedTo,q):'Unassigned')+'</span>'
+            +axBadge(statusTone(a.status),a.status)+'</span>'
+        +'</button>';
+      }).join('')
+      +'<div class="ax-sug-foot">'+(all.length>AST_SUGGEST_MAX?'Top '+AST_SUGGEST_MAX+' of '+all.length+' matches':all.length+' match'+(all.length===1?'':'es'))
+        +'<span><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open</span></div>'
+    :'<div class="ax-sug-none">No assets match “'+astSugEsc(q)+'”</div>';
+  const r=box.getBoundingClientRect();
+  pop.style.left=r.left+'px';pop.style.top=(r.bottom+6)+'px';
+  pop.style.width=Math.max(r.width,440)+'px';
+  pop.classList.add('is-open');
+  box.setAttribute('aria-expanded','true');
+}
+function astSugClose(){
+  const pop=document.getElementById('ast-suggest');if(pop)pop.remove();
+  astSugHits=[];
+  const box=document.getElementById('ast-f-q');if(box)box.setAttribute('aria-expanded','false');
+}
+function astSugHover(i){
+  astSugIdx=i;
+  document.querySelectorAll('#ast-suggest .ax-sug-row').forEach(function(r){r.classList.toggle('is-on',+r.dataset.i===i);});
+}
+function astSugPick(i){
+  const a=astSugHits[i];if(!a)return;
+  astSugClose();
+  openAstSidebar(a.id);
+}
+function astSuggestEnter(){
+  /* Enter right after typing can beat the debounce, so match now. */
+  const box=document.getElementById('ast-f-q');
+  if(!document.getElementById('ast-suggest')&&box)astSuggest(box.value);
+  astSugPick(astSugIdx);
+}
+document.addEventListener('keydown',function(e){
+  if(!e.target||e.target.id!=='ast-f-q'||!document.getElementById('ast-suggest'))return;
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+    e.preventDefault();
+    if(!astSugHits.length)return;
+    astSugHover((astSugIdx+(e.key==='ArrowDown'?1:-1)+astSugHits.length)%astSugHits.length);
+  }else if(e.key==='Escape'){astSugClose();}
+});
+/* The list belongs to the box: it goes when focus or the page moves away. */
+document.addEventListener('mousedown',function(e){
+  if(!document.getElementById('ast-suggest'))return;
+  if(e.target.closest&&(e.target.closest('#ast-suggest')||e.target.id==='ast-f-q'))return;
+  astSugClose();
+});
+window.addEventListener('resize',function(){astSugClose();});
+window.addEventListener('scroll',function(e){
+  if(e.target&&e.target.closest&&e.target.closest('#ast-suggest'))return;
+  astSugClose();
+},true);
+function resetAstFilters(){astDeptF='';astBranchF='';astCatF='';astStatusF='';astEmpF='';astSelectedId=null;renderADTPage();}
 
 // ── Detail panel ──
 function openAstSidebar(id,tab){
@@ -442,19 +530,22 @@ function astSaveLog(id){
 function buildAssetAllocationHTML(){
   const count=function(s){return assetsData.filter(function(a){return a.status===s;}).length;};
   const rows=astRows();
-  const shown=lpSearchRows(rows,astQ);
+  const shown=rows;
   if(astSelectedId&&!shown.some(function(a){return a.id===astSelectedId;}))astSelectedId=null;
-  const pgn=listPage('asset-allocation',[astEmpF,astBranchF,astStatusF,astQ].join('|'),shown.map(function(a,i){
+  const pgn=listPage('asset-allocation',[astEmpF,astBranchF,astStatusF].join('|'),shown.map(function(a,i){
     return '<tr class="ast-row'+(astSelectedId===a.id?' lp-row-selected':'')+'" id="ast-row-'+a.id+'" style="cursor:pointer" onclick="openAstSidebar('+a.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
-      +'<td><div class="ax-asset-cell">'+(a.image?'<img class="ax-thumb" src="'+a.image+'" alt="">':'<span class="ax-thumb">'+AX_ICO.fBox+'</span>')
-        +'<div class="ax-asset-txt"><div class="lp-c-main ax-c-link">'+a.name+'</div><div class="lp-c-sub">'+a.code+'</div></div></div></td>'
+      +'<td><div class="lp-c-main ax-c-link">'+a.name+'</div>'
+        +'<div class="ax-ids">'
+          +'<span class="ax-id" title="Key ID '+a.keyId+'">'+AX_ICO.fHash+a.keyId+'</span>'
+        +'</div></td>'
+      +'<td>'+(a.serial?'<div class="lp-c-plain ax-barcode">'+a.serial+'</div>':'<span class="sb-dash">—</span>')+'</td>'
       +'<td><div class="lp-c-plain">'+a.category+'</div></td>'
-      +'<td><div class="lp-c-plain'+(a.assignedTo?'':' is-none')+'">'+(a.assignedTo||'Unassigned')+'</div></td>'
+      +'<td><div class="lp-c-plain'+(a.assignedTo?'':' is-none')+'">'+(a.assignedTo||'Unassigned')+'</div><div class="lp-c-sub">'+a.branch+'</div></td>'
       +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
       +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAstSidebar('+a.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
       +'</tr>';
-  }),'<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray)">No assets match this filter.</td></tr>');
+  }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No assets match this filter.</td></tr>');
   const stat=function(s){const color='var(--st-'+statusTone(s)+'-fg)';
     return '<div class="listing-stat'+(astStatusF===s?' stat-selected':'')+'" onclick="astToggleStat(\''+s+'\')">'
       +'<div class="listing-stat-count" style="color:'+color+'">'+count(s)+'</div><div class="listing-stat-label">'+s+'</div></div>';
@@ -466,11 +557,11 @@ function buildAssetAllocationHTML(){
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
-    +lpSearchField('ast-f-q',astQ,'Search asset name, Key ID, code, employee','applyAstFilters()')
+    +lpSearchField('ast-f-q','','Search asset, Key ID, barcode, employee','astSuggestEnter()','astSuggest')
     +axCS('ast-f-emp',axEmpNames(),astEmpF,'All Employees')
     +axCS('ast-f-branch',AX_BRANCHES,astBranchF,'All Branches')
     +axCS('ast-f-status',AST_STATUSES,astStatusF,'All Statuses')
-    +clearFiltersBtn([astEmpF,astBranchF,astStatusF,astQ],'resetAstFilters()')
+    +clearFiltersBtn([astEmpF,astBranchF,astStatusF],'resetAstFilters()')
     +'<button class="lp-pill-search" onclick="applyAstFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'
@@ -480,7 +571,7 @@ function buildAssetAllocationHTML(){
     /* What a row needs to be found and recognised: the asset (its code under
        the name), category, who has it and its status. Key ID, serial, branch,
        employee confirmation and dates are in the detail panel. */
-    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset</th><th>Category</th>'
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Asset</th><th>Barcode</th><th>Category</th>'
       +'<th>Assigned To</th><th>Asset Status</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
@@ -501,11 +592,11 @@ function astNextCode(category,id){
   do{code=pre+'-'+String(n++).padStart(3,'0');}while(assetsData.some(function(a){return a.code===code;}));
   return code;
 }
-/* The Assets dropdowns can be cleared: clicking the option that is already
-   picked unpicks it and the field goes back to its placeholder. csSelect
-   (core.js) does this for any select that carries data-csclear. */
+/* The Assets dropdowns can be cleared - clicking the option that is already
+   picked unpicks it (csSelect, data-csclear) - and searched - a search box
+   tops every menu (csSearchSetup, data-cssearch). Both live in core.js. */
 function axCS(id,opts,val,ph,hook){
-  return apCS(id,opts,val,ph,hook).replace('<div class="cs-wrap"','<div class="cs-wrap" data-csclear="1"');
+  return apCS(id,opts,val,ph,hook).replace('<div class="cs-wrap"','<div class="cs-wrap" data-csclear="1" data-cssearch="1"');
 }
 /* THE FORM IS STATE, NOT MARKUP. "+ Add" and the image picker both repaint
    the popup, so everything typed is read back into astDraft first (astSync) -
@@ -635,7 +726,7 @@ function astFormFieldsHTML(){
      and Vendor. */
   const fields=txt('ast-name','Asset Name',d.name,'e.g. Dell Laptop',true)
       +sel('category','ast-cat','Asset Category',AST_CATEGORIES,d.category,'Select Category',true)
-      +txt('ast-serial','Barcode / Serial Number',d.serial,'e.g. SN123456',true)
+      +txt('ast-serial','Barcode / Serial Number',d.serial,'e.g. NFA000439',true)
       +txt('ast-brand','Brand',d.brand,'e.g. Dell')
       +txt('ast-model','Model',d.model,'e.g. Latitude 7420')
       +date('ast-pdate','Purchase Date',d.purchaseDate)
@@ -689,6 +780,11 @@ function submitAddAsset(){
   for(let i=0;i<need.length;i++){
     if(!String(d[need[i][0]]||'').trim()){showToast(need[i][1]+' is required','error');return;}
   }
+  /* Barcodes are NFA followed by six digits - NFA000439. Typed in any case,
+     stored in capitals. */
+  d.serial=String(d.serial||'').trim().toUpperCase();
+  if(!/^NFA\d{6}$/.test(d.serial)){
+    showToast('Barcode format is NFA + 6 digits','error','For example NFA000439 - "'+d.serial+'" does not match.');return;}
   if(assetsData.some(function(a){return a.id!==astEditId&&a.serial&&a.serial.toLowerCase()===d.serial.toLowerCase();})){
     showToast('Barcode / Serial Number '+d.serial+' is already in use','error','Every asset needs its own barcode.');return;}
   if(d.cost!==''&&(isNaN(parseFloat(d.cost))||parseFloat(d.cost)<0)){showToast('Purchase Cost must be a number','error');return;}

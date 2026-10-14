@@ -2386,9 +2386,25 @@ function resetListingFilters(pg){
 
    Enter runs the page's own apply, the same function the Search button calls,
    so there is one path in and no second definition of what searching means. */
-function lpSearchField(id,value,placeholder,applyCall){
+/* liveCall, when given, is a global function NAME run with the typed text a
+   moment after each keystroke, so results narrow as the user types. The page
+   repaints in place (patchDom), so the box keeps its focus and caret. */
+function lpSearchField(id,value,placeholder,applyCall,liveCall){
   return '<input class="lp-search-input" id="'+id+'" type="text" placeholder="'+(placeholder||'Search')+'"'
-    +' value="'+attrSafe(value||'')+'" onkeydown="if(event.key===\'Enter\')'+applyCall+'">';
+    +' value="'+attrSafe(value||'')+'" onkeydown="if(event.key===\'Enter\')'+applyCall+'"'
+    +(liveCall?' oninput="lpLiveSearch(this,\''+liveCall+'\')" autocomplete="off"':'')+'>';
+}
+let lpLiveTimer=null;
+function lpLiveSearch(el,fn){
+  clearTimeout(lpLiveTimer);
+  lpLiveTimer=setTimeout(function(){
+    if(typeof window[fn]!=='function')return;
+    const pos=el.selectionStart;
+    window[fn](el.value.trim());
+    /* Belt and braces: if the repaint did replace the box, put the caret back. */
+    const now=document.getElementById(el.id);
+    if(now&&document.activeElement!==now){now.focus();try{now.setSelectionRange(pos,pos);}catch(e){}}
+  },160);
 }
 function lpSearchValue(id){
   const el=document.getElementById(id);
@@ -2645,8 +2661,60 @@ function csToggle(btn){
   // Fixed, so the list is placed here rather than by CSS: left-aligned and
   // trigger-width, the same call the custom select makes. Placement runs
   // after the class flip because the helper measures the open menu.
-  if(open)placeAnchoredMenu(drop,btn.getBoundingClientRect(),
-    {alignLeft:true,width:btn.getBoundingClientRect().width});
+  if(open){
+    drop.style.minHeight='';
+    csSearchSetup(drop);
+    placeAnchoredMenu(drop,btn.getBoundingClientRect(),
+      {alignLeft:true,width:btn.getBoundingClientRect().width});
+    /* Held at its opened height, so narrowing the list by typing does not
+       make the menu jump - above all one that opened upwards. */
+    if(drop.querySelector('.cs-search'))drop.style.minHeight=drop.offsetHeight+'px';
+  }
+}
+/* ── SEARCHABLE DROPDOWNS ──
+   A select whose wrapper carries data-cssearch gets a search box at the top
+   of its menu. Opening the menu clears it and puts the caret in it, so a
+   long list (every employee) can be narrowed by typing straight away. Enter
+   picks the first match; Escape closes the menu. Options are hidden, never
+   removed, so csSelect and getCSValue work exactly as before. */
+const CS_SEARCH_ICO='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+function csSearchSetup(drop){
+  const wrap=drop.closest('.cs-wrap');
+  if(!wrap||!wrap.dataset.cssearch)return;
+  let box=drop.querySelector('.cs-search');
+  if(!box){
+    box=document.createElement('div');box.className='cs-search';
+    box.innerHTML=CS_SEARCH_ICO+'<input type="text" placeholder="Search…" aria-label="Search options" autocomplete="off">';
+    drop.insertBefore(box,drop.firstChild);
+    const none=document.createElement('div');none.className='cs-search-none';none.textContent='No matches';none.hidden=true;
+    drop.appendChild(none);
+    const inp=box.querySelector('input');
+    inp.addEventListener('input',function(){csSearchFilter(drop,inp.value);});
+    inp.addEventListener('click',function(e){e.stopPropagation();});
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){
+        e.preventDefault();
+        const first=Array.prototype.find.call(drop.querySelectorAll('.cs-option'),function(o){return !o.hidden;});
+        if(first)first.click();
+      }else if(e.key==='Escape'){
+        drop.classList.remove('cs-open');
+        const t=document.querySelector('[data-csid="'+drop.id.replace(/^csd-/,'')+'"]');
+        if(t){t.classList.remove('cs-open');t.focus();}
+      }
+    });
+  }
+  const inp=box.querySelector('input');
+  inp.value='';csSearchFilter(drop,'');
+  setTimeout(function(){inp.focus({preventScroll:true});},0);
+}
+function csSearchFilter(drop,q){
+  q=String(q||'').trim().toLowerCase();
+  let shown=0;
+  drop.querySelectorAll('.cs-option').forEach(function(o){
+    const hit=!q||o.textContent.toLowerCase().indexOf(q)>=0;
+    o.hidden=!hit;if(hit)shown++;
+  });
+  const none=drop.querySelector('.cs-search-none');if(none)none.hidden=shown>0;
 }
 /* The standard dropdown for a FORM that reads its values back by id.
    apCS has no element carrying the id itself, so this pairs it with a hidden

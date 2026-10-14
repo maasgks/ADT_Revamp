@@ -118,3 +118,42 @@
 .lp-table tr.ax-row-off td{color:#94a3b8}
 .lp-table tr.ax-row-off .lp-c-main{color:#94a3b8}
 .ct-modal.ax-type-modal{width:min(460px,92vw)}
+
+/* ── Assets search type-ahead (astSuggest, js/admin-access.js) ──
+   Hangs under the search box, over the page. One row per asset: what it is on
+   the left, who has it and its status on the right. */
+.ax-suggest{position:fixed;z-index:950;max-width:calc(100vw - 24px);padding:6px;background:#fff;
+  border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 36px rgba(15,23,42,.14);
+  animation:ax-sug-in .16s var(--e-out,ease-out) both}
+@keyframes ax-sug-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.ax-sug-row{display:flex;align-items:center;gap:14px;width:100%;padding:9px 10px;border:0;border-radius:8px;background:none;
+  font-family:inherit;text-align:left;cursor:pointer}
+.ax-sug-row.is-on{background:#f1f5f9}
+.ax-sug-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ax-sug-name{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax-sug-sub{font-size:11.5px;color:var(--gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ax-sug-side{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.ax-sug-who{font-size:12px;color:#475569;white-space:nowrap}
+.ax-suggest mark{background:#fef3c7;color:inherit;border-radius:3px;padding:0 1px}
+.ax-sug-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px -6px -6px;padding:8px 14px;
+  border-top:1px solid #f1f3f5;font-size:11px;color:#94a3b8}
+.ax-sug-foot kbd{display:inline-block;min-width:16px;margin:0 2px;padding:0 4px;border:1px solid var(--border);border-radius:4px;
+  background:#f8fafc;font-family:inherit;font-size:10px;line-height:16px;text-align:center;color:var(--gray)}
+.ax-sug-none{padding:16px 12px;text-align:center;font-size:12.5px;color:var(--gray)}
+@media (max-width:640px){.ax-sug-side .ax-sug-who{display:none}}
+
+/* ── Asset identifiers in the listing ──
+   Key ID and barcode as two small chips under the asset name, so the two
+   numbers read as labelled facts rather than one run-on grey line. The
+   barcode is monospaced: NFA codes line up down the column and are easy to
+   compare against a sticker. */
+.ax-ids{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.ax-id{display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:6px;
+  background:#f8fafc;border:1px solid #eef1f5;color:#475569;
+  font-size:11px;font-weight:600;line-height:1;white-space:nowrap;font-variant-numeric:tabular-nums}
+.ax-id svg{width:11px;height:11px;flex-shrink:0;color:#94a3b8}
+.lp-row-selected .ax-id,tr:hover .ax-id{background:#fff}
+
+/* Barcode column: plain text like the columns beside it; tabular digits so
+   the numbers line up down the column. */
+.ax-barcode{font-variant-numeric:tabular-nums;letter-spacing:.2px}

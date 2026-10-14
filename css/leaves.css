@@ -263,6 +263,17 @@ tr.lp-row-selected>td:first-child,
 .cs-option:hover,.cs-option.cs-selected{background:#f1f5f9}
 .cs-check{flex-shrink:0;display:none;color:var(--orange)}
 .cs-option.cs-selected .cs-check{display:block}
+/* Searchable menu (csSearchSetup, core.js): the box stays pinned at the top
+   while the options scroll under it. */
+.cs-option[hidden]{display:none}
+.cs-search{position:sticky;top:-4px;z-index:1;display:flex;align-items:center;gap:8px;margin:-4px -4px 4px;padding:8px 12px;
+  background:#fff;border-bottom:1px solid #f1f3f5;color:#94a3b8}
+.cs-search svg{flex-shrink:0}
+.cs-search input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:13px;color:var(--navy);padding:2px 0}
+.cs-search input::placeholder{color:#a3acb9}
+.cs-search:focus-within{color:var(--navy)}
+.cs-search-none{padding:14px;text-align:center;font-size:12.5px;color:var(--gray)}
+.cs-search-none[hidden]{display:none}
 
 /* CUSTOM DATE PICKER (apCD)
    <input type="date"> hands its popup to the browser, and that popup cannot be

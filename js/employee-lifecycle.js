@@ -1563,8 +1563,9 @@ function empSetReturnFor(name){
 function empGoAllAssets(name){
   empSetReturnFor(name);
   astDeptF='';astBranchF='';astCatF='';astStatusF='';astSelectedId=null;
-  if(typeof astEmpF!=='undefined')astEmpF='';
-  astQ=name;
+  /* The Assets search box is a type-ahead now and does not filter the table,
+     so the employee's assets are shown through the Employee filter. */
+  astEmpF=name;
   empNavKeep=true;navigatePage('asset-allocation');
 }
 function empGoAllItAccess(name){
