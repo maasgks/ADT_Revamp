@@ -117,3 +117,12 @@
   .ts-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .ts-stat-card{padding:14px;min-width:0}
 }
+
+/* ── Compact status tiles ──
+   A strip with many tiles (Tickets has six) sizes each tile to its own label
+   instead of to the widest one, with tighter padding, so the strip and the
+   filter bar fit on one row at desktop width. Below that the strip still
+   wraps under the filters, as every listing does. */
+.listing-stats.is-compact{grid-auto-columns:auto}
+.listing-stats.is-compact .listing-stat{min-width:64px;padding:10px 11px}
+.lp-filter-bar:has(~ .listing-stats.is-compact) .lp-search-input{width:130px}

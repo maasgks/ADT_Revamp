@@ -8519,7 +8519,7 @@ function buildTicketsPageHTML(){
     +clearFiltersBtn([tkQuickStatusFilter,tkChannelFilter,tkSearchQuery],'resetTkFilters()')
     +'<button class="lp-pill-search" onclick="applyTkFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="listing-stats">'
+    +'<div class="listing-stats is-compact">'
     +stat('__unassigned__',unassignedCount,'Unassigned','var(--st-bad-fg)')
     +stat('open',cnt('open'),'Open','var(--st-info-fg)')
     +stat('in_progress',cnt('in_progress'),'In Progress','var(--st-wait-fg)')

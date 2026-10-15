@@ -940,3 +940,18 @@
 /* The Ops Admin contract-pipeline cards used to be a bespoke, centre-aligned
    tile defined here. They now use .hr-stat-card like every other card in every
    other dashboard, so there is nothing left to style. */
+
+/* ── Escalated Tickets: the flame flickers on hover ───────────────────────
+   One short flicker per hover, in the icon's own colours - the same kind of
+   small motion every other icon makes (see css/sidebar-icons.css). It sways
+   and stretches from its base and settles back where it started. */
+.ico-flame{transform-origin:50% 92%}
+.hr-stat-card:is(:hover,:focus-visible) .ico-flame{animation:flame-flicker .7s var(--e-out,ease-out)}
+@keyframes flame-flicker{
+  0%,100%{transform:none}
+  20%{transform:scale(.94,1.1) skewX(-5deg)}
+  45%{transform:scale(1.04,.95) skewX(4deg)}
+  70%{transform:scale(.98,1.05) skewX(-2deg)}}
+@media (prefers-reduced-motion:reduce){
+  .hr-stat-card:is(:hover,:focus-visible) .ico-flame{animation:none}
+}
