@@ -1150,6 +1150,33 @@ tr.lp-row-selected>td:first-child,
   width:min(1100px,92vw);height:min(86vh,920px);min-height:0;z-index:1200;border-radius:16px;
   box-shadow:0 24px 70px rgba(15,23,42,.28);transition:none}
 #sb-popup-backdrop{position:fixed;inset:0;z-index:1190;background:rgba(15,23,42,.45);animation:fadeIn .15s ease}
+/* The popup's record header (sbPopHead, core.js): the record across the top,
+   the tab bar under it. Shrink and close live here, so the tab's own Enlarge
+   and the tab bar's x step aside while it is up. */
+.sb-pop-head{display:flex;align-items:center;gap:14px;padding:14px 18px 14px 20px;border-bottom:1px solid var(--border);
+  background:#fff;flex-shrink:0;border-radius:16px 16px 0 0}
+.sb-pop-ico{flex-shrink:0;display:flex}
+.sb-pop-ico .sb-hero-ico,.sb-pop-ico .sb-hero-img{width:40px;height:40px;border-radius:10px}
+.sb-pop-ico .sb-hero-ico svg{width:19px;height:19px}
+.sb-pop-ico .hd-sb-datechip{transform:scale(.88);transform-origin:center}
+.sb-pop-txt{flex:1;min-width:0}
+.sb-pop-title{display:flex;align-items:center;gap:10px;min-width:0}
+.sb-pop-name{font-size:17px;font-weight:700;color:var(--navy);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sb-pop-status{display:inline-flex;align-items:center;gap:6px;flex-shrink:0}
+.sb-pop-status .hd-sb-badges{display:inline-flex;align-items:center;gap:6px}
+.sb-pop-meta{margin-top:3px;font-size:12.5px;color:var(--gray);display:flex;align-items:center;flex-wrap:wrap;
+  white-space:nowrap;overflow:hidden}
+.sb-pop-tools{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto}
+.sb-pop-btn{width:30px;height:30px;border-radius:8px;color:var(--gray)}
+.sb-pop-btn svg{width:13px;height:13px}
+.lp-isb:has(>.sb-pop-head) .lp-isb-tabbar .lp-isb-close{display:none}
+.lp-isb:has(>.sb-pop-head) .lp-isb-tabbar .lp-isb-right:not(:has(>:not(.lp-isb-close))){display:none}
+.lp-isb:has(>.sb-pop-head) .lp-isb-body .sb-tool-wide{display:none}
+.lp-isb:has(>.sb-pop-head) .sb-body-tools:not(:has(.sb-tool:not(.sb-tool-wide))){display:none}
+@media (max-width:640px){
+  .sb-pop-head{padding:12px 14px;gap:10px}
+  .sb-pop-title{flex-wrap:wrap;gap:6px}
+}
 /* Edit / Enlarge inside the tab: at the end of the heading row, or on a slim
    row of their own at the top of a tab that starts without one. */
 /* the heading stays left; anything else on the row (a count) sits with the buttons */

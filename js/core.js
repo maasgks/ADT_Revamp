@@ -1238,6 +1238,56 @@ function sbToolWide(btn){
   SB_WIDE[p]=!SB_WIDE[p];
   sbDecorateTabbars();
 }
+/* ── THE POPUP'S RECORD HEADER ──
+   Opened as a popup, the panel reads like a record window: the record itself
+   (icon, name, status, its identifying line) on a header across the top, then
+   the tab bar, then the tab. The header is lifted from the details tab's own
+   hero (sbHero / the holiday hero), remembered per panel so it stays in place
+   while any other tab is open. Shrink and close sit on its right; the tab bar
+   gives up its own x while the header carries one. */
+const SB_POP_REC={};
+const SB_X_ICO='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+function sbPopReadHero(body){
+  const hero=body.querySelector('.sb-hero,.hd-sb-hero');if(!hero)return null;
+  const name=hero.querySelector('.sb-hero-name,.hd-sb-hero-name');if(!name)return null;
+  const ico=hero.querySelector('.sb-hero-ico,.sb-hero-img,.hd-sb-datechip');
+  const meta=hero.querySelector('.sb-hero-meta,.hd-sb-hero-meta');
+  const right=hero.querySelector('.sb-hero-right,.hd-sb-hero-right');
+  let status='';
+  if(right){
+    const r=right.cloneNode(true);
+    r.querySelectorAll('button,.sb-tools,.sb-hero-editing').forEach(function(x){x.remove();});
+    status=r.innerHTML.trim();
+  }
+  return {ico:ico?ico.outerHTML:'',name:name.innerHTML,meta:meta?meta.innerHTML:'',status:status};
+}
+function sbPopClose(btn){
+  const inner=btn.closest('[id$="-isb-inner"]');
+  const x=inner&&inner.querySelector('.lp-isb-tabbar .lp-isb-close');
+  if(x)x.click();
+}
+function sbPopHead(p,inner,body){
+  const rec=sbPopReadHero(body);
+  if(rec)SB_POP_REC[p]=rec;
+  let head=inner.querySelector(':scope>.sb-pop-head');
+  if(!SB_WIDE[p]){if(head)head.remove();return;}
+  const r=SB_POP_REC[p]||{ico:'',name:'',meta:'',status:''};
+  const hasX=!!inner.querySelector('.lp-isb-tabbar .lp-isb-close');
+  const sig=JSON.stringify([r,hasX]);
+  if(head&&head.dataset.sig===sig&&head===inner.firstElementChild)return;
+  if(!head){head=document.createElement('div');head.className='sb-pop-head';}
+  head.dataset.sig=sig;
+  head.innerHTML=(r.ico?'<div class="sb-pop-ico">'+r.ico+'</div>':'')
+    +'<div class="sb-pop-txt">'
+      +'<div class="sb-pop-title"><span class="sb-pop-name">'+r.name+'</span>'+(r.status?'<span class="sb-pop-status">'+r.status+'</span>':'')+'</div>'
+      +(r.meta?'<div class="sb-pop-meta">'+r.meta+'</div>':'')
+    +'</div>'
+    +'<div class="sb-pop-tools">'
+      +'<button type="button" class="sb-tool sb-pop-btn" title="Close popup" aria-label="Close popup" onclick="sbToolWide(this)">'+SB_SHRINK_ICO+'</button>'
+      +(hasX?'<button type="button" class="sb-tool sb-pop-btn" title="Close" aria-label="Close" onclick="sbPopClose(this)">'+SB_X_ICO+'</button>':'')
+    +'</div>';
+  if(inner.firstElementChild!==head)inner.insertBefore(head,inner.firstChild);
+}
 /* Placed INSIDE the open tab, on the row of its heading: beside the header
    card's own Edit on Basic Details (only Enlarge is added there), at the end
    of a section heading row where the tab starts with one, and otherwise on a
@@ -1247,7 +1297,7 @@ function sbDecorateTabbars(){
   document.querySelectorAll('[id$="-isb-inner"]').forEach(function(inner){
     const p=inner.id.slice(0,-'-isb-inner'.length);
     const panel=inner.closest('.lp-split-sb');
-    if(panel&&!panel.classList.contains('open'))SB_WIDE[p]=false;   // a closed panel leaves the popup
+    if(panel&&!panel.classList.contains('open')){SB_WIDE[p]=false;delete SB_POP_REC[p];}   // a closed panel leaves the popup
     if(panel)panel.classList.toggle('is-popup',!!SB_WIDE[p]);
     const body=inner.querySelector('.lp-isb-body');if(!body)return;
     let tools=body.querySelector('.sb-tools');
@@ -1269,6 +1319,7 @@ function sbDecorateTabbars(){
       wide.innerHTML=SB_WIDE[p]?SB_SHRINK_ICO:SB_GROW_ICO;
       wide.title=wide.ariaLabel=SB_WIDE[p]?'Close popup':'Open in popup';
     }
+    sbPopHead(p,inner,body);
   });
   /* One dimmed backdrop under whichever panel is open as a popup. Clicking it
      does nothing - like every popup, it closes from its own button or x. */
