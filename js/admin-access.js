@@ -1069,7 +1069,7 @@ function buildItAccessHTML(){
       +'<td><div class="lp-c-plain ax-c-trunc" title="'+attrSafe(r.login)+'">'+r.login+'</div><div class="lp-c-sub">'+(r.role||'—')+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
       +'<td><div class="lp-c-plain">'+axDate(r.effective)+'</div><div class="lp-c-sub">'+(r.expiry?'Review '+axDate(r.expiry):'No expiry')+'</div></td>'
-      +'<td><div class="lp-c-plain'+(r.provisionedBy?'':' is-none')+'">'+(r.provisionedBy||'Not provisioned')+'</div><div class="lp-c-sub">MFA '+r.mfa+'</div></td>'
+      +'<td><div class="lp-c-plain'+(r.provisionedBy?'':' is-none')+'">'+(r.provisionedBy||'Not provisioned')+'</div></td>'
       +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openItaSidebar('+r.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
       +'</tr>';
   }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No access records match this filter.</td></tr>');
@@ -1095,8 +1095,8 @@ function buildItAccessHTML(){
     +ITA_TILES.map(function(s){return stat(s);}).join('')
     +'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="ita-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Employee Name / ID</th><th>System / Access Type</th>'
-      +'<th>Login ID / Role</th><th>Access Status</th><th>Effective / Expiry Date</th><th>Provisioned By / MFA</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Employee Name</th><th>System</th>'
+      +'<th>Login ID</th><th>Access Status</th><th>Effective Date</th><th>Provisioned By</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
