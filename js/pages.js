@@ -6740,13 +6740,10 @@ function closeAtSidebar(){
   document.querySelectorAll('.at-tr').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
 function navAtTab(tab){atTab=tab;isbTab('at',renderAtSidebar);}
-// Prototype stand-in: the row knows which file it means, so the toast can name
-// it rather than saying "download started" about nothing in particular.
-function atOpenSlip(name){showToast('Opening payslip','success',name);}
 
 function renderAtSidebar(){
   const emp=atEmp(atSelectedId);if(!emp)return'';
-  const tabs=[{id:'timesheet',label:'Timesheet'},{id:'payslips',label:'Payslips'}];
+  const tabs=[{id:'timesheet',label:'Timesheet'},{id:'salary',label:'Salary'},{id:'payslips',label:'Payslips'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="at-isb-tabs">'+tabs.map(function(t){
       return '<button class="lp-isb-tab'+(atTab===t.id?' active':'')+'" onclick="navAtTab(\''+t.id+'\')">'+t.label+'</button>';
@@ -6799,6 +6796,8 @@ function renderAtSidebar(){
       +'<th style="'+thS+'">Week End</th><th style="'+thS+'">Create Time</th><th style="'+thS+'">Status</th>'
       +'<th style="'+thS+';text-align:center">Details</th>'
       +'</tr></thead><tbody>'+list+'</tbody></table></div>';
+  }else if(atTab==='salary'){
+    body=atSalTabHTML(emp);   // js/at-salary.js
   }else{
     const slips=atPayslips(emp.empId);
     const dlIco='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -6811,7 +6810,7 @@ function renderAtSidebar(){
         +'<td style="'+tdS+'"><span class="at-sb-file">'+pdfIco+'PDF &middot; '+p.size+'</span></td>'
         +'<td style="'+tdS+';white-space:nowrap">'+p.month+'</td>'
         +'<td style="'+tdS+';text-align:center"><button class="at-sb-icon-btn" title="Download '+attrSafe(p.name)+'" '
-          +'onclick="atOpenSlip(\''+attrSafe(p.name)+'\')">'+dlIco+'</button></td>'
+          +'onclick="atSalViewSlip(\''+emp.empId+'\',\''+p.month.slice(0,3)+'\')">'+dlIco+'</button></td>'
         +'</tr>';
     }).join(''):empty(5,'No payslips found');
     // Said once, above the list, because a capped list that does not admit it
@@ -6830,7 +6829,7 @@ function renderAtSidebar(){
 // against it, so the panel can never describe a period the list is not for.
 function atPeriod(){
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const picked=getCSValue('at-f-month')||'Aug';
+  const picked=atMonth||AT_DEFAULT_MONTH;
   let m=months.indexOf(picked);if(m<0)m=7;
   const yr=2026,pad=function(n){return n<10?'0'+n:''+n;};
   const last=new Date(yr,m+1,0).getDate();
@@ -6844,10 +6843,11 @@ function applyAtFilters(){
   const ts=getCSValue('at-f-ts');
   atTsQuickFilter=ts&&ts!=='Timesheet Status'&&ts!=='All'?ts:'';
   atSearchQuery=lpSearchValue('at-f-q');
+  atMonth=getCSValue('at-f-month')||atMonth;
   renderADTPage();
 }
 function resetAtFilters(){
-  atTsQuickFilter='';atSearchQuery='';
+  atTsQuickFilter='';atSearchQuery='';atMonth=AT_DEFAULT_MONTH;
   renderADTPage();
 }
 function buildAllTimesheetHTML(){
@@ -6858,6 +6858,14 @@ function buildAllTimesheetHTML(){
   const total=data.length;
 
   const calIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+  const salIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3a5 5 0 0 0 0-10"/></svg>';
+  // Where this month's pay stands for the row, read from the same record the
+  // Salary tab edits — so the column and the panel always agree.
+  const salBadge=function(emp){
+    if(!AT_PAY[emp.empId])return '<span style="color:var(--gray)">—</span>';
+    const r=atSalRec(emp.empId);
+    return '<span class="lp-status-badge tone-'+atSalTone(r)+'">'+atSalStatusLabel(r)+'</span>';
+  };
   const listIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>';
 
   // Filter bar
@@ -6869,7 +6877,7 @@ function buildAllTimesheetHTML(){
     +apCS('at-f-status',['Active','Inactive','All'],'','Status')
     +apCS('at-f-admin',['Admin Name'],'','Admin Name')
     +apCS('at-f-ts',['Unfilled','Filled','All'],atTsQuickFilter,'Timesheet Status')
-    +apCS('at-f-month',months,'Jun','Month')
+    +apCS('at-f-month',months,atMonth,'Month')
     +clearFiltersBtn([atTsQuickFilter,atSearchQuery],'resetAtFilters()')
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
     // The listing is a set to begin with, so its export opens on the roster.
@@ -6901,12 +6909,14 @@ function buildAllTimesheetHTML(){
       +'<td class="at-td">'+emp.country+'</td>'
       +'<td class="at-td">'+empBadge+'</td>'
       +'<td class="at-td">'+tsBadge+'</td>'
+      +'<td class="at-td">'+salBadge(emp)+'</td>'
       +'<td class="at-td" onclick="event.stopPropagation()"><div class="at-actions">'
       +'<button class="at-act-btn" title="View Calendar" onclick="atViewCalendar(\''+emp.empId+'\',\''+emp.name+'\',\''+emp.initials+'\',\''+emp.role+'\')">'+calIco+'</button>'
+      +'<button class="at-act-btn" title="Get Salary" onclick="openAtSidebar(\''+emp.empId+'\',\'salary\')">'+salIco+'</button>'
       +'<button class="at-act-btn" title="View Details" onclick="openAtSidebar(\''+emp.empId+'\')">'+listIco+'</button>'
       +'</div></td>'
       +'</tr>';
-  }),'<tr><td class="at-td" colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No timesheets match this filter.</td></tr>');
+  }),'<tr><td class="at-td" colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No timesheets match this filter.</td></tr>');
   // A panel must belong to a row you can still see.
   if(atSelectedId&&!filteredTs.some(function(e){return e.empId===atSelectedId;}))atSelectedId=null;
 
@@ -6922,6 +6932,7 @@ function buildAllTimesheetHTML(){
     +'<th class="at-th">Country</th>'
     +'<th class="at-th">Employee Status</th>'
     +'<th class="at-th">Timesheet Status</th>'
+    +'<th class="at-th">Salary ('+atMonth+')</th>'
     +'<th class="at-th">Action</th>'
     +'</tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody>'
@@ -7721,16 +7732,41 @@ function renderCsSidebar(){
   let body='';
 
   if(csTab==='basic-details'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Entity Details</span>'+editBtn+'</div>'
-      +'<div class="lp-sb-detail-grid">'
-      +fc(iEnt,'Entity ID','293')+fc(iCity,'Entity Name','Closedhi')
-      +fcW(iMap,'Address','Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India')
-      +fc(iCity,'City','Hyderabad')
-      +fc(iGlobe,'Country','India')+fc(iCal,'Created Time','12 Apr 2026 | 08:53 PM')
-      +fc(iPerson,'Created By','Shaun Test1')+fc(iId,'Employee ID Pre fix','CLD')
-      +fc(iImg,'Entity Logo',dash)+fc(iDoc,'Header',dash)
-      +fc(iDoc,'Footer',dash)
-      +'</div>';
+    /* Each row of the listing is its own setting, so Basic Details shows the
+       details of the setting that was opened, not always the entity profile. */
+    const row=(getPageMeta('settings').rows||[]).find(r=>r[0]===csSelectedItem)||[];
+    const setting=row[1]||'Entity Profile';
+    // Setting and Status are on the header card above the grid.
+    const common=fc(iEnt,'Area',row[2]||dash)
+      +fc(iPerson,'Owner',row[3]||dash)+fc(iCal,'Last Updated',row[4]||dash);
+    const CS_SETTING_FIELDS={
+      'Entity Profile':()=>fc(iEnt,'Entity ID','293')+fc(iCity,'Entity Name','Closedhi')
+        +fcW(iMap,'Address','Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India')
+        +fc(iCity,'City','Hyderabad')
+        +fc(iGlobe,'Country','India')+fc(iCal,'Created Time','12 Apr 2026 | 08:53 PM')
+        +fc(iPerson,'Created By','Shaun Test1')+fc(iId,'Employee ID Pre fix','CLD')
+        +fc(iImg,'Entity Logo',dash)+fc(iDoc,'Header',dash)
+        +fc(iDoc,'Footer',dash),
+      'Bank Details':()=>common+fc(iGlobe,'Country / Location','India')+fc(iPerson,'Pay Name','Closedhi')
+        +fc(iBank,'Pay Bank','ICIC')+fc(iHash,'Account Number','223445565666')
+        +fc(iKey,'IFSC Code','ICFHDE123')+fc(iDollar,'Currency','INR'),
+      'Permissions':()=>common+fc(iKey,'Roles Defined','6')+fc(iPerson,'Default Role','Employee')
+        +fc(iKey,'Two-Factor Login','Required for admins')+fc(iCal,'Session Timeout','30 minutes')+fc(iPerson,'Admins','3')
+        +fcW(iComment,'Notes','Role changes need Super Admin approval and are recorded in Logs.'),
+      'Notifications':()=>common+fc(iMail,'Email Alerts','On')+fc(iComment,'In-app Alerts','On')
+        +fc(iCal,'Daily Digest','09:00 AM')+fc(iFlash,'Approval Reminders','Every 24 hours')+fc(iPhone,'SMS Alerts','Off')
+        +fcW(iMail,'Sender Address','no-reply@closedhi.com'),
+      'Billing Contacts':()=>common+fc(iPerson,'Contact Name','Finance Ops')+fc(iMail,'Email','billing@closedhi.com')
+        +fc(iPhone,'Phone Number','9949860707')+fc(iCal,'Invoice Cycle','Monthly')+fc(iHash,'GST Number','36AABCC1234F1Z5')
+        +fcW(iMap,'Billing Address','Kukatpally, Hyderabad, Telangana 500085, India'),
+      'Audit Logs':()=>common+fc(iCal,'Retention','365 days')+fc(iDoc,'Export Format','CSV')
+        +fc(iFlash,'Tracked Events','All admin actions')+fc(iCal,'Last Export','01 May 2026')
+    };
+    const fields=(CS_SETTING_FIELDS[setting]||(()=>common))();
+    const CS_SETTING_ICO={'Entity Profile':sbIco.building,'Bank Details':sbIco.database,'Permissions':sbIco.shieldCheck,
+      'Notifications':sbIco.sliders,'Billing Contacts':sbIco.users,'Audit Logs':sbIco.fileText};
+    body=sbHero({icon:CS_SETTING_ICO[setting]||sbIco.grid,name:setting,meta:[row[2],row[3]],status:sbHeroBadge(row[5]),edit:editBtn})
+      +'<div class="lp-sb-detail-grid">'+fields+'</div>';
   }
   else if(csTab==='attachments'){
     body=csAttachmentsTabHTML();   // agreements + uploads, see cs-agreements.js

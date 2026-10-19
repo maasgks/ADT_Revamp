@@ -1261,17 +1261,51 @@ function sbPopReadHero(body){
   }
   return {ico:ico?ico.outerHTML:'',name:name.innerHTML,meta:meta?meta.innerHTML:'',status:status};
 }
+/* Panels whose details tab has no hero: the header is read off the list row
+   the panel was opened from - its name cell, its status pill, and the next
+   two plain cells as the identifying line. */
+const SB_POP_DOC_ICO='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+function sbPopReadRow(inner){
+  const panel=inner.closest('.lp-split-sb');
+  const row=panel&&panel.parentElement&&panel.parentElement.querySelector('tr.lp-row-selected');
+  if(!row)return null;
+  const txt=function(el){return (el.textContent||'').replace(/\s+/g,' ').trim();};
+  const tbl=row.closest('table');const hrow=tbl&&tbl.tHead&&tbl.tHead.rows[0];
+  const isNo=function(i){const th=hrow&&hrow.cells[i];return !!th&&/^(s\.?\s*no\.?|sr\.?\s*no\.?|#)$/i.test(txt(th));};
+  const cells=Array.prototype.filter.call(row.cells,function(td,i){
+    return !td.classList.contains('lp-c-n')&&!isNo(i)&&!td.querySelector('button,input')&&txt(td);
+  });
+  const plain=cells.filter(function(td){return !td.querySelector('.lp-status-badge');});
+  if(!plain.length)return null;
+  const nameCell=plain[0];
+  const first=nameCell.firstElementChild;
+  const name=txt(first&&first.children.length===0?first:nameCell);
+  const meta=[];
+  const sub=nameCell.querySelector('.lp-c-sub');if(sub&&txt(sub)!==name)meta.push(txt(sub));
+  plain.slice(1).forEach(function(td){
+    if(meta.length>=3)return;
+    const f=td.firstElementChild;const t=txt(f&&!f.classList.contains('sb-dash')?f:td);
+    if(t&&t!=='—'&&t!=='--')meta.push(t);
+  });
+  const badge=row.querySelector('.lp-status-badge');
+  const esc=function(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+  return {ico:'<div class="sb-hero-ico">'+SB_POP_DOC_ICO+'</div>',name:esc(name),
+    meta:meta.map(esc).join('<span class="sb-dot">•</span>'),status:badge?badge.outerHTML:''};
+}
 function sbPopClose(btn){
   const inner=btn.closest('[id$="-isb-inner"]');
   const x=inner&&inner.querySelector('.lp-isb-tabbar .lp-isb-close');
   if(x)x.click();
 }
 function sbPopHead(p,inner,body){
-  const rec=sbPopReadHero(body);
+  /* Only the first (details) tab's hero describes the record; a card on any
+     other tab - the E-Sign integration, say - is about that tab. */
+  const firstTab=inner.querySelector('.lp-isb-tab');
+  const rec=(!firstTab||firstTab.classList.contains('active'))?sbPopReadHero(body):null;
   if(rec)SB_POP_REC[p]=rec;
   let head=inner.querySelector(':scope>.sb-pop-head');
   if(!SB_WIDE[p]){if(head)head.remove();return;}
-  const r=SB_POP_REC[p]||{ico:'',name:'',meta:'',status:''};
+  const r=SB_POP_REC[p]||sbPopReadRow(inner)||{ico:'',name:'',meta:'',status:''};
   const hasX=!!inner.querySelector('.lp-isb-tabbar .lp-isb-close');
   const sig=JSON.stringify([r,hasX]);
   if(head&&head.dataset.sig===sig&&head===inner.firstElementChild)return;
@@ -1306,7 +1340,10 @@ function sbDecorateTabbars(){
       const hero=first&&first.matches('.sb-hero,.hd-sb-hero')?first:null;
       const head=!hero&&first&&first.matches('.lp-sb-view-header')?first:null;
       const host=hero?hero.querySelector('.sb-hero-right,.hd-sb-hero-right'):head;
-      const hasEdit=!!(host&&host.querySelector('.lp-sb-view-edit-btn,.sb-hero-editing'))||!!body.querySelector('.lp-sb-edit-form');
+      /* The Workflow tab is a read-only record of approvals: no Edit there. */
+      const act=inner.querySelector('.lp-isb-tab.active');
+      const onWf=!!act&&/workflow/i.test(sbTabIdOf(act)+' '+act.textContent);
+      const hasEdit=onWf||!!(host&&host.querySelector('.lp-sb-view-edit-btn,.sb-hero-editing'))||!!body.querySelector('.lp-sb-edit-form');
       tools=document.createElement('span');tools.className='sb-tools';
       tools.innerHTML=(SB_TOOL_EDIT[p]&&!hasEdit?'<button type="button" class="sb-tool" title="Edit" aria-label="Edit" onclick="sbToolEdit(this)">'+SB_PEN_ICO+'</button>':'')
         +'<button type="button" class="sb-tool sb-tool-wide" onclick="sbToolWide(this)"></button>';
@@ -1936,6 +1973,13 @@ function isbRevealTab(prefix){
    user could have reached by hand. Where a card's wording has no equivalent
    in the destination's vocabulary ("Escalated Tickets" is not a ticket status)
    it links unfiltered rather than inventing one. */
+/* ── CARD VISIBILITY BY MODULE ──
+   Stands in for per-entity Module Control: an entity that has not switched a
+   module on does not see the dashboard cards that report on it. Only the three
+   operational cards read this (js/dash-ops.js) — "This week" needs Timesheets,
+   "Attendance today" needs Attendance. A hidden card leaves no gap. */
+var DASH_MODULES={timesheets:true,attendance:true};
+
 var DASH_CARD_LINK={
   /* people */
   'Total Employees':              ['employees'],
@@ -3059,6 +3103,40 @@ const globalEmpData=[
   {id:6,name:'Ana Silva',empId:'GEP006',dept:'Support',country:'Portugal',jobTitle:'Support Specialist',workerType:'EOR',joinDate:'14 Sep 2026',desc:'Full time employee',contact:'+351 91 000 0001',email:'ana@testemp.com',status:'Onboarding'},
 ];
 let geStatusFilter='';
+
+/* ── RECORD DATES & GAPS, for "Expiring & incomplete records" (HR dashboard) ──
+   The employee records carried no expiry dates, so these are seeded onto them.
+   Dates are OFFSETS FROM TODAY, worked out at load, so the card always has
+   live items whatever day the prototype is opened. Stored as ISO; the card
+   formats them. visaExpiry is only ever set on Global (EOR) workers. */
+function dashOffsetISO(days){
+  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+days);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+[
+  [directEmpData,1,{idProofExpiry:dashOffsetISO(5),contractEnd:dashOffsetISO(40)}],
+  [directEmpData,2,{idProofExpiry:dashOffsetISO(200)}],
+  [directEmpData,3,{contractEnd:dashOffsetISO(24)}],
+  [directEmpData,5,{probationEnd:dashOffsetISO(38),bankDetailsMissing:true}],
+  [directEmpData,6,{probationEnd:dashOffsetISO(44),complianceSnapshotMissing:true}],
+  [globalEmpData,1,{visaExpiry:dashOffsetISO(3)}],
+  [globalEmpData,2,{visaExpiry:dashOffsetISO(27),idProofExpiry:dashOffsetISO(60)}],
+  [globalEmpData,3,{contractEnd:dashOffsetISO(14)}],
+  [globalEmpData,5,{complianceSnapshotMissing:true}]
+].forEach(function(s){const r=s[0].find(function(e){return e.id===s[1];});if(r)Object.assign(r,s[2]);});
+
+/* ── TODAY'S PUNCHES, for "Attendance today" (HR dashboard) ──
+   There is no workforce-wide daily attendance store yet, so this seeds one
+   punch per Active direct employee for TODAY (the real clock date), keyed by
+   directEmpData id. null = no punch. On time / late is NOT stored: the card
+   judges it with the entity shift and clock-in grace, the same rule as
+   dsClassify. Leave is not stored either — it comes from approved Leave
+   Requests covering today. */
+const hrAttendanceToday={
+  1:{in:'08:52',mode:'office'},
+  2:{in:'09:32',mode:'office'},
+  3:{in:'09:06',mode:'remote'}
+};
 const geWorkflowData={
   1:[
     {title:'Onboarding Complete',user:'HR',date:'10 Feb 2024',time:'09:00:00 AM',description:'EOR onboarding via Dhi completed. Access provisioned for Germany entity.'},
@@ -5037,6 +5115,12 @@ const allTsData=[
    have a real empty state rather than being seeded with rows that would make
    "Unfilled" look like a lie. */
 let atSelectedId=null,atTab='timesheet';
+/* The month the page is filtered to. Held as state rather than read off the
+   dropdown, because the dropdown is rebuilt on every repaint and used to snap
+   back to its default — the panel, the Salary tab and the payslip all read it.
+   Defaults to the first month with no payslips on file yet. */
+const AT_DEFAULT_MONTH='Sep';
+let atMonth=AT_DEFAULT_MONTH;
 const atSheetsData={
   // 11803 has nothing yet — this is the row the Unfilled tile is counting.
   '11755':[

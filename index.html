@@ -58,6 +58,8 @@
 <link rel="stylesheet" href="css/logs-view.css">
 <link rel="stylesheet" href="css/form-page.css">
 <link rel="stylesheet" href="css/apply-application.css">
+<link rel="stylesheet" href="css/at-salary.css">
+<link rel="stylesheet" href="css/dash-ops.css">
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
 <link rel="stylesheet" href="css/timesheet-calendar.css">
@@ -351,6 +353,11 @@
             <div class="hr-stat-sub">April 2025 available</div>
           </div>
         </div>
+
+        <!-- This week: hours against target and the week's submission state.
+             Filled by dashOpsRender() (js/dash-ops.js) from the timesheet data;
+             empty, and so invisible, when the Timesheets module is off. -->
+        <div id="emp-week-dash"></div>
 
         <!-- Action Required -->
         <div class="hr-section" style="margin-bottom:14px">
@@ -676,6 +683,11 @@
           </div>
         </div>
         
+        <!-- Attendance today | Expiring & incomplete records. The whole .hr-grid-2
+             row is written by dashOpsRender() (js/dash-ops.js) with only the cards
+             whose module is on, so a hidden card leaves no gap. -->
+        <div id="hr-ops-dash"></div>
+
         <!-- Two Column Grid -->
         <div class="hr-grid-2">
           <!-- Leave Requests Section -->
@@ -2236,6 +2248,9 @@
 <!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
 <script src="js/day-status.js"></script>
 <script src="js/pages.js"></script>
+<!-- All Timesheet Salary tab + payslip. Reads atPeriod/atEmp (pages.js, core.js)
+     and payheadsData for the PF / PT slabs. -->
+<script src="js/at-salary.js"></script>
 <script src="js/apply-application.js"></script>
 <!-- After pages.js (it calls apCD, showToast and aiGenCommercial) and before
      renderer.js, which dispatches contract-immigration and contract-contractor
@@ -2249,6 +2264,9 @@
 <script src="js/esign-settings.js"></script>
 <script src="js/admin-access.js"></script>
 <script src="js/hr-docs.js"></script>
+<!-- Before renderer.js: its first renderADTPage() on load draws the dashboard
+     and calls dashOpsRender(). -->
+<script src="js/dash-ops.js"></script>
 <script src="js/renderer.js"></script>
 <!-- After renderer.js: it enhances what the renderer paints, and needs the
      page data arrays and open*Sidebar handlers to already exist. -->

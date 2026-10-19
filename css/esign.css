@@ -149,6 +149,20 @@
 .es-rule{height:1px;background:var(--border);margin:22px 0 18px}
 .es-toggle{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .es-toggle-lbl{font-size:12px;font-weight:600;color:var(--navy);white-space:nowrap}
+/* Who does what (csEsignTabHTML): two bordered columns under the header card,
+   each a short checklist, in place of the paragraph that used to say it. */
+.es-roles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.es-role{border:1px solid var(--border);border-radius:10px;padding:12px 14px;background:#fff}
+.es-role-h{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.es-role-h svg{width:13px;height:13px;color:#64748b;flex-shrink:0}
+.es-role-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.es-role-list li{display:flex;align-items:flex-start;gap:7px;font-size:12.5px;color:#475569;line-height:1.4}
+.es-role-list li svg{width:12px;height:12px;margin-top:2px;flex-shrink:0;color:var(--st-ok-fg)}
+.es-send-from{display:flex;align-items:center;gap:8px;padding:9px 12px;margin-bottom:16px;border-radius:8px;
+  background:var(--light);font-size:12.5px;color:var(--gray)}
+.es-send-from>svg{width:14px;height:14px;flex-shrink:0;color:#64748b}
+.es-send-from .es-inline-link{font-weight:600;padding:0;vertical-align:baseline}
+@media (max-width:640px){.es-roles{grid-template-columns:1fr}}
 /* The panel is narrower than a page, so the form keeps two columns but tighter
    gutters than a full-width form would use. */
 .es-cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
@@ -207,7 +221,7 @@
    upload" both have to fit without clipping, because a truncated person or a
    truncated source tells you nothing, where a truncated file name still
    tells you which file it is. */
-.csag-table--files th:nth-child(1){width:6%}
+.csag-table--files th:nth-child(1){width:58px}
 .csag-table--files th:nth-child(2){width:25%}
 .csag-table--files th:nth-child(3){width:18%}
 .csag-table--files th:nth-child(4){width:8%}
@@ -217,6 +231,16 @@
    columns holding free text clip rather than overlap their neighbour. */
 .csag-table--files td:nth-child(3),
 .csag-table--files td:nth-child(5){overflow:hidden;text-overflow:ellipsis}
+/* In the side panel the Action share is ~200px, short of the full "Send to
+   E-sign" button beside Download and Remove, so the row scrolled sideways and
+   the button was cut. Below 900px the button drops its label and becomes the
+   same square as the icons beside it; the full wording stays on its tooltip.
+   The popup and wider screens keep the label. */
+.csag-table-wrap{container-type:inline-size}
+@container (max-width:900px){
+  .csag-table--files .es-send-btn{width:28px;padding:0;justify-content:center}
+  .csag-table--files .es-send-lbl{display:none}
+}
 
 /* Roles & Access: the person cell's avatar, the one part that table needs and
    the attachments table does not have. */

@@ -218,16 +218,28 @@ function csEsignTabHTML(){
   /* 1 — what it is doing right now. "Is this on?" is the question this tab is
      opened with, so it is answered before the credentials are shown. The
      facts are the panel's own field cards. */
-  let html='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+sbEsc(ESIGN_CFG.provider)
-      +' E-Signing</span>'
-    +'<div class="es-toggle"><span class="lp-status-badge tone-'+tone+'">'+label+'</span>'
-      +'<span class="es-toggle-lbl">'+(d.enabled?'Enabled':'Disabled')+'</span>'
-      +'<button type="button" class="np-switch'+(d.enabled?' on':'')+'" onclick="esCfgToggleEnabled()" '
-      +'role="switch" aria-checked="'+(d.enabled?'true':'false')+'" aria-label="Enable integration"></button></div></div>'
-    +'<p class="es-tab-sub">Used to execute this entity&rsquo;s NDA and uploaded MSA. '+sbEsc(ESIGN_CFG.provider)
-      +' owns the signing link, the signer journey, the signature, the signed PDF and the audit certificate. '
-      +'The platform creates the submission, stores the reference ids and tracks status from the webhook callbacks. '
-      +'Documents are sent from the <b>Attachments</b> tab.</p>'
+  /* The integration reads as a record, in the shared header card every panel
+     opens with: what it is, where it points, its state and its switch. The
+     old paragraph under it said three things - who does what, and where
+     documents are sent from - so those became a two-column split and a
+     one-line pointer that takes you there. */
+  const prov=sbEsc(ESIGN_CFG.provider);
+  const roleList=function(items){return '<ul class="es-role-list">'+items.map(function(t){
+    return '<li>'+ES_ICO.check+'<span>'+t+'</span></li>';}).join('')+'</ul>';};
+  let html=sbHero({icon:ES_ICO.plug,name:prov+' E-Signing',
+      meta:[ESIGN_CFG.env,'NDA &amp; uploaded MSA'],
+      status:'<div class="es-toggle"><span class="lp-status-badge tone-'+tone+'">'+label+'</span>'
+        +'<span class="es-toggle-lbl">'+(d.enabled?'Enabled':'Disabled')+'</span>'
+        +'<button type="button" class="np-switch'+(d.enabled?' on':'')+'" onclick="esCfgToggleEnabled()" '
+        +'role="switch" aria-checked="'+(d.enabled?'true':'false')+'" aria-label="Enable integration"></button></div>'})
+    +'<div class="es-roles">'
+      +'<div class="es-role"><div class="es-role-h">'+ES_ICO.pen+prov+' handles</div>'
+        +roleList(['Signing link &amp; signer journey','Signature &amp; signed PDF','Audit certificate'])+'</div>'
+      +'<div class="es-role"><div class="es-role-h">'+ES_ICO.shield+'This platform handles</div>'
+        +roleList(['Creates the submission','Stores the reference IDs','Tracks status from webhooks'])+'</div>'
+    +'</div>'
+    +'<div class="es-send-from">'+ES_ICO.info+'<span>Documents are sent for signature from the '
+      +'<button type="button" class="att-link es-inline-link" onclick="csSetTab(\'attachments\')">Attachments</button> tab.</span></div>'
     +'<div class="lp-sb-detail-grid">'
       +esFact(ES_ICO.fFlag,'Environment',ESIGN_CFG.env)
       +esFact(ES_ICO.fLink,'API Base URL',ESIGN_CFG.baseUrl)

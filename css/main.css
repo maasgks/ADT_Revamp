@@ -2359,7 +2359,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .sr-table th:nth-child(8),.sr-table td:nth-child(8){width:64px;text-align:right}
 
 /* ══ ALL TIMESHEET — ROW DETAIL PANEL ══════════════════════════════════════
-   Two tabs, Timesheet and Payslips, in the same split panel every other
+   Three tabs, Timesheet, Salary (css/at-salary.css) and Payslips, in the same split panel every other
    listing uses. Everything structural comes from .lp-split-* and .lp-isb-* in
    leaves.css; only what this panel adds on top lives here. */
 .at-split-wrap .lp-split-main{border:none;border-radius:0;background:transparent}

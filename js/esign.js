@@ -956,7 +956,7 @@ function esSendControl(doc){
     : (soft?soft+' — open to add it and send':'Send to '+ESIGN_CFG.provider+' for signature');
   return '<button class="es-send-btn" onclick="esOpenSend(\''+doc.uid+'\')"'
     +(hard?' disabled':'')+' title="'+attrSafe(title)+'">'
-    +ES_ICO.pen+'Send to E-sign</button>';
+    +ES_ICO.pen+'<span class="es-send-lbl">Send to E-sign</span></button>';
 }
 function esDetailBtn(doc){
   return '<button class="att-row-btn es-detail" title="E-sign details" onclick="esOpenDetail(\''+doc.uid+'\')">'+ES_ICO.pen+'</button>';
