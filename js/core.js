@@ -1973,13 +1973,6 @@ function isbRevealTab(prefix){
    user could have reached by hand. Where a card's wording has no equivalent
    in the destination's vocabulary ("Escalated Tickets" is not a ticket status)
    it links unfiltered rather than inventing one. */
-/* ── CARD VISIBILITY BY MODULE ──
-   Stands in for per-entity Module Control: an entity that has not switched a
-   module on does not see the dashboard cards that report on it. Only the three
-   operational cards read this (js/dash-ops.js) — "This week" needs Timesheets,
-   "Attendance today" needs Attendance. A hidden card leaves no gap. */
-var DASH_MODULES={timesheets:true,attendance:true};
-
 var DASH_CARD_LINK={
   /* people */
   'Total Employees':              ['employees'],
@@ -2030,6 +2023,57 @@ function openDashCard(label){
   if(apply)apply(target[1]||'');
   navigatePage(target[0],true);
   return true;
+}
+
+/* ── A DASHBOARD ROW OPENS ITS OWN RECORD ──
+   A row on a dashboard names one record, so clicking it has to land on THAT
+   record — not on the top of a listing where it may be filtered out, on page
+   3, or not selected. Every row used to call navigatePage(listing) and stop.
+
+   dashOpenRecord does the three things that make the row findable:
+     1. clears the listing's filters and search (a filter left over from the
+        last visit could hide the row),
+     2. turns to the page the row is on,
+     3. opens its detail panel on Basic Details and scrolls the row into view.
+   `row` is the listing's row-id prefix, `key` its listPage key. */
+var DASH_RECORD={
+  'all-leaves':{row:'al-row-',key:'all-leaves',
+    clear:function(){alStatusFilter='';alSearchQuery='';},
+    open:function(id){alSelectedId=id;openAlSidebar(id,'basic-details');}},
+  'payments':{row:'pm-row-',key:'payments',
+    clear:function(){pmInvoiceStatusFilter='';pmDateFilter='';pmSearchQuery='';},
+    open:function(id){pmSelectedId=id;openPmSidebar(id,'basic-details');}},
+  'support-tickets':{row:'tk-row-',key:'support-tickets',
+    clear:function(){tkQuickStatusFilter='';tkChannelFilter='';tkSearchQuery='';},
+    open:function(id){tkSelectedId=id;openTkSidebar(id,'basic-details');}},
+  'chats':{row:'chat-row-',key:'chats',
+    clear:function(){chatQuickStatusFilter='';chatSearchQuery='';},
+    open:function(id){chatSelectedId=id;openChatSidebar(id,'basic-details');}},
+  'contracts':{row:'ct-row-',key:'contracts',
+    clear:function(){ctQuickStatusFilter='';ctCountryFilter='';ctSearchQuery='';ctTypeFilter=CT_TYPE_ALL;ctLandingOpen=false;},
+    open:function(id){ctSelectedId=id;openCtSidebar(id,'basic-details');}},
+  'compliance':{row:'cmp-row-',key:'compliance',
+    clear:function(){complianceCountryFilter='';complianceModelFilter='';complianceStatusFilter='';complianceSearchQuery='';},
+    open:function(id){complianceSelectedId=id;complianceTab='basic-details';openComplianceSidebar(id);}}
+};
+function dashOpenRecord(listing,id){
+  var c=DASH_RECORD[listing];
+  if(!c){navigatePage(listing,true);return;}
+  c.clear();
+  navigatePage(listing,true);
+  /* After the listing has painted: its rows and panel only exist then. */
+  setTimeout(function(){
+    var rowId=c.row+id;
+    if(!document.getElementById(rowId)){
+      for(var n=1;n<=50;n++){
+        listPageNo[c.key]=n;renderADTPage();
+        if(document.getElementById(rowId))break;
+      }
+    }
+    c.open(id);
+    var row=document.getElementById(rowId);
+    if(row)row.scrollIntoView({block:'nearest'});
+  },0);
 }
 
 /* One delegated listener rather than fifty-one inline onclicks - and it takes
@@ -3103,40 +3147,6 @@ const globalEmpData=[
   {id:6,name:'Ana Silva',empId:'GEP006',dept:'Support',country:'Portugal',jobTitle:'Support Specialist',workerType:'EOR',joinDate:'14 Sep 2026',desc:'Full time employee',contact:'+351 91 000 0001',email:'ana@testemp.com',status:'Onboarding'},
 ];
 let geStatusFilter='';
-
-/* ── RECORD DATES & GAPS, for "Expiring & incomplete records" (HR dashboard) ──
-   The employee records carried no expiry dates, so these are seeded onto them.
-   Dates are OFFSETS FROM TODAY, worked out at load, so the card always has
-   live items whatever day the prototype is opened. Stored as ISO; the card
-   formats them. visaExpiry is only ever set on Global (EOR) workers. */
-function dashOffsetISO(days){
-  const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+days);
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-[
-  [directEmpData,1,{idProofExpiry:dashOffsetISO(5),contractEnd:dashOffsetISO(40)}],
-  [directEmpData,2,{idProofExpiry:dashOffsetISO(200)}],
-  [directEmpData,3,{contractEnd:dashOffsetISO(24)}],
-  [directEmpData,5,{probationEnd:dashOffsetISO(38),bankDetailsMissing:true}],
-  [directEmpData,6,{probationEnd:dashOffsetISO(44),complianceSnapshotMissing:true}],
-  [globalEmpData,1,{visaExpiry:dashOffsetISO(3)}],
-  [globalEmpData,2,{visaExpiry:dashOffsetISO(27),idProofExpiry:dashOffsetISO(60)}],
-  [globalEmpData,3,{contractEnd:dashOffsetISO(14)}],
-  [globalEmpData,5,{complianceSnapshotMissing:true}]
-].forEach(function(s){const r=s[0].find(function(e){return e.id===s[1];});if(r)Object.assign(r,s[2]);});
-
-/* ── TODAY'S PUNCHES, for "Attendance today" (HR dashboard) ──
-   There is no workforce-wide daily attendance store yet, so this seeds one
-   punch per Active direct employee for TODAY (the real clock date), keyed by
-   directEmpData id. null = no punch. On time / late is NOT stored: the card
-   judges it with the entity shift and clock-in grace, the same rule as
-   dsClassify. Leave is not stored either — it comes from approved Leave
-   Requests covering today. */
-const hrAttendanceToday={
-  1:{in:'08:52',mode:'office'},
-  2:{in:'09:32',mode:'office'},
-  3:{in:'09:06',mode:'remote'}
-};
 const geWorkflowData={
   1:[
     {title:'Onboarding Complete',user:'HR',date:'10 Feb 2024',time:'09:00:00 AM',description:'EOR onboarding via Dhi completed. Access provisioned for Germany entity.'},
@@ -4660,6 +4670,98 @@ const chatsData=[
   {id:6,chatId:'CHAT-1040',clientName:'Luca Bianchi',assignedTo:'Pallavi Parate',lastActivity:'3 months ago',status:'waiting_client',country:'Italy',clientEmail:'luca.bianchi@example.com',startedAt:'Mar 12, 2026 | 03:45 PM',linkedTickets:['TCK-1100']},
   {id:7,chatId:'CHAT-1039',clientName:'Hannah Müller',assignedTo:'Rahul Mehta',lastActivity:'4 months ago',status:'waiting_csm',country:'Germany',clientEmail:'hannah.muller@example.com',startedAt:'Feb 26, 2026 | 09:30 AM',linkedTickets:['TCK-1298']}
 ];
+
+/* ══ RECORDS BEHIND THE DASHBOARD ROWS ═════════════════════════════════════
+   Every clickable row on a dashboard opens ITS record (dashOpenRecord), so
+   every row needs a record to open. These are the ones the dashboards named
+   but the listings never held. They are ordinary records — they show in the
+   listings and count in the totals like any other.
+   Ids are fixed because index.html links each row to one. */
+(function(){
+  const L=function(id,name,empId,type,from,to,hours,desc,status,sub,applied){
+    return {id:id,empId:empId,name:name,leaveId:String(2041+id),leaveType:type,leaveFrom:from,leaveTo:to,leaveHours:hours,
+      description:desc,email:name.toLowerCase().replace(/\s+/g,'.')+'@testemp.com',appliedDate:applied,createdBy:'Self',status:status,subStatus:sub};
+  };
+  allLeavesData.push(
+    // Employee dashboard — the signed-in employee's own requests (empSelf, Meera Iyer).
+    L(12,'Meera Iyer','CLOCLO11766','Casual Leave','22-05-2026','24-05-2026','Full Day','Short family trip.','Pending','Paid','15 May, 2026 10:05:00'),
+    L(13,'Meera Iyer','CLOCLO11766','Sick Leave','10-04-2026','10-04-2026','Full Day','Down with a fever.','Approved','Paid','10 Apr, 2026 08:12:00'),
+    L(14,'Meera Iyer','CLOCLO11766','Earned Leave','02-03-2026','06-03-2026','Full Day','Planned vacation, handover done.','Approved','Paid','20 Feb, 2026 17:40:00'),
+    // HR dashboard — Leave Requests card.
+    L(15,'Ramesh Patel','CLOCLO11767','Sick Leave','20-05-2026','20-05-2026','Full Day','Unwell, resting at home.','Pending','Unpaid','19 May, 2026 21:30:00'),
+    L(16,'Priya Sharma','CLOCLO11768','Casual Leave','22-05-2026','22-05-2026','Full Day','Personal errand.','Approved','Paid','16 May, 2026 11:00:00'),
+    L(17,'Aishi Verma','CLOCLO11769','Earned Leave','23-05-2026','25-05-2026','Full Day','Long weekend away.','Approved','Paid','12 May, 2026 15:20:00'),
+    L(18,'Arjun Desai','CLOCLO11770','Sick Leave','28-05-2026','28-05-2026','Full Day','Doctor visit.','Pending','Unpaid','27 May, 2026 07:45:00')
+  );
+
+  /* Finance dashboards — entity invoices. Payments holds orders, so each
+     invoice is an order whose order id is the invoice number. */
+  const P=function(id,inv,entity,amt,date,status,country){
+    const who=entity.replace(/[^A-Za-z ]/g,'').trim();
+    return {id:id,orderId:inv,name:entity,amountDue:'INR '+amt+'.00',type:'Entity Invoice',orderStatus:'Active',invoiceStatus:status,
+      key:inv,dealId:'—',entityName:entity,addedFrom:'billing',createdTime:date+' 2026 | 10:00 am',courseId:'—',courseName:'—',lastUpdated:'--',
+      startFrom:date+' 2026',endTo:'—',workingCountry:country,orderCategory:'international',
+      emp:{empId:'—',name:'—',email:'—',mobile:'—',status:'—',createdOn:'—'},
+      sales:{companyId:'—',companyName:entity,contactPersonId:'—',contactPersonName:'Accounts Team',rateType:'Monthly',days:'0',rate:'INR '+amt+'.00',totalAmount:'INR '+amt+'.00',contractPeriod:'—',workLocation:country,tsPeriodDate:'—',paymentTerm:'30'},
+      user:{company:{userId:'—',concernPersonName:'Accounts Team',companyName:entity,firstName:'Accounts',lastName:'Team',email:'accounts@'+who.toLowerCase().replace(/\s+/g,'')+'.com',mobile:'—',altMobile:'—',website:'—',address:'—'},
+            concern:{key:'—',name:'Accounts Team',mobile:'—',email:'—',date:date+' 2026',createBy:'Billing',address:'—'}},
+      attachments:[]};
+  };
+  paymentsData.push(
+    P(3,'INV-2041','Dhi Hyperlocal','4,20,000','28 May','Unpaid','India'),
+    P(4,'INV-2040','ADT Spain S.L.','2,10,000','22 May','Pending','Spain'),
+    P(5,'INV-2039','ADT Singapore Pte.','6,10,000','25 May','Pending','Singapore'),
+    P(6,'INV-2038','Dhi Hyperlocal','2,75,000','12 May','Paid','India'),
+    P(7,'INV-2035','Dhi Hyperlocal','6,10,000','10 May','Unpaid','India'),
+    P(8,'INV-2031','Dhi Hyperlocal','1,85,000','08 May','Paid','India'),
+    P(9,'INV-2029','Dhi Hyperlocal','3,40,000','02 May','Paid','India'),
+    P(10,'INV-2027','ADT Singapore Pte.','3,40,000','02 May','Paid','Singapore'),
+    P(11,'INV-2024','Dhi Hyperlocal','5,25,000','25 Apr','Paid','India'),
+    P(12,'INV-2021','ADT Spain S.L.','5,25,000','25 Apr','Paid','Spain'),
+    P(13,'INV-2018','ADT Brazil Ltda.','1,60,000','20 Apr','Paid','Brazil')
+  );
+
+  // CSM dashboard — the one ticket it named that did not exist.
+  ticketsData.push({id:18,ticketId:'TCK-1010',clientName:'Mark Lee',title:'Tax Registration',category:'Payroll',createdAt:'Jun 25, 2026',
+    status:'in_progress',source:'portal',raisedBy:'Mark Lee',clientEmail:'mark.lee@example.com',clientPhone:'+49 30 000 0000',country:'Germany',
+    assignedTo:'Pallavi Parate',description:'Waiting on the Tax ID before payroll can be registered.'});
+
+  // CSM dashboard — Recent Chats.
+  chatsData.push(
+    {id:8,chatId:'CHAT-1046',clientName:'Thijs Verbeek',assignedTo:'Pallavi Parate',lastActivity:'2 days ago',status:'waiting_client',country:'Belgium',clientEmail:'thijs.verbeek@example.com',startedAt:'Jun 24, 2026 | 11:10 AM',linkedTickets:['TCK-1025']},
+    {id:9,chatId:'CHAT-1047',clientName:'Alice Smith',assignedTo:'Neha Sharma',lastActivity:'1 week ago',status:'active',country:'Italy',clientEmail:'alice.smith@example.com',startedAt:'Jun 19, 2026 | 04:20 PM',linkedTickets:['TCK-1019']},
+    {id:10,chatId:'CHAT-1048',clientName:'Mark Lee',assignedTo:'Rahul Mehta',lastActivity:'2 months ago',status:'inactive',country:'Germany',clientEmail:'mark.lee@example.com',startedAt:'Apr 22, 2026 | 10:00 AM',linkedTickets:['TCK-1010']},
+    {id:11,chatId:'CHAT-1049',clientName:'John Doe',assignedTo:'Pallavi Parate',lastActivity:'2 months ago',status:'inactive',country:'Netherlands',clientEmail:'john.doe@example.com',startedAt:'Apr 20, 2026 | 02:15 PM',linkedTickets:[]}
+  );
+
+  /* Ops dashboard — Active Contracts. Cloned from a record of the same type so
+     the detail panel has every field it reads, then made into this person. */
+  const C=function(id,from,o){
+    const base=JSON.parse(JSON.stringify(contractsData.find(function(c){return c.id===from;})));
+    return Object.assign(base,{id:id,contractId:String(94160+id)},o);
+  };
+  contractsData.push(
+    C(27,5,{empName:'Anika Shah',country:'Netherlands',countryOfOp:'Netherlands',type:'EOR',status:'Ready for Payroll',email:'anika@testemp.com'}),
+    // A contractor's flow ends at Active, not Ready for Payroll (CT_FLOWS).
+    C(28,26,{empName:'Rahul Mehta',country:'India',countryOfOp:'India',type:'Contractor',status:'Active',email:'rahul@testemp.com'}),
+    C(29,8,{empName:'Owen Clark',country:'United Kingdom',countryOfOp:'United Kingdom',type:'EOR',status:'Contract Sent',email:'owen.clark@testemp.com'}),
+    C(30,7,{empName:'Nora Kim',country:'Germany',countryOfOp:'Germany',type:'PEO',status:'Proposal Sent',email:'nora.kim@testemp.com'})
+  );
+
+  // Ops dashboard — Compliance Items.
+  const K=function(id,item,cat,mand,country){
+    return {id:id,country:country,item:item,model:'EOR',status:'Active',category:cat,createdBy:'Pritam Rai',createdAt:'02 Jun 2026 | 10:00:00 AM',
+      mandatory:mand,payrollBlocking:mand,evidenceRequired:true,attachments:[],logs:[]};
+  };
+  complianceItemsData.push(
+    K(10,'Employee KYC Review','Documents',true,'Netherlands'),
+    K(11,'Work Authorization','Statutory',true,'Germany'),
+    K(12,'Tax Registration','Payroll',true,'India'),
+    K(13,'Policy Acknowledgement','Policy',false,'Netherlands'),
+    K(14,'Statutory Filing Check','Entity',false,'Spain')
+  );
+  complianceNextId=15;
+})();
 let tkSelectedId=null,tkTab='basic-details';
 let chatSelectedId=null,chatTab='basic-details';
 /* ── Chat lifecycle ───────────────────────────────────────────────────────

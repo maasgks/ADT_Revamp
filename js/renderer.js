@@ -84,10 +84,7 @@ function renderPageContent(target){
     // The employee's lifecycle tracker is drawn from the live record.
     if(typeof empDashRender==='function')empDashRender(el);
     // So are the announcements under Key Metrics.
-    if(typeof annRender==='function')annRender(el);
-    // This week (Employee), Attendance today + Expiring records (HR).
-    if(typeof dashOpsRender==='function')dashOpsRender(el);
-    // The snapshot always has the first tab active — restore the one the user was on.
+    if(typeof annRender==='function')annRender(el);    // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
     _attRestore();   // ...and the snapshot is always the idle clock — see _attRestore
     return;

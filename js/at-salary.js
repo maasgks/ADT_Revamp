@@ -49,12 +49,26 @@ const AT_PAY={
     earnings:[{key:'hra',name:'HRA',amt:4000},{key:'internet',name:'Internet Allowance',amt:2000}],
     deductions:[{key:'pf',name:'Provident Fund',rule:'Provident Fund'},{key:'pt',name:'Professional Tax',rule:'Professional Tax'}]}
 };
+/* The Employee dashboard's signed-in employee (empSelf: direct employee 6).
+   Her Payroll card lists months paid at INR 1,25,000 net; this structure is
+   what makes the payslip for those months net exactly that. */
+AT_PAY['EMP006']={doj:'15-09-2026',dept:'Design',designation:'UX Designer',location:'Hyderabad',
+  pan:'AKMPI4471Q',bank:'XXXXXX6620',filledHours:0,
+  leaves:{yearly:24,takenYear:0,wfh:0,paid:0,unpaid:0,thisMonth:0},
+  basic:60000,
+  earnings:[{key:'hra',name:'HRA',amt:24000},{key:'general',name:'General Allowance',amt:43000}],
+  deductions:[{key:'pf',name:'Provident Fund',rule:'Provident Fund'},{key:'pt',name:'Professional Tax',rule:'Professional Tax'}]};
 const AT_HOURS_PER_DAY=9;
 const AT_MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const AT_YEAR=2026;
 let atSalState={};      // empId|Mon → record
 let atSalModal=null;    // {kind:'approve'|'reopen'|'slip', empId, month}
 
+function atSalEmp(empId){
+  const t=atEmp(empId);if(t)return t;
+  const d=(typeof directEmpData!=='undefined')?directEmpData.find(function(e){return e.empId===empId;}):null;
+  return d?{empId:d.empId,name:d.name}:null;
+}
 function atSalMonth(){return atPeriod().label;}
 function atSalDays(mon){return new Date(AT_YEAR,AT_MONTHS.indexOf(mon)+1,0).getDate();}
 function atSalSlipName(mon){return 'Payslip_'+mon+'_'+AT_YEAR+'.pdf';}
@@ -272,8 +286,8 @@ function atSalReopen(){
   atSalModal=null;atSalModalPaint();renderADTPage();
   showToast('Salary reopened','success','Payslip for '+m.month+' '+AT_YEAR+' withdrawn');
 }
-function atSalViewSlip(empId,mon){
-  atSalModal={kind:'slip',empId:empId||atSelectedId,month:mon||atSalMonth()};atSalModalPaint();
+function atSalViewSlip(empId,mon,year){
+  atSalModal={kind:'slip',empId:empId||atSelectedId,month:mon||atSalMonth(),year:year||AT_YEAR};atSalModalPaint();
 }
 function atSalCloseModal(){atSalModal=null;atSalModalPaint();}
 
@@ -432,8 +446,9 @@ const AT_COMPANY={
   formerly:'(Formerly known as NEWFORCE GLOBAL SERVICES INDIA PRIVATE LIMITED)',
   address:'REG ADD: WEWORK VASWANI CHAMBERS, 2ND FLOOR, 264-265, DR ANNIE BESANT RD, MUNICIPAL COLONY, WORLI SHIVAJI NAGAR, WORLI, MUMBAI, MAHARASHTRA 400030'
 };
-function atPayslipHTML(empId,mon){
-  const emp=atEmp(empId),pay=AT_PAY[empId];
+function atPayslipHTML(empId,mon,year){
+  year=year||AT_YEAR;
+  const emp=atSalEmp(empId),pay=AT_PAY[empId];
   if(!emp||!pay)return '<div class="atsal-empty">No pay structure on file for this employee.</div>';
   const rec=atSalRec(empId,mon);
   const c=atSalCalc(empId,rec);
@@ -452,7 +467,7 @@ function atPayslipHTML(empId,mon){
     +'<div class="psl-head"><img src="assets/Opendhilogo.png" alt="OpenDhi" class="psl-logo">'
       +'<div class="psl-co"><b>'+AT_COMPANY.name+'</b><span>'+AT_COMPANY.formerly+'</span></div></div>'
     +'<div class="psl-addr">'+AT_COMPANY.address+'</div>'
-    +'<div class="psl-title">Payslip for the month of <b>'+mon.toUpperCase()+' '+AT_YEAR+'</b></div>'
+    +'<div class="psl-title">Payslip for the month of <b>'+mon.toUpperCase()+' '+year+'</b></div>'
     +'<div class="psl-info">'
       +'<div>'+kv('Staff ID',emp.empId)+kv('Employee’s Name',emp.name)+kv('Department',pay.dept)+kv('Designation',pay.designation)+kv('Location',pay.location)+'</div>'
       +'<div>'+kv('Date of Joining',pay.doj)+kv('Month Gross Salary',atMoney0(c.grossActual))+kv('PAN Card',pay.pan)+kv('Bank Account No.',pay.bank)+'</div>'
@@ -472,14 +487,14 @@ function atSalModalPaint(){
   let host=document.getElementById('atsal-modal');
   if(!atSalModal){if(host)host.remove();return;}
   if(!host){host=document.createElement('div');host.id='atsal-modal';document.body.appendChild(host);}
-  const m=atSalModal,emp=atEmp(m.empId);
+  const m=atSalModal,emp=atSalEmp(m.empId),yr=m.year||AT_YEAR;
   const x='<button class="ct-modal-close" onclick="atSalCloseModal()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
   let inner;
   if(m.kind==='slip'){
     inner='<div class="ct-modal ct-modal--form atsal-slip-modal" onclick="event.stopPropagation()">'
-      +'<div class="ct-modal-hdr"><span class="ct-modal-title">Payslip — '+emp.name+' · '+m.month+' '+AT_YEAR
+      +'<div class="ct-modal-hdr"><span class="ct-modal-title">Payslip — '+emp.name+' · '+m.month+' '+yr
         +' <span class="lp-status-badge tone-ok">'+(m.fresh?'Generated':'Approved')+'</span></span>'+x+'</div>'
-      +'<div class="atsal-slip-scroll" id="atsal-slip-doc">'+atPayslipHTML(m.empId,m.month)+'</div>'
+      +'<div class="atsal-slip-scroll" id="atsal-slip-doc">'+atPayslipHTML(m.empId,m.month,yr)+'</div>'
       +'<div class="ct-modal-foot"><span class="atsal-hint">Download opens the print dialog — choose “Save as PDF”.</span>'
         +'<div class="ct-modal-btns"><button class="btn-outline" onclick="atSalCloseModal()">Close</button>'
         +'<button class="btn-primary" onclick="atSalDownload()">Download PDF</button></div></div>'
@@ -509,12 +524,12 @@ function atSalModalPaint(){
    title becomes the file name Chrome suggests for "Save as PDF". */
 function atSalDownload(){
   const m=atSalModal;if(!m||m.kind!=='slip')return;
-  const emp=atEmp(m.empId);
+  const emp=atSalEmp(m.empId),yr=m.year||AT_YEAR;
   let root=document.getElementById('psl-print-root');
   if(!root){root=document.createElement('div');root.id='psl-print-root';document.body.appendChild(root);}
-  root.innerHTML=atPayslipHTML(m.empId,m.month);
+  root.innerHTML=atPayslipHTML(m.empId,m.month,yr);
   const title=document.title;
-  document.title='Payslip_'+m.month+'_'+AT_YEAR+'_'+emp.name.replace(/\s+/g,'_');
+  document.title='Payslip_'+m.month+'_'+yr+'_'+emp.name.replace(/\s+/g,'_');
   document.documentElement.classList.add('psl-printing');
   const done=function(){
     document.documentElement.classList.remove('psl-printing');

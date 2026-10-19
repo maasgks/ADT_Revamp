@@ -59,7 +59,6 @@
 <link rel="stylesheet" href="css/form-page.css">
 <link rel="stylesheet" href="css/apply-application.css">
 <link rel="stylesheet" href="css/at-salary.css">
-<link rel="stylesheet" href="css/dash-ops.css">
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
 <link rel="stylesheet" href="css/timesheet-calendar.css">
@@ -354,11 +353,6 @@
           </div>
         </div>
 
-        <!-- This week: hours against target and the week's submission state.
-             Filled by dashOpsRender() (js/dash-ops.js) from the timesheet data;
-             empty, and so invisible, when the Timesheets module is off. -->
-        <div id="emp-week-dash"></div>
-
         <!-- Action Required -->
         <div class="hr-section" style="margin-bottom:14px">
           <div class="hr-section-header">
@@ -407,7 +401,7 @@
               <div class="hr-section-title">Payroll</div>
               <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('payroll',true)">View All</a>
             </div>
-            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
+            <div class="emp-payslip-row" style="cursor:pointer" title="View payslip" onclick="atSalViewSlip(empSelfRec().empId,'Apr',2025)">
               <div>
                 <div class="emp-payslip-month">April 2025</div>
                 <div class="emp-payslip-sub">Processed 01 May 2025</div>
@@ -417,7 +411,7 @@
                 <span class="lp-status-badge approved">Paid</span>
               </div>
             </div>
-            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
+            <div class="emp-payslip-row" style="cursor:pointer" title="View payslip" onclick="atSalViewSlip(empSelfRec().empId,'Mar',2025)">
               <div>
                 <div class="emp-payslip-month">March 2025</div>
                 <div class="emp-payslip-sub">Processed 01 Apr 2025</div>
@@ -427,7 +421,7 @@
                 <span class="lp-status-badge approved">Paid</span>
               </div>
             </div>
-            <div class="emp-payslip-row" style="cursor:pointer" onclick="navigatePage('payroll',true)">
+            <div class="emp-payslip-row" style="cursor:pointer" title="View payslip" onclick="atSalViewSlip(empSelfRec().empId,'Feb',2025)">
               <div>
                 <div class="emp-payslip-month">February 2025</div>
                 <div class="emp-payslip-sub">Processed 01 Mar 2025</div>
@@ -438,10 +432,12 @@
               </div>
             </div>
           </div>
-          <div class="hr-section">
+          <!-- Column flex so the Apply Leave footer sits on the card's bottom
+               edge, in the space the grid row leaves under a three-row table. -->
+          <div class="hr-section" style="display:flex;flex-direction:column">
             <div class="hr-section-header">
               <div class="hr-section-title">Leave Requests</div>
-              <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('all-leaves',true)">Apply Leave</a>
+              <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('all-leaves',true)">View all leaves</a>
             </div>
             <table class="hr-leave-table">
               <thead>
@@ -453,19 +449,19 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',12)">
                   <td><span class="hr-emp-name">Casual Leave</span></td>
                   <td style="color:var(--gray)">22–24 May</td>
                   <td style="color:var(--gray)">3</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',13)">
                   <td><span class="hr-emp-name">Sick Leave</span></td>
                   <td style="color:var(--gray)">10 Apr</td>
                   <td style="color:var(--gray)">1</td>
                   <td><span class="lp-status-badge approved">Approved</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',14)">
                   <td><span class="hr-emp-name">Earned Leave</span></td>
                   <td style="color:var(--gray)">2–6 Mar</td>
                   <td style="color:var(--gray)">5</td>
@@ -473,6 +469,13 @@
                 </tr>
               </tbody>
             </table>
+            <!-- Apply Leave lives in a footer, not the header, so the header
+                 matches every other card. It opens the same Create Leave form
+                 as the Leave Requests page and the Ctrl+K palette. -->
+            <div style="margin-top:auto;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <span style="font-size:var(--ds-caption);color:var(--gray)">Planning time off? Request it here.</span>
+              <button type="button" class="btn-primary btn-sm" onclick="navigatePage('all-leaves',true);startAddLeave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Apply Leave</button>
+            </div>
           </div>
         </div>
 
@@ -483,7 +486,7 @@
               <div class="hr-section-title">Documents &amp; Compliance</div>
               <a class="hr-section-link" href="javascript:void(0)" onclick="navigatePage('compliance',true)">View All</a>
             </div>
-            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
+            <div class="emp-doc-row">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Form 16 — FY 2024–25</div>
@@ -491,7 +494,7 @@
               </div>
               <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
             </div>
-            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
+            <div class="emp-doc-row">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Offer Letter</div>
@@ -499,7 +502,7 @@
               </div>
               <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
             </div>
-            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
+            <div class="emp-doc-row">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">IT Policy Acknowledgement</div>
@@ -507,13 +510,13 @@
               </div>
               <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Sign</button>
             </div>
-            <div class="emp-doc-row" style="cursor:pointer" onclick="navigatePage('compliance',true)">
+            <div class="emp-doc-row" style="cursor:pointer" title="View payslip" onclick="atSalViewSlip(empSelfRec().empId,'Apr',2025)">
               <div class="emp-doc-icon"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></div>
               <div style="flex:1">
                 <div class="emp-doc-name">Apr 2025 Payslip</div>
                 <div class="emp-doc-date">Generated 01 May 2025</div>
               </div>
-              <button class="hr-action-btn neutral" onclick="event.stopPropagation()">Download</button>
+              <button class="hr-action-btn neutral" onclick="event.stopPropagation();atSalViewSlip(empSelfRec().empId,'Apr',2025)">Download</button>
             </div>
           </div>
           <div class="hr-section">
@@ -683,11 +686,6 @@
           </div>
         </div>
         
-        <!-- Attendance today | Expiring & incomplete records. The whole .hr-grid-2
-             row is written by dashOpsRender() (js/dash-ops.js) with only the cards
-             whose module is on, so a hidden card leaves no gap. -->
-        <div id="hr-ops-dash"></div>
-
         <!-- Two Column Grid -->
         <div class="hr-grid-2">
           <!-- Leave Requests Section -->
@@ -706,25 +704,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',15)">
                   <td class="hr-emp-name">Ramesh Patel</td>
                   <td>Sick Leave</td>
                   <td>20 May</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',16)">
                   <td class="hr-emp-name">Priya Sharma</td>
                   <td>Casual Leave</td>
                   <td>22 May</td>
                   <td><span class="lp-status-badge approved">Approved</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',17)">
                   <td class="hr-emp-name">Aishi Verma</td>
                   <td>Earned Leave</td>
                   <td>23-25 May</td>
                   <td><span class="lp-status-badge approved">Approved</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('all-leaves',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('all-leaves',18)">
                   <td class="hr-emp-name">Arjun Desai</td>
                   <td>Sick Leave</td>
                   <td>28 May</td>
@@ -1364,21 +1362,21 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',4)">
                   <td class="hr-emp-name">INV-2040</td>
                   <td>ADT Spain S.L.</td>
                   <td>₹2,10,000</td>
                   <td>22 May</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',5)">
                   <td class="hr-emp-name">INV-2039</td>
                   <td>ADT Singapore Pte.</td>
                   <td>₹6,10,000</td>
                   <td>25 May</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',6)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
@@ -1403,31 +1401,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',6)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td>12 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',8)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
                   <td>08 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',10)">
                   <td class="hr-emp-name">INV-2027</td>
                   <td>ADT Singapore Pte.</td>
                   <td>₹3,40,000</td>
                   <td>02 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',12)">
                   <td class="hr-emp-name">INV-2021</td>
                   <td>ADT Spain S.L.</td>
                   <td>₹5,25,000</td>
                   <td>25 Apr</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',13)">
                   <td class="hr-emp-name">INV-2018</td>
                   <td>ADT Brazil Ltda.</td>
                   <td>₹1,60,000</td>
@@ -1534,25 +1532,25 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',3)">
                   <td class="hr-emp-name">INV-2041</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹4,20,000</td>
                   <td><span class="lp-status-badge pending">Unpaid</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',6)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td><span class="lp-status-badge approved">Paid</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',7)">
                   <td class="hr-emp-name">INV-2035</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹6,10,000</td>
                   <td><span class="lp-status-badge pending">Unpaid</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',8)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
@@ -1576,26 +1574,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',6)">
                   <td class="hr-emp-name">INV-2038</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹2,75,000</td>
                   <td>12 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',8)">
                   <td class="hr-emp-name">INV-2031</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹1,85,000</td>
                   <td>08 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
-                  <td class="hr-emp-name">INV-2027</td>
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',9)">
+                  <td class="hr-emp-name">INV-2029</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹3,40,000</td>
                   <td>02 May</td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('payments',true)">
-                  <td class="hr-emp-name">INV-2021</td>
+                <tr style="cursor:pointer" onclick="dashOpenRecord('payments',11)">
+                  <td class="hr-emp-name">INV-2024</td>
                   <td>Dhi Hyperlocal</td>
                   <td>₹5,25,000</td>
                   <td>25 Apr</td>
@@ -1625,41 +1623,41 @@
               <div class="csm-panel-title">Tickets</div>
               <a href="javascript:void(0)" class="csm-panel-link" onclick="navigatePage('support-tickets',true)">View All <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></a>
             </div>
-            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="dashOpenRecord('support-tickets',1)">
               <div>
-                <div class="csm-ticket-meta">#TCK-1021 John Doe 🇳🇱</div>
-                <div class="csm-ticket-title">Payroll Blocked</div>
-                <div class="csm-ticket-desc">Work Permit Missing</div>
+                <div class="csm-ticket-meta">#TCK-1021 John Doe 🇺🇸</div>
+                <div class="csm-ticket-title">Issue with compliance doc</div>
+                <div class="csm-ticket-desc">Compliance</div>
                 <div class="csm-ticket-time">5 min ago</div>
               </div>
-              <span class="lp-status-badge blocked">Blocked</span>
+              <span class="lp-status-badge tone-info">Open</span>
             </div>
-            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="dashOpenRecord('support-tickets',2)">
               <div>
-                <div class="csm-ticket-meta">#TCK-1025 Thijs Verbeek 🇧🇪</div>
-                <div class="csm-ticket-title">Document Pending</div>
-                <div class="csm-ticket-desc">Awaiting Passport Verification</div>
+                <div class="csm-ticket-meta">#TCK-1025 Thijs Verbeek 🇳🇱</div>
+                <div class="csm-ticket-title">Salary document missing</div>
+                <div class="csm-ticket-desc">Document</div>
                 <div class="csm-ticket-time">1 hour ago</div>
               </div>
-              <span class="lp-status-badge pending">Pending</span>
+              <span class="lp-status-badge tone-bad">Blocked</span>
             </div>
-            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="dashOpenRecord('support-tickets',3)">
               <div>
-                <div class="csm-ticket-meta">#TCK-1019 Alice Smith 🇮🇹</div>
-                <div class="csm-ticket-title">Contract Pending</div>
-                <div class="csm-ticket-desc">Awaiting Signature</div>
+                <div class="csm-ticket-meta">#TCK-1019 Alice Smith 🇬🇧</div>
+                <div class="csm-ticket-title">Contract renewal request</div>
+                <div class="csm-ticket-desc">Contract</div>
                 <div class="csm-ticket-time">15 hours ago</div>
               </div>
-              <span class="lp-status-badge pending">Pending</span>
+              <span class="lp-status-badge tone-info">Open</span>
             </div>
-            <div class="csm-ticket-row" style="cursor:pointer" onclick="navigatePage('support-tickets',true)">
+            <div class="csm-ticket-row" style="cursor:pointer" onclick="dashOpenRecord('support-tickets',18)">
               <div>
                 <div class="csm-ticket-meta">#TCK-1010 Mark Lee 🇩🇪</div>
                 <div class="csm-ticket-title">Tax Registration</div>
                 <div class="csm-ticket-desc">Waiting on Tax ID</div>
                 <div class="csm-ticket-time">1 day ago</div>
               </div>
-              <span class="lp-status-badge active">Active</span>
+              <span class="lp-status-badge tone-wait">In Progress</span>
             </div>
           </div>
 
@@ -1667,18 +1665,18 @@
             <div class="csm-panel-header">
               <div class="csm-panel-title">Chats</div>
             </div>
-            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="dashOpenRecord('chats',1)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">JD</div>
                 <span class="csm-chat-dot online"></span>
               </div>
               <div class="csm-chat-info">
-                <div class="csm-chat-name">John Doe 🇳🇱</div>
+                <div class="csm-chat-name">John Doe 🇺🇸</div>
                 <div class="csm-chat-time">53 min ago</div>
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="dashOpenRecord('chats',8)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">TV</div>
                 <span class="csm-chat-dot online"></span>
@@ -1689,7 +1687,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="dashOpenRecord('chats',9)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">AS</div>
                 <span class="csm-chat-dot"></span>
@@ -1700,7 +1698,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="dashOpenRecord('chats',10)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">ML</div>
                 <span class="csm-chat-dot online"></span>
@@ -1711,7 +1709,7 @@
               </div>
               <svg class="csm-chat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
             </div>
-            <div class="csm-chat-row" style="cursor:pointer" onclick="navigatePage('chats',true)">
+            <div class="csm-chat-row" style="cursor:pointer" onclick="dashOpenRecord('chats',11)">
               <div class="csm-chat-avatar-wrap">
                 <div class="csm-chat-avatar">JD</div>
                 <span class="csm-chat-dot online"></span>
@@ -1866,26 +1864,26 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('contracts',27)">
                   <td class="hr-emp-name">Netherlands EOR – Anika</td>
                   <td>Netherlands</td>
                   <td>EOR</td>
                   <td><span class="lp-status-badge approved">Ready for Payroll</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('contracts',28)">
                   <td class="hr-emp-name">India Contractor – Rahul</td>
                   <td>India</td>
                   <td>Contractor</td>
-                  <td><span class="lp-status-badge approved">Ready for Payroll</span></td>
+                  <td><span class="lp-status-badge approved">Active</span></td>
                 </tr>
 
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('contracts',29)">
                   <td class="hr-emp-name">UK EOR – Owen</td>
                   <td>United Kingdom</td>
                   <td>EOR</td>
                   <td><span class="lp-status-badge pending">Contract Sent</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('contracts',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('contracts',30)">
                   <td class="hr-emp-name">Germany PEO – Nora</td>
                   <td>Germany</td>
                   <td>PEO</td>
@@ -1910,31 +1908,31 @@
                 </tr>
               </thead>
               <tbody>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('compliance',10)">
                   <td class="hr-emp-name">Employee KYC Review</td>
                   <td>Documents</td>
                   <td>Yes</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('compliance',11)">
                   <td class="hr-emp-name">Work Authorization</td>
                   <td>Statutory</td>
                   <td>Yes</td>
                   <td><span class="lp-status-badge pending">Evidence Uploaded</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('compliance',12)">
                   <td class="hr-emp-name">Tax Registration</td>
                   <td>Payroll</td>
                   <td>Yes</td>
                   <td><span class="lp-status-badge pending">Pending</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('compliance',13)">
                   <td class="hr-emp-name">Policy Acknowledgement</td>
                   <td>Policy</td>
                   <td>No</td>
                   <td><span class="lp-status-badge pending">Reopened</span></td>
                 </tr>
-                <tr style="cursor:pointer" onclick="navigatePage('compliance',true)">
+                <tr style="cursor:pointer" onclick="dashOpenRecord('compliance',14)">
                   <td class="hr-emp-name">Statutory Filing Check</td>
                   <td>Entity</td>
                   <td>No</td>
@@ -2264,9 +2262,6 @@
 <script src="js/esign-settings.js"></script>
 <script src="js/admin-access.js"></script>
 <script src="js/hr-docs.js"></script>
-<!-- Before renderer.js: its first renderADTPage() on load draws the dashboard
-     and calls dashOpsRender(). -->
-<script src="js/dash-ops.js"></script>
 <script src="js/renderer.js"></script>
 <!-- After renderer.js: it enhances what the renderer paints, and needs the
      page data arrays and open*Sidebar handlers to already exist. -->
