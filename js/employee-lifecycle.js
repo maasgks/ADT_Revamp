@@ -1253,15 +1253,27 @@ function empLogExtraHTML(l){
   var moved=l.prev&&l.next&&l.prev!==l.next;
   return (moved?'<span class="lpl-rem-extra">'+empLifeHtml(l.prev)+' &rarr; <b>'+empLifeHtml(l.next)+'</b></span>':'')
     +(l.docs&&l.docs.length?x('Requested',l.docs.map(empLifeHtml).join(' · ')):'')
-    +(l.details&&l.details.length?x('Recorded',l.details.map(function(d){
-        return empLifeHtml(String(d.label).replace(/\?$/,''))+': <b>'+empLifeHtml(d.value)+'</b>';}).join(' · ')):'')
     +(l.issues&&l.issues.length?x('Issues',l.issues.map(function(p,n){
         return (n+1)+'. '+empLifeHtml(p.issue)+(p.res?' — <b>'+empLifeHtml(p.res)+'</b>':'');}).join('<br>')):'')
     +(l.rejected&&l.rejected.length?x('Rejected',l.rejected.map(function(d){
         return empLifeHtml(d.name)+(d.reason?' ('+empLifeHtml(d.reason)+')':'');}).join(' · '),true):'')
-    +(l.notified&&l.notified.length?'<div class="emp-log-mail">'+l.notified.map(function(n){
-        return '<span title="'+empLifeHtml(n.body)+'">'+EMP_ICO.mail+'<b>'+empLifeHtml(n.to)+'</b> · '+empLifeHtml(n.subject.split(' – ')[0])+(n.status==='Failed'?' (failed)':'')+'</span>';
-      }).join('')+'</div>':'');
+    +empLogCardHTML(l);
+}
+/* The details a step recorded and the emails it sent, as one card under the
+   comment: the details as label / value rows, the emails as a short list -
+   read down, not along one wrapped sentence. */
+function empLogCardHTML(l){
+  var det=l.details||[],sent=l.notified||[];
+  if(!det.length&&!sent.length)return '';
+  return '<div class="emp-log-card">'
+    +(det.length?'<dl class="emp-log-kv">'+det.map(function(d){
+        return '<div><dt>'+empLifeHtml(String(d.label).replace(/\?$/,''))+'</dt><dd>'+empLifeHtml(d.value)+'</dd></div>';
+      }).join('')+'</dl>':'')
+    +(sent.length?'<div class="emp-log-card-head">Notified &middot; '+sent.length+'</div><ul class="emp-log-notif">'+sent.map(function(n){
+        return '<li title="'+empLifeHtml(n.body)+'">'+EMP_ICO.mail+'<span><b>'+empLifeHtml(n.to)+'</b>'
+          +'<em'+(n.status==='Failed'?' class="is-bad"':'')+'>'+empLifeHtml(n.subject.split(' – ')[0])+(n.status==='Failed'?' &middot; Failed':'')+'</em></span></li>';
+      }).join('')+'</ul>':'')
+    +'</div>';
 }
 function empTimelineHTML(emp){
   var logs=empLogs(emp).map(function(l){

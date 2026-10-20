@@ -72,6 +72,22 @@
   background:#f8fafc;border:1px solid #eef0f3;border-radius:6px;padding:3px 8px}
 .emp-log-mail svg{color:#94a3b8;flex-shrink:0;margin-top:2px}
 .emp-log-mail b{font-weight:600;color:#475569}
+/* Logs > Remarks: what a step recorded and who it emailed, as one card */
+.emp-log-card{margin-top:8px;padding:4px 10px;border:1px solid #eef0f3;border-radius:8px;background:#fff;max-width:340px}
+.emp-log-kv{margin:0}
+.emp-log-kv>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #f1f3f5}
+.emp-log-kv>div:last-child{border-bottom:none}
+.emp-log-kv dt{font-size:11.5px;color:var(--gray)}
+.emp-log-kv dd{margin:0;font-size:12px;font-weight:600;color:var(--navy);text-align:right;white-space:nowrap}
+.emp-log-card-head{padding:7px 0 4px;line-height:1;font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#9ca3af}
+.emp-log-kv+.emp-log-card-head{margin-top:2px;border-top:1px solid #eef0f3;padding-top:9px}
+.emp-log-notif{list-style:none;margin:0;padding:0 0 4px}
+.emp-log-notif li{display:flex;align-items:flex-start;gap:8px;padding:4px 0}
+.emp-log-notif svg{flex-shrink:0;margin-top:2px;color:#94a3b8}
+.emp-log-notif span{display:flex;flex-direction:column;min-width:0;line-height:1.35}
+.emp-log-notif b{font-size:12px;font-weight:600;color:var(--navy)}
+.emp-log-notif em{font-style:normal;font-size:11.5px;color:var(--gray)}
+.emp-log-notif em.is-bad{color:var(--st-bad-fg)}
 
 .emp-trk-bar{height:6px;border-radius:999px;background:#eef0f3;overflow:hidden}
 .emp-trk-bar span{display:block;height:100%;border-radius:inherit;background:var(--st-ok-fg);transition:width .4s ease}

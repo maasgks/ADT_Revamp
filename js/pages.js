@@ -1010,7 +1010,14 @@ function renderAlSidebar(){
       +'</div>'
       +'</div>';
     body=lpLogsView(logs,actionPanel,{current:l.status,open:decided?preset:'',statusLabel:'Leave Status',
-      labels:admin?AL_MOVE_LABEL:{Cancelled:'Cancel Leave'},select:admin});
+      labels:admin?AL_MOVE_LABEL:{Cancelled:'Cancel Leave'},select:admin,
+      aiUser:currentRole==='Employee'?l.name:CURRENT_USER,
+      // alSaveLog writes the status, and a real move adds a Workflow stage.
+      aiFields:function(v){
+        return [{label:'Leave Status',from:l.status,to:v},
+          {label:'Leave Period',info:true,to:l.leaveFrom+(l.leaveTo&&l.leaveTo!==l.leaveFrom?' – '+l.leaveTo:'')+' · '+l.leaveHours}]
+          .concat(v!==l.status?[{label:'Workflow Stage',to:'Leave '+v}]:[]);
+      }});
   }else if(alTab==='workflow'){
     body=wfTimelineHTML(wfLeave(l));
   }
@@ -1401,6 +1408,27 @@ function pmSaveLog(orderId){
     ? 'Order '+p.orderId+' moved to '+status+'.'
     : 'Payment log saved with status "'+status+'".');
 }
+/* AI fetched results for a Payments log - the order fields the move writes.
+   A step of the invoice flow is written by pmSaveLog; the other log statuses
+   are where the order itself stands, so they land on Order Status. Paying an
+   invoice clears what is due, and the billed amount is kept so moving it back
+   to Unpaid or Pending restores it. */
+function pmAiFields(p,v){
+  const st=stampNow(),rows=[];
+  const due=parseFloat(String(p.amountDue).replace(/[^\d.]/g,''))||0;
+  const cur=String(p.amountDue).split(' ')[0];
+  if(pmInvoiceFlow.indexOf(v)>=0){
+    rows.push({label:'Invoice Status',from:p.invoiceStatus,to:v});
+    if(v==='Paid'&&due>0){
+      rows.push({label:'Amount Due',from:p.amountDue,to:cur+' 0.00',obj:p,key:'amountDue'});
+      rows.push({hidden:true,to:p.amountDue,obj:p,key:'amountBilled'});
+    }else if((v==='Unpaid'||v==='Pending')&&due===0&&p.amountBilled){
+      rows.push({label:'Amount Due',from:p.amountDue,to:p.amountBilled,obj:p,key:'amountDue'});
+    }
+  }else rows.push({label:'Order Status',from:p.orderStatus,to:v,obj:p,key:'orderStatus'});
+  rows.push({label:'Last Updated',from:p.lastUpdated,to:st.date+' | '+lplTime(st.time).toLowerCase(),obj:p,key:'lastUpdated'});
+  return rows;
+}
 function renderPmSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const p=paymentsData.find(x=>x.id===pmSelectedId);if(!p)return '';
@@ -1538,7 +1566,7 @@ function renderPmSidebar(){
       +'<button class="lp-logs-save-btn" style="background:var(--navy)" onclick="pmSaveLog('+p.id+')">Save</button>'
       +'</div>'
       +'</div>';
-    body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||''});
+    body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||'',select:'auto',aiFields:function(v){return pmAiFields(p,v);}});
   }else if(pmTab==='workflow'){
     body=wfTimelineHTML(wfPayment(p));
   }
@@ -1874,7 +1902,16 @@ function ctLogsTabHTML(c){
   const flow=ctFlowFor(c.type),idx=flow.indexOf(c.status);
   return lpLogsView(rows,ctLogFormHTML(c),{
     isBack:function(v){const j=flow.indexOf(v);return idx>=0&&j>=0&&j<idx;},
-    rowClass:function(r){return ctIsOverrideRow(r)?'is-bad':'';}
+    rowClass:function(r){return ctIsOverrideRow(r)?'is-bad':'';},
+    // What ctSaveLog writes: the stage, and the registry event the entry is stamped with.
+    aiFields:function(v){
+      const j=flow.indexOf(v),back=idx>=0&&j>=0&&j<idx;
+      const key=v===c.status?'COMMENT_ADDED':back?'STATUS_REVERTED':ctEventKeyFor(c.type,v);
+      const ev=key&&typeof ctEventInfo==='function'?ctEventInfo(key,c.type):null;
+      return [{label:'Contract Status',from:c.status,to:v},
+        {label:'Event',group:'log',to:ev?ev.label:(back?'Stage reverted':'Stage changed')},
+        {label:'Visible To',group:'log',to:v===c.status||back?'Internal only':'Client and internal'}];
+    }
   });
 }
 
@@ -8171,7 +8208,23 @@ function tkLogsTabHTML(t){
     +'<button class="ep-cancel-btn" style="flex:1" onclick="tkCancelLog()">Cancel</button>'
     +'<button class="lp-logs-save-btn" style="flex:1" onclick="tkSaveLog('+t.id+')">Submit</button>'
     +'</div></div>';
-  return lpLogsView(logs,form,{owner:tkOwner(t)});
+  // What tkApply writes: the status, the assignee and blocker the move asks
+  // for, and so who the ticket is with next.
+  const mvFor=function(v){return moves.find(function(m){return tkMoveLabel(m)===v;});};
+  return lpLogsView(logs,form,{owner:tkOwner(t),
+    aiLogStatus:function(v){const mv=mvFor(v);return mv?tkStatusLabel(mv.to):v;},
+    aiFields:function(v){
+      const mv=mvFor(v);if(!mv)return [];
+      const asg=function(){return mv.needs.indexOf('assignee')>=0?getCSValue('tk-log-assignee-sel'):t.assignedTo;};
+      const wait=function(){return mv.to==='blocked'?getCSValue('tk-log-waiting-sel'):'';};
+      const rows=[{label:'Ticket Status',from:tkStatusLabel(t.status),to:tkStatusLabel(mv.to)}];
+      if(mv.needs.indexOf('assignee')>=0)rows.push({label:'Assigned To',from:t.assignedTo,to:asg});
+      if(mv.to==='blocked')rows.push({label:'Waiting On',from:t.waitingOn,to:wait});
+      else if(t.waitingOn)rows.push({label:'Waiting On',from:t.waitingOn,to:'Cleared'});
+      rows.push({label:'Next Action On',from:tkOwner(t),to:function(){
+        return tkOwner(Object.assign({},t,{status:mv.to,assignedTo:asg()||t.assignedTo,waitingOn:wait()}));}});
+      return rows;
+    }});
 }
 /* The dropdown shows a move's label; the record stores its target status, so
    one builder writes the label and one lookup reads it back. */

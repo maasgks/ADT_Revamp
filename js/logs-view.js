@@ -137,9 +137,20 @@ function lplBarHTML(current,sub,actions,o){
    o.labels      {status: 'verb'} - what each move is called on screen when
                  the status it writes reads differently ('Approved' -> 'Approve')
    o.select      true: the moves are one 'Select action' dropdown instead of a
-                 row of buttons; picking one opens the composer the same way
+                 row of buttons; picking one opens the composer the same way.
+                 'auto': the dropdown only when the moves would not fit as
+                 buttons (more than o.maxBtns) - no row-plus-More overflow
    o.noAction    {title, sub}: with no form, the card to show instead of the
                  generic one - for a user who may not act on this record
+   o.aiFields    fn(move) -> [{label, from, to, obj, key, group, info, hidden}]:
+                 the record fields this move writes, for the composer's "AI
+                 fetched results" section. A row with obj/key is written on
+                 Submit (and undone if the save is refused); one without is
+                 written by the module's own save. `to` may be a function,
+                 read again as the form changes. See lplAiRows().
+   o.aiLogStatus fn(move) -> the status the log entry stores, when it is not
+                 the move's own value
+   o.aiUser      who the log entry is signed by (default CURRENT_USER)
    o.statusLabel / o.rowExtra   passed to the table */
 function lpLogsView(logs,formHTML,o){
   o=o||{};
@@ -192,12 +203,13 @@ function lpLogsView(logs,formHTML,o){
     });
     /* Forward moves lead, backward moves follow - in a button row. A dropdown
        keeps the caller's order: it is a list somebody chose the order of. */
-    if(!o.select)actions.sort(function(a,b){return (a.back?1:0)-(b.back?1:0);});
+    const useSelect=o.select==='auto'?actions.length>(o.maxBtns||LPL_MAX_BTNS):!!o.select;
+    if(!useSelect)actions.sort(function(a,b){return (a.back?1:0)-(b.back?1:0);});
 
     /* Dropdown mode: the moves still exist as buttons - they carry the value,
        label and direction lplPick reads - but hidden, and the dropdown presses
        the one picked. */
-    const picker=o.select&&actions.length
+    const picker=useSelect&&actions.length
       ?apCS('lpl-act-'+selId,actions.map(function(a){return a.text;}),'','Select action','lplSelectPick')
         +'<span hidden>'+actions.map(function(a){return '<button type="button" class="lpl-btn"'+a.data+' onclick="lplPick(this)">'+a.label+'</button>';}).join('')+'</span>'
       :'';
@@ -206,14 +218,15 @@ function lpLogsView(logs,formHTML,o){
       :lplBarHTML(current,sub,actions);
 
     const fields=form.innerHTML;
+    const aiId=lplAiRegister(current,o);
     head+='<div class="lpl-composer" hidden>'
       +'<div class="lpl-c-head"><div class="lpl-c-move"><span class="lpl-c-from">'+current+'</span>'
         +'<span class="lpl-c-arrow">&rarr;</span><span class="lpl-c-to"></span></div>'
         +'<button type="button" class="lpl-c-x" aria-label="Close" onclick="lplClose(this);'+lplAttr(cancelJs)+'">'+LPL_ICO.x+'</button></div>'
-      +'<div class="lpl-c-body">'+fields+'</div>'
+      +'<div class="lpl-c-body">'+(aiId?'<div class="lpl-ai" data-ai="'+aiId+'"></div>':'')+fields+'</div>'
       +'<div class="lpl-c-foot"><span class="lpl-c-hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> to submit</span>'
         +'<div class="lpl-c-btns"><button type="button" class="btn-outline lpl-btn" onclick="lplClose(this);'+lplAttr(cancelJs)+'">Cancel</button>'
-        +'<button type="button" class="btn-primary lpl-btn lpl-c-submit" onclick="'+lplAttr(saveJs)+'">Submit</button></div></div>'
+        +'<button type="button" class="btn-primary lpl-btn lpl-c-submit" onclick="'+lplAttr(saveJs?'lplAiCommit(this);try{'+saveJs+'}finally{lplAiSettle(this);}':'')+'">Submit</button></div></div>'
       +'</div>';
 
     return '<div class="lpl" data-sel="'+lplAttr(selId)+'"'+(o.open?' data-open="'+lplAttr(o.open)+'"':'')+'>'
@@ -274,6 +287,8 @@ function lplOpen(root,value,label,back){
   const sub=comp.querySelector('.lpl-c-submit');
   sub.textContent=label;
   sub.classList.toggle('is-danger',/^reject/i.test(value));
+  comp.setAttribute('data-v',value);
+  lplAiRender(comp);
   root.classList.add('is-composing');
   comp.hidden=false;
   const ta=comp.querySelector('textarea');
@@ -305,4 +320,159 @@ document.addEventListener('keydown',function(e){
   if(!comp||comp.hidden)return;
   e.preventDefault();
   const b=comp.querySelector('.lpl-c-submit');if(b)b.click();
+});
+
+/* ── AI fetched results ────────────────────────────────────────────────────
+   A section at the top of the composer listing the exact fields this log
+   writes: the record's own fields (o.aiFields) and the log entry's. The values
+   are read from the record itself - there is no AI service behind this demo -
+   and refresh as the form is filled in. */
+const LPL_AI={},LPL_AI_ICO='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>';
+let lplAiSeq=0;
+function lplAiRegister(current,o){
+  const id='ai'+(++lplAiSeq);
+  delete LPL_AI['ai'+(lplAiSeq-40)];   // older tabs are long gone from the page
+  LPL_AI[id]={current:current,fields:o.aiFields,logStatus:o.aiLogStatus,user:o.aiUser,statusLabel:o.statusLabel};
+  return id;
+}
+function lplAiVal(x){return typeof x==='function'?x():x;}
+/* Record rows first, then the log entry: its status, any extra log fields the
+   module adds (group:'log'), who signs it and when. */
+function lplAiRows(reg,v){
+  const all=(reg.fields?reg.fields(v)||[]:[]);
+  const st=stampNow();
+  return {
+    record:all.filter(function(r){return r.group!=='log';}),
+    log:[{label:reg.statusLabel||'Status',to:reg.logStatus?reg.logStatus(v):v}]
+      .concat(all.filter(function(r){return r.group==='log';}))
+      .concat([{label:'Created By',to:reg.user||(typeof CURRENT_USER!=='undefined'?CURRENT_USER:'You')},
+               {label:'Create Time',to:st.date+' · '+lplTime(st.time)}])
+  };
+}
+/* Four layouts for the same rows, picked from the tabs in the section's head
+   and remembered per browser. */
+const LPL_AI_VIEWS=[{id:'cards',label:'Cards'},{id:'table',label:'Table'},{id:'compact',label:'Compact'},{id:'split',label:'Before / After'}];
+let lplAiViewId=(function(){try{return localStorage.getItem('lpl-ai-view')||'cards';}catch(e){return 'cards';}})();
+function lplAiSetView(id){
+  lplAiViewId=id;
+  try{localStorage.setItem('lpl-ai-view',id);}catch(e){}
+  document.querySelectorAll('.lpl-composer:not([hidden])').forEach(lplAiRender);
+}
+/* A row resolved for display: its value now, what it was, and whether it moves. */
+function lplAiResolve(r){
+  const to=lplAiVal(r.to),from=r.info?null:lplAiVal(r.from);
+  const blank=to==null||to==='';
+  return {label:r.label,to:to,from:from,info:!!r.info,blank:blank,
+    moved:!r.info&&from!=null&&from!==''&&String(from)!==String(to),
+    added:!r.info&&(from==null||from==='')};
+}
+function lplAiTo(x){
+  return x.blank?'<span class="lpl-ai-empty">Pick it in the form below</span>':lplEsc(x.to);
+}
+function lplAiChange(x){
+  return (x.moved?'<span class="lpl-ai-chip">'+lplEsc(x.from)+'</span><span class="lpl-ai-arrow">&rarr;</span>':'')
+    +(x.blank?lplAiTo(x):'<span class="lpl-ai-chip'+(x.info?'':' is-to')+'">'+lplEsc(x.to)+'</span>');
+}
+const LPL_AI_LAYOUT={
+  /* Changes as full-width rows, the log entry as a compact grid. */
+  cards:function(rec,log){
+    return (rec.length?'<div class="lpl-ai-group">Record</div><div class="lpl-ai-diff">'+rec.map(function(x){
+        return '<div class="lpl-ai-diff-row'+(x.info?' is-info':'')+'"><span class="lpl-ai-k">'+lplEsc(x.label)+'</span><span class="lpl-ai-v">'+lplAiChange(x)+'</span></div>';
+      }).join('')+'</div>':'')
+      +'<div class="lpl-ai-group">Log entry</div><dl class="lpl-ai-grid">'+log.map(function(x){
+        return '<div class="lpl-ai-row"><dt>'+lplEsc(x.label)+'</dt><dd>'+lplAiTo(x)+'</dd></div>';
+      }).join('')+'</dl>';
+  },
+  /* One table: field, current value, new value. */
+  table:function(rec,log){
+    const tr=function(x){
+      return '<tr'+(x.moved?' class="is-moved"':'')+'><td class="lpl-ai-k">'+lplEsc(x.label)+'</td>'
+        +'<td class="lpl-ai-cur">'+(x.info?lplEsc(x.to):x.from!=null&&x.from!==''?lplEsc(x.from):'&mdash;')+'</td>'
+        +'<td class="lpl-ai-new">'+(x.info?'<span class="lpl-ai-same">No change</span>':x.moved||x.added?lplAiTo(x):'<span class="lpl-ai-same">No change</span>')+'</td></tr>';
+    };
+    const sec=function(t,list){return list.length?'<tr class="lpl-ai-sec"><td colspan="3">'+t+'</td></tr>'+list.map(tr).join(''):'';};
+    return '<div class="lpl-ai-tbl-wrap"><table class="lpl-ai-tbl"><thead><tr><th>Field</th><th>Current</th><th>New</th></tr></thead><tbody>'
+      +sec('Record',rec)+sec('Log entry',log)+'</tbody></table></div>';
+  },
+  /* The changes as chips, the log entry as one line of text. */
+  compact:function(rec,log){
+    const by=log.filter(function(x){return x.label==='Created By';})[0],at=log.filter(function(x){return x.label==='Create Time';})[0];
+    const rest=log.filter(function(x){return x!==by&&x!==at;});
+    return (rec.length?'<div class="lpl-ai-chips">'+rec.map(function(x){
+        return '<span class="lpl-ai-pill"><b>'+lplEsc(x.label)+'</b>'+lplAiChange(x)+'</span>';
+      }).join('')+'</div>':'')
+      +'<p class="lpl-ai-line">Logged as '+rest.map(function(x,i){
+        return (i?'<span class="lpl-ai-dot">&middot;</span>'+lplEsc(x.label)+' ':'')+'<b>'+lplAiTo(x)+'</b>';
+      }).join(' ')
+      +(by?' by <b>'+lplAiTo(by)+'</b>':'')+(at?' on <b>'+lplAiTo(at)+'</b>':'')+'</p>';
+  },
+  /* The record as it is and as it will be, side by side. */
+  split:function(rec,log){
+    const all=rec.concat(log);
+    const col=function(t,cls,f){
+      return '<div class="lpl-ai-side '+cls+'"><div class="lpl-ai-side-h">'+t+'</div>'+all.map(function(x){
+        return '<div class="lpl-ai-side-row'+(x.moved||x.added?' is-moved':'')+'"><span>'+lplEsc(x.label)+'</span><b>'+f(x)+'</b></div>';
+      }).join('')+'</div>';
+    };
+    return '<div class="lpl-ai-split">'
+      +col('Before','is-before',function(x){return x.info?lplEsc(x.to):x.from!=null&&x.from!==''?lplEsc(x.from):'<span class="lpl-ai-same">&mdash;</span>';})
+      +col('After','is-after',function(x){return lplAiTo(x);})
+      +'</div>';
+  }
+};
+function lplAiRender(comp){
+  const box=comp&&comp.querySelector('.lpl-ai'),reg=box&&LPL_AI[box.getAttribute('data-ai')];
+  if(!reg)return;
+  const rows=lplAiRows(reg,comp.getAttribute('data-v')||'');
+  const shown=function(list){return list.filter(function(r){return !r.hidden;}).map(lplAiResolve);};
+  const rec=shown(rows.record),log=shown(rows.log);
+  const changes=rec.concat(log).filter(function(x){return x.moved||x.added;}).length;
+  const view=LPL_AI_LAYOUT[lplAiViewId]?lplAiViewId:'cards';
+  box.className='lpl-ai is-'+view;
+  box.innerHTML='<div class="lpl-ai-head"><span class="lpl-ai-ico">'+LPL_AI_ICO+'</span>'
+      +'<div class="lpl-ai-title-wrap"><span class="lpl-ai-title">AI fetched results</span>'
+      +'<span class="lpl-ai-meta">'+changes+' field'+(changes===1?'':'s')+' will be updated on submit</span></div>'
+      +'<div class="lpl-ai-tabs" role="tablist">'+LPL_AI_VIEWS.map(function(v){
+        return '<button type="button" role="tab" class="lpl-ai-tab'+(v.id===view?' active':'')+'" aria-selected="'+(v.id===view)+'" onclick="lplAiSetView(\''+v.id+'\')">'+v.label+'</button>';
+      }).join('')+'</div></div>'
+    +'<div class="lpl-ai-body">'+LPL_AI_LAYOUT[view](rec,log)+'</div>';
+}
+/* Submit writes the record rows that carry obj/key, then runs the module's
+   save. A save that succeeds adds a row to the log and closes the composer
+   (renderADTPage patches the tab in place, so the button itself may survive);
+   one that is refused - an empty comment - does neither, and the writes are
+   undone. */
+function lplAiLogCount(btn){
+  const root=btn.isConnected&&btn.closest('.lpl');
+  return root?root.querySelectorAll('.lpl-table tbody tr').length:-1;
+}
+function lplAiCommit(btn){
+  const comp=btn.closest('.lpl-composer'),box=comp&&comp.querySelector('.lpl-ai'),reg=box&&LPL_AI[box.getAttribute('data-ai')];
+  btn._aiUndo=[];
+  btn._aiRows=lplAiLogCount(btn);
+  if(!reg)return;
+  lplAiRows(reg,comp.getAttribute('data-v')||'').record.forEach(function(r){
+    const to=lplAiVal(r.to);
+    if(!r.obj||!r.key||to==null||to==='')return;
+    btn._aiUndo.push([r.obj,r.key,r.obj[r.key]]);
+    r.obj[r.key]=to;
+  });
+}
+function lplAiSettle(btn){
+  const undo=btn._aiUndo||[];btn._aiUndo=null;
+  const comp=btn.isConnected&&btn.closest('.lpl-composer');
+  const saved=!comp||comp.hidden||lplAiLogCount(btn)>btn._aiRows;
+  if(!saved){undo.reverse().forEach(function(u){u[0][u[1]]=u[2];});return;}
+  // Saved: the listing may show a field written here, so it is redrawn too.
+  if(undo.length&&typeof renderADTPage==='function')renderADTPage();
+}
+/* Values picked or typed further down the form (an assignee, a blocker) are
+   read again as they change. */
+['input','click'].forEach(function(ev){
+  document.addEventListener(ev,function(){
+    // Any click: a dropdown's menu may sit outside the composer it belongs to.
+    setTimeout(function(){
+      document.querySelectorAll('.lpl-composer:not([hidden])').forEach(lplAiRender);
+    },0);
+  });
 });
