@@ -974,3 +974,6 @@ td > .hr-action-btn:only-child{width:100%;justify-content:center}
    one height, so the two read as the same kind of control from across the
    page - the icon in Apply Leave used to make it 22px wider. */
 .dash-cta{min-width:140px}
+/* Documents & Compliance row actions: the standard 34px button (not the 28px
+   in-row size), one width for all, so Download and Sign line up as a column. */
+.emp-doc-btn{min-width:104px;flex-shrink:0}
