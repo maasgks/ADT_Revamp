@@ -1648,11 +1648,14 @@ function empDashTrackerHTML(){
   var m=empMilestones(emp);
   if(!m)return '';          // no onboarding or offboarding running - no tracker
   var act=empPendingAction(emp,m);
+  /* Progress is said once, in the header (stage count + status); the big
+     "25%" row that repeated it is gone. The bar and the boxed stage cards are
+     the original design - a connected-dot stepper was tried here and
+     reverted at the user's request. */
   return '<div class="hr-section emp-trk">'
-    +'<div class="hr-section-header"><div class="hr-section-title">'+m.title+' Tracker</div>'
-      +'<span class="emp-trk-status">Current Status '+empLifeBadge(empTrackerStatus(emp))+'</span></div>'
-    +'<div class="emp-trk-top"><div class="emp-trk-pct">'+m.pct+'%</div>'
-      +'<div class="emp-trk-pct-sub">'+m.title+' – '+m.pct+'% Completed · '+m.done+' of '+m.total+' stages</div></div>'
+    +'<div class="hr-section-header"><div class="hr-section-title">'+m.title+'</div>'
+      +'<span class="emp-trk-status"><span class="emp-trk-count">Stage '+Math.min(m.done+1,m.total)+' of '+m.total+'</span>'
+      +empLifeBadge(empTrackerStatus(emp))+'</span></div>'
     +'<div class="emp-trk-bar"><span style="width:'+m.pct+'%"></span></div>'
     +'<div class="emp-trk-steps" style="--n:'+m.stages.length+'">'+m.stages.map(function(x,i){
       return '<div class="emp-trk-step is-'+x.state+'">'
@@ -1709,8 +1712,19 @@ function empDashRender(root){
   var emp=empSelfRec();
   var view=host.closest('#employee-view');
   var desc=view&&view.querySelector('.hr-header-desc');
-  if(desc&&emp)desc.textContent='Welcome back, '+emp.name.split(' ')[0]+'. Here’s your workspace overview.';
   empDashActionRows(view,false);
+  if(typeof fillDashHeaders==='function')fillDashHeaders();
+  empDashSummary(view);
+}
+/* The header's line under the greeting counts what is actually waiting in
+   Action Required, so it changes as the employee clears things. */
+function empDashSummary(view){
+  var desc=view&&view.querySelector('.hr-header-desc');
+  if(!desc)return;
+  var sec=Array.prototype.find.call(view.querySelectorAll('.hr-section'),function(s){
+    var t=s.querySelector('.hr-section-title');return t&&t.textContent.trim()==='Action Required';});
+  var n=sec?sec.querySelectorAll('tbody tr:not(.dp-row-out)').length:0;
+  desc.textContent=n?'You have '+n+' thing'+(n===1?'':'s')+' waiting on you today.':'You’re all caught up — nothing needs you today.';
 }
 /* Action Required: the employee's lifecycle rows sit above the seeded ones,
    while the lifecycle is running. `animate` fades them in or out when the
@@ -1726,11 +1740,13 @@ function empDashActionRows(view,animate){
   if(!empTrackerShow){
     if(!animate){old.forEach(function(r){r.remove();});return;}
     old.forEach(function(r){r.classList.add('dp-row-out');});
+    empDashSummary(view);
     setTimeout(function(){old.forEach(function(r){r.remove();});},260);
     return;
   }
   old.forEach(function(r){r.remove();});
   tb.insertAdjacentHTML('afterbegin',empActionRowsHTML(emp));
+  if(animate)empDashSummary(view);
   if(animate)tb.querySelectorAll('tr[data-emp-life]').forEach(function(r,i){
     r.classList.add('dp-row-in');r.style.animationDelay=(120+i*45)+'ms';
   });

@@ -113,7 +113,7 @@
   /* Dashboard tracker: the current status drops under the title, the
      percentage line wraps, and the four stat cards pair up. */
   .emp-trk .hr-section-header{flex-wrap:wrap;row-gap:6px}
-  .emp-trk-top{flex-wrap:wrap;row-gap:4px}
+
   .ts-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .ts-stat-card{padding:14px;min-width:0}
 }

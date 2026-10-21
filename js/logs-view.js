@@ -148,6 +148,12 @@ function lplBarHTML(current,sub,actions,o){
                  Submit (and undone if the save is refused); one without is
                  written by the module's own save. `to` may be a function,
                  read again as the form changes. See lplAiRows().
+   o.aiContext   fn(move) -> null | {title, rows:[{label, value, state, note, wide}]}:
+                 the few facts THIS move depends on, read off the record and
+                 shown above the changes. null (a comment, a revert, a move
+                 nothing informs) draws no section. state 'ok'/'warn' marks a
+                 check; `note` says why; `wide` spans a long value. Blank
+                 values are left out. See lplAiContext().
    o.aiLogStatus fn(move) -> the status the log entry stores, when it is not
                  the move's own value
    o.aiUser      who the log entry is signed by (default CURRENT_USER)
@@ -332,8 +338,55 @@ let lplAiSeq=0;
 function lplAiRegister(current,o){
   const id='ai'+(++lplAiSeq);
   delete LPL_AI['ai'+(lplAiSeq-40)];   // older tabs are long gone from the page
-  LPL_AI[id]={current:current,fields:o.aiFields,logStatus:o.aiLogStatus,user:o.aiUser,statusLabel:o.statusLabel};
+  LPL_AI[id]={current:current,fields:o.aiFields,logStatus:o.aiLogStatus,user:o.aiUser,statusLabel:o.statusLabel,
+    context:o.aiContext};
   return id;
+}
+/* Context for the move being logged - NOT the whole record. Each module
+   answers one question per move: what does the person need in front of them
+   to make THIS step? Sending a contract needs who it goes to and what it
+   commits to; approving a leave needs the dates and whether they clash. A
+   comment, a revert, or a move nothing extra informs returns null and the
+   section is not drawn at all. Rows may carry a check (state 'ok' | 'warn')
+   so a gap - a pending compliance item, money still due - is flagged before
+   Submit rather than discovered after. */
+function lplAiContext(reg,v){
+  const c=reg.context&&v?reg.context(v):null;
+  if(!c||!c.rows)return null;
+  const rows=c.rows.map(function(r){return {label:r.label,value:lplAiVal(r.value),state:r.state||'',note:r.note||'',wide:!!r.wide};})
+    .filter(function(r){return r.value!=null&&String(r.value).trim()!==''&&!/^[—–-]+$/.test(String(r.value).trim());});
+  return rows.length?{title:c.title||'Context for this step',rows:rows}:null;
+}
+function lplAiCtxVal(x){
+  return (x.state?'<span class="lpl-ai-ck is-'+x.state+'" aria-label="'+(x.state==='ok'?'Check passed':'Needs attention')+'"></span>':'')
+    +lplEsc(x.value)+(x.note?'<span class="lpl-ai-note">'+lplEsc(x.note)+'</span>':'');
+}
+/* The context in the same shape as the layout picked below it. */
+const LPL_AI_CTX_LAYOUT={
+  grid:function(rows){
+    return '<dl class="lpl-ai-grid">'+rows.map(function(x){
+      return '<div class="lpl-ai-row'+(x.wide?' is-wide':'')+(x.state?' is-'+x.state:'')+'"><dt>'+lplEsc(x.label)+'</dt><dd>'+lplAiCtxVal(x)+'</dd></div>';
+    }).join('')+'</dl>';
+  },
+  table:function(rows){
+    return '<div class="lpl-ai-tbl-wrap"><table class="lpl-ai-tbl"><tbody>'+rows.map(function(x){
+      return '<tr'+(x.state?' class="is-'+x.state+'"':'')+'><td class="lpl-ai-k">'+lplEsc(x.label)+'</td><td>'+lplAiCtxVal(x)+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+  },
+  compact:function(rows){
+    return '<p class="lpl-ai-line">'+rows.map(function(x,i){
+      return (i?'<span class="lpl-ai-dot">&middot;</span>':'')+lplEsc(x.label)+' <b>'+lplAiCtxVal(x)+'</b>';
+    }).join(' ')+'</p>';
+  }
+};
+function lplAiContextHTML(ctx,view){
+  if(!ctx)return '';
+  const warn=ctx.rows.filter(function(x){return x.state==='warn';}).length;
+  return '<div class="lpl-ai-ctx">'
+    +'<div class="lpl-ai-ctx-h"><span class="lpl-ai-group">'+lplEsc(ctx.title)+'</span>'
+    +(warn?'<span class="lpl-ai-ctx-flag">'+warn+' to check</span>':'')+'</div>'
+    +LPL_AI_CTX_LAYOUT[view==='table'?'table':view==='compact'?'compact':'grid'](ctx.rows)
+    +'</div>';
 }
 function lplAiVal(x){return typeof x==='function'?x():x;}
 /* Record rows first, then the log entry: its status, any extra log fields the
@@ -428,14 +481,19 @@ function lplAiRender(comp){
   const rec=shown(rows.record),log=shown(rows.log);
   const changes=rec.concat(log).filter(function(x){return x.moved||x.added;}).length;
   const view=LPL_AI_LAYOUT[lplAiViewId]?lplAiViewId:'cards';
+  const ctx=lplAiContext(reg,comp.getAttribute('data-v')||''),ctxHTML=lplAiContextHTML(ctx,view);
+  const warn=ctx?ctx.rows.filter(function(x){return x.state==='warn';}).length:0;
   box.className='lpl-ai is-'+view;
   box.innerHTML='<div class="lpl-ai-head"><span class="lpl-ai-ico">'+LPL_AI_ICO+'</span>'
       +'<div class="lpl-ai-title-wrap"><span class="lpl-ai-title">AI fetched results</span>'
-      +'<span class="lpl-ai-meta">'+changes+' field'+(changes===1?'':'s')+' will be updated on submit</span></div>'
+      +'<span class="lpl-ai-meta">'+changes+' field'+(changes===1?'':'s')+' will be updated on submit'
+      +(warn?' &middot; '+warn+' thing'+(warn===1?'':'s')+' to check first':'')+'</span></div>'
       +'<div class="lpl-ai-tabs" role="tablist">'+LPL_AI_VIEWS.map(function(v){
         return '<button type="button" role="tab" class="lpl-ai-tab'+(v.id===view?' active':'')+'" aria-selected="'+(v.id===view)+'" onclick="lplAiSetView(\''+v.id+'\')">'+v.label+'</button>';
       }).join('')+'</div></div>'
-    +'<div class="lpl-ai-body">'+LPL_AI_LAYOUT[view](rec,log)+'</div>';
+    +'<div class="lpl-ai-body">'+ctxHTML
+      +(ctxHTML?'<div class="lpl-ai-changes"><div class="lpl-ai-group">Changes on submit</div>':'')
+      +LPL_AI_LAYOUT[view](rec,log)+(ctxHTML?'</div>':'')+'</div>';
 }
 /* Submit writes the record rows that carry obj/key, then runs the module's
    save. A save that succeeds adds a row to the log and closes the composer

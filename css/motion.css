@@ -285,6 +285,22 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 .notif-pop{animation:m-modal-in var(--t-base) var(--e-out) both}
 .np-item{transition:background var(--t-micro) ease}
 .np-switch,.np-switch::after,.cs-toggle-slider{transition:background var(--t-fast) var(--e-out),left var(--t-fast) var(--e-spring)}
+/* The unread switch's knob slides on transform, not `left`: a composited move
+   that cannot stutter while the list under it is being redrawn. core.js now
+   flips .on in place - the knob used to be re-created already at its end. */
+.np-switch::after{left:2px;transition:transform 220ms var(--e-spring),width var(--t-fast) var(--e-out),box-shadow var(--t-fast) ease;box-shadow:0 1px 2px rgba(15,23,42,.2)}
+.np-switch.on::after{left:2px;transform:translateX(14px)}
+.np-switch:active::after{width:17px}
+.np-switch.on:active::after{transform:translateX(11px)}
+.np-switch:focus-visible{outline:2px solid var(--btn-accent);outline-offset:2px}
+/* Refresh: one full turn per click; the list fades back in under it. */
+.np-refresh.is-spinning svg{animation:np-spin 600ms var(--e-out)}
+@keyframes np-spin{to{transform:rotate(360deg)}}
+.np-list.np-list-in{animation:np-list-in 220ms var(--e-out)}
+@keyframes np-list-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .np-refresh.is-spinning svg,.np-list.np-list-in{animation:none}
+}
 
 /* ── 6. NAVIGATION ────────────────────────────────────────────────────────
    The rail already transitions its width. These are the parts that were
@@ -432,3 +448,16 @@ tr.m-flash-idle>td{animation:m-flash-idle 900ms var(--e-out)}
    Programmatic scrolls (tab into view, back-to-top on navigate) glide.
    Wheel and trackpad are untouched by this - only scripted scrolls.       */
 .page-content,.lp-isb-body,.chat-area,.emp-sel-list,.np-list,.lp-isb-tabs{scroll-behavior:smooth}
+
+/* Notification: mark ONE as read. The tick sits at the end of the row's
+   second line, revealed when the row is hovered or focused - always shown on
+   touch, where there is no hover. Read rows lose their Pending badge; with
+   "Only Show Unread" on, the row slides out first (.is-leaving). */
+.np-read{display:inline-flex;align-items:center;gap:4px;margin-left:auto;height:22px;padding:0 8px;border:1px solid var(--border);border-radius:999px;
+  background:#fff;color:var(--gray);font:inherit;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;
+  opacity:0;transition:opacity var(--t-micro) ease,color var(--t-micro) ease,border-color var(--t-micro) ease}
+.np-item:hover .np-read,.np-read:focus-visible{opacity:1}
+.np-read:hover{color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
+.np-read:focus-visible{outline:2px solid var(--btn-accent);outline-offset:1px}
+@media (hover:none){.np-read{opacity:1}}
+.np-item.is-leaving{opacity:0;transform:translateX(12px);transition:opacity 200ms ease,transform 200ms var(--e-out)}

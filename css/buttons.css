@@ -15,10 +15,15 @@
                                support banner - the switch-entity screen was
                                the other one until it went light).
 
-   SIZES
-     .btn-sm   28px   dense rows, table actions, filter bars
-     (default) 34px   standard forms, page headers, toolbars
-     .btn-lg   40px   full-width and modal-footer commitments
+   SIZES  -  exactly two.  Do not add a third, and do not give a button its
+   own height: pick one of these.
+     .btn-sm   28px   actions INSIDE a row - table cells, filter bars
+     (default) 34px   every standalone button - card CTAs, forms, page
+                      headers, toolbars, modal footers, full-width buttons
+   .btn-lg (40px) used to be a third size.  It is kept as a no-op class so
+   existing markup keeps working, and renders at the default 34px.  Three
+   heights side by side on one dashboard (Clock In 40 / Raise Ticket 34 /
+   Apply Leave 28) is what retired it.
 
    NO SEMANTIC COLOUR.  Buttons are navigation - they open another view rather
    than committing a result - so Approve/Reject carry no green/red. The label
@@ -101,7 +106,6 @@
              transform var(--t-fast) var(--e-out);
 }
 .hr-action-btn,.btn-sm,.tb-cost-calc,.cost-calc-btn,.cost-calc-nav-btn,.cs-edit-btn,.ct-action-btn,.ep-file-btn,.fcmp-footer-btn,.filter-reset,.filter-search,.hr-action-btn.approve,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-edit-btn,.lp-sb-view-edit-btn{--btn-h:28px;--btn-px:12px;--btn-fs:12px}
-.btn-lg,.ap-pill-btn,.se-proceed,.se-cancel,.ccn-calc-btn,.ccn-export-btn,.lp-logs-save-btn,.ts-sb-submit{--btn-h:40px;--btn-px:24px;--btn-fs:13.5px}
 
 /* -- default: no fill, light grey stroke, --btn-ink label --------------- */
 .btn-outline,.se-cancel,.at-btn-reset,.btn-negative,.btn-positive,.btn-secondary,.btn-success,.clock-btn,.cost-calc-btn,.cost-calc-nav-btn,.ep-cancel-btn,.filter-reset,.hr-action-btn,.hr-action-btn.neutral,.hr-action-btn.reject,.lp-clear-btn,.lp-pill-clear,.tb-cost-calc,.ts-btn-reset,.wb-btn.secondary{background:var(--card);color:var(--btn-ink);border-color:var(--btn-stroke)}

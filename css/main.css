@@ -1,5 +1,5 @@
 ﻿
-:root{--orange:#1a1a1a;--navy:#0f172a;--gray:#6a7282;--light:#f8f9fb;--card:#fff;--border:#e5e7eb;--ol:#f1f5f9;--green:var(--st-ok-fg);--red:#ef4444}
+:root{--orange:#1a1a1a;--navy:#0f172a;--gray:#6a7282;--light:#f8f9fb;--card:#fff;--border:#e5e7eb;--ol:#f1f5f9;--green:var(--st-ok-fg);--red:#b83a3a}
 /* Dashboard widget type scale — single source of truth for every card/widget.
    Use these tokens instead of hard-coded px so all widgets stay optically aligned.
    10 / 11 / 12 / 13 / 15 / 18 / 26 — no in-between sizes. */
@@ -62,7 +62,12 @@
    (#0d9488, the AI-recommend badge) is a different hue and a different
    meaning, and is left alone. */
   --st-wait-bg:#fef3c7; --st-wait-fg:#92400e; --st-wait-bd:#fde68a;
-  --st-bad-bg:#fee2e2;  --st-bad-fg:#dc2626;  --st-bad-bd:#fca5a5;
+  /* Red is a muted brick (#b83a3a), not the stock #dc2626 / #ef4444: as a
+     filled button (Cancel Onboarding) those were the brightest thing on the
+     page and read as an alarm. Every red in the app - this token, --red and
+     the hard-coded ones - was moved to it together; #962f2f is its hover.
+     White on it is 5.7:1, it on --st-bad-bg is 4.6:1 - both pass AA. */
+  --st-bad-bg:#fee2e2;  --st-bad-fg:#b83a3a;  --st-bad-bd:#fca5a5;
   --st-info-bg:#eff6ff; --st-info-fg:#2563eb; --st-info-bd:#93c5fd;
   --st-idle-bg:#f1f5f9; --st-idle-fg:#64748b; --st-idle-bd:#cbd5e1;
   /* Contract pipeline. The 5 tones above answer "is this good or bad"; a deal
@@ -192,8 +197,8 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .hdr-dd-item{display:flex;align-items:center;gap:9px;width:100%;padding:9px 10px;border:none;background:none;border-radius:8px;font-size:13px;font-weight:500;color:var(--navy);cursor:pointer;text-align:left;transition:background .12s}
 .hdr-dd-item:hover{background:var(--light)}
 .hdr-dd-item svg{color:var(--gray);flex-shrink:0}
-.hdr-dd-item-danger{color:#dc2626}
-.hdr-dd-item-danger svg{color:#dc2626}
+.hdr-dd-item-danger{color:#b83a3a}
+.hdr-dd-item-danger svg{color:#b83a3a}
 .hdr-dd-item-danger:hover{background:#fef2f2}
 /* SIDEBAR */
 .sidebar{width:var(--sb-w,224px);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;overflow-x:hidden;max-height:calc(100vh - 56px);padding:8px 0;transition:width var(--t-base,260ms) var(--e-in-out,cubic-bezier(.65,0,.35,1));scrollbar-width:thin;scrollbar-color:#e5e7eb transparent}
@@ -483,14 +488,14 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    the page the user came to press — and it was rendering as an outline button,
    the same weight as a Cancel. It takes the filled treatment the button system
    already reserves for the affirmative action (--btn-ink, per buttons.css),
-   the large size, and a slow attention ring.
+   and a slow attention ring.  It stays at the default 34px height - the
+   fill and the ring carry the emphasis, not a third button size.
 
    The ring is NOT a hover effect — buttons.css rules those out, and rightly.
    It is a resting state on the single unstarted action of the page, and it
    stops the moment the pointer or focus arrives, because at that point the
    button has the user's attention and no longer needs to ask for it. */
 .att .clock-btn{
-  --btn-h:40px; --btn-px:22px; --btn-fs:13.5px;
   margin-top:0;float:none;flex-shrink:0;
   background:var(--btn-ink);color:#fff;border-color:var(--btn-ink)}
 .att .clock-btn:hover{background:var(--btn-solid-hover);border-color:var(--btn-solid-hover);color:#fff}
@@ -1300,7 +1305,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
   display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   color:var(--orange);font-weight:500}
 .lp-yes{color:var(--st-ok-fg);font-weight:600}
-.lp-no{color:#dc2626;font-weight:600}
+.lp-no{color:#b83a3a;font-weight:600}
 .lp-dash{color:#9ca3af}
 .lp-status-badge{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:3px 12px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1.5px solid transparent;white-space:nowrap;min-width:68px}
 /* ══ STATUS COLOURS ═══════════════════════════════════════════════════
@@ -1387,7 +1392,7 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
 .ep-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .ep-form-group{display:flex;flex-direction:column;gap:6px}
 .ep-form-label{font-size:12px;font-weight:600;color:var(--navy)}
-.ep-form-label span.req{color:#ef4444}
+.ep-form-label span.req{color:#b83a3a}
 .ep-form-input{padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-input);font-size:13px;color:var(--navy);font-family:inherit;outline:none;transition:.15s;width:100%;box-sizing:border-box}
 /* Date/time fields open a picker - they are choosers, so they take the square
    control shape even though they sit on .ep-form-input with the input shape. */
@@ -1439,7 +1444,7 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .emp-sel-title{font-size:10.5px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.6px;display:flex;align-items:center;gap:7px}
 .emp-sel-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:10px;font-weight:700;background:#e8edf4;color:#374151}
 .emp-sel-count.has-selection{background:#e5e7eb;color:var(--navy)}
-.emp-sel-clear{font-size:11.5px;font-weight:600;color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:5px;font-family:inherit;transition:.12s}
+.emp-sel-clear{font-size:11.5px;font-weight:600;color:#b83a3a;background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:5px;font-family:inherit;transition:.12s}
 .emp-sel-clear:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
 .emp-sel-search-wrap{padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 .emp-sel-search{display:flex;align-items:center;gap:7px;background:#f4f6f9;border-radius:var(--r-input);padding:6px 10px;transition:.15s}
@@ -1495,7 +1500,7 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .qcmp-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:var(--r-status);font-size:11px;font-weight:700}
 .qcmp-pill.price{background:#f1f5f9;color:var(--navy)}
 .qcmp-pill.yes{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.qcmp-pill.no{background:#fee2e2;color:#dc2626}
+.qcmp-pill.no{background:#fee2e2;color:#b83a3a}
 .qcmp-pill.spec{background:#eff6ff;color:#1d4ed8}
 .qcmp-pill.gen{background:#f3f4f6;color:#6b7280}
 .qcmp-pill.incl{background:var(--st-ok-bg);color:var(--st-ok-fg)}
@@ -1522,7 +1527,7 @@ input[type="date"],input[type="month"],input[type="time"],input[type="datetime-l
 .fcmp-feature-name{font-weight:600;color:var(--navy);font-size:12.5px}
 .fcmp-feature-desc{font-size:11px;color:var(--gray);margin-top:2px}
 .fcmp-check{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.fcmp-cross{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fee2e2;color:#dc2626}
+.fcmp-cross{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fee2e2;color:#b83a3a}
 .fcmp-adt-col{background:#fffdf9}
 .fcmp-footer{padding:14px 24px;background:#f8f9fb;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px}
 .fcmp-footer-note{font-size:11px;color:var(--gray);line-height:1.5}
@@ -2108,7 +2113,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ai-chip-system{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
 .ai-chip-client{background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe}
 .ai-chip-validation{background:#fefce8;color:#a16207;border-color:#fde68a}
-.ai-chip-approval{background:#fef2f2;color:#dc2626;border-color:#fca5a5}
+.ai-chip-approval{background:#fef2f2;color:#b83a3a;border-color:#fca5a5}
 .ai-chip-exception{background:#fdf2f8;color:#db2777;border-color:#fbcfe8}
 .ai-chip-completed{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
 .ai-chip-queued{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
@@ -2116,7 +2121,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 /* Run detail timeline dot states */
 .ai-timeline-dot.run-done{border-color:var(--st-ok-fg);color:var(--st-ok-fg);background:var(--st-ok-bg);font-size:13px}
 .ai-timeline-dot.run-current{border-color:#f59e0b;color:#b45309;background:#fef3c7;font-size:13px}
-.ai-timeline-dot.run-exception{border-color:#ef4444;color:#dc2626;background:#fee2e2;font-size:13px}
+.ai-timeline-dot.run-exception{border-color:#b83a3a;color:#b83a3a;background:#fee2e2;font-size:13px}
 .ai-timeline-dot.run-pending{border-color:var(--border);color:#cbd5e1;background:#fff;font-size:13px}
 /* Active automation: meta row + runs table */
 .ai-run-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
@@ -2296,7 +2301,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .toast-ico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
 .toast-ico svg{width:14px;height:14px}
 .toast.success .toast-ico{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.toast.error .toast-ico{background:#fee2e2;color:#dc2626}
+.toast.error .toast-ico{background:#fee2e2;color:#b83a3a}
 .toast.info .toast-ico{background:#e0e7ff;color:#4f46e5}
 .toast-body{flex:1;min-width:0}
 .toast-title{font-size:13px;font-weight:600;color:var(--navy);line-height:1.35}

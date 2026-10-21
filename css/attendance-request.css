@@ -88,7 +88,7 @@
 
 /* .lp-sb-form-grid gives the fields their shape; only the row rhythm differs. */
 .ar-grid{gap:14px 16px}
-.ar-req{color:#ef4444}
+.ar-req{color:#b83a3a}
 .ar-auto{margin-left:5px;padding:1px 6px;border-radius:var(--r-status);
   background:var(--st-idle-bg);color:var(--st-idle-fg);font-size:9px;font-weight:700;letter-spacing:.2px}
 /* A derived value is shown, not offered: same box as a field so the row still

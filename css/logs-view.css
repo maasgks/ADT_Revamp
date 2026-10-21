@@ -116,6 +116,27 @@
 .lpl-ai-row dt{margin-bottom:2px;font-size:11px;color:var(--gray)}
 .lpl-ai-row dd{margin:0;font-size:12.5px;font-weight:600;color:var(--navy);overflow-wrap:anywhere}
 
+.lpl-ai-row.is-wide{grid-column:1/-1}
+.lpl-ai-row.is-wide dd{font-weight:500;line-height:1.5}
+
+/* Context for this step - the few facts the picked move depends on, above the
+   changes. A check reads as a small dot before the value: green when it holds,
+   amber when it needs a look before Submit. Amber, not red - it is a prompt,
+   not a block; the module's own save still decides what is allowed. */
+.lpl-ai-ctx-h{display:flex;align-items:center;gap:8px;margin:2px 0 6px}
+.lpl-ai-ctx-h .lpl-ai-group{margin:0}
+.lpl-ai-ctx-flag{font-size:10.5px;font-weight:600;padding:1px 7px;border-radius:999px;
+  color:var(--st-wait-fg);background:var(--st-wait-bg);border:1px solid var(--st-wait-bd)}
+.lpl-ai-ck{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;vertical-align:1px;background:var(--st-ok-fg)}
+.lpl-ai-ck.is-warn{background:var(--st-wait-fg)}
+.lpl-ai-note{display:block;margin-top:2px;font-size:11px;font-weight:500;color:var(--gray)}
+.lpl-ai-row.is-warn{border-color:var(--st-wait-bd);background:var(--st-wait-bg)}
+.lpl-ai-row.is-warn .lpl-ai-note{color:var(--st-wait-fg)}
+.lpl-ai-tbl tr.is-warn td{background:var(--st-wait-bg)}
+.lpl-ai-line .lpl-ai-note{display:inline;margin:0 0 0 4px}
+.lpl-ai-changes{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border)}
+.lpl-ai-changes>.lpl-ai-group:first-child{margin-top:0}
+
 /* Table */
 .lpl-ai-tbl-wrap{border:1px solid #eef0f3;border-radius:8px;background:#fff;overflow:auto}
 .lpl-ai-tbl{width:100%;border-collapse:collapse}

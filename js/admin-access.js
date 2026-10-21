@@ -494,7 +494,7 @@ function astSaveLog(id){
   const emp=getCSValue('ast-log-emp');
   if(next==='Assigned'&&was==='Assigned'){showToast('Already assigned','error','Move it to Returned first, then assign it again.');return;}
   if(next==='Assigned'&&!emp){
-    const t=csTrigger('ast-log-emp');if(t){t.style.borderColor='#ef4444';setTimeout(function(){t.style.borderColor='';},1500);}
+    const t=csTrigger('ast-log-emp');if(t){t.style.borderColor='#b83a3a';setTimeout(function(){t.style.borderColor='';},1500);}
     showToast('Pick who it is assigned to','error');return;
   }
   const inp=document.getElementById('ast-log-comment-inp');

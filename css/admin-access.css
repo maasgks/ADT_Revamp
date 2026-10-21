@@ -114,7 +114,7 @@
 .ax-type-act svg{width:12px;height:12px}
 .ax-type-act:hover{border-color:var(--btn-accent);color:var(--btn-accent)}
 .ax-type-act.is-danger{color:var(--st-bad-fg);border-color:var(--st-bad-bd);background:var(--st-bad-bg)}
-.ax-type-act.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#b91c1c}
+.ax-type-act.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#962f2f}
 .lp-table tr.ax-row-off td{color:#94a3b8}
 .lp-table tr.ax-row-off .lp-c-main{color:#94a3b8}
 .ct-modal.ax-type-modal{width:min(460px,92vw)}

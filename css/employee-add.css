@@ -61,12 +61,12 @@
 
 /* ── Field extras ──────────────────────────────────────────────────────────*/
 .ea-hint{font-size:11px;color:#98a2b3;line-height:1.4}
-.ea-err{font-size:11px;color:#ef4444;font-weight:600;line-height:1.4}
+.ea-err{font-size:11px;color:#b83a3a;font-weight:600;line-height:1.4}
 /* Red on the control itself, not a red border around the whole group - the
    label has to stay readable. */
-.ep-form-input.ea-bad,.ea-phone.ea-bad{border-color:#ef4444}
+.ep-form-input.ea-bad,.ea-phone.ea-bad{border-color:#b83a3a}
 .ea-bad-wrap .cs-trigger,.ea-bad-wrap .cd-trigger,.ea-bad-wrap .ea-chip,
-.ea-bad-wrap .choice-card{border-color:#ef4444}
+.ea-bad-wrap .choice-card{border-color:#b83a3a}
 .ea-phone{display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:center}
 /* One height for every control in the wizard. .cs-trigger stands 42px and
    .cd-trigger 38px by default, so a select next to a text input (36px) read

@@ -73,7 +73,7 @@
 .ci-field{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ci-full{grid-column:1/-1}
 .ci-label{font-size:12px;font-weight:600;color:var(--navy);line-height:1.45}
-.ci-label .req{color:#ef4444}
+.ci-label .req{color:#b83a3a}
 /* The PRD's third mandatory flag. It is not an asterisk, because the field is
    not always required, and it is not silence, because sometimes it is. The
    field's own hint says which condition turns it on. */
@@ -156,7 +156,7 @@
 .ci-dd-opt.is-on .ci-dd-check{opacity:1}
 .ci-dd-empty{padding:16px 12px;text-align:center;font-size:12.5px;color:var(--gray)}
 .ci-dd-empty[hidden]{display:none}
-.ci-dd.ci-bad .ci-dd-trigger{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.09)}
+.ci-dd.ci-bad .ci-dd-trigger{border-color:#b83a3a;box-shadow:0 0 0 3px rgba(184,58,58,.09)}
 
 /* Two compound controls, both the same idea: a narrow picker welded to a wide
    value, so the pair reads as one field instead of two that happen to be
@@ -176,11 +176,11 @@
 
 /* A field that failed validation. The class goes on the control itself, so a
    radio SET and an input can both wear it. */
-.ci-bad.ci-input{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.09)}
-.segmented.ci-bad{outline:1px solid #ef4444;outline-offset:4px;border-radius:var(--r-control)}
+.ci-bad.ci-input{border-color:#b83a3a;box-shadow:0 0 0 3px rgba(184,58,58,.09)}
+.segmented.ci-bad{outline:1px solid #b83a3a;outline-offset:4px;border-radius:var(--r-control)}
 /* The date picker is core.js's, so the mark lands on its wrapper - the id
    ciRequire is given belongs to a hidden input that can show nothing. */
-.cd-wrap.ci-bad .cd-trigger{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.09)}
+.cd-wrap.ci-bad .cd-trigger{border-color:#b83a3a;box-shadow:0 0 0 3px rgba(184,58,58,.09)}
 
 /* ── Radio sets ─────────────────────────────────────────────────────────────
    THE SET IS .segmented NOW, from css/main.css — the strip this app's forms

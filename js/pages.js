@@ -626,7 +626,7 @@ function renderTmSidebar(){
           +'<td style="'+tdS+'">'+(m.desig&&m.desig!=='--'?m.desig:'<span style="color:#9ca3af">--</span>')+'</td>'
           +'<td style="'+tdS+'"><div style="display:flex;gap:10px;align-items:center">'
           +'<button style="border:none;background:none;cursor:pointer;color:#64748b;padding:0" title="Edit">'+editIco+'</button>'
-          +'<button style="border:none;background:none;cursor:pointer;color:#ef4444;padding:0" title="Delete">'+delIco+'</button>'
+          +'<button style="border:none;background:none;cursor:pointer;color:#b83a3a;padding:0" title="Delete">'+delIco+'</button>'
           +'</div></td>'
           +'</tr>').join('')
         :'<tr><td colspan="5" style="padding:28px 10px;text-align:center;font-size:13px;color:#9ca3af">No members assigned</td></tr>')
@@ -728,7 +728,7 @@ function tmSaveLog(id){
   const sel=csTrigger('tm-log-status-sel');
   const inp=document.getElementById('tm-log-comment-inp');
   const to=getCSValue('tm-log-status-sel'),comment=inp?inp.value.trim():'';
-  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  const flash=function(el){if(el){el.style.borderColor='#b83a3a';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!to){flash(sel);return;}
   if(!comment){flash(inp);return;}
   const was=team.status;
@@ -758,7 +758,7 @@ function alSaveLog(id){
   const sel=csTrigger('al-log-status-sel');
   const inp=document.getElementById('al-log-comment-inp');
   const to=getCSValue('al-log-status-sel'),comment=inp?inp.value.trim():'';
-  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  const flash=function(el){if(el){el.style.borderColor='#b83a3a';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!to){flash(sel);return;}
   if(!comment){flash(inp);return;}
   const was=l.status;
@@ -1012,6 +1012,7 @@ function renderAlSidebar(){
     body=lpLogsView(logs,actionPanel,{current:l.status,open:decided?preset:'',statusLabel:'Leave Status',
       labels:admin?AL_MOVE_LABEL:{Cancelled:'Cancel Leave'},select:admin,
       aiUser:currentRole==='Employee'?l.name:CURRENT_USER,
+      aiContext:function(v){return alAiContext(l,v);},
       // alSaveLog writes the status, and a real move adds a Workflow stage.
       aiFields:function(v){
         return [{label:'Leave Status',from:l.status,to:v},
@@ -1022,6 +1023,45 @@ function renderAlSidebar(){
     body=wfTimelineHTML(wfLeave(l));
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
+}
+/* "AI fetched results" context for a leave decision. Approving or refusing
+   turns on two things the row alone does not show: whether the dates clash
+   with another leave this employee already has, and how much notice was
+   given. Cancelling an approved leave turns on whether it has started. A
+   Follow Up needs the employee's own reason and nothing else. */
+function alDay(s){const m=String(s||'').match(/^(\d{2})-(\d{2})-(\d{4})/);return m?new Date(+m[3],m[2]-1,+m[1]):null;}
+function alAiContext(l,v){
+  if(v===l.status)return null;
+  const from=alDay(l.leaveFrom),to=alDay(l.leaveTo)||from;
+  const reason={label:'Employee’s Reason',value:l.description,wide:true};
+  const type={label:'Leave Type',value:l.leaveType+(l.subStatus?' · '+l.subStatus:'')};
+  if(v==='Follow Up')return {title:'What the employee said',rows:[type,reason]};
+  if(v==='Approved'||v==='Unapproved'){
+    const clash=from?allLeavesData.filter(function(x){
+      if(x.id===l.id||x.empId!==l.empId||['Approved','Pending','Follow Up'].indexOf(x.status)<0)return false;
+      const a=alDay(x.leaveFrom),b=alDay(x.leaveTo)||a;
+      return a&&a<=to&&b>=from;
+    }):[];
+    const applied=new Date(String(l.appliedDate||'').replace(',','').replace(/(\d{2}:\d{2}:\d{2})$/,' $1'));
+    const days=from&&!isNaN(applied)?Math.floor((from-applied)/864e5):null;
+    return {title:v==='Approved'?'Before approving':'Before refusing',rows:[type,
+      {label:'Overlapping Leave',value:clash.length?clash.length+' request'+(clash.length===1?'':'s'):'None',
+       state:clash.length?'warn':'ok',
+       note:clash.map(function(x){return x.leaveType+' '+x.leaveFrom+' ('+x.status+')';}).join(', ')},
+      // Short notice is only worth flagging on planned leave - sick leave is
+      // applied for on the day by its nature.
+      {label:'Notice Given',value:days==null?'':days<0?'Applied after it began':days===0?'Same day':days+' day'+(days===1?'':'s'),
+       state:days!=null&&days<1&&!/sick/i.test(l.leaveType)?'warn':'',
+       note:days!=null&&days<1&&!/sick/i.test(l.leaveType)?'Planned leave with no notice':''},
+      reason]};
+  }
+  if(v==='Cancelled'&&l.status==='Approved'){
+    const started=from&&from<=new Date();
+    return {title:'Cancelling an approved leave',rows:[type,
+      {label:'Leave Period',value:l.leaveFrom+(l.leaveTo&&l.leaveTo!==l.leaveFrom?' – '+l.leaveTo:''),
+       state:started?'warn':'ok',note:started?'Already started - days taken stay taken':'Not started yet'}]};
+  }
+  return null;
 }
 var alDurationType='multiple';
 var alAddModalOpen=false;   // creation is a popup, like every other create form
@@ -1390,8 +1430,8 @@ function pmSaveLog(orderId){
   if(!sel||!inp)return;
   const status=getCSValue('pm-log-status-sel');
   const comment=inp.value.trim();
-  if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
-  if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
+  if(!status){sel.style.borderColor='#b83a3a';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#b83a3a';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
   const st=stampNow();
   if(!pmLogsData[orderId])pmLogsData[orderId]=[];
   pmLogsData[orderId].unshift({date:st.date,time:st.time,user:CURRENT_USER,status,action:comment});
@@ -1428,6 +1468,49 @@ function pmAiFields(p,v){
   }else rows.push({label:'Order Status',from:p.orderStatus,to:v,obj:p,key:'orderStatus'});
   rows.push({label:'Last Updated',from:p.lastUpdated,to:st.date+' | '+lplTime(st.time).toLowerCase(),obj:p,key:'lastUpdated'});
   return rows;
+}
+/* "AI fetched results" context for a Payments move. Money moves need the
+   money: what is due, against what was billed, on what terms, and who to
+   chase. Closing or winding an order down needs nothing still owed. An
+   extension needs the end date being moved. Follow-ups and discussion notes
+   get nothing - the comment is the content. */
+function pmAiContext(p,v){
+  if(v===p.invoiceStatus||v===p.orderStatus)return null;
+  const s=p.sales||{},e=p.emp||{},concern=(p.user&&p.user.concern)||{};
+  const due=parseFloat(String(p.amountDue).replace(/[^\d.]/g,''))||0;
+  const term={label:'Payment Term',value:s.paymentTerm!=null&&s.paymentTerm!==''?s.paymentTerm+' days':''};
+  const owed={label:'Amount Due',value:p.amountDue,state:due>0?'warn':'ok',note:due>0?'Still owed on this order':''};
+  switch(v){
+    case 'Paid':
+      return {title:'Recording the payment',rows:[
+        {label:'Amount Due',value:p.amountDue,state:due>0?'ok':'warn',note:due>0?'':'Nothing is due on this invoice'},
+        {label:'Invoice Total',value:s.totalAmount},
+        {label:'Billed To',value:s.companyName},term]};
+    case 'Unpaid':case 'Pending':
+      return {title:'Who to follow up with',rows:[
+        {label:'Amount',value:due>0?p.amountDue:(p.amountBilled||s.totalAmount)},
+        {label:'Billed To',value:s.companyName},
+        {label:'Contact',value:s.contactPersonName||concern.name},
+        {label:'Email',value:concern.email},term]};
+    case 'Closed':case 'Finance Completed':case 'Logistic Completed':case 'Inactive':
+      return {title:'Nothing should be outstanding',rows:[owed,{label:'Order Period',value:p.startFrom&&p.endTo?p.startFrom+' – '+p.endTo:''}]};
+    case 'Offboarding':case 'Logistic Terminated':case 'Finance Termination':
+      return {title:'Winding the order down',rows:[
+        {label:'Employee',value:e.name||p.name},
+        {label:'Order Ends',value:p.endTo},owed]};
+    case 'Onboarding':
+      return {title:'Who is being onboarded',rows:[
+        {label:'Employee',value:e.name||p.name},
+        {label:'Starts',value:p.startFrom},
+        {label:'Working Country',value:p.workingCountry},
+        {label:'Employee Status',value:e.status}]};
+    case 'Order Extension':
+      return {title:'The term being extended',rows:[
+        {label:'Current End',value:p.endTo},
+        {label:'Rate',value:s.rate&&s.rateType?s.rate+' / '+s.rateType:s.rate},
+        {label:'Contract Period',value:s.contractPeriod?s.contractPeriod+' days':''}]};
+  }
+  return null;
 }
 function renderPmSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
@@ -1566,7 +1649,8 @@ function renderPmSidebar(){
       +'<button class="lp-logs-save-btn" style="background:var(--navy)" onclick="pmSaveLog('+p.id+')">Save</button>'
       +'</div>'
       +'</div>';
-    body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||'',select:'auto',aiFields:function(v){return pmAiFields(p,v);}});
+    body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||'',select:'auto',aiFields:function(v){return pmAiFields(p,v);},
+      aiContext:function(v){return pmAiContext(p,v);}});
   }else if(pmTab==='workflow'){
     body=wfTimelineHTML(wfPayment(p));
   }
@@ -1684,7 +1768,7 @@ function chatSaveLog(id){
   const picked=getCSValue('chat-log-status-sel');
   const mv=chatMoves(c).find(function(m){return chatMoveLabel(m)===picked;});
   const to=mv?mv.to:'',comment=inp?inp.value.trim():'';
-  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  const flash=function(el){if(el){el.style.borderColor='#b83a3a';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!to){flash(sel);return;}
   if(!comment){flash(inp);return;}
   const was=c.status;
@@ -1894,6 +1978,92 @@ const CT_LOG_ICO={
    six months has to see that a stage was walked back without hunting for it. */
 function ctIsOverrideRow(r){return r.family==='Overrides';}
 
+/* "AI fetched results" context for a contract move: only what THAT stage
+   commits to or depends on, read off the contract.
+     quote / proposal stages   the commercials being agreed
+     Contract Sent             who it goes to and what it binds them to
+     Contract Approved         the mandatory compliance still open
+     onboarding / kickoff      right to work, start date, compliance
+     filing                    the immigration facts being filed
+     live (payroll / active)   what payroll will run on, and nothing pending
+     Inactive                  when it was meant to end
+   A comment (same stage) or a revert gets nothing: the reason is the point,
+   and the stage being left is already on screen. */
+function ctAiContext(c,v,back){
+  if(v===c.status||back)return null;
+  const cm=c.commercial||{},cur=c.currency||'';
+  const money=function(x){
+    if(x==null||x==='')return '';
+    const n=parseFloat(String(x).replace(/[^\d.]/g,''));
+    return (cur?cur+' ':'')+(isNaN(n)?x:n.toLocaleString('en-IN',{maximumFractionDigits:2}));
+  };
+  const span=String(c.empDuration||'').split(/\s*[–-]\s*(?=\d{4}-)/);
+  const start=span[0]||'',end=span[1]||'';
+  const country=c.countryOfOp||c.country;
+  // Mandatory items not yet approved hold the contract up; optional ones never do.
+  const open=(c.complianceItems||[]).filter(function(i){return i.note!=='Optional'&&i.status!=='Approved';});
+  const comp={label:'Mandatory Compliance',wide:true,
+    value:open.length?open.length+' pending':'All approved',
+    state:open.length?'warn':'ok',
+    note:open.length?open.map(function(i){return i.item;}).join(', '):''};
+  const pay={label:'Pay',value:c.payAmount?money(c.payAmount)+(c.payFrequency?' / '+c.payFrequency.toLowerCase():''):''};
+  const permit={label:'Work Permit',value:c.workPermit==null?'':c.workPermit?'Required':'Not required',
+    state:c.workPermit?'warn':'',note:c.workPermit?(c.nationality||'Employee')+' national working in '+country:''};
+  const commercials=[
+    {label:'Monthly Invoice',value:money(cm.monthlyInvoice)},
+    {label:'ADT Fee',value:money(cm.adtFee)},
+    pay,
+    {label:'Social Premium',value:cm.socialPremPct?cm.socialPremPct+'%':''},
+    {label:'Service Type',value:c.serviceType},
+    {label:'Country of Operation',value:country}];
+  switch(v){
+    case 'Quotation Approved':
+      return {title:'The quote being approved',rows:commercials};
+    case 'Proposal Sent':
+      return {title:'What the proposal offers',rows:commercials.concat([{label:'Duration',value:c.empDuration}])};
+    case 'Proposal Approved':
+      return {title:'What the client is agreeing to',rows:[commercials[0],commercials[1],{label:'Duration',value:c.empDuration}]};
+    case 'Contract Sent':
+      return {title:'Who the contract goes to',rows:[
+        {label:'Employee',value:c.empName},
+        {label:'Sent To',value:c.email,state:c.email?'ok':'warn',note:c.email?'':'No email on the contract'},
+        {label:'Role',value:c.jobTitle||c.empDesig},
+        {label:'Term',value:c.empDuration},
+        pay,
+        {label:'Work Schedule',value:c.workSchedule?c.workSchedule+' hrs / day':''}]};
+    case 'Contract Approved':
+      return {title:'Before the contract is signed off',rows:[
+        {label:'Employee',value:c.empName},{label:'Start Date',value:start},comp]};
+    case 'Onboarding':case 'Pending Onboarding':case 'Pending Kickoff':
+      return {title:'Ready to onboard?',rows:[
+        {label:'Start Date',value:start},
+        {label:'Nationality',value:c.nationality},
+        {label:'Country of Operation',value:country},
+        permit,comp]};
+    case 'Ready for Filing':case 'Filed':
+      return {title:'What is being filed',rows:[
+        {label:'Applicant',value:c.empName},
+        {label:'Nationality',value:c.nationality},
+        {label:'Destination',value:country},
+        {label:'Date of Birth',value:c.dob},
+        permit,comp]};
+    case 'Ready for Payroll':case 'Active':
+      return {title:'What payroll will run on',rows:[
+        pay,
+        {label:'Net Pay',value:money(cm.netPay)},
+        {label:'First Pay Period',value:start},
+        {label:'Contract Ends',value:end},
+        comp]};
+    case 'Inactive':
+      return {title:'Closing the contract',rows:[
+        {label:'Employee',value:c.empName},
+        {label:'Contract Ends',value:end,
+         state:end&&new Date(end)>new Date()?'warn':'',
+         note:end&&new Date(end)>new Date()?'Closing before the agreed end date':''}]};
+  }
+  return null;
+}
+
 function ctLogsTabHTML(c){
   const raw=ctLogsData[c.id]||[];
   const rows=raw.map(function(l){return ctLogRow(l,c.type);});
@@ -1903,6 +2073,7 @@ function ctLogsTabHTML(c){
   return lpLogsView(rows,ctLogFormHTML(c),{
     isBack:function(v){const j=flow.indexOf(v);return idx>=0&&j>=0&&j<idx;},
     rowClass:function(r){return ctIsOverrideRow(r)?'is-bad':'';},
+    aiContext:function(v){const j=flow.indexOf(v);return ctAiContext(c,v,idx>=0&&j>=0&&j<idx);},
     // What ctSaveLog writes: the stage, and the registry event the entry is stamped with.
     aiFields:function(v){
       const j=flow.indexOf(v),back=idx>=0&&j>=0&&j<idx;
@@ -2287,7 +2458,7 @@ function sbActionRow(actionHTML){
 }
 /* Yes/No is a VALUE, not a status, so it is rendered in the panel's one value
    colour and nothing else. The leave-policy panel used to paint its own pair
-   green (#16a34a) and red (#ef4444) at weight 700, which put three more text
+   green (#16a34a) and red (#b83a3a) at weight 700, which put three more text
    colours into a card that already had a label grey and a value ink - and,
    worse, spent the status palette on fields that carry no status. Green there
    said "good" about "Carry Forward Allowed: Yes", which is not a judgement the
@@ -3732,7 +3903,7 @@ function resetCtpFilters(){
 }
 function closeCtpModal(){ctpModalOpen=false;renderADTPage();}
 function closeCtpSuccess(){ctpSuccessName='';renderADTPage();}
-function flashFieldError(el){if(!el)return;el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);}
+function flashFieldError(el){if(!el)return;el.style.borderColor='#b83a3a';setTimeout(()=>{el.style.borderColor='';},1500);}
 function updateFileLabel(input,labelId){
   const el=document.getElementById(labelId);if(!el)return;
   if(input.files&&input.files[0]){el.textContent=input.files[0].name;el.classList.add('chosen');}
@@ -6102,8 +6273,8 @@ function lpSaveLog(policyId){
   if(!sel||!inp)return;
   const status=getCSValue('lp-log-status-sel');
   const comment=inp.value.trim();
-  if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
-  if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
+  if(!status){sel.style.borderColor='#b83a3a';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#b83a3a';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
@@ -6153,7 +6324,7 @@ function lpSidebarEmpSelectorHTML(policyEmps){
    rather than generated per location — a real map centres on what you asked
    for too, and a randomly drawn one would imply geography it does not have. */
 function tsMapSVG(fix,tone){
-  const ink=tone==='out'?'#ef4444':'#16a34a';
+  const ink=tone==='out'?'#b83a3a':'#16a34a';
   const streets=(fix&&fix.place&&fix.place.streets)||['',''];
   return '<svg class="ts-map-svg" viewBox="0 0 320 190" role="img" aria-label="Approximate location of the punch">'
     // land, water, park
@@ -8212,6 +8383,26 @@ function tkLogsTabHTML(t){
   // for, and so who the ticket is with next.
   const mvFor=function(v){return moves.find(function(m){return tkMoveLabel(m)===v;});};
   return lpLogsView(logs,form,{owner:tkOwner(t),
+    // Context per move: the issue when work starts, restarts or is resolved,
+    // who confirms when it closes, what it was waiting on when it unblocks.
+    // Blocking needs nothing - the blocker is picked in the form itself.
+    aiContext:function(v){
+      const mv=mvFor(v);if(!mv)return null;
+      const age=Math.floor((new Date()-new Date(t.createdAt))/864e5);
+      const raised={label:'Raised',value:t.createdAt?t.createdAt+(age>=0?' · '+age+' day'+(age===1?'':'s')+' ago':''):'',
+        state:age>7&&mv.to!=='closed'?'warn':'',note:age>7&&mv.to!=='closed'?'Open more than a week':''};
+      const issue={label:'Issue',value:t.description,wide:true};
+      if(mv.to==='blocked')return null;
+      if(t.status==='blocked')return {title:'What it was waiting on',rows:[{label:'Waiting On',value:t.waitingOn},raised]};
+      if(mv.to==='closed')return {title:'Who confirms the fix',rows:[
+        {label:'Client',value:t.clientName},{label:'Email',value:t.clientEmail},{label:'Phone',value:t.clientPhone}]};
+      if(mv.to==='resolved')return {title:'What is being resolved',rows:[
+        {label:'Category',value:t.category},raised,
+        {label:'Confirms With',value:t.clientName+(t.clientEmail?' · '+t.clientEmail:'')},issue]};
+      return {title:t.status==='open'?'What the work is':'The issue being picked up again',rows:[
+        {label:'Category',value:t.category},
+        {label:'Client',value:t.clientName+(t.country?' · '+t.country:'')},raised,issue]};
+    },
     aiLogStatus:function(v){const mv=mvFor(v);return mv?tkStatusLabel(mv.to):v;},
     aiFields:function(v){
       const mv=mvFor(v);if(!mv)return [];
@@ -8260,7 +8451,7 @@ function tkSaveLog(id){
   const t=ticketsData.find(x=>x.id===id);if(!t)return;
   const sel=csTrigger('tk-log-status-sel');
   const inp=document.getElementById('tk-log-comment-inp');
-  const flash=el=>{if(el){el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
+  const flash=el=>{if(el){el.style.borderColor='#b83a3a';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
   const mv=tkPickedMove(t);
   if(!mv){flash(sel);return;}
   const to=mv.to;
@@ -8289,7 +8480,7 @@ function tkReassign(id){
   const note=document.getElementById('tk-reassign-note');
   const who=sel?sel.value:'';
   const why=note?note.value.trim():'';
-  const flash=el=>{if(el){el.style.borderColor='#ef4444';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
+  const flash=el=>{if(el){el.style.borderColor='#b83a3a';setTimeout(()=>{el.style.borderColor='';},1500);el.focus();}};
   if(!who){flash(sel);return;}
   if(!why){flash(note);return;}
   if(who===t.assignedTo){flash(sel);showToast('Already assigned','info',t.ticketId+' is already with '+who);return;}
@@ -8969,7 +9160,7 @@ function buildAIJourneyRunSummaryHTML(journeyId){
     +'<div class="stat-card"><div class="stat-label"><span>Journeys Created</span></div><div class="stat-val">'+runs.length+'</div></div>'
     +'<div class="stat-card"><div class="stat-label"><span>Completed</span></div><div class="stat-val" style="color:#16a34a">'+completed+'</div></div>'
     +'<div class="stat-card"><div class="stat-label"><span>In Progress</span></div><div class="stat-val" style="color:#2563eb">'+inProgress+'</div></div>'
-    +'<div class="stat-card"><div class="stat-label"><span>Needs Attention</span></div><div class="stat-val" style="color:'+(exceptions?'#dc2626':'var(--navy)')+'">'+exceptions+'</div></div>'
+    +'<div class="stat-card"><div class="stat-label"><span>Needs Attention</span></div><div class="stat-val" style="color:'+(exceptions?'#b83a3a':'var(--navy)')+'">'+exceptions+'</div></div>'
     +'</div>'
     +'<div class="ep-form-card" style="margin-bottom:16px;padding:18px 22px 20px">'+bar+'</div>'
     +'<div id="aicj-run-drilldown">'+buildAIJourneyRunDrilldownHTML()+'</div>';
@@ -9174,10 +9365,10 @@ function confirmRemoveCfgSystem(systemId){
   const s=cfgSystems.find(function(x){return x.id===systemId;});if(!s)return;
   const overlay=document.getElementById('ct-modal-overlay');if(!overlay)return;
   overlay.innerHTML='<div class="ct-modal" style="width:min(440px,92vw);text-align:center;padding:32px 30px" onclick="event.stopPropagation()">'
-    +'<div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>'
+    +'<div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b83a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>'
     +'<div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px">Remove '+s.name+'?</div>'
     +'<div style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:22px">This disconnects the system and removes it from Systems. Models and journeys that reference it may need remapping.</div>'
-    +'<div style="display:flex;justify-content:center;gap:10px"><button class="ep-cancel-btn" onclick="closeCtModal()">Cancel</button><button class="ep-save-btn" style="background:#dc2626" onclick="removeCfgSystemConfirmed(\''+s.id+'\')">Remove system</button></div>'
+    +'<div style="display:flex;justify-content:center;gap:10px"><button class="ep-cancel-btn" onclick="closeCtModal()">Cancel</button><button class="ep-save-btn" style="background:#b83a3a" onclick="removeCfgSystemConfirmed(\''+s.id+'\')">Remove system</button></div>'
     +'</div>';
   overlay.style.display='flex';
 }
@@ -9215,7 +9406,7 @@ function buildCfgSystemDetailHTML(){
       +cfgKVRow('Authentication',s.auth)
       +cfgKVRow('Status','<span class="status-pill '+(s.status==='Connected'?'active':'inactive')+'">'+s.status+'</span>')
       +cfgKVRow('Last tested',s.lastTested+' &middot; '+s.apis+' APIs')
-      +(s.lastTestResult==='fail'?'<div style="margin-top:10px;padding:11px 14px;border-radius:9px;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;font-size:12px;line-height:1.6">Test failed &mdash; the endpoint looks incomplete or unreachable. Update the endpoint (Edit) and test again.</div>':'')
+      +(s.lastTestResult==='fail'?'<div style="margin-top:10px;padding:11px 14px;border-radius:9px;background:#fef2f2;border:1px solid #fecaca;color:#962f2f;font-size:12px;line-height:1.6">Test failed &mdash; the endpoint looks incomplete or unreachable. Update the endpoint (Edit) and test again.</div>':'')
       +(s.lastTestResult==='ok'?'<div style="margin-top:10px;padding:11px 14px;border-radius:9px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-size:12px;line-height:1.6">Connection verified &mdash; the endpoint responded successfully.</div>':'')
       +'</div>';
   const apiRows=(s.apiList.length?s.apiList.map(function(a,i){
@@ -9233,7 +9424,7 @@ function buildCfgSystemDetailHTML(){
       +'<button type="button" class="btn btn-secondary btn-sm" onclick="addCfgApiRow(\''+s.id+'\')">+ Add API</button>'
       +'</div>'
     :'';
-  const removeSection=editing?'':'<div style="margin-top:22px"><button type="button" class="ep-cancel-btn" style="color:#dc2626;border-color:#fca5a5" onclick="confirmRemoveCfgSystem(\''+s.id+'\')">Remove system</button></div>';
+  const removeSection=editing?'':'<div style="margin-top:22px"><button type="button" class="ep-cancel-btn" style="color:#b83a3a;border-color:#fca5a5" onclick="confirmRemoveCfgSystem(\''+s.id+'\')">Remove system</button></div>';
   return '<div class="ai-exec-page">'
     +cfgBackBtn('cfg-systems','Systems')
     +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:24px;flex-wrap:wrap"><div>'+heading+'</div>'+actionBtns+'</div>'
@@ -9398,10 +9589,10 @@ function confirmRemoveCfgModel(modelId){
   const m=cfgModels.find(function(x){return x.id===modelId;});if(!m)return;
   const overlay=document.getElementById('ct-modal-overlay');if(!overlay)return;
   overlay.innerHTML='<div class="ct-modal" style="width:min(440px,92vw);text-align:center;padding:32px 30px" onclick="event.stopPropagation()">'
-    +'<div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>'
+    +'<div style="width:56px;height:56px;border-radius:50%;background:#fee2e2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#b83a3a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg></div>'
     +'<div style="font-size:16px;font-weight:700;color:var(--navy);margin-bottom:10px">Remove '+m.name+'?</div>'
     +'<div style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:22px">This removes the model from Data Foundation. Journeys or agents that reference it may need remapping.</div>'
-    +'<div style="display:flex;justify-content:center;gap:10px"><button class="ep-cancel-btn" onclick="closeCtModal()">Cancel</button><button class="ep-save-btn" style="background:#dc2626" onclick="removeCfgModelConfirmed(\''+m.id+'\')">Remove model</button></div>'
+    +'<div style="display:flex;justify-content:center;gap:10px"><button class="ep-cancel-btn" onclick="closeCtModal()">Cancel</button><button class="ep-save-btn" style="background:#b83a3a" onclick="removeCfgModelConfirmed(\''+m.id+'\')">Remove model</button></div>'
     +'</div>';
   overlay.style.display='flex';
 }
@@ -9518,7 +9709,7 @@ function buildCfgModelDetailHTML(){
         +'</div>'
       :'<div class="review-section" style="margin-top:14px"><div style="font-size:12.5px;color:var(--gray)">No fields mapped yet &mdash; add a field mapping above, then test again.</div></div>')
     :'';
-  const removeSection=editing?'':'<div style="margin-top:22px"><button type="button" class="ep-cancel-btn" style="color:#dc2626;border-color:#fca5a5" onclick="confirmRemoveCfgModel(\''+m.id+'\')">Remove model</button></div>';
+  const removeSection=editing?'':'<div style="margin-top:22px"><button type="button" class="ep-cancel-btn" style="color:#b83a3a;border-color:#fca5a5" onclick="confirmRemoveCfgModel(\''+m.id+'\')">Remove model</button></div>';
   const saveCancelBar=editing?'<div style="display:flex;gap:10px;margin-bottom:18px"><button class="ep-cancel-btn" onclick="cancelCfgModelEdit()">Cancel</button><button class="ep-save-btn" onclick="saveCfgModelEdit(\''+m.id+'\')">Save changes</button></div>':'';
   const fetchSampleSection=editing?'':'<div class="ep-form-card">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">'
@@ -10207,7 +10398,7 @@ function aiPayrollRunSearch(text){
   setTimeout(function(){
     const emp=findExistingEmployeeByQuery(query);
     if(emp)aiPayrollRenderMatchCard(emp,parsed);
-    else res.innerHTML='<div class="ep-form-card"><div style="font-size:11.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">No employee found</div><div style="font-size:12px;color:var(--gray)">Please enter a valid employee name or ID to run payroll.</div></div>';
+    else res.innerHTML='<div class="ep-form-card"><div style="font-size:11.5px;font-weight:700;color:#b83a3a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">No employee found</div><div style="font-size:12px;color:var(--gray)">Please enter a valid employee name or ID to run payroll.</div></div>';
   },900);
 }
 function aiPayrollMockBase(emp){
@@ -10586,7 +10777,7 @@ function aiCtNotFoundPanel(parsed){
   const countryOpts=['','Netherlands','India','Germany','Spain','United Kingdom','France','Italy'].map(function(c){return '<option value="'+c+'">'+(c||'Select Country')+'</option>';}).join('');
   const empTypeOpts=['','EOR','PEO','Contractor'].map(function(t){return '<option value="'+t+'">'+(t||'Select Type')+'</option>';}).join('');
   return '<div class="ep-form-card">'
-    +'<div style="font-size:11.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">No existing employee found</div>'
+    +'<div style="font-size:11.5px;font-weight:700;color:#b83a3a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">No existing employee found</div>'
     +'<div style="font-size:12px;color:var(--gray);margin-bottom:14px">I couldn\'t find &ldquo;'+(parsed.name||'this person')+'&rdquo; in ADT. Enter their details below, or let AI fill the form in for you.</div>'
     +'<button type="button" class="btn btn-secondary" id="ai-ct-autofill-btn" style="margin-bottom:16px" onclick="aiCtSimulateFill()">&#10024; Simulate Auto-Fill</button>'
     +'<div class="ep-form-grid" style="margin-bottom:16px">'
@@ -11075,7 +11266,7 @@ function buildAIActiveAutomationHTML(){
     +'<div class="stat-card"><div class="stat-label"><span>Automation Status</span></div><div class="stat-val" style="font-size:16px;color:#16a34a">Active</div></div>'
     +'<div class="stat-card"><div class="stat-label"><span>Total Runs</span></div><div class="stat-val">'+totalRuns+'</div></div>'
     +'<div class="stat-card"><div class="stat-label"><span>Success Rate</span></div><div class="stat-val" style="color:#16a34a">'+successRate+'%</div></div>'
-    +'<div class="stat-card"><div class="stat-label"><span>Exceptions Pending</span></div><div class="stat-val" style="color:'+(exceptions?'#dc2626':'var(--navy)')+'">'+exceptions+'</div></div>'
+    +'<div class="stat-card"><div class="stat-label"><span>Exceptions Pending</span></div><div class="stat-val" style="color:'+(exceptions?'#b83a3a':'var(--navy)')+'">'+exceptions+'</div></div>'
     +'</div>'
     +'<div class="listing-card">'
     +'<table class="listing-table ai-run-table"><thead><tr>'
@@ -11107,7 +11298,7 @@ function buildAIRunDetailHTML(){
       +'<div class="ai-timeline-dot run-'+st+'">'+icon+'</div>'
       +'<div class="ai-timeline-card" style="cursor:pointer" onclick="openAIEventDrawer(\''+j.id+'\','+i+')">'
       +'<div class="ai-timeline-card-head"><span class="ai-timeline-card-title">'+e.name+'</span></div>'
-      +(st==='exception'?'<div class="ai-timeline-card-desc" style="color:#dc2626">'+(run.exceptionNote||'This step needs attention.')+'</div>':'<div class="ai-timeline-card-desc">'+e.desc+'</div>')
+      +(st==='exception'?'<div class="ai-timeline-card-desc" style="color:#b83a3a">'+(run.exceptionNote||'This step needs attention.')+'</div>':'<div class="ai-timeline-card-desc">'+e.desc+'</div>')
       +'<div class="ai-timeline-chips">'+aiChipsCompact(e.chips)+'</div>'
       +'</div></div>';
   }).join('');
@@ -11138,7 +11329,7 @@ function buildAIRunDetailHTML(){
       +'</div>';
   }else if(run.status==='Exception'){
     actionPanel='<div class="ep-form-card">'
-      +'<div style="font-size:11.5px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Exception &mdash; Action Required</div>'
+      +'<div style="font-size:11.5px;font-weight:700;color:#b83a3a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Exception &mdash; Action Required</div>'
       +'<div style="font-size:12.5px;color:var(--navy);line-height:1.6;margin-bottom:18px">'+(run.exceptionNote||'This run is blocked and needs review.')+'</div>'
       +'<button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" onclick="aiResolveException(\''+run.runId+'\',\''+j.id+'\')">Resolve Exception &amp; Continue</button>'
       +'<button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="openAIEventDrawer(\''+j.id+'\','+run.currentStepIdx+')">View Event Details</button>'

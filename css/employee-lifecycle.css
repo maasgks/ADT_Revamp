@@ -277,7 +277,7 @@
   font-size:11px;font-weight:600;color:var(--gray);vertical-align:1px}
 .emp-return-sub{font-size:12.5px;color:var(--gray)}
 .emp-return-sub b{color:var(--navy);font-weight:600}
-.emp-return-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;height:38px;padding:0 18px;border:none;border-radius:var(--r-control);
+.emp-return-btn{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;height:34px;padding:0 18px;border:none;border-radius:var(--r-control);
   background:var(--btn-accent);color:#fff;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
 .emp-return-btn:hover{background:#000}
 .emp-return-btn svg{flex-shrink:0}
@@ -287,10 +287,8 @@
 /* ── Employee Dashboard tracker ────────────────────────────────────────── */
 #emp-life-dash:empty{display:none}
 #emp-life-dash{margin-bottom:22px}
-.emp-trk-status{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--gray);font-weight:500}
-.emp-trk-top{display:flex;align-items:baseline;gap:10px;margin-bottom:8px}
-.emp-trk-pct{font-size:28px;font-weight:700;color:var(--navy);letter-spacing:-.5px;line-height:1}
-.emp-trk-pct-sub{font-size:12.5px;color:var(--gray)}
+.emp-trk-status{display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--gray);font-weight:500}
+.emp-trk-count{white-space:nowrap}
 .emp-trk .emp-trk-bar{height:8px;margin-bottom:16px}
 /* One column per applicable milestone - four to six of them. */
 .emp-trk-steps{display:grid;grid-template-columns:repeat(var(--n,6),minmax(0,1fr));gap:10px}
@@ -380,7 +378,7 @@
    the soft red of a status badge - pale fill, red text - rather than a solid
    red block; it deepens a step on hover. */
 .ep-save-btn.is-danger{background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
-.ep-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#b91c1c}
+.ep-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#962f2f}
 /* The row button on the employee listings: a little wider than the Contracts
    one: a status reads in full (Active, Onboarding); a longer step name ends
    in "…" and the whole name is on the hover title. Same colour, height
@@ -404,4 +402,4 @@
   background:var(--st-wait-bg);color:var(--st-wait-fg);border:1px solid var(--st-wait-bd)}
 .emp-sm .ct-modal-foot>.emp-next-wait{margin-left:auto}
 .lp-logs-save-btn.is-danger{background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
-.lp-logs-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#b91c1c}
+.lp-logs-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#962f2f}

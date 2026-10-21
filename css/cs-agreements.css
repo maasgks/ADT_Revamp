@@ -35,7 +35,7 @@
 /* ── Popup ────────────────────────────────────────────────────────────── */
 .csag-subrow{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:-8px 0 14px}
 .csag-subrow .ct-modal-sub{margin:0}
-.csag-subrow .req{color:#ef4444}
+.csag-subrow .req{color:#b83a3a}
 .ct-modal-title .lp-status-badge{margin-left:8px;vertical-align:middle}
 
 .csag-modal .ep-form-grid{gap:14px 18px}

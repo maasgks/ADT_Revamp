@@ -394,8 +394,8 @@ function lstSaveLog(){
   const inp=document.getElementById('lst-log-comment-inp');
   if(!sel||!inp)return;
   const status=getCSValue('lst-log-status-sel'),comment=inp.value.trim();
-  if(!status){sel.style.borderColor='#ef4444';setTimeout(function(){sel.style.borderColor='';},1500);return;}
-  if(!comment){inp.style.borderColor='#ef4444';setTimeout(function(){inp.style.borderColor='';},1500);return;}
+  if(!status){sel.style.borderColor='#b83a3a';setTimeout(function(){sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#b83a3a';setTimeout(function(){inp.style.borderColor='';},1500);return;}
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();
@@ -453,7 +453,7 @@ function lpCommitLog(rec,statusSelId,commentInpId,fixture){
   const inp=document.getElementById(commentInpId);
   const status=getCSValue(statusSelId);
   const comment=inp?inp.value.trim():'';
-  const flash=function(el){if(el){el.style.borderColor='#ef4444';setTimeout(function(){el.style.borderColor='';},1500);}};
+  const flash=function(el){if(el){el.style.borderColor='#b83a3a';setTimeout(function(){el.style.borderColor='';},1500);}};
   if(!status){flash(sel);return false;}
   if(!comment){flash(inp);return false;}
   const s=stampNow();
@@ -471,18 +471,30 @@ const CURRENT_USER='Shaun Test1';
    value for this user, and the permission gates read it, so the two cannot
    drift apart. */
 const CURRENT_USER_ROLE='Entity Super Admin';
-/* Dashboard headers can end with the date. Written from the clock rather than
-   typed into the markup - a date in a template is wrong the day after it ships.
-   Every [data-dash-date] on the page gets it, so adding one to another
-   dashboard is a markup change and nothing else. */
-function fillDashDates(){
-  const els=document.querySelectorAll('[data-dash-date]');
-  if(!els.length)return;
-  const txt=' \u00b7 '+new Date().toLocaleDateString('en-GB',
-    {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  els.forEach(function(el){el.textContent=txt;});
+/* Dashboard headers greet the person instead of naming the dashboard. The tab
+   strip above already says which dashboard this is, so a heading reading
+   "Employee Dashboard" repeated it and told the user nothing. Each header is:
+     [data-dash-date]    today's date, small, above      - from the clock,
+                         never typed: a date in a template is wrong tomorrow
+     [data-dash-greet]   "Good afternoon, Meera"         - time of day + name
+     .hr-header-desc     what this view covers for them
+   The Employee Dashboard greets the employee it belongs to (empSelfRec);
+   every other view greets the signed-in user. Run again on each tab switch so
+   a tab left open over lunch does not still say good morning. */
+function dashGreeting(){
+  const h=new Date().getHours();
+  return h<5?'Good evening':h<12?'Good morning':h<17?'Good afternoon':'Good evening';
 }
-document.addEventListener('DOMContentLoaded',fillDashDates);
+function fillDashHeaders(){
+  const date=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  document.querySelectorAll('[data-dash-date]').forEach(function(el){el.textContent=date;});
+  const self=typeof empSelfRec==='function'?empSelfRec():null;
+  document.querySelectorAll('[data-dash-greet]').forEach(function(el){
+    const who=(el.closest('#employee-view')&&self?self.name:CURRENT_USER)||'';
+    el.textContent=dashGreeting()+(who?', '+who.split(' ')[0]:'');
+  });
+}
+document.addEventListener('DOMContentLoaded',fillDashHeaders);
 
 function stampNow(){
   const now=new Date();
@@ -1340,9 +1352,12 @@ function sbDecorateTabbars(){
       const hero=first&&first.matches('.sb-hero,.hd-sb-hero')?first:null;
       const head=!hero&&first&&first.matches('.lp-sb-view-header')?first:null;
       const host=hero?hero.querySelector('.sb-hero-right,.hd-sb-hero-right'):head;
-      /* The Workflow tab is a read-only record of approvals: no Edit there. */
+      /* Workflow and Logs are records of what happened - approvals, status
+         moves - and a record is not edited. Logs already has its own action
+         (the status move and its comment), so a pencil there only competed
+         with it. No Edit on either tab. */
       const act=inner.querySelector('.lp-isb-tab.active');
-      const onWf=!!act&&/workflow/i.test(sbTabIdOf(act)+' '+act.textContent);
+      const onWf=!!act&&/workflow|\blogs?\b/i.test(sbTabIdOf(act)+' '+act.textContent);
       const hasEdit=onWf||!!(host&&host.querySelector('.lp-sb-view-edit-btn,.sb-hero-editing'))||!!body.querySelector('.lp-sb-edit-form');
       tools=document.createElement('span');tools.className='sb-tools';
       tools.innerHTML=(SB_TOOL_EDIT[p]&&!hasEdit?'<button type="button" class="sb-tool" title="Edit" aria-label="Edit" onclick="sbToolEdit(this)">'+SB_PEN_ICO+'</button>':'')
@@ -1587,8 +1602,51 @@ const notifData=[
   {name:'Your Invoice is ready for review',cid:'675',time:'1 day ago',pending:true}
 ];
 function toggleNotif(e){if(e)e.stopPropagation();closeAllHdrDD();notifOpen=!notifOpen;renderNotif();}
-function notifMarkAllRead(){notifData.forEach(function(n){n.pending=false;});renderNotif();showToast('All notifications marked as read');}
-function notifRefresh(){renderNotif();showToast('Notifications refreshed','info');}
+function notifMarkAllRead(){notifData.forEach(function(n){n.pending=false;});notifUpdateList();showToast('All notifications marked as read');}
+/* Refresh spins its icon once and fades the list back in. Restarting the
+   class (remove, reflow, add) lets a second click replay the spin. */
+function notifRefresh(btn){
+  if(btn){btn.classList.remove('is-spinning');void btn.offsetWidth;btn.classList.add('is-spinning');
+    btn.addEventListener('animationend',function(){btn.classList.remove('is-spinning');},{once:true});}
+  notifUpdateList();showToast('Notifications refreshed','info');
+}
+/* The switch and the list are updated IN PLACE. renderNotif() rebuilds the
+   whole panel with innerHTML, which drew the switch already in its end state -
+   its knob jumped instead of sliding - and swapped the list with no motion. */
+function notifToggleUnread(btn){
+  notifShowUnread=!notifShowUnread;
+  btn.classList.toggle('on',notifShowUnread);
+  btn.setAttribute('aria-checked',notifShowUnread?'true':'false');
+  notifUpdateList();
+}
+function notifListHTML(){
+  const list=notifShowUnread?notifData.filter(n=>n.pending):notifData;
+  /* Each unread row carries its own "Mark as read" (a tick, under the time).
+     Index into notifData, not into the filtered list, so the button still
+     points at the right notification while "Only Show Unread" is on. */
+  return list.map(n=>{const i=notifData.indexOf(n);
+    return `<div class="np-item${n.pending?' is-unread':''}" data-i="${i}"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
+  }).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>';
+}
+/* One notification read. With "Only Show Unread" on, the row slides out
+   before the list is redrawn, so it is clear where it went. */
+function notifMarkRead(i,btn){
+  const n=notifData[i];if(!n||!n.pending)return;
+  n.pending=false;
+  const row=btn&&btn.closest('.np-item');
+  if(notifShowUnread&&row&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
+    row.classList.add('is-leaving');notifSyncBell();
+    setTimeout(function(){notifUpdateList(true);},220);
+  }else notifUpdateList(true);
+}
+function notifUpdateList(quiet){
+  notifSyncBell();
+  const l=document.querySelector('#notif-pop .np-list');
+  if(!l){renderNotif();return;}
+  l.innerHTML=notifListHTML();
+  if(quiet)return;     // one row changed in place: no need to fade the whole list
+  l.classList.remove('np-list-in');void l.offsetWidth;l.classList.add('np-list-in');
+}
 /* The bell carries the unread count and says whether its panel is open, so
    the panel always reads as belonging to the button under it. */
 function notifSyncBell(){
@@ -1604,10 +1662,9 @@ function renderNotif(){
   notifSyncBell();
   if(!notifOpen){el.classList.add('hidden');return;}
   el.classList.remove('hidden');
-  const list=notifShowUnread?notifData.filter(n=>n.pending):notifData;
-  el.innerHTML=`<div class="np-head"><div class="np-title">Notifications</div><div class="np-actions"><button class="np-iconbtn" title="Refresh" onclick="notifRefresh()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="np-iconbtn" onclick="toggleNotif()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
-  <div class="np-controls"><button class="np-mark" onclick="notifMarkAllRead()">Mark all as read</button><div class="np-toggle-row"><span>Only Show Unread</span><button class="np-switch ${notifShowUnread?'on':''}" onclick="event.stopPropagation();notifShowUnread=!notifShowUnread;renderNotif()"></button></div></div>
-  <div class="np-list">${list.map(n=>`<div class="np-item"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span>':''}</div></div></div>`).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>'}</div>`;
+  el.innerHTML=`<div class="np-head"><div class="np-title">Notifications</div><div class="np-actions"><button class="np-iconbtn np-refresh" title="Refresh" aria-label="Refresh notifications" onclick="notifRefresh(this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button><button class="np-iconbtn" onclick="toggleNotif()" title="Close"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div>
+  <div class="np-controls"><button class="np-mark" onclick="notifMarkAllRead()">Mark all as read</button><div class="np-toggle-row"><span>Only Show Unread</span><button type="button" class="np-switch ${notifShowUnread?'on':''}" role="switch" aria-checked="${notifShowUnread}" aria-label="Only show unread" onclick="event.stopPropagation();notifToggleUnread(this)"></button></div></div>
+  <div class="np-list">${notifListHTML()}</div>`;
 }
 document.getElementById('notif-pop')?.addEventListener('click',e=>e.stopPropagation());
 notifSyncBell();
@@ -5334,8 +5391,8 @@ function csSaveLog(){
   if(!sel||!inp)return;
   const status=getCSValue('cs-log-status-sel');
   const comment=inp.value.trim();
-  if(!status){sel.style.borderColor='#ef4444';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
-  if(!comment){inp.style.borderColor='#ef4444';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
+  if(!status){sel.style.borderColor='#b83a3a';setTimeout(()=>{sel.style.borderColor='';},1500);return;}
+  if(!comment){inp.style.borderColor='#b83a3a';setTimeout(()=>{inp.style.borderColor='';},1500);return;}
   const now=new Date();
   const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const dateStr=now.getDate()+' '+months[now.getMonth()]+' '+now.getFullYear();

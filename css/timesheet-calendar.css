@@ -79,7 +79,7 @@
 .ts-cal-card .ts-day-cell.we .ts-day-num{color:#d4b07a}
 .ts-cal-card .ts-day-hrs{font-size:16px;letter-spacing:-.2px;margin-top:2px}
 .ts-cal-card .ts-day-pill{font-size:10px;font-weight:600;padding:3px 9px;border:1px solid transparent;margin-top:4px}
-.ts-cal-card .ts-day-pill.absent{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.ts-cal-card .ts-day-pill.absent{background:#fef2f2;color:#b83a3a;border-color:#fecaca}
 .ts-cal-card .ts-day-pill.leave{background:#eff6ff;color:#2563eb;border-color:#dbeafe}
 .ts-cal-card .ts-day-pill.inprog{background:#fffbeb;color:#b45309;border-color:#fde68a}
 .ts-cal-card .ts-day-pill.closed{border-color:#e2e8f0}
@@ -89,7 +89,7 @@
   line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ts-cal-card .ts-day-flag::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0;background:currentColor}
 .ts-cal-card .ts-day-flag.tone-wait{color:#b45309}
-.ts-cal-card .ts-day-flag.tone-bad{color:#dc2626}
+.ts-cal-card .ts-day-flag.tone-bad{color:#b83a3a}
 
 /* "Manual" becomes a small quiet tag rather than loose caps text. */
 .ts-cal-card .ts-day-src{align-self:flex-start;padding:1px 6px;border-radius:4px;
