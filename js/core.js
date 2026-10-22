@@ -1888,6 +1888,7 @@ function navigatePage(pg,fromDashboard){
   prCreateOpen=false;pmCreateOpen=false;
   page=pg;
   syncSidebarDropdown(pg);
+  if(typeof syncHeaderUser==='function')syncHeaderUser();
   cameFromDashboard=!!fromDashboard;
   if(view==='adt'){renderADTPage();return;}
   if(view==='agent-active'){showAgentModule(pg);return;}

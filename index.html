@@ -2295,7 +2295,34 @@ function switchDashboard(tab){
   // markup, so they have to be (re)rendered whenever this tab is shown.
   if(tab==='opendhi-compliance'&&typeof renderOcaDashboard==='function')renderOcaDashboard();
   if(tab==='csm'&&typeof renderCsmDashCards==='function')renderCsmDashCards();
+  syncHeaderUser();
 }
+/* The Employee Dashboard belongs to empSelf (Meera Iyer), so while it is the
+   view on screen the header's profile chip and dropdown show her; every other
+   view shows the signed-in admin. */
+var HDR_USERS={
+  admin:{name:'Pallavi Parate',initials:'PP',email:'pallavi@dhihyperlocal.com',role:'Admin'},
+  self:{name:'Meera Iyer',initials:'MI',email:'meera@testemp.com',role:'Employee'}
+};
+function syncHeaderUser(){
+  var onEmp=(typeof page==='undefined'||page==='dashboard')&&(window.activeDashboardTab||'employee')==='employee';
+  var u=HDR_USERS.admin;
+  if(onEmp){
+    var rec=typeof empSelfRec==='function'?empSelfRec():null;
+    u=rec?{name:rec.name,initials:rec.name.split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(),email:rec.email||'',role:'Employee'}:HDR_USERS.self;
+  }
+  var trig=document.getElementById('user-trigger');
+  var dd=document.getElementById('user-dd');
+  if(!trig||!dd)return;
+  trig.title=u.name;
+  trig.querySelector('.user-avatar-sm').textContent=u.initials;
+  trig.querySelector('.hdr-sel-label').textContent=u.name;
+  dd.querySelector('.hdr-dd-header .user-avatar-sm').textContent=u.initials;
+  dd.querySelector('.hdr-dd-title').textContent=u.name;
+  dd.querySelector('.hdr-dd-subtitle').textContent=u.email;
+  dd.querySelector('.hdr-dd-info-val').textContent=u.role;
+}
+document.addEventListener('DOMContentLoaded',syncHeaderUser);
 function scrollDashboardTabs(dir){
   var el=document.getElementById('dashboard-tabs');
   if(!el)return;
