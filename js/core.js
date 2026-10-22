@@ -1355,9 +1355,10 @@ function sbDecorateTabbars(){
       /* Workflow and Logs are records of what happened - approvals, status
          moves - and a record is not edited. Logs already has its own action
          (the status move and its comment), so a pencil there only competed
-         with it. No Edit on either tab. */
+         with it. No Edit on either tab. Bank Details has its own
+         "+ Add Bank Detail" action, so it gets no pencil either. */
       const act=inner.querySelector('.lp-isb-tab.active');
-      const onWf=!!act&&/workflow|\blogs?\b/i.test(sbTabIdOf(act)+' '+act.textContent);
+      const onWf=!!act&&/workflow|\blogs?\b|bank-details|bank details/i.test(sbTabIdOf(act)+' '+act.textContent);
       const hasEdit=onWf||!!(host&&host.querySelector('.lp-sb-view-edit-btn,.sb-hero-editing'))||!!body.querySelector('.lp-sb-edit-form');
       tools=document.createElement('span');tools.className='sb-tools';
       tools.innerHTML=(SB_TOOL_EDIT[p]&&!hasEdit?'<button type="button" class="sb-tool" title="Edit" aria-label="Edit" onclick="sbToolEdit(this)">'+SB_PEN_ICO+'</button>':'')
