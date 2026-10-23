@@ -420,41 +420,101 @@ function lplAiOn(comp,reg){
   const v=comp.getAttribute('data-v')||'';
   return !!(v&&v!==reg.current&&reg.when&&reg.when(v)&&!comp.hasAttribute('data-ai-off'));
 }
-/* The card, top to bottom:
-     head      sparkle, "AI Recommendation", what it looked at, dismiss
-     verdict   a tinted banner: go ahead, or review first - and why in a line
-     checks    each check as a row, flagged ones first, the note under it
-     based on  the plain facts the checks were made against, as a small grid
-     foot      Accept & submit (or Submit anyway) · Edit details */
-function lplAiRender(comp){
-  const box=comp&&comp.querySelector('.lpl-ai'),reg=box&&LPL_AI[box.getAttribute('data-ai')];
-  if(!reg)return;
-  if(!lplAiOn(comp,reg)){box.hidden=true;if(box._html){box.innerHTML='';box._html='';}return;}
-  const a=lplAiAnalyse(comp,reg),n=a.warn.length;
-  const checks=a.rows.filter(function(r){return r.state==='warn';}).concat(a.rows.filter(function(r){return r.state==='ok';}));
-  const facts=a.rows.filter(function(r){return !r.state;});
-  const passed=checks.length-n;
-  const verdictSub=n
-    ?n+' item'+(n===1?' needs':'s need')+' a look before you submit.'
-    :(passed?(passed===1?'1 check':'All '+passed+' checks')+' passed. ':'')+'Nothing flagged on this record.';
-  const html='<div class="lpl-ai-head"><span class="lpl-ai-ico">'+LPL_AI_ICO+'</span>'
-      +'<div class="lpl-ai-head-txt"><span class="lpl-ai-title">AI Recommendation</span>'
-      +(a.title?'<span class="lpl-ai-sub">'+lplEsc(a.title)+'</span>':'')+'</div>'
-      +'<button type="button" class="lpl-c-x lpl-ai-x" aria-label="Dismiss recommendation" title="Dismiss" onclick="lplAiDismiss(this)">'+LPL_ICO.x+'</button></div>'
-    +'<div class="lpl-ai-body">'
-      +'<div class="lpl-ai-verdict is-'+(n?'warn':'ok')+'"><span class="lpl-ai-v-ico">'+LPL_AI_MARK[n?'warn':'ok']+'</span>'
-        +'<div><div class="lpl-ai-v-title">'+(n?'Review before ':'Go ahead with ')+lplEsc(a.label)+'</div>'
-        +'<div class="lpl-ai-v-sub">'+verdictSub+'</div></div></div>'
-      +(checks.length?'<div class="lpl-ai-group">Checks</div><ul class="lpl-ai-checks">'+checks.map(function(r){
+/* The card has four designs, picked from the tabs in its head and remembered
+   per browser. Every design shows the same three things - the verdict, the
+   checks, the facts they were made against - and the same Accept / Edit foot;
+   only the layout changes.
+     card      Detailed: verdict banner, checks as rows, facts as a field grid
+     compact   one-line verdict, checks as pills, facts as one line of text
+     table     one table - field, value, check - flagged rows tinted
+     summary   the recommendation written out as a short paragraph */
+const LPL_AI_VIEWS=[{id:'card',label:'Detailed'},{id:'compact',label:'Compact'},{id:'table',label:'Table'},{id:'summary',label:'Summary'}];
+let lplAiViewId=(function(){try{return localStorage.getItem('lpl-ai-design')||'card';}catch(e){return 'card';}})();
+function lplAiSetView(id){
+  lplAiViewId=id;
+  try{localStorage.setItem('lpl-ai-design',id);}catch(e){}
+  document.querySelectorAll('.lpl-composer:not([hidden])').forEach(lplAiRender);
+}
+/* The verdict as one tinted line - the compact and table designs lead with it. */
+function lplAiStrip(a){
+  return '<div class="lpl-ai-strip is-'+a.tone+'"><span class="lpl-ai-mk">'+LPL_AI_MARK[a.tone]+'</span>'
+    +'<b>'+a.head+'</b><span class="lpl-ai-strip-sub">'+a.sub+'</span></div>';
+}
+const LPL_AI_DESIGN={
+  card:function(a){
+    return '<div class="lpl-ai-verdict is-'+a.tone+'"><span class="lpl-ai-v-ico">'+LPL_AI_MARK[a.tone]+'</span>'
+        +'<div><div class="lpl-ai-v-title">'+a.head+'</div><div class="lpl-ai-v-sub">'+a.sub+'</div></div></div>'
+      +(a.checks.length?'<div class="lpl-ai-group">Checks</div><ul class="lpl-ai-checks">'+a.checks.map(function(r){
           return '<li class="lpl-ai-check is-'+r.state+'"><span class="lpl-ai-mk">'+LPL_AI_MARK[r.state]+'</span>'
             +'<div class="lpl-ai-check-txt"><div class="lpl-ai-check-row"><span class="lpl-ai-check-k">'+lplEsc(r.label)+'</span>'
             +'<span class="lpl-ai-check-v">'+lplEsc(r.value)+'</span></div>'
             +(r.note?'<div class="lpl-ai-note">'+lplEsc(r.note)+'</div>':'')+'</div></li>';
         }).join('')+'</ul>':'')
-      +(facts.length?'<div class="lpl-ai-group">Based on</div><dl class="lpl-ai-facts">'+facts.map(function(r){
+      +(a.facts.length?'<div class="lpl-ai-group">Based on</div><dl class="lpl-ai-facts">'+a.facts.map(function(r){
           return '<div class="lpl-ai-fact'+(String(r.value).length>48?' is-wide':'')+'"><dt>'+lplEsc(r.label)+'</dt><dd>'+lplEsc(r.value)+'</dd></div>';
-        }).join('')+'</dl>':'')
-    +'</div>'
+        }).join('')+'</dl>':'');
+  },
+  compact:function(a){
+    return lplAiStrip(a)
+      +(a.checks.length?'<div class="lpl-ai-pills">'+a.checks.map(function(r){
+          return '<span class="lpl-ai-cpill is-'+r.state+'"'+(r.note?' title="'+lplAttr(r.note)+'"':'')+'>'+LPL_AI_MARK[r.state]
+            +lplEsc(r.label)+' <b>'+lplEsc(r.value)+'</b></span>';
+        }).join('')+'</div>':'')
+      +(a.facts.length?'<p class="lpl-ai-inline">'+a.facts.map(function(r){
+          return '<span>'+lplEsc(r.label)+' <b>'+lplEsc(r.value)+'</b></span>';
+        }).join('<span class="lpl-ai-sep">&middot;</span>')+'</p>':'');
+  },
+  table:function(a){
+    const rows=a.checks.concat(a.facts);
+    return lplAiStrip(a)
+      +'<div class="lpl-ai-tbl-wrap"><table class="lpl-ai-tbl"><thead><tr><th>Field</th><th>Value</th><th>Check</th></tr></thead><tbody>'
+      +rows.map(function(r){
+        return '<tr'+(r.state==='warn'?' class="is-warn"':'')+'><td class="lpl-ai-tk">'+lplEsc(r.label)+'</td><td class="lpl-ai-tv">'+lplEsc(r.value)+'</td>'
+          +'<td>'+(r.state
+            ?'<span class="lpl-ai-tc is-'+r.state+'"><span class="lpl-ai-mk">'+LPL_AI_MARK[r.state]+'</span>'+(r.note?lplEsc(r.note):r.state==='ok'?'Passed':'Check')+'</span>'
+            :'<span class="lpl-ai-tdash">&mdash;</span>')+'</td></tr>';
+      }).join('')+'</tbody></table></div>';
+  },
+  summary:function(a){
+    const facts=a.facts.map(function(r){return lplEsc(r.label)+' <b>'+lplEsc(r.value)+'</b>';});
+    const ok=a.checks.filter(function(r){return r.state==='ok';});
+    const warn=a.checks.filter(function(r){return r.state==='warn';});
+    return '<div class="lpl-ai-sum is-'+a.tone+'">'
+      +'<p class="lpl-ai-sum-lead"><span class="lpl-ai-mk">'+LPL_AI_MARK[a.tone]+'</span><span><b>'+a.head+'.</b> '+a.sub+'</span></p>'
+      +(facts.length?'<p class="lpl-ai-sum-p">From the record: '+facts.join(', ')+'.</p>':'')
+      +(ok.length?'<p class="lpl-ai-sum-p">'+ok.map(function(r){return lplEsc(r.label)+' (<b>'+lplEsc(r.value)+'</b>)';}).join(', ')
+        +(ok.length===1?' checks out.':' check out.')+'</p>':'')
+      +(warn.length?'<ul class="lpl-ai-sum-flags">'+warn.map(function(r){
+          return '<li><span class="lpl-ai-mk">'+LPL_AI_MARK.warn+'</span><span><b>'+lplEsc(r.label)+':</b> '+lplEsc(r.value)
+            +(r.note?' &mdash; '+lplEsc(r.note):'')+'</span></li>';
+        }).join('')+'</ul>':'')
+      +'</div>';
+  }
+};
+/* The card: head (sparkle, title, what it looked at, design tabs, dismiss),
+   the picked design, then Accept & submit (or Submit anyway) · Edit details. */
+function lplAiRender(comp){
+  const box=comp&&comp.querySelector('.lpl-ai'),reg=box&&LPL_AI[box.getAttribute('data-ai')];
+  if(!reg)return;
+  if(!lplAiOn(comp,reg)){box.hidden=true;if(box._html){box.innerHTML='';box._html='';}return;}
+  const a=lplAiAnalyse(comp,reg),n=a.warn.length;
+  a.checks=a.rows.filter(function(r){return r.state==='warn';}).concat(a.rows.filter(function(r){return r.state==='ok';}));
+  a.facts=a.rows.filter(function(r){return !r.state;});
+  const passed=a.checks.length-n;
+  a.tone=n?'warn':'ok';
+  a.head=(n?'Review before ':'Go ahead with ')+lplEsc(a.label);
+  a.sub=n
+    ?n+' item'+(n===1?' needs':'s need')+' a look before you submit.'
+    :(passed?(passed===1?'1 check':'All '+passed+' checks')+' passed. ':'')+'Nothing flagged on this record.';
+  const view=LPL_AI_DESIGN[lplAiViewId]?lplAiViewId:'card';
+  const html='<div class="lpl-ai-head"><span class="lpl-ai-ico">'+LPL_AI_ICO+'</span>'
+      +'<div class="lpl-ai-head-txt"><span class="lpl-ai-title">AI Recommendation</span>'
+      +(a.title?'<span class="lpl-ai-sub">'+lplEsc(a.title)+'</span>':'')+'</div>'
+      +'<div class="lpl-ai-tabs" role="tablist" aria-label="Recommendation design">'+LPL_AI_VIEWS.map(function(v){
+        return '<button type="button" role="tab" class="lpl-ai-tab'+(v.id===view?' active':'')+'" aria-selected="'+(v.id===view)+'" onclick="lplAiSetView(\''+v.id+'\')">'+v.label+'</button>';
+      }).join('')+'</div>'
+      +'<button type="button" class="lpl-c-x lpl-ai-x" aria-label="Dismiss recommendation" title="Dismiss" onclick="lplAiDismiss(this)">'+LPL_ICO.x+'</button></div>'
+    +'<div class="lpl-ai-body is-'+view+'">'+LPL_AI_DESIGN[view](a)+'</div>'
     +'<div class="lpl-ai-foot">'
       +'<button type="button" class="'+(n?'btn-outline':'btn-primary')+' lpl-btn" onclick="lplAiAccept(this)">'+(n?'Submit anyway':'Accept &amp; submit')+'</button>'
       +'<button type="button" class="btn-outline lpl-btn" onclick="lplAiEdit(this)">Edit details</button>'
