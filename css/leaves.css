@@ -1173,6 +1173,9 @@ tr.lp-row-selected>td:first-child,
 .lp-isb:has(>.sb-pop-head) .lp-isb-tabbar .lp-isb-right:not(:has(>:not(.lp-isb-close))){display:none}
 .lp-isb:has(>.sb-pop-head) .lp-isb-body .sb-tool-wide{display:none}
 .lp-isb:has(>.sb-pop-head) .sb-body-tools:not(:has(.sb-tool:not(.sb-tool-wide))){display:none}
+/* The header card a tab was given only to hold the tools repeats the popup's
+   own header - so in the popup it goes, unless it still carries an Edit. */
+.lp-isb:has(>.sb-pop-head) .sb-hero-auto:not(:has(.sb-tool:not(.sb-tool-wide))){display:none}
 @media (max-width:640px){
   .sb-pop-head{padding:12px 14px;gap:10px}
   .sb-pop-title{flex-wrap:wrap;gap:6px}

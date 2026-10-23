@@ -1650,6 +1650,9 @@ function renderPmSidebar(){
       +'</div>'
       +'</div>';
     body=lpLogsView(logs,formHTML,{current:p.invoiceStatus,open:pmPendingStatus||'',select:'auto',aiFields:function(v){return pmAiFields(p,v);},
+      // Recording a payment or raising an extension is a submission; the rest
+      // of the flow is follow-up and close-out.
+      aiWhen:function(v){return v==='Paid'||v==='Order Extension';},
       aiContext:function(v){return pmAiContext(p,v);}});
   }else if(pmTab==='workflow'){
     body=wfTimelineHTML(wfPayment(p));
@@ -2072,7 +2075,12 @@ function ctLogsTabHTML(c){
   const flow=ctFlowFor(c.type),idx=flow.indexOf(c.status);
   return lpLogsView(rows,ctLogFormHTML(c),{
     isBack:function(v){const j=flow.indexOf(v);return idx>=0&&j>=0&&j<idx;},
+    // Ready for Payroll / Filed / Active - the flow's last stage is a finish.
+    done:idx>=0&&idx===flow.length-1,
     rowClass:function(r){return ctIsOverrideRow(r)?'is-bad':'';},
+    // The AI card is for putting the contract forward - sending and filing.
+    // The approval stages are the client's or reviewer's call, so they get none.
+    aiWhen:function(v){const j=flow.indexOf(v);return j>idx&&/Sent$|Filing|Filed/.test(v);},
     aiContext:function(v){const j=flow.indexOf(v);return ctAiContext(c,v,idx>=0&&j>=0&&j<idx);},
     // What ctSaveLog writes: the stage, and the registry event the entry is stamped with.
     aiFields:function(v){
@@ -8403,6 +8411,8 @@ function tkLogsTabHTML(t){
         {label:'Category',value:t.category},
         {label:'Client',value:t.clientName+(t.country?' · '+t.country:'')},raised,issue]};
     },
+    // Only proposing a resolution is submitted for the client to confirm.
+    aiWhen:function(v){const mv=mvFor(v);return !!mv&&mv.to==='resolved';},
     aiLogStatus:function(v){const mv=mvFor(v);return mv?tkStatusLabel(mv.to):v;},
     aiFields:function(v){
       const mv=mvFor(v);if(!mv)return [];

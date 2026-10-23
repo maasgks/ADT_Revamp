@@ -1260,7 +1260,7 @@ function sbToolWide(btn){
 const SB_POP_REC={};
 const SB_X_ICO='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 function sbPopReadHero(body){
-  const hero=body.querySelector('.sb-hero,.hd-sb-hero');if(!hero)return null;
+  const hero=body.querySelector('.sb-hero:not(.sb-hero-auto),.hd-sb-hero');if(!hero)return null;
   const name=hero.querySelector('.sb-hero-name,.hd-sb-hero-name');if(!name)return null;
   const ico=hero.querySelector('.sb-hero-ico,.sb-hero-img,.hd-sb-datechip');
   const meta=hero.querySelector('.sb-hero-meta,.hd-sb-hero-meta');
@@ -1289,10 +1289,14 @@ function sbPopReadRow(inner){
   });
   const plain=cells.filter(function(td){return !td.querySelector('.lp-status-badge');});
   if(!plain.length)return null;
+  /* A leading ID column (94132, INV-2041, TCK-1021) is not the record's name:
+     the name is the next cell, and the ID leads the identifying line. */
+  const idLike=function(td){return /^[A-Z]{0,5}[-#]?\d[\d-]*$/.test(txt(td));};
+  const lead=plain.length>1&&idLike(plain[0])?plain.shift():null;
   const nameCell=plain[0];
   const first=nameCell.firstElementChild;
   const name=txt(first&&first.children.length===0?first:nameCell);
-  const meta=[];
+  const meta=lead?[txt(lead)]:[];
   const sub=nameCell.querySelector('.lp-c-sub');if(sub&&txt(sub)!==name)meta.push(txt(sub));
   plain.slice(1).forEach(function(td){
     if(meta.length>=3)return;
@@ -1304,6 +1308,20 @@ function sbPopReadRow(inner){
   return {ico:'<div class="sb-hero-ico">'+SB_POP_DOC_ICO+'</div>',name:esc(name),
     meta:meta.map(esc).join('<span class="sb-dot">•</span>'),status:badge?badge.outerHTML:''};
 }
+/* Which list row the panel belongs to, so a remembered header is only reused
+   for the record it was read from. */
+function sbSelRowId(inner){
+  const panel=inner.closest('.lp-split-sb');
+  const row=panel&&panel.parentElement&&panel.parentElement.querySelector('tr.lp-row-selected');
+  return row?(row.id||String(row.rowIndex)):'';
+}
+/* The record header for a tab that has none: the details tab's hero if it was
+   read for this same record, otherwise the selected list row. */
+function sbRecFor(p,inner){
+  const r=SB_POP_REC[p];
+  if(r&&r.rowId===sbSelRowId(inner))return r;
+  return sbPopReadRow(inner);
+}
 function sbPopClose(btn){
   const inner=btn.closest('[id$="-isb-inner"]');
   const x=inner&&inner.querySelector('.lp-isb-tabbar .lp-isb-close');
@@ -1314,7 +1332,7 @@ function sbPopHead(p,inner,body){
      other tab - the E-Sign integration, say - is about that tab. */
   const firstTab=inner.querySelector('.lp-isb-tab');
   const rec=(!firstTab||firstTab.classList.contains('active'))?sbPopReadHero(body):null;
-  if(rec)SB_POP_REC[p]=rec;
+  if(rec){rec.rowId=sbSelRowId(inner);SB_POP_REC[p]=rec;}
   let head=inner.querySelector(':scope>.sb-pop-head');
   if(!SB_WIDE[p]){if(head)head.remove();return;}
   const r=SB_POP_REC[p]||sbPopReadRow(inner)||{ico:'',name:'',meta:'',status:''};
@@ -1334,11 +1352,12 @@ function sbPopHead(p,inner,body){
     +'</div>';
   if(inner.firstElementChild!==head)inner.insertBefore(head,inner.firstChild);
 }
-/* Placed INSIDE the open tab, on the row of its heading: beside the header
-   card's own Edit on Basic Details (only Enlarge is added there), at the end
-   of a section heading row where the tab starts with one, and otherwise on a
-   slim row of their own at the top of the tab. Edit is left out while the
-   form is already open. */
+/* Placed INSIDE the record's header card at the top of the open tab, on its
+   right beside the status: next to the card's own Edit on Basic Details (only
+   Enlarge is added there), and on every other tab in the same card, added to
+   the tab when it has none. Only a panel with no record to describe falls back
+   to a section heading row or a slim row of its own. Edit is left out while
+   the form is already open. */
 function sbDecorateTabbars(){
   document.querySelectorAll('[id$="-isb-inner"]').forEach(function(inner){
     const p=inner.id.slice(0,-'-isb-inner'.length);
@@ -1349,7 +1368,23 @@ function sbDecorateTabbars(){
     let tools=body.querySelector('.sb-tools');
     if(!tools){
       const first=body.firstElementChild;
-      const hero=first&&first.matches('.sb-hero,.hd-sb-hero')?first:null;
+      let hero=first&&first.matches('.sb-hero,.hd-sb-hero')?first:null;
+      /* The standard: Enlarge (and Edit) live in the record's header card, on
+         every tab. A tab that opens without one gets the same card - the
+         details tab's hero, remembered, or failing that the selected list
+         row - so the tools are never on a loose row of their own. */
+      if(hero&&!hero.classList.contains('sb-hero-auto')){const r=sbPopReadHero(body);if(r){r.rowId=sbSelRowId(inner);SB_POP_REC[p]=r;}}
+      if(!hero){
+        const rec=sbRecFor(p,inner);
+        if(rec){
+          hero=document.createElement('div');hero.className='sb-hero sb-hero-auto';
+          hero.innerHTML=(rec.ico||'<div class="sb-hero-ico">'+SB_POP_DOC_ICO+'</div>')
+            +'<div class="sb-hero-txt"><div class="sb-hero-name">'+rec.name+'</div>'
+            +(rec.meta?'<div class="sb-hero-meta">'+rec.meta+'</div>':'')+'</div>'
+            +'<div class="sb-hero-right">'+(rec.status||'')+'</div>';
+          body.insertBefore(hero,body.firstChild);
+        }
+      }
       const head=!hero&&first&&first.matches('.lp-sb-view-header')?first:null;
       const host=hero?hero.querySelector('.sb-hero-right,.hd-sb-hero-right'):head;
       /* Workflow and Logs are records of what happened - approvals, status
