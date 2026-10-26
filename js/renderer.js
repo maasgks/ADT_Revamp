@@ -1196,16 +1196,61 @@ function _attSetLocation(text,pending){
   if(sub&&card&&card.classList.contains('is-busy')&&!card.classList.contains('is-waiting'))
     sub.textContent=text;
 }
-function _attLocDone(ok,reason){
+/* `kind` says WHICH refusal this was. A permission or hardware failure and a
+   punch from outside the fence end the same way — nothing recorded — but they
+   need different headlines and a different way out, so the stage asks. */
+function _attLocDone(ok,reason,kind){
   if(_attLoc.state!=='pending')return;       // first outcome wins
-  _attLoc.state=ok?'ok':'fail';_attLoc.reason=reason||'';
+  _attLoc.state=ok?'ok':'fail';_attLoc.reason=reason||'';_attLoc.kind=kind||'';
   var w=_attLoc.waiters;_attLoc.waiters=[];
-  w.forEach(function(fn){fn(ok,reason||'');});
+  w.forEach(function(fn){fn(ok,reason||'',kind||'');});
 }
 // Hand back the decision — now if it is already in, later if it is not.
 function _attLocAwait(cb){
   if(_attLoc.state==='pending')_attLoc.waiters.push(cb);
-  else cb(_attLoc.state==='ok',_attLoc.reason);
+  else cb(_attLoc.state==='ok',_attLoc.reason,_attLoc.kind||'');
+}
+
+/* The company's Attendance tab is the authority on both questions. Read live
+   on every punch, so a setting saved a minute ago applies to the next click —
+   and defaulted to ON if the settings module is absent, because silently not
+   checking is the failure that would go unnoticed. */
+function _attGeoOn(){
+  return typeof csAtt==='undefined'||csAtt.geolocation!==false;
+}
+/* Not a setting of its own: with geolocation on, the office radius always
+   applies — as long as there is an Active branch to measure against. An
+   Inactive branch is one nobody is meant to be clocking in at. */
+function _attOffices(){
+  if(typeof csAtt==='undefined'||!csAtt.locations)return [];
+  return csAtt.locations.filter(function(L){return (L.status||'Active')==='Active';});
+}
+function _attFenceOn(){
+  return _attGeoOn()&&_attOffices().length>0;
+}
+// Great-circle distance in metres — accurate to well under a metre at the
+// scale of an office radius.
+function _attDistM(lat1,lng1,lat2,lng2){
+  var R=6371000,r=Math.PI/180;
+  var dLat=(lat2-lat1)*r,dLng=(lng2-lng1)*r;
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)
+       +Math.cos(lat1*r)*Math.cos(lat2*r)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(a)));
+}
+/* Null when the punch is inside ANY office's radius, otherwise the nearest
+   office — the one worth naming, since it is the one the user most likely
+   meant to be at. */
+function _attFenceMiss(lat,lng){
+  var best=null,offices=_attOffices();
+  for(var i=0;i<offices.length;i++){
+    var L=offices[i],d=_attDistM(lat,lng,+L.lat,+L.lng),rad=+L.radius||100;
+    if(d<=rad)return null;
+    if(!best||d-rad<best.over)best={name:L.name||'the office',dist:d,radius:rad,over:d-rad};
+  }
+  return best;
+}
+function _attFmtDist(m){
+  return m>=1000?(m/1000).toFixed(m>=10000?0:1)+' km':Math.round(m)+' m';
 }
 
 function _attRequestLocation(){
@@ -1226,7 +1271,10 @@ function _attRequestLocation(){
   navigator.geolocation.getCurrentPosition(function(p){
     var lat=p.coords.latitude,lng=p.coords.longitude;
     _attSetLocation(lat.toFixed(4)+', '+lng.toFixed(4));
-    _attLocDone(true);
+    var miss=_attFenceOn()?_attFenceMiss(lat,lng):null;
+    if(miss)_attLocDone(false,'You are '+_attFmtDist(miss.dist)+' from '+miss.name
+      +'. Clock in from the office, or request a manual entry for approval.','fence');
+    else _attLocDone(true);
     _attNameLocation(lat,lng);               // refinement only — nothing waits on it
   },function(err){
     _attSetLocation('Unavailable');
@@ -1345,10 +1393,10 @@ function _attRunStage(opts,commit){
      dismisses itself leaves the user looking at an unchanged card with no idea
      why nothing happened — so it holds, says what went wrong, and offers the
      way out of it. Nothing is recorded either way. */
-  var fail=function(reason){
+  var fail=function(reason,kind){
     card.classList.remove('is-waiting');
     card.classList.add('is-denied');
-    _attEl('att-stage-label').textContent='Location required';
+    _attEl('att-stage-label').textContent=kind==='fence'?'Outside office geofence':'Location required';
     _attEl('att-stage-time').textContent='Clock-in cancelled';
     _attEl('att-stage-sub').textContent=reason;
     _attSay(reason);
@@ -1357,7 +1405,7 @@ function _attRunStage(opts,commit){
 
   // Kept on the module so the Allow button can re-enter the wait after a retry
   // without re-running the whole animation behind it.
-  _attGate={card:card,pass:pass,fail:fail,release:release};
+  _attGate={card:card,pass:pass,fail:fail,release:release,at:opts.at};
   setTimeout(function(){
     if(!opts.gated){pass();return;}
     _attAwaitGate();
@@ -1379,7 +1427,7 @@ function _attAwaitGate(){
     // that does not depend on a timer running out.
     _attShowRecovery(true);
   }
-  _attLocAwait(function(ok,reason){ ok?g.pass():g.fail(reason); });
+  _attLocAwait(function(ok,reason,kind){ ok?g.pass():g.fail(reason,kind); });
 }
 
 /* THE RECOVERY BUTTON HAS TO TELL THE TRUTH ABOUT WHAT IT CAN DO. Once a site
@@ -1394,7 +1442,14 @@ function _attShowRecovery(cancelOnly){
   if(!box)return;
   box.hidden=false;
   if(btn){btn.hidden=!!cancelOnly;btn.textContent='Allow Location Access';}
+  var man=_attEl('att-manual-btn');
+  if(man)man.hidden=cancelOnly||_attLoc.kind!=='fence';
   if(cancelOnly)return;                       // still waiting: nothing to retry yet
+  /* Permission is fine — the user is simply somewhere else. Two ways on: walk
+     in and retry, or put the punch in as a manual entry, which goes to the
+     approver rather than onto the sheet. */
+  if(btn)btn.classList.toggle('is-primary',_attLoc.kind!=='fence');
+  if(_attLoc.kind==='fence'){if(btn)btn.textContent='Retry';return;}
   if(!navigator.permissions||!navigator.permissions.query)return;
   navigator.permissions.query({name:'geolocation'}).then(function(st){
     if(st.state!=='denied')return;
@@ -1421,6 +1476,16 @@ function attRetryLocation(){
   _attRequestLocation();
   _attAwaitGate();
 }
+/* Outside the fence: hand the punch to the manual entry request, seeded with
+   the time of the attempt and where it was made from. Nothing is recorded
+   until the approver agrees, so the card goes back to idle. */
+function attRequestManual(){
+  var where=_attLoc.reason||'';
+  var at=_attGate&&_attGate.at?_attGate.at:new Date();
+  _attHideRecovery();
+  if(_attGate)_attGate.release();
+  if(typeof arOpenManual==='function')arOpenManual(at,_attPlace,where);
+}
 // Give up on this punch. Nothing was recorded, so there is nothing to undo.
 function attCancelClockIn(){
   _attHideRecovery();
@@ -1439,6 +1504,22 @@ function toggleClock(){
 
 function _attClockIn(){
   var now=new Date();
+  /* Geolocation switched off for the company: the browser is never asked, and
+     the punch is not gated on anything. Not asking is the point — a prompt
+     for a location the company said it does not want is the bug. */
+  if(!_attGeoOn()){
+    _attLoc={state:'ok',reason:'',waiters:[]};
+    _attSetLocation('Location not captured');
+    _attRunStage({at:now,from:null,out:false,gated:false,
+                  label:'Clocked in',sub:'Location not captured'},function(){
+      _attInAt=now;_attOutAt=null;_attState='in';
+      _attPaint();
+      clearInterval(_attTimer);
+      _attTimer=setInterval(_attTickLogged,1000);
+      _attSay('Clocked in at '+_attFmtTime(now)+'.');
+    });
+    return;
+  }
   // Asked FIRST and synchronously, so the browser attributes the prompt to
   // this click. The stage then waits on the answer — see _attRunStage.
   _attRequestLocation();

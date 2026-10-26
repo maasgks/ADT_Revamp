@@ -86,6 +86,45 @@ function arCanRequest(iso){
   return (typeof tsDayEditable==='function')?tsDayEditable(iso):true;
 }
 function arGet(iso){return arRequests[iso]||null;}
+
+/* ── MANUAL ENTRY: A CLOCK-IN FROM OUTSIDE THE OFFICE RADIUS ──
+   The other way a day's hours become a claim instead of a record. The clock
+   saw the punch but not inside any office's fence, so it is not written to
+   the sheet; it is filed here, with where it was made from, and the day reads
+   "Pending" until the Manager or HR agrees. Same drawer, same store, same
+   status chip — only the day description and the approver differ. */
+const AR_MANUAL='Manual Entry';
+const AR_MANUAL_APPROVER='Manager / HR';
+let arManualCtx=null;     // {in,location,note} while a fresh manual entry is open
+function arIsManual(iso){
+  const r=arGet(iso);
+  return !!((r&&r.kind===AR_MANUAL)||(arManualCtx&&arManualCtx.iso===iso));
+}
+function arApproverFor(iso){
+  return arIsManual(iso)?AR_MANUAL_APPROVER:arApprover();
+}
+// The day as the drawer and the panel describe it: a manual entry is a
+// working day, so it has no closed-day label to borrow.
+function arDayFor(iso){
+  if(arIsManual(iso))return {kind:AR_MANUAL,label:'Outside geofence',both:false};
+  return arNonWorkingDay(iso);
+}
+function arIsoOf(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Called by the clock-in card (renderer.js) when the punch lands outside
+// every office radius.
+function arOpenManual(at,location,note){
+  const iso=arIsoOf(at);
+  const existing=arGet(iso);
+  if(existing&&existing.kind!==AR_MANUAL){arOpen(iso);return;}   // one claim per day
+  arManualCtx=existing?null:{
+    iso:iso,
+    in:String(at.getHours()).padStart(2,'0')+':'+String(at.getMinutes()).padStart(2,'0'),
+    location:location||'',note:note||''
+  };
+  arOpen(iso);
+}
 /* Hours already standing on a closed day. A weekly off or a holiday cannot be
    typed into — tsStartEdit sends Add entry to the request drawer — so hours
    sitting on one got there by being claimed and agreed to. */
@@ -172,7 +211,7 @@ function arCellHTML(iso){
      everything below it — the claim, its status, the button — belongs to days
      the entity has closed. A Wednesday's hours are the clock's own record and
      nobody's to approve, so the cell says nothing here. */
-  if(!arNonWorkingDay(iso))return '';
+  if(!arNonWorkingDay(iso)&&!arIsManual(iso))return '';
   const req=arGet(iso);
   const att=arPunch(iso);
   if(req){
@@ -217,7 +256,7 @@ function arHeaderChipHTML(){
    button a working day gets. Three states: the entity does not allow it, no
    request yet, or one already filed. */
 function arDayPanelHTML(iso){
-  const day=arNonWorkingDay(iso);
+  const day=arDayFor(iso);
   if(!day)return '';
   const req=arGet(iso);
   if(req){
@@ -268,9 +307,11 @@ function arDayPanelHTML(iso){
    the month behind it. It sits above the day panel, so opening it from there
    leaves that panel where it was to go back to. */
 function arOpen(iso){
-  const day=arNonWorkingDay(iso);
+  const day=arDayFor(iso);
   if(!day)return;
+  const ctx=arManualCtx&&arManualCtx.iso===iso?arManualCtx:null;
   arClose();
+  arManualCtx=ctx;          // arClose clears it; a fresh manual entry needs it back
   const req=arGet(iso);
   arOpenDate=iso;
   /* Seeded, never blank, and from the best thing available in this order: the
@@ -281,6 +322,9 @@ function arOpen(iso){
   const from24=function(t){return (typeof tsTo24==='function')?tsTo24(t):'';};
   arDraft=req
     ? {kind:req.kind,in:req.in,out:req.out,reason:req.reason}
+    : ctx
+    ? {kind:AR_MANUAL,in:ctx.in,
+       out:(arSettings()&&arSettings().endTime)||'18:00',reason:''}
     : {kind:day.kind,
        in:(punch&&from24(punch.in))||(arSettings()&&arSettings().startTime)||'09:00',
        out:(punch&&from24(punch.out))||(arSettings()&&arSettings().endTime)||'18:00',
@@ -296,7 +340,7 @@ function arOpen(iso){
 function arClose(){
   const host=document.getElementById('ar-host');
   if(host)host.remove();
-  arOpenDate=null;arDraft=null;
+  arOpenDate=null;arDraft=null;arManualCtx=null;
   document.removeEventListener('keydown',arKey);
 }
 function arKey(e){if(e.key==='Escape')arClose();}
@@ -325,9 +369,18 @@ function arSync(){
   if(c)c.textContent=arDraft.reason.length+' / '+AR_REASON_MAX;
 }
 function arDrawerHTML(iso){
-  const day=arNonWorkingDay(iso);
+  const day=arDayFor(iso);
   const req=arGet(iso);
   const d=arDraft;
+  const manual=day.kind===AR_MANUAL;
+  // Where the punch was made from — the one fact an approver of a manual
+  // entry needs that a closed-day claim does not have.
+  const from=req?req.location:(arManualCtx&&arManualCtx.location);
+  const fromNote=req?req.note:(arManualCtx&&arManualCtx.note);
+  const fromField=manual&&from
+    ? '<div class="lp-sb-field ep-form-full"><label>Clock-in Location</label>'
+      +'<div class="ar-static">'+arEsc(from)+(fromNote?' &middot; '+arEsc(fromNote.split('.')[0]):'')+'</div></div>'
+    : '';
   const span=arSpan(d.in,d.out);
   /* A holiday that also falls on a week off is genuinely both, so the type is
      a choice on those days and a statement on every other. */
@@ -363,12 +416,12 @@ function arDrawerHTML(iso){
     +'<aside class="ar-panel" role="dialog" aria-modal="true" aria-labelledby="ar-title">'
       +'<header class="ar-head">'
         +'<div><h2 class="ar-title" id="ar-title">Attendance Request</h2>'
-          +'<p class="ar-sub">Request attendance on a weekly off or holiday.</p></div>'
+          +'<p class="ar-sub">'+(manual?'Your clock-in was outside the office radius. Submit it for approval.':'Request attendance on a weekly off or holiday.')+'</p></div>'
         +'<button class="ar-close" onclick="arClose()" title="Close" aria-label="Close">'+AR_ICO.close+'</button>'
       +'</header>'
       +'<div class="ar-body">'
         +'<div class="ar-note">'+AR_ICO.info+'<span>Attendance will be counted only after approval from '
-          +arEsc(arApprover())+'.</span></div>'
+          +arEsc(arApproverFor(iso))+'.</span></div>'
 
         +'<div class="ar-date">'+AR_ICO.cal
           +'<span class="ar-date-txt"><span class="ar-date-label">Selected Date</span>'
@@ -378,6 +431,7 @@ function arDrawerHTML(iso){
 
         +'<div class="lp-sb-form-grid ar-grid">'
           +'<div class="lp-sb-field ep-form-full"><label>Request Type</label>'+kindField+'</div>'
+          +fromField
           +'<div class="lp-sb-field"><label>Clock In Time</label>'
             +'<input type="time" class="ep-form-input" id="ar-in" value="'+arEsc(d.in)+'" oninput="arSync()"'+dis+'></div>'
           +'<div class="lp-sb-field"><label>Clock Out Time</label>'
@@ -390,11 +444,11 @@ function arDrawerHTML(iso){
             +'<span class="ar-warn" id="ar-time-warn">Clock out must be after clock in.</span></div>'
           +'<div class="lp-sb-field ep-form-full"><label>Reason <span class="ar-req">*</span></label>'
             +'<textarea class="ep-form-input ar-textarea" id="ar-reason" rows="3" maxlength="'+AR_REASON_MAX+'"'
-              +' placeholder="Why were you working on this day?" oninput="arSync()"'+dis+'>'
+              +' placeholder="'+(manual?'Why are you clocking in from outside the office?':'Why were you working on this day?')+'" oninput="arSync()"'+dis+'>'
               +arEsc(d.reason)+'</textarea>'
             +'<span class="ar-count" id="ar-count">'+d.reason.length+' / '+AR_REASON_MAX+'</span></div>'
           +'<div class="lp-sb-field ep-form-full"><label>Approver / Sent to</label>'
-            +'<div class="ar-static">Sent to '+arEsc(arApprover())+' for approval</div></div>'
+            +'<div class="ar-static">Sent to '+arEsc(arApproverFor(iso))+' for approval</div></div>'
         +'</div>'
         +statusBlock
       +'</div>'
@@ -411,7 +465,10 @@ function arSubmit(){
   arRead();
   const iso=arOpenDate,d=arDraft;
   if(!iso||!d)return;
-  if(!arCanRequest(iso)&&!arGet(iso)){
+  const manual=arIsManual(iso);
+  const prev=arGet(iso);
+  const ctx=arManualCtx;
+  if(!manual&&!arCanRequest(iso)&&!arGet(iso)){
     showToast('This day cannot be claimed','error','It is outside the sheet you can change.');return;
   }
   const span=arSpan(d.in,d.out);
@@ -424,18 +481,22 @@ function arSubmit(){
     kind:d.kind,in:d.in,out:d.out,reason:d.reason.trim(),
     status:'Pending Approval',
     requestedAt:arNowLabel(),
-    approver:arApprover()
+    approver:arApproverFor(iso),
+    location:manual?(prev?prev.location:(ctx&&ctx.location)):undefined,
+    note:manual?(prev?prev.note:(ctx&&ctx.note)):undefined
   };
   arClose();
   if(typeof renderADTPage==='function')renderADTPage();
   showToast(existing?'Request updated':'Attendance request submitted','success',
-    arDateLabel(iso)+' · '+span.text+' · sent to '+arApprover());
+    arDateLabel(iso)+' · '+span.text+' · sent to '+arApproverFor(iso));
 }
 function arWithdraw(){
   const iso=arOpenDate;
   if(!iso||!arGet(iso))return;
+  const manual=arGet(iso).kind===AR_MANUAL;
   delete arRequests[iso];
   arClose();
   if(typeof renderADTPage==='function')renderADTPage();
-  showToast('Request withdrawn','info',arDateLabel(iso)+' is a closed day again.');
+  showToast('Request withdrawn','info',arDateLabel(iso)
+    +(manual?' has no manual entry now.':' is a closed day again.'));
 }

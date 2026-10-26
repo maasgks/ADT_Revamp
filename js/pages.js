@@ -8010,19 +8010,9 @@ function renderCsSidebar(){
       +'</div>';
     let sub='';
     if(csStructureTab==='branch'){
-      const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-      const tdS='padding:9px 10px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-      const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-      sub='<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Branch</button></div>'
-        +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-        +'<thead><tr><th style="'+thS+'">SR NO</th><th style="'+thS+'">Branch Name</th><th style="'+thS+'">Location</th><th style="'+thS+'">Status</th><th style="'+thS+'">ACTION</th></tr></thead>'
-        +'<tbody><tr>'
-        +'<td style="'+tdS+';color:#f97316;font-weight:600">1</td>'
-        +'<td style="'+tdS+';font-weight:500">Hyderabd</td>'
-        +'<td style="'+tdS+';font-size:11.5px;color:#6b7280">My Home Bhooja, Dallas Centre Rd, Silpa Gram Craft Village, Hyderabad, Rai Durg, Telangana 500032, India</td>'
-        +'<td style="'+tdS+'"><span style="color:#16a34a;font-weight:600;font-size:12.5px">Active</span></td>'
-        +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:3px;line-height:0">'+editSvg+'</button></td>'
-        +'</tr></tbody></table>';
+      /* Branches are the attendance work locations — one list, owned by
+         attendance-settings.js, so the radius reads the same on both tabs. */
+      sub=csBranchTabHTML();
     }else{
       sub='<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">No records found.</div>';
     }

@@ -295,6 +295,7 @@
                   <!-- Only ever shown on the refusal state. The stage is
                        aria-hidden, so these are exposed on their own. -->
                   <div class="att-stage-actions" id="att-stage-actions" hidden>
+                    <button class="att-stage-btn is-primary" id="att-manual-btn" onclick="attRequestManual()" hidden>Request Manual Entry</button>
                     <button class="att-stage-btn is-primary" id="att-retry-btn" onclick="attRetryLocation()">Allow Location Access</button>
                     <button class="att-stage-btn" onclick="attCancelClockIn()">Cancel</button>
                   </div>
@@ -737,7 +738,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Holidays</div>
-              <a href="#" class="hr-section-link">View calendar</a>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="openOptionalHolidays()">View calendar</a>
             </div>
             <div class="hr-holiday-list">
               <div class="hr-holiday-item">
@@ -949,6 +950,7 @@
           <div class="hr-section">
             <div class="hr-section-header">
               <div class="hr-section-title">Holidays</div>
+              <a href="javascript:void(0)" class="hr-section-link" onclick="openOptionalHolidays()">View calendar</a>
             </div>
             <div class="hr-holiday-list">
               <div class="hr-holiday-item">

@@ -61,6 +61,10 @@ let csAtt={
   shiftType:'Fixed',
   overtimeAllowed:false,
   latePolicy:30,
+  /* With geolocation on, a clock-in is accepted only inside one of the
+     Attendance Locations' radius — there is no separate switch for that.
+     Outside it, the punch becomes a manual entry request for approval
+     (attendance-request.js). With it off, nobody is asked for a location. */
   geolocation:true,
   startTime:'09:00',
   endTime:'18:00',
@@ -75,13 +79,14 @@ let csAtt={
   abscondEnabled:true,
   abscondDays:3,
   abscondAction:'Notify HR & Mark Employee as Absconding',
-  locations:[{
-    name:CSA_PLACES[0].name,
-    address:CSA_PLACES[0].address,
-    lat:CSA_PLACES[0].lat,
-    lng:CSA_PLACES[0].lng,
-    radius:100
-  }]
+  /* ONE LIST, TWO SCREENS. These are the entity's branches — Company
+     Structure → Branch lists and adds them — and the same records are the
+     offices a clock-in is measured against here. Keeping one list is what
+     lets the radius be set in either place and read the same in both. Only
+     Active ones fence a punch. */
+  locations:CSA_PLACES.map(function(p){
+    return {name:p.name,address:p.address,lat:p.lat,lng:p.lng,radius:100,status:'Active'};
+  })
 };
 let csAttEdit=false;     // true while the tab is showing controls
 let csAttDraft=null;     // the edit in progress; null unless csAttEdit
@@ -254,9 +259,20 @@ const CSA_MAP_W=360,CSA_MAP_H=250;
 const CSA_M_PER_DEG=111320;
 let csaViews={};                 // per-location {cLat,cLng,mpp,userZoom}
 function csaResetViews(){csaViews={};}
+/* The map serves two forms: the Attendance tab's location cards (index 0..n)
+   and the Company Structure → Add / Edit Branch form, which edits one branch
+   at a time and is addressed as CSA_BR. Every map helper asks csaLoc() for
+   its record, so neither form needs its own copy of the map. */
+const CSA_BR=-1;
+function csaLoc(i){
+  return i===CSA_BR?csBrDraft:(csAttModel().locations||[])[i];
+}
+function csaChanged(i){
+  if(i===CSA_BR)csBrOnChange();else csAttOnChange();
+}
 function csaView(i){
   if(!csaViews[i]){
-    const loc=(csAttModel().locations||[])[i]||{};
+    const loc=csaLoc(i)||{};
     const lat=csAttNum(loc.lat,CSA_PLACES[0].lat),lng=csAttNum(loc.lng,CSA_PLACES[0].lng);
     csaViews[i]={cLat:lat,cLng:lng,mpp:csaFitMpp(loc.radius),userZoom:false};
   }
@@ -446,11 +462,11 @@ function csaMapSVG(loc,i,editable){
 }
 function csAttPaintMap(i){
   const svg=document.getElementById('csa-map-'+i);
-  const loc=csAttModel().locations[i];
+  const loc=csaLoc(i);
   if(svg&&loc)svg.innerHTML=csaMapInner(loc,i);
 }
 function csAttPaintCoords(i){
-  const loc=csAttModel().locations[i];
+  const loc=csaLoc(i);
   if(!loc)return;
   const la=document.getElementById('csa-lat-'+i),lo=document.getElementById('csa-lng-'+i);
   if(la)la.textContent=csAttNum(loc.lat,0).toFixed(6);
@@ -467,7 +483,7 @@ function csaSvgPoint(svg,ev){
   return {x:(ev.clientX-r.left)*CSA_MAP_W/r.width, y:(ev.clientY-r.top)*CSA_MAP_H/r.height};
 }
 function csAttMapDown(ev,i){
-  if(!csAttEdit)return;
+  if(i!==CSA_BR&&!csAttEdit)return;
   const svg=ev.currentTarget;
   const v=csaView(i);
   csaDrag={i:i,svg:svg,x0:ev.clientX,y0:ev.clientY,moved:0,cLat:v.cLat,cLng:v.cLng,
@@ -508,13 +524,13 @@ function csAttMapUp(ev){
   }
 }
 function csAttSetPin(i,ll){
-  const loc=csAttModel().locations[i];
+  const loc=csaLoc(i);
   if(!loc)return;
   loc.lat=+ll.lat.toFixed(6);
   loc.lng=+ll.lng.toFixed(6);
   csAttPaintMap(i);
   csAttPaintCoords(i);
-  csAttOnChange();
+  csaChanged(i);
 }
 function csAttZoom(i,factor){
   const v=csaView(i);
@@ -527,7 +543,7 @@ function csAttZoom(i,factor){
    away and zooming into a 20 m radius, recentring alone leaves you staring at
    a tint that fills the whole frame with no edge in sight. */
 function csAttFitFence(i){
-  const loc=csAttModel().locations[i],v=csaView(i);
+  const loc=csaLoc(i),v=csaView(i);
   if(!loc)return;
   v.cLat=csAttNum(loc.lat,v.cLat);
   v.cLng=csAttNum(loc.lng,v.cLng);
@@ -539,7 +555,8 @@ function csAttFitFence(i){
    for the same reasons documented there: ask inside the click so the browser
    attributes the prompt to the gesture, and say plainly when a file:// page
    has had the API taken away from it rather than appearing to hang. */
-function csAttUseMyLocation(i){
+// `onFix(lat,lng)` is optional — the branch form uses it to fill the address.
+function csAttUseMyLocation(i,onFix){
   if(!navigator.geolocation){
     showToast('Location unavailable','error','This browser cannot report a location.');return;
   }
@@ -552,6 +569,7 @@ function csAttUseMyLocation(i){
     const v=csaView(i);
     v.cLat=p.coords.latitude;v.cLng=p.coords.longitude;
     csAttSetPin(i,{lat:p.coords.latitude,lng:p.coords.longitude});
+    if(onFix)onFix(p.coords.latitude,p.coords.longitude);
     showToast('Pin moved to your location','success',
       'Accurate to about '+Math.round(p.coords.accuracy)+' m. Check the address still matches.');
   },function(err){
@@ -562,9 +580,20 @@ function csAttUseMyLocation(i){
 }
 // Jumping to a saved place is the only path that fills the address in, because
 // it is the only one that HAS an address to fill in with.
-function csAttUsePlace(i,idx){
-  const place=CSA_PLACES[+idx];
-  const loc=csAttModel().locations[i];
+function csAttUsePlace(i,idx){csaFillFrom(i,CSA_PLACES[+idx]);}
+// The Attendance tab's "Branch" picker: fills the card from a branch saved in
+// Company Structure, name, address, pin and all.
+function csAttUseBranch(i,idx){
+  if(idx==='')return;
+  const br=(csAtt.locations||[])[+idx];
+  if(!br)return;
+  csaFillFrom(i,br);
+  const r=document.getElementById('csa-loc-rad-'+i);
+  if(r)r.value=csAttInt(br.radius,100);
+  csAttRadius(i,br.radius);
+}
+function csaFillFrom(i,place){
+  const loc=csaLoc(i);
   if(!place||!loc)return;
   loc.name=place.name;loc.address=place.address;
   const v=csaView(i);
@@ -677,8 +706,7 @@ function csAttViewHTML(){
     +csAttFc(CSA_ICO.clock,'Shift Type',attrSafe(m.shiftType))
     +csAttFc(CSA_ICO.trend,'Overtime Allowed',m.overtimeAllowed?'Yes':'No')
     +csAttFc(CSA_ICO.hourglass,'Late Policy',m.latePolicy+' Minutes')
-    +csAttFc(CSA_ICO.pin,'Geolocation',m.geolocation?'Enable':'Disable')
-    +'</div>';
+    +csAttFc(CSA_ICO.pin,'Geolocation',m.geolocation?'Enable':'Disable')    +'</div>';
 
   out+=csAttSub('Working Hours &amp; Grace')
     +'<div class="lp-sb-detail-grid">'
@@ -712,7 +740,8 @@ function csAttViewHTML(){
             +csAttFc(CSA_ICO.map,'Address',attrSafe(loc.address),true)
             +csAttFc(CSA_ICO.pin,'Latitude',csAttNum(loc.lat,0).toFixed(6))
             +csAttFc(CSA_ICO.pin,'Longitude',csAttNum(loc.lng,0).toFixed(6))
-            +csAttFc(CSA_ICO.ruler,'Attendance Radius',loc.radius+' meters',true)
+            +csAttFc(CSA_ICO.ruler,'Attendance Radius',loc.radius+' meters')
+            +csAttFc(CSA_ICO.alert,'Status',attrSafe(loc.status||'Active'))
           +'</div></div>'
         +'</div>';
       }).join('')
@@ -740,8 +769,7 @@ function csAttEditHTML(){
     +csAttGroup('Daily Work Hours',csAttUnit('csa-daily',m.dailyHours,'hours',1,24))
     +csAttGroup('Late Policy',csAttUnit('csa-late',m.latePolicy,'mins',0,240))
     +csAttGroup('Overtime',csAttCheck('csa-ot',m.overtimeAllowed,'Overtime allowed'))
-    +csAttGroup('Geolocation',csAttCheck('csa-geo',m.geolocation,'Capture location on punch'))
-  +'</div>');
+    +csAttGroup('Geolocation',csAttCheck('csa-geo',m.geolocation,'Capture location on punch'))  +'</div>');
 
   out+=sec('Working Hours &amp; Grace','<div class="lp-sb-form-grid">'
     +csAttGroup('Start Time','<input type="time" class="ep-form-input" id="csa-start" value="'+attrSafe(m.startTime)+'" oninput="csAttOnChange()">')
@@ -777,12 +805,30 @@ function csAttEditHTML(){
   return '<div class="lp-sb-edit-form">'+out+'</div>';
 }
 function csAttLocEditHTML(loc,i,removable){
-  const places='<select class="ep-form-select" onchange="csAttUsePlace('+i+',this.value);this.selectedIndex=0">'
-    +'<option value="">Jump to a saved place…</option>'
-    +CSA_PLACES.map(function(p,n){return '<option value="'+n+'">'+attrSafe(p.name)+'</option>';}).join('')
+  // The branches from Company Structure — the saved list, not this draft, so
+  // a card being typed into right now is not offered as its own source.
+  const places='<select class="ep-form-select" onchange="csAttUseBranch('+i+',this.value);this.selectedIndex=0">'
+    +'<option value="">Select a branch…</option>'
+    +(csAtt.locations||[]).map(function(p,n){
+      return '<option value="'+n+'">'+attrSafe(p.name)+((p.status||'Active')==='Active'?'':' (Inactive)')+'</option>';
+    }).join('')
   +'</select>';
   return '<div class="csa-loc csa-loc-edit">'
-    +'<div class="csa-map-col">'
+    +csaMapColHTML(loc,i,removable)
+    +'<div class="csa-loc-fields"><div class="lp-sb-form-grid">'
+      +csAttGroup('Branch',places,true)
+      +csAttGroup('Location Name','<input type="text" class="ep-form-input" id="csa-loc-name-'+i+'" value="'+attrSafe(loc.name)+'" placeholder="e.g. Head Office" oninput="csAttOnChange()">',true)
+      +csAttGroup('Address','<input type="text" class="ep-form-input" id="csa-loc-addr-'+i+'" value="'+attrSafe(loc.address)+'" placeholder="Street, city, postcode" oninput="csAttOnChange()">',true,
+        'The map cannot look an address up, so this one is yours to write.')
+      +csAttGroup('Attendance Radius',
+        csAttUnit('csa-loc-rad-'+i,loc.radius,'meters',10,20000,'csAttRadius('+i+',this.value)'))
+    +'</div></div>'
+  +'</div>';
+}
+// The live map with its tools and the two coordinate read-outs — shared by the
+// Attendance tab's location cards and the Add / Edit Branch form.
+function csaMapColHTML(loc,i,removable){
+  return '<div class="csa-map-col">'
       +'<div class="csa-map-frame is-live">'
         +csaMapSVG(loc,i,true)
         +'<div class="csa-map-tools">'
@@ -790,7 +836,7 @@ function csAttLocEditHTML(loc,i,removable){
           +'<button type="button" class="csa-map-btn" title="Zoom out" onclick="csAttZoom('+i+',1.6)">'+CSA_ICO.minus+'</button>'
           +'<button type="button" class="csa-map-btn" title="Fit the fence" onclick="csAttFitFence('+i+')">'+CSA_ICO.target+'</button>'
         +'</div>'
-        +'<button type="button" class="csa-map-here" onclick="csAttUseMyLocation('+i+')">'
+        +'<button type="button" class="csa-map-here" onclick="'+(i===CSA_BR?'csBrUseCurrent()':'csAttUseMyLocation('+i+')')+'">'
           +CSA_ICO.crosshair+'Use my location</button>'
         +(removable
           ? '<button type="button" class="csa-loc-del" title="Remove this location" onclick="csAttRemoveLocation('+i+')">'+CSA_ICO.trash+'</button>'
@@ -806,16 +852,7 @@ function csAttLocEditHTML(loc,i,removable){
         +'<div class="csa-coord"><span class="csa-coord-label">Longitude</span>'
           +'<span class="csa-coord-value" id="csa-lng-'+i+'">'+csAttNum(loc.lng,0).toFixed(6)+'</span></div>'
       +'</div>'
-    +'</div>'
-    +'<div class="csa-loc-fields"><div class="lp-sb-form-grid">'
-      +csAttGroup('Saved places',places,true)
-      +csAttGroup('Location Name','<input type="text" class="ep-form-input" id="csa-loc-name-'+i+'" value="'+attrSafe(loc.name)+'" placeholder="e.g. Head Office" oninput="csAttOnChange()">',true)
-      +csAttGroup('Address','<input type="text" class="ep-form-input" id="csa-loc-addr-'+i+'" value="'+attrSafe(loc.address)+'" placeholder="Street, city, postcode" oninput="csAttOnChange()">',true,
-        'The map cannot look an address up, so this one is yours to write.')
-      +csAttGroup('Attendance Radius',
-        csAttUnit('csa-loc-rad-'+i,loc.radius,'meters',10,20000,'csAttRadius('+i+',this.value)'))
-    +'</div></div>'
-  +'</div>';
+    +'</div>';
 }
 
 function csAttendanceTabHTML(){
@@ -910,7 +947,7 @@ function csAttAddLocation(){
     name:'',address:'',
     lat:last?last.lat:CSA_PLACES[0].lat,
     lng:last?last.lng:CSA_PLACES[0].lng,
-    radius:100
+    radius:100,status:'Active'
   });
   csAttDirty=true;csaResetViews();
   isbTab('cs',renderCsSidebar);
@@ -924,21 +961,223 @@ function csAttRemoveLocation(i){
 // Redraws just this card's ring, so the number and the circle never disagree.
 // A zoom the user set by hand is left alone; one we chose is refitted.
 function csAttRadius(i,v){
-  const loc=csAttModel().locations[i];
+  const loc=csaLoc(i);
   if(!loc)return;
   loc.radius=Math.max(10,csAttInt(v,loc.radius));
   const view=csaView(i);
   if(!view.userZoom)view.mpp=csaFitMpp(loc.radius);
   csAttPaintMap(i);
-  csAttOnChange();
+  csaChanged(i);
+}
+
+/* ══ COMPANY STRUCTURE → BRANCH ════════════════════════════════════════════
+   A branch IS a work location: the list and the Add / Edit form here read and
+   write csAtt.locations, the same records the Attendance tab fences clock-ins
+   with. So the Allowed Radius set here is the Attendance Radius over there,
+   and changing it in either place changes it in both.
+
+   The form is the sidebar's standard edit form, drawn in place of the table
+   (the same view-then-edit swap the Attendance tab does), with the shared map
+   addressed as CSA_BR. */
+let csBrIdx=null;        // null: the list; -1: adding; 0..n: editing that branch
+let csBrDraft=null;
+let csBrDirty=false;
+
+function csBrOnChange(){
+  if(csBrIdx===null)return;
+  csBrDirty=true;
+  const el=document.getElementById('csa-br-dirty');
+  if(el)el.classList.add('is-on');
+}
+
+function csBranchTabHTML(){
+  return csBrIdx===null?csBranchListHTML():csBranchFormHTML();
+}
+
+function csBranchListHTML(){
+  const locs=csAtt.locations||[];
+  const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
+  const tdS='padding:9px 10px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
+  const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const rows=locs.length
+    ? locs.map(function(l,i){
+        const on=(l.status||'Active')==='Active';
+        return '<tr>'
+          +'<td style="'+tdS+';color:#f97316;font-weight:600">'+(i+1)+'</td>'
+          +'<td style="'+tdS+';font-weight:500">'+attrSafe(l.name)+'</td>'
+          +'<td style="'+tdS+';font-size:11.5px;color:#6b7280">'+attrSafe(l.address)+'</td>'
+          +'<td style="'+tdS+';white-space:nowrap">'+csAttInt(l.radius,100)+' m</td>'
+          +'<td style="'+tdS+'"><span style="color:'+(on?'#16a34a':'#9ca3af')+';font-weight:600;font-size:12.5px">'+(on?'Active':'Inactive')+'</span></td>'
+          +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:3px;line-height:0" title="Edit branch" onclick="csBrOpen('+i+')">'+editSvg+'</button></td>'
+        +'</tr>';
+      }).join('')
+    : '<tr><td colspan="6" style="'+tdS+';text-align:center;color:#9ca3af;padding:28px">No branches yet.</td></tr>';
+  return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="csBrOpen(-1)">+ Add Branch</button></div>'
+    +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
+    +'<thead><tr><th style="'+thS+'">SR NO</th><th style="'+thS+'">Branch Name</th><th style="'+thS+'">Location</th><th style="'+thS+'">Radius</th><th style="'+thS+'">Status</th><th style="'+thS+'">ACTION</th></tr></thead>'
+    +'<tbody>'+rows+'</tbody></table>';
+}
+
+function csBranchFormHTML(){
+  const b=csBrDraft,i=CSA_BR;
+  /* Address search: "Use my current location" first, then the places the app
+     already knows. Picking a place fills the address, names the branch if it
+     has no name yet, and drops the pin there. Anything else typed is kept as
+     written — the map cannot geocode it, so the pin is then placed by hand.
+     A custom list rather than a <datalist>, because a datalist can only offer
+     values, never an action like locating the user. */
+  const addr='<div class="ms-wrap csa-addr-wrap">'
+    +'<input type="text" class="ep-form-input" id="csa-loc-addr-'+i+'" value="'+attrSafe(b.address)+'"'
+      +' placeholder="Search an address" autocomplete="off"'
+      +' onfocus="csBrAddrOpen()" onclick="csBrAddrOpen()" oninput="csBrAddr(this.value)">'
+    +'<div class="ms-dropdown csa-addr-dd" id="csa-br-addr-dd"></div>'
+  +'</div>';
+  return '<div class="lp-sb-edit-form">'
+    +'<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+(csBrIdx===-1?'Add Work Location':'Edit Work Location')+'</span>'
+      +'<span class="csa-dirty'+(csBrDirty?' is-on':'')+'" id="csa-br-dirty">Unsaved changes</span></div>'
+    +'<div class="lp-sb-edit-section"><div class="csa-loc csa-loc-edit">'
+      +csaMapColHTML(b,i,false)
+      +'<div class="csa-loc-fields"><div class="lp-sb-form-grid">'
+        +csAttGroup('Location Name <span class="ar-req">*</span>','<input type="text" class="ep-form-input" id="csa-loc-name-'+i+'" value="'+attrSafe(b.name)+'" placeholder="e.g. Hyderabad Branch" oninput="csBrOnChange()">',true)
+        +csAttGroup('Address <span class="ar-req">*</span>',addr,true,
+          'Use your current location, pick a saved address, or type one and place the pin on the map.')
+        +csAttGroup('Allowed Radius',
+          csAttUnit('csa-loc-rad-'+i,b.radius,'meters',10,20000,'csAttRadius('+i+',this.value)'),false,
+          'Also editable in the Attendance tab.')
+        +csAttGroup('Status',sbSelect('csa-br-status',['Active','Inactive'],b.status||'Active','csBrOnChange'),false,
+          'Inactive branches do not accept clock-ins.')
+      +'</div></div>'
+    +'</div></div>'
+    +'<div class="lp-sb-form-actions">'
+      +'<button class="ep-cancel-btn" onclick="csBrCancel()">Cancel</button>'
+      +'<button class="ep-save-btn" onclick="csBrSave()">'+(csBrIdx===-1?'Add Branch':'Save Changes')+'</button>'
+    +'</div>'
+  +'</div>';
+}
+
+function csBrOpen(idx){
+  const src=idx>=0?csAtt.locations[idx]:null;
+  csBrIdx=idx;
+  csBrDraft=src?csAttClone(src):{
+    name:'',address:'',lat:CSA_PLACES[0].lat,lng:CSA_PLACES[0].lng,radius:100,status:'Active'
+  };
+  csBrDirty=false;
+  delete csaViews[CSA_BR];
+  isbTab('cs',renderCsSidebar);
+}
+function csBrAddr(v){
+  csBrOnChange();
+  if(csBrDraft)csBrDraft.address=v;
+  csBrAddrOpen();
+}
+// The suggestion list, filtered by what is typed. The current-location row is
+// always first and never filtered out — it is the one option that does not
+// depend on the app already knowing the address.
+function csBrAddrOpen(){
+  const dd=document.getElementById('csa-br-addr-dd');
+  const inp=document.getElementById('csa-loc-addr-'+CSA_BR);
+  if(!dd||!inp)return;
+  const q=inp.value.trim().toLowerCase();
+  const hits=CSA_PLACES.map(function(p,n){return {p:p,n:n};}).filter(function(o){
+    return !q||o.p.address.toLowerCase().indexOf(q)>=0||o.p.name.toLowerCase().indexOf(q)>=0;
+  });
+  dd.innerHTML='<div class="cs-option csa-addr-opt csa-addr-here" role="option" onmousedown="event.preventDefault()" onclick="csBrUseCurrent()">'
+      +CSA_ICO.crosshair+'<span class="csa-addr-txt"><b>Use my current location</b>'
+      +'<small>Drop the pin where you are and fill the address</small></span></div>'
+    +hits.map(function(o){
+      return '<div class="cs-option csa-addr-opt" role="option" onmousedown="event.preventDefault()" onclick="csBrPickPlace('+o.n+')">'
+        +CSA_ICO.pin+'<span class="csa-addr-txt"><b>'+attrSafe(o.p.address)+'</b><small>'+attrSafe(o.p.name)+'</small></span></div>';
+    }).join('');
+  if(!dd.classList.contains('ms-open')){msCloseAll();dd.classList.add('ms-open');}
+  placeAnchoredMenu(dd,inp.getBoundingClientRect(),{alignLeft:true,width:inp.offsetWidth});
+}
+function csBrAddrClose(){
+  const dd=document.getElementById('csa-br-addr-dd');
+  if(dd)dd.classList.remove('ms-open');
+}
+function csBrPickPlace(n){
+  csBrAddrClose();
+  const nameEl=document.getElementById('csa-loc-name-'+CSA_BR);
+  const keepName=nameEl&&nameEl.value.trim();
+  csAttUsePlace(CSA_BR,n);
+  if(keepName){csBrDraft.name=keepName;nameEl.value=keepName;}
+  csBrOnChange();
+}
+/* Locate, drop the pin, then turn the coordinates into an address. The pin is
+   the fact and lands first; the address is a reverse-geocode (the same free
+   service the clock-in card names places with) and falls back to the
+   coordinates if it is slow or unavailable, so the required field is never
+   left empty by a network hiccup. */
+function csBrUseCurrent(){
+  csBrAddrClose();
+  csAttUseMyLocation(CSA_BR,function(lat,lng){
+    const inp=document.getElementById('csa-loc-addr-'+CSA_BR);
+    const set=function(text){
+      if(!csBrDraft)return;
+      csBrDraft.address=text;
+      if(inp)inp.value=text;
+      csBrOnChange();
+    };
+    set(lat.toFixed(6)+', '+lng.toFixed(6));
+    if(typeof fetch!=='function'||typeof AbortController!=='function')return;
+    const ctl=new AbortController();
+    const bail=setTimeout(function(){ctl.abort();},5000);
+    fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+lat
+        +'&longitude='+lng+'&localityLanguage=en',{signal:ctl.signal})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        clearTimeout(bail);
+        if(!d)return;
+        const parts=[d.locality,d.city,d.principalSubdivision,d.postcode,d.countryName]
+          .filter(function(x,k,a){return x&&a.indexOf(x)===k;});
+        if(parts.length)set(parts.join(', '));
+      })
+      .catch(function(){clearTimeout(bail);});
+  });
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.csa-addr-wrap')&&!e.target.closest('#csa-br-addr-dd'))csBrAddrClose();
+},true);
+function csBrClose(){
+  csBrIdx=null;csBrDraft=null;csBrDirty=false;
+  delete csaViews[CSA_BR];
+  isbTab('cs',renderCsSidebar);
+}
+function csBrCancel(){
+  const was=csBrDirty;
+  csBrClose();
+  if(was)showToast('Changes discarded','info','The branch is unchanged.');
+}
+function csBrSave(){
+  const b=csBrDraft;
+  if(!b)return;
+  const val=function(id){const el=document.getElementById(id);return el?el.value:'';};
+  b.name=val('csa-loc-name-'+CSA_BR).trim();
+  b.address=val('csa-loc-addr-'+CSA_BR).trim();
+  b.radius=Math.max(10,csAttInt(val('csa-loc-rad-'+CSA_BR),b.radius));
+  b.status=val('csa-br-status')||'Active';
+  if(!b.name){showToast('Location Name is required','error','Branch');return;}
+  if(!b.address){showToast('Address is required','error','Branch');return;}
+  const adding=csBrIdx===-1,rec=csAttClone(b);
+  if(adding)csAtt.locations.push(rec);else csAtt.locations[csBrIdx]=rec;
+  /* An Attendance edit open at the same time holds its own copy of the list;
+     bring it the same change, or its Save would quietly undo this one. */
+  if(csAttDraft){
+    if(adding)csAttDraft.locations.push(csAttClone(rec));
+    else if(csAttDraft.locations[csBrIdx])csAttDraft.locations[csBrIdx]=csAttClone(rec);
+  }
+  csBrClose();
+  showToast(adding?'Branch added':'Branch updated','success',
+    rec.name+' · '+rec.radius+' m radius · '+rec.status);
 }
 
 /* Unsaved edits on the company panel's Attendance and Leaves tabs (sbDraftReg,
    core.js) - each tab keeps its own draft and dirty flag. */
 sbDraftReg('cs',{
-  dirty:function(){return !!((csAttEdit&&csAttDirty)||(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty));},
-  tabs:function(){const t=[];if(csAttEdit&&csAttDirty)t.push('attendance');if(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty)t.push('leaves');return t;},
+  dirty:function(){return !!((csAttEdit&&csAttDirty)||(csBrIdx!==null&&csBrDirty)||(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty));},
+  tabs:function(){const t=[];if(csAttEdit&&csAttDirty)t.push('attendance');if(csBrIdx!==null&&csBrDirty)t.push('company-structure');if(typeof csLeaveEdit!=='undefined'&&csLeaveEdit&&csLeaveDirty)t.push('leaves');return t;},
   drop:function(){
     csAttEdit=false;csAttDraft=null;csAttDirty=false;
+    csBrIdx=null;csBrDraft=null;csBrDirty=false;
     if(typeof csLeaveEdit!=='undefined'){csLeaveEdit=false;csLeaveDraft=null;csLeaveDirty=false;}
   }});
