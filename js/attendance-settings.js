@@ -47,7 +47,8 @@ const CSA_PLACES=[
    address:'My Home Bhooja, Dallas Centre Rd, Silpa Gram Craft Village, Rai Durg, Hyderabad 500032, India',
    lat:17.4256,lng:78.3823}
 ];
-const CSA_MODES=['Auto','Manual','Hybrid'];
+/* QR: the employee marks attendance by scanning the entity's QR code. */
+const CSA_MODES=['Auto','Manual','Hybrid','QR'];
 const CSA_SHIFTS=['Fixed','Flexible','Rotational'];
 let csAtt={
   /* The six the tab has always shown. They are kept because they answer

@@ -25,11 +25,11 @@
    Contracts page: one outlined .tb-* button beside the page title, shown on
    the page it belongs to and nowhere else. */
 
-/* How many optional holidays a person may take in a year. In a wired-up build
-   this is a leave-policy figure — leavePoliciesData is where it would come
-   from — and it is a constant here for the same reason TS_TODAY is: a
-   prototype needs one honest number, not a settings page nobody asked for. */
-const OH_ENTITLEMENT=3;
+/* How many optional holidays a person may take in a year: the entity's own
+   figure, set in Company Settings → Leaves → Optional Holidays (csLeave in
+   js/leave-settings.js). Read at the moment it is drawn, so a change there
+   shows here without a reload. */
+function ohEntitlement(){return typeof csLeave!=='undefined'&&csLeave.optionalHolidays!=null?csLeave.optionalHolidays:3;}
 const OH_MONTHS=['January','February','March','April','May','June',
   'July','August','September','October','November','December'];
 const OH_MON_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -89,7 +89,7 @@ function ohUsed(year){
   });
   return n;
 }
-function ohAvailable(year){return Math.max(0,OH_ENTITLEMENT-ohUsed(year));}
+function ohAvailable(year){return Math.max(0,ohEntitlement()-ohUsed(year));}
 function ohToday(){return (typeof hdTodayISO==='function')?hdTodayISO():'';}
 function ohIsPast(iso){const t=ohToday();return !!t&&!!iso&&iso<t;}
 function ohDateLong(iso){
@@ -210,13 +210,13 @@ function ohApply(id){
   }
   const year=+h.date.slice(0,4);
   if(ohAvailable(year)<=0){
-    showToast('No balance left','error','All '+OH_ENTITLEMENT+' optional holidays for '+year+' are used.');
+    showToast('No balance left','error','All '+ohEntitlement()+' optional holidays for '+year+' are used.');
     return;
   }
   ohApplied[h.id]={status:'Applied (Pending)'};
   ohPaint();
   showToast('Applied for '+h.name,'success',
-    ohDateLong(h.date)+' · '+ohAvailable(year)+' of '+OH_ENTITLEMENT+' left');
+    ohDateLong(h.date)+' · '+ohAvailable(year)+' of '+ohEntitlement()+' left');
 }
 function ohWithdraw(id){
   const h=ohById(id);
@@ -224,7 +224,7 @@ function ohWithdraw(id){
   delete ohApplied[h.id];
   ohPaint();
   showToast('Application withdrawn','info',
-    h.name+' · '+ohAvailable(+h.date.slice(0,4))+' of '+OH_ENTITLEMENT+' available');
+    h.name+' · '+ohAvailable(+h.date.slice(0,4))+' of '+ohEntitlement()+' available');
 }
 
 // ── MARKUP ──
@@ -429,7 +429,7 @@ function ohDetailHTML(id){
   }else if(past){
     note='<p class="oh-d-note is-bad">This date has already passed, so it can no longer be claimed.</p>';
   }else if(avail<=0){
-    note='<p class="oh-d-note is-bad">All '+OH_ENTITLEMENT+' optional holidays for '+year
+    note='<p class="oh-d-note is-bad">All '+ohEntitlement()+' optional holidays for '+year
       +' have been used. Withdraw another application to free one up.</p>';
   }else{
     note='<p class="oh-d-note">You can apply for this optional holiday.</p>';
@@ -455,7 +455,7 @@ function ohDetailHTML(id){
         +row(OH_ICO.day,'Day',ohDayName(h.date))
         +(isOpt
           ? row(OH_ICO.scale,'Available Optional Holiday Balance',
-              '<b>'+avail+'</b> of '+OH_ENTITLEMENT)
+              '<b>'+avail+'</b> of '+ohEntitlement())
           : row(OH_ICO.pin,'Applies To',tsxHtmlSafe(branches)))
       +'</div>'
       +note

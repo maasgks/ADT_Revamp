@@ -79,7 +79,7 @@ function buildApplyApplicationHTML(){
       +'<div class="ep-form-grid">'
         +aaField('Application Type',true,apCS('aa-type',AA_TYPES,f.type,'Select application type','aaPick'),{key:'type'})
         +aaField('Select Days',false,'<div class="segmented">'+seg('one','One Day')+seg('multi','Multiple Days')+'</div>',{key:'days'})
-        +aaField('Leave Type',true,apCS('aa-leave-type',AA_LEAVE_TYPES,f.leaveType,'Select leave type','aaPick'),{key:'leaveType',hidden:!isLeave})
+        +aaField('Leave Type',true,apCS('aa-leave-type',AA_LEAVE_TYPES,f.leaveType,'Select leave type','aaPick')+aaBalHTML(),{key:'leaveType',hidden:!isLeave})
         +aaField('Leave Hours',false,apCS('aa-hours',AA_HOURS,f.hours,'Select leave hours','aaPick'),{key:'hours',hidden:!one,hint:'A half day counts as 0.5 of your balance.'})
         +aaField(one?'Date':'From',true,'<input type="date" class="ep-form-input" id="aa-from" value="'+f.from+'" onchange="aaSetDate(\'from\',this.value)">',{key:'from'})
         +aaField('To',true,'<input type="date" class="ep-form-input" id="aa-to" value="'+f.to+'" min="'+f.from+'" onchange="aaSetDate(\'to\',this.value)">',{key:'to',hidden:one,err:'Pick an end date on or after the start date.'})
@@ -150,6 +150,7 @@ function aaSync(){
 function aaPick(val,csid){
   aaSync();
   if(csid==='aa-type'||csid==='aa-hours')aaRepaint();
+  else if(csid==='aa-leave-type')aaRefreshBal();   // the balance left in that type
   aaClearErr(csid==='aa-type'?'type':csid==='aa-leave-type'?'leaveType':'hours');
 }
 function aaSetDays(v){aaSync();aaForm.days=v;if(v==='one')aaForm.to='';aaRepaint();}
@@ -158,6 +159,7 @@ function aaSetDate(which,v){
   if(which==='from'&&aaForm.to&&aaForm.to<v)aaForm.to='';
   const to=document.getElementById('aa-to');if(to){to.min=aaForm.from;to.value=aaForm.to;}
   const line=document.getElementById('aa-days');if(line)line.innerHTML=aaDaysLine();
+  if(which==='from')aaRefreshBal();   // the monthly figure follows the month picked
   aaClearErr(which);
 }
 function aaClearErr(key){const g=document.getElementById('aaf-'+key);if(g)g.classList.remove('is-invalid');}

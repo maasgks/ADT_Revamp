@@ -103,7 +103,6 @@ const sidebarItems=[
   {dropdown:'Time & Attendance',color:'teal',icon:sbIco.clock,children:[
     {id:'timesheet',label:'Timesheets',color:'teal',icon:sbIco.clock},
     {id:'all-leaves',label:'Leave Requests',color:'teal',icon:sbIco.calendar},
-    {id:'leave-balance',label:'Leave Balance',color:'teal',icon:sbIco.wallet},
     {id:'leave-policies',label:'Leave Policies',color:'teal',icon:sbIco.fileText},
     {id:'holidays',label:'Holidays',color:'teal',icon:sbIco.calStar}
   ]},

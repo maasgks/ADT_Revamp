@@ -191,7 +191,7 @@ function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';de
 function renderDeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves & Holidays'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'de-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="de-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(deTab===t.id?' active':'')+'" onclick="navDeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -315,6 +315,8 @@ function renderDeSidebar(){
         +'<button class="ep-cancel-btn">Cancel</button>'
         +'<button class="ep-save-btn">Save</button>'
       +'</div>';
+  }else if(deTab==='leaves-holidays'){
+    body=lhPanelHTML('de',emp.name);
   }else if(deTab==='history'){
     body=sbHistoryHTML(emp);
   }else if(deTab==='logs'){
@@ -402,7 +404,7 @@ function navGeTab(tab){geTab=tab;if(!sbHasDraft('ge'))geEditMode=false;isbTab('g
 function renderGeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves & Holidays'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ge-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="ge-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(geTab===t.id?' active':'')+'" onclick="navGeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -495,6 +497,8 @@ function renderGeSidebar(){
         +'</tr></thead><tbody><tr><td colspan="4" style="padding:22px 8px;text-align:center;font-size:12px;color:#9ca3af">No salary history</td></tr></tbody></table>'
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:10px"><button class="ep-cancel-btn">Cancel</button><button class="ep-save-btn">Save</button></div>';
+  }else if(geTab==='leaves-holidays'){
+    body=lhPanelHTML('ge',emp.name);
   }else if(geTab==='history'){
     body=sbHistoryHTML(emp);
   }else if(geTab==='logs'){
@@ -1111,7 +1115,7 @@ function alAttachChosen(input){
   updateFileLabel(input,'al-attach-name');
 }
 function submitAddLeave(isDraft){
-  const empVal=(document.getElementById('al-emp-search')||{}).value||'';
+  const emp=alSelectedEmp();const empVal=emp?emp.name:'';
   const typeWrap=document.getElementById('csw-al-type');
   const typeVal=typeWrap?typeWrap.querySelector('.cs-value').textContent.trim():'';
   const fromVal=(document.getElementById('al-from-date')||{}).value||'';
@@ -1120,7 +1124,7 @@ function submitAddLeave(isDraft){
   const attachEl=document.getElementById('al-attach');
   const attachFile=attachEl&&attachEl.files&&attachEl.files[0];
   if(!isDraft){
-    if(!empVal){showToast('Please enter an employee name or ID','error');return;}
+    if(!empVal){showToast('Please select an employee','error');return;}
     if(!typeVal||typeVal==='Select'){showToast('Please select a leave type','error');return;}
     if(!fromVal){showToast('Please select a From Date','error');return;}
     if(!emailVal){showToast('Please enter employee email','error');return;}
@@ -1137,7 +1141,7 @@ function submitAddLeave(isDraft){
   const hrMap={'half':'Half Day','one':'Full Day','multiple':'Full Day'};
   lpLanded('all-leaves',newId);
   allLeavesData.unshift({
-    id:newId,empId:'CLOCLO'+Math.floor(10000+Math.random()*90000),name:empVal||'Unknown',
+    id:newId,empId:emp&&emp.empId!=='—'?emp.empId:'CLOCLO'+Math.floor(10000+Math.random()*90000),name:empVal||'Unknown',
     leaveId:String(leaveIdNum),leaveType:typeVal||'Casual Leave',
     leaveFrom:fmtDate(fromVal),leaveTo:fmtDate(toVal),
     leaveHours:hrMap[alDurationType]||'Full Day',
@@ -1185,10 +1189,15 @@ function buildAddLeaveModalHTML(){
     +'<div class="policy-form-section">'
     +'<div class="policy-form-grid">'
     +'<div class="ep-form-group"><label class="ep-form-label">Select Employee <span class="req">*</span></label>'
-    +'<div class="ep-emp-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
-    +'<input id="al-emp-search" type="text" placeholder="Search by name or ID"></div></div>'
+    /* A pick from the roster, not free text: a typed name that matches nobody
+       could not show a balance or file a request against a real person. The
+       menu searches by name or ID (data-cssearch). */
+    +apCS('al-emp',alEmpOptions(),'','Search by name or ID','alPickEmp').replace('<div class="cs-wrap"','<div class="cs-wrap" data-cssearch="1"')
+    +'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Leave Type <span class="req">*</span></label>'
-    +apCS('al-type',leaveTypes,'','Select')+'</div>'
+    +apCS('al-type',leaveTypes,'','Select','alRefreshBal')
+    /* Filled by alRefreshBal() (js/leaves-holidays.js) once a type is picked. */
+    +'<div class="al-type-bal" id="al-type-bal"></div></div>'
     +'</div></div>'
 
     // Row 2: Duration type radio
@@ -1209,7 +1218,7 @@ function buildAddLeaveModalHTML(){
     +'<div class="policy-form-section" id="al-add-date-row" style="border-top:1px dashed #e5e7eb">'
     +'<div class="policy-form-grid">'
     +'<div class="ep-form-group" id="al-add-from-group"><label class="ep-form-label">From Date <span class="req">*</span></label>'
-    +apCD('al-from-date','','Select date')+'</div>'
+    +apCD('al-from-date','','Select date','alRefreshBal')+'</div>'
     +'<div class="ep-form-group" id="al-add-to-group"><label class="ep-form-label">To Date <span class="req">*</span></label>'
     +apCD('al-to-date','','Select date')+'</div>'
     +'</div></div>'
@@ -1257,7 +1266,7 @@ function buildAddLeaveModalHTML(){
 
    Everyone who works here has a balance, so every role sees their own - except
    HR and admins, whose view of this page is the whole team's requests; they
-   read balances in Leave Balance → All Leave Balance.
+   read balances on the Employees panel → Leaves & Holidays.
 
    The figure is the Leave Balance module's (lbRows in js/leave-balance.js),
    summed across the person's leave types: what is left after approved and
@@ -1272,7 +1281,7 @@ function alBalCardHTML(){
   const rows=alBalanceOf(LB_ME);
   const fmt=function(n){return String(+n.toFixed(1));};
   const tot=rows.reduce(function(s,r){s.entitled+=r.entitled;s.available+=r.available;return s;},{entitled:0,available:0});
-  // The split by leave type is on hover, and in full on the Leave Balance page.
+  // The split by leave type is on hover, and in full under My Profile → Leaves & Holidays.
   const tip=rows.length
     ?rows.map(function(r){return r.type+': '+fmt(r.available)+' of '+r.entitled+' left';}).join('\n')
     :'No active leave policy is assigned to you yet.';
@@ -7577,6 +7586,7 @@ function buildMyProfileHTML(){
     {id:'bank-details',label:'Bank Details'},
     {id:'attachments',label:'Attachments'},
     {id:'salary-slip',label:'Salary Slip'},
+    {id:'leaves-holidays',label:'Leaves & Holidays'},
     {id:'change-password',label:'Change Password'},
   ];
   const tabBar=`<div class="prof-tab-bar">${profTabs.map(t=>`<button class="prof-tab${profTab===t.id?' active':''}" data-tab="${t.id}" onclick="setProfTab('${t.id}')">${t.label}</button>`).join('')}</div>`;
@@ -7826,6 +7836,12 @@ function buildProfTabContent(){
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+  }
+
+  /* The signed-in person's own balance and the entity's holidays. The admin
+     is "Pallavi P" in leave data; lhResolve() matches the two spellings. */
+  else if(profTab==='leaves-holidays'){
+    tabContent='<div class="ep-form-card">'+lhPanelHTML('prof',pe?pe.name:'Pallavi Parate',true)+'</div>';
   }
 
   else if(profTab==='change-password'){

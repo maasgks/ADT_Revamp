@@ -37,7 +37,8 @@
 .lb-pend{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-status);
   background:var(--st-wait-bg);color:var(--st-wait-fg);font-weight:600;font-size:12px}
 .lb-avail{font-weight:700}
-.lb-avail.is-ok{color:var(--st-ok-fg)}
+/* Room left reads in plain ink - only low (amber) and none (red) are coloured. */
+.lb-avail.is-ok{color:var(--navy)}
 .lb-avail.is-low{color:var(--st-wait-fg)}
 .lb-avail.is-out{color:var(--st-bad-fg)}
 .lb-empty{padding:22px 16px;border:1px dashed var(--border);border-radius:10px;background:#f9fafb;text-align:center;font-size:12.5px;color:var(--gray);line-height:1.5}
@@ -65,3 +66,47 @@
 @media (max-width:720px){
   .lb-card-hd{flex-direction:column}
 }
+
+/* ══ LEAVES & HOLIDAYS (js/leaves-holidays.js) ════════════════════════════
+   The tab on the Employees panel and My Profile, and Company Settings →
+   Leave Balance. Same tables and tones as above; what is here is the
+   Yearly/Monthly filter row, the four figures, the holiday chips, the
+   roster's expandable rows and the balance line in the leave forms. */
+.lh-panel{display:flex;flex-direction:column;gap:12px;min-width:0}
+.lh-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.lh-tools .cs-wrap{width:170px;margin:0}
+.lh-tools .cs-trigger{height:34px;border-width:1px;font-size:12.5px}
+.lh-period{font-size:var(--ds-caption);color:var(--gray)}
+.lh-sec-hd{margin-top:6px}
+.lh-sec-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
+.lh-sec-sub{font-size:var(--ds-caption);color:var(--gray);margin-top:3px;line-height:1.45}
+.lh-figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lh-fig{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--card)}
+.lh-fig-val{font-size:18px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
+.lh-fig-val.is-ok{color:var(--navy)}
+.lh-fig-val.is-wait{color:var(--st-wait-fg)}
+.lh-fig-label{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
+.lh-chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1px solid transparent}
+.lh-chip.is-info{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
+.lh-chip.is-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
+.lh-chip.is-idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
+
+
+/* The balance under Leave Type while applying for leave: four figures in one
+   neutral strip. Only Available is toned, and only when low or gone. */
+.al-type-bal{display:none}
+.al-type-bal.is-on{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px;border:1px solid var(--border);
+  border-radius:var(--r-control);background:#fafbfc;overflow:hidden}
+.al-bal-fig{padding:8px 12px;min-width:0}
+.al-bal-fig+.al-bal-fig{border-left:1px solid var(--border)}
+.al-bal-val{font-size:15px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
+.al-bal-val.is-low{color:var(--st-wait-fg)}
+.al-bal-val.is-out{color:var(--st-bad-fg)}
+.al-bal-of{font-size:12px;font-weight:500;color:#94a3b8}
+.al-bal-lbl{font-size:var(--ds-caption);color:var(--gray);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A message instead of figures: no employee picked, or a type not in policy. */
+.al-type-bal.is-note{display:block;padding:9px 12px;font-size:12.5px;color:var(--gray);line-height:1.45}
+.al-type-bal.is-note b{color:var(--navy)}
+.al-type-bal.is-note.is-bad{color:var(--st-bad-fg);border-color:var(--st-bad-bd);background:var(--st-bad-bg)}
+
+@media (max-width:720px){.lh-figs{grid-template-columns:repeat(2,minmax(0,1fr))}}

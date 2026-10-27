@@ -36,6 +36,8 @@ let csLeave={
   allocationFrequency:'Yearly',
   probationMonths:1,
   lopAllowed:true,
+  // how many optional holidays one person may take in the leave year
+  optionalHolidays:3,
   // leave restrictions
   maxConsecutive:15,
   // sandwich rule
@@ -171,6 +173,7 @@ function cslViewHTML(){
     +cslFc(CSL_ICO.doc,'Allocation Frequency',attrSafe(m.allocationFrequency))
     +cslFc(CSL_ICO.clock,'Probation Period',m.probationMonths+' Month'+(m.probationMonths===1?'':'s'))
     +cslFc(CSL_ICO.doc,'LOP Allowed',m.lopAllowed?'Yes':'No')
+    +cslFc(CSL_ICO.cal,'Optional Holidays',m.optionalHolidays+' per year')
     +'</div>';
 
   out+=cslSub('Leave Restrictions')
@@ -219,6 +222,8 @@ function cslEditHTML(){
     +cslGroup('Period To',apCD('csl-to',m.periodTo,'End date','cslPickTo'))
     +cslGroup('Allocation Frequency',cslSelect('csl-freq',CSL_FREQ,m.allocationFrequency))
     +cslGroup('Probation Period',cslUnit('csl-prob',m.probationMonths,'months',0,36))
+    +cslGroup('Optional Holidays',cslUnit('csl-opth',m.optionalHolidays,'days',0,30),true,
+      'How many of the entity&rsquo;s optional holidays one employee may take in the leave year.')
     +cslGroup('Loss of Pay',cslCheck('csl-lop',m.lopAllowed,'LOP allowed'),true)
   +'</div>');
 
@@ -270,6 +275,7 @@ function cslReadForm(){
   d.allocationFrequency=val('csl-freq')||d.allocationFrequency;
   d.probationMonths=cslInt(val('csl-prob'),d.probationMonths);
   d.lopAllowed=on('csl-lop');
+  d.optionalHolidays=cslInt(val('csl-opth'),d.optionalHolidays);
   d.maxConsecutive=Math.max(1,cslInt(val('csl-maxcons'),d.maxConsecutive));
   d.sandwichEnabled=on('csl-sandwich');
   d.countWeeklyOff=val('csl-cwo')||d.countWeeklyOff;
