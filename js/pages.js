@@ -191,7 +191,7 @@ function resetDeFilters(){deDeptFilter='';deBranchFilter='';deStatusFilter='';de
 function renderDeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startDeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=directEmpData.find(e=>e.id===deSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves & Holidays'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'de-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="de-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(deTab===t.id?' active':'')+'" onclick="navDeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -404,7 +404,7 @@ function navGeTab(tab){geTab=tab;if(!sbHasDraft('ge'))geEditMode=false;isbTab('g
 function renderGeSidebar(){
   const editBtn='<button class="lp-sb-view-edit-btn" onclick="startGeEdit()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit</button>';
   const emp=globalEmpData.find(e=>e.id===geSelectedId);if(!emp)return '';
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves & Holidays'},{id:'workflow',label:'Workflow'}];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'bank-details',label:'Bank Details'},{id:'attachments',label:'Attachments'},{id:'salary-details',label:'Salary Details'},{id:'leaves-holidays',label:'Leaves'},{id:'workflow',label:'Workflow'}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<button class="lp-isb-nav-btn" onclick="scrollTabRow(\'left\',\'ge-isb-tabs\')" title="Scroll left"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>'
     +'<div class="lp-isb-tabs" id="ge-isb-tabs">'+tabs.map(t=>'<button class="lp-isb-tab'+(geTab===t.id?' active':'')+'" onclick="navGeTab(\''+t.id+'\')">'+t.label+'</button>').join('')+'</div>'
@@ -1266,7 +1266,7 @@ function buildAddLeaveModalHTML(){
 
    Everyone who works here has a balance, so every role sees their own - except
    HR and admins, whose view of this page is the whole team's requests; they
-   read balances on the Employees panel → Leaves & Holidays.
+   read balances on the Employees panel → Leaves.
 
    The figure is the Leave Balance module's (lbRows in js/leave-balance.js),
    summed across the person's leave types: what is left after approved and
@@ -1281,7 +1281,7 @@ function alBalCardHTML(){
   const rows=alBalanceOf(LB_ME);
   const fmt=function(n){return String(+n.toFixed(1));};
   const tot=rows.reduce(function(s,r){s.entitled+=r.entitled;s.available+=r.available;return s;},{entitled:0,available:0});
-  // The split by leave type is on hover, and in full under My Profile → Leaves & Holidays.
+  // The split by leave type is on hover, and in full under My Profile → Leaves.
   const tip=rows.length
     ?rows.map(function(r){return r.type+': '+fmt(r.available)+' of '+r.entitled+' left';}).join('\n')
     :'No active leave policy is assigned to you yet.';
@@ -1683,7 +1683,7 @@ function buildPaymentsHTML(){
         +'<span class="ct-act-step '+(isCurrent?'current':'next')+'">'+(isCurrent?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(pmInvoiceFlow.indexOf(s)+1))+'</span>'+s+'</div>';
     }).join('');
     const statusBtn='<div class="ct-action-wrap">'
-      +'<button class="ct-action-btn" onclick="togglePmAction('+p.id+',event)"><span>'+p.invoiceStatus+'</span>'+chevDn+'</button>'
+      +'<button class="ct-action-btn" title="'+attrSafe(p.invoiceStatus)+'" onclick="togglePmAction('+p.id+',event)"><span>'+p.invoiceStatus+'</span>'+chevDn+'</button>'
       +'<div class="ct-action-menu" id="pm-ctm-'+p.id+'">'+menuItems+'</div>'
       +'</div>';
     return '<tr class="pm-row'+(pmSelectedId===p.id?' lp-row-selected':'')+'" id="pm-row-'+p.id+'" style="cursor:pointer" onclick="openPmSidebar('+p.id+')">'
@@ -4671,9 +4671,10 @@ function buildContractsListingHTML(){
       const click=(!isDone&&!isCurrent)?'onclick="ctPickStatus('+c.id+',\''+step+'\')"':'';
       return '<div class="ct-act-item '+cls+'" '+click+'><span class="ct-act-step '+cls+'">'+checkIco+'</span>'+step+'</div>';
     }).join('');
-    const btnLabel=c.status.length>12?c.status.slice(0,10)+'…':c.status;
+    // Shortened by the pill's CSS ("…"), the whole status on the title.
+    const btnLabel=c.status;
     const actionBtn='<div class="ct-action-wrap">'
-      +'<button class="ct-action-btn" onclick="toggleCtAction('+c.id+',event)"><span>'+btnLabel+'</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
+      +'<button class="ct-action-btn" title="'+attrSafe(c.status)+'" onclick="toggleCtAction('+c.id+',event)"><span>'+btnLabel+'</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>'
       +'<button class="ct-dots-btn" onclick="openCtSidebar('+c.id+');event.stopPropagation()">'+dotsIco+'</button>'
       +'<div class="ct-action-menu" id="ctm-'+c.id+'">'+menuItems+'</div>'
       +'</div>';
@@ -7586,7 +7587,7 @@ function buildMyProfileHTML(){
     {id:'bank-details',label:'Bank Details'},
     {id:'attachments',label:'Attachments'},
     {id:'salary-slip',label:'Salary Slip'},
-    {id:'leaves-holidays',label:'Leaves & Holidays'},
+    {id:'leaves-holidays',label:'Leaves'},
     {id:'change-password',label:'Change Password'},
   ];
   const tabBar=`<div class="prof-tab-bar">${profTabs.map(t=>`<button class="prof-tab${profTab===t.id?' active':''}" data-tab="${t.id}" onclick="setProfTab('${t.id}')">${t.label}</button>`).join('')}</div>`;
@@ -7841,7 +7842,7 @@ function buildProfTabContent(){
   /* The signed-in person's own balance and the entity's holidays. The admin
      is "Pallavi P" in leave data; lhResolve() matches the two spellings. */
   else if(profTab==='leaves-holidays'){
-    tabContent='<div class="ep-form-card">'+lhPanelHTML('prof',pe?pe.name:'Pallavi Parate',true)+'</div>';
+    tabContent='<div class="ep-form-card">'+lhPanelHTML('prof',pe?pe.name:'Pallavi Parate')+'</div>';
   }
 
   else if(profTab==='change-password'){

@@ -1,21 +1,17 @@
-/* ══ LEAVES & HOLIDAYS ═════════════════════════════════════════════════════
+/* ══ LEAVES TAB ════════════════════════════════════════════════════════════
    Leave Balance is no longer a module of its own. A balance belongs to a
    person, so it is read where the person is:
 
-     Employees → detail panel → Leaves & Holidays   one employee, for HR
-     My Profile → Leaves & Holidays                 the signed-in person
+     Employees → detail panel → Leaves   one employee, for HR
+     My Profile → Leaves                 the signed-in person
 
    Both read the SAME calculation, lbRows() in js/leave-balance.js, so a
    number cannot differ between the panel, the profile and the balance shown
    while applying for leave.
 
    YEARLY / MONTHLY is one filter, not two tables stacked: yearly reads the
-   leave year against each policy's yearly limit (carry-forward included);
-   monthly reads the picked month against the monthly limit. The holidays
-   under the balance follow the same filter - the whole year, or that month.
-
-   Optional holidays are an allowance set per entity in Company Settings →
-   Leaves (csLeave.optionalHolidays); the panel states it beside the list. */
+   leave year against each policy's yearly allowance (carry-forward
+   included); monthly reads the picked month against the monthly one. */
 
 /* One filter state per place the panel is drawn, so switching the profile to
    Monthly does not also switch the employee panel. */
@@ -81,57 +77,41 @@ function lhToolbarHTML(host){
   +'</div>';
 }
 
-function lhFiguresHTML(t,mode){
-  const fig=function(label,val,cls){
-    return '<div class="lh-fig"><div class="lh-fig-val'+(cls||'')+'">'+lbFmt(val)+'<span class="lb-stat-unit">days</span></div><div class="lh-fig-label">'+label+'</div></div>';
+/* Optional holidays this person has left in the leave year: the entity's
+   allowance (Company Settings → Leaves → Optional Holidays) less those taken
+   or waiting - optional-holiday leave requests, plus, for the signed-in
+   employee, the ones claimed on the Optional Holidays calendar. A yearly
+   allowance, so the card reads the same under Yearly and Monthly. */
+function lhOptionalLeft(who){
+  const allowed=typeof ohEntitlement==='function'?ohEntitlement():0;
+  let used=0;
+  if(who){
+    const yLo=new Date(LB_YEAR,0,1),yHi=new Date(LB_YEAR,11,31);
+    allLeavesData.forEach(function(l){
+      if(l.name===who&&/optional holiday/i.test(l.leaveType)&&(l.status==='Approved'||LB_PENDING.indexOf(l.status)>=0))used+=lbDays(l,yLo,yHi);
+    });
+    if(who===LB_ME&&typeof ohUsed==='function')used+=ohUsed(LB_YEAR);
+  }
+  return {allowed:allowed,left:Math.max(0,allowed-used)};
+}
+function lhFiguresHTML(t,mode,who){
+  const fig=function(label,val,cls,of){
+    return '<div class="lh-fig"><div class="lh-fig-val'+(cls||'')+'">'+lbFmt(val)
+      +(of!=null?'<span class="lb-stat-unit">of '+lbFmt(of)+' left</span>':'<span class="lb-stat-unit">days</span>')
+      +'</div><div class="lh-fig-label">'+label+'</div></div>';
   };
+  const oh=lhOptionalLeft(who);
   return '<div class="lh-figs">'
     +fig(mode==='yearly'?'Total':'Monthly Limit',t.limit)
     +fig('Availed',t.availed)
     +fig('Pending',t.pending,t.pending?' is-wait':'')
     +fig('Available',t.available,' is-ok')
+    +fig('Optional Holidays',oh.left,oh.left<=0&&oh.allowed?' is-out':'',oh.allowed)
   +'</div>';
 }
 
-/* The entity's holidays in the period, oldest first. Withdrawn holidays are
-   records for an administrator, not days anyone has off, so they are left out. */
-function lhHolidays(mode,month){
-  const all=typeof hdEntityRows==='function'?hdEntityRows():[];
-  return all.filter(function(h){
-    if(h.status==='Inactive'||!h.date)return false;
-    const p=h.date.split('-');
-    if(+p[0]!==LB_YEAR)return false;
-    return mode==='yearly'||(+p[1]-1)===month;
-  }).sort(function(a,b){return a.date<b.date?-1:1;});
-}
-function lhHolidaysHTML(host,self){
-  const s=lhSt(host);
-  const list=lhHolidays(s.mode,s.month);
-  const allowed=typeof ohEntitlement==='function'?ohEntitlement():0;
-  const used=self&&typeof ohUsed==='function'?ohUsed(LB_YEAR):null;
-  const optN=list.filter(function(h){return h.type==='Optional Holiday';}).length;
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const tone={'Public Holiday':'info','Company Holiday':'idle','Optional Holiday':'wait'};
-  const table=list.length
-    ?'<div class="lb-table-wrap"><table class="lb-table"><thead><tr><th>Date</th><th>Day</th><th>Holiday</th><th>Type</th></tr></thead><tbody>'
-      +list.map(function(h){
-        const p=h.date.split('-');
-        return '<tr><td>'+cdLabel(h.date)+'</td><td>'+days[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+'</td>'
-          +'<td class="lb-type">'+sbEsc(h.name)+'</td>'
-          +'<td><span class="lh-chip is-'+(tone[h.type]||'idle')+'">'+sbEsc(h.type.replace(' Holiday',''))+'</span></td></tr>';
-      }).join('')+'</tbody></table></div>'
-    :'<div class="lb-empty">No holidays in '+(s.mode==='yearly'?LB_YEAR:LB_MONTHS[s.month]+' '+LB_YEAR)+'.</div>';
-  return '<div class="lh-sec-hd"><div class="lh-sec-title">Holidays</div>'
-      +'<div class="lh-sec-sub">'+list.length+' in '+(s.mode==='yearly'?'the year':LB_MONTHS[s.month])
-        +(optN?' · '+optN+' optional':'')
-        +' · '+allowed+' optional holiday'+(allowed===1?'':'s')+' allowed per year'
-        +(used!=null?' · '+used+' used':'')+'</div></div>'
-    +table;
-}
-
-/* The tab itself. name: the person as the host knows them; self: true on
-   My Profile, where the optional holidays already claimed are known. */
-function lhPanelHTML(host,name,self){
+/* The tab itself. name: the person as the host knows them. */
+function lhPanelHTML(host,name){
   const s=lhSt(host);
   const who=lhResolve(name);
   const rows=who?lbRows(who,s.month):[];
@@ -142,9 +122,8 @@ function lhPanelHTML(host,name,self){
       +'<div class="lh-sec-sub">'+(s.mode==='yearly'
         ?'Against each policy&rsquo;s yearly limit · carried-forward days are used first'
         :'Against each policy&rsquo;s monthly limit for '+LB_MONTHS[s.month]+' '+LB_YEAR)+'</div></div>'
-    +(rows.length?lhFiguresHTML(t,s.mode):'')
+    +(rows.length?lhFiguresHTML(t,s.mode,who):'')
     +(s.mode==='yearly'?lbYearTableHTML(rows):lbMonthTableHTML(rows))
-    +lhHolidaysHTML(host,self)
     +'<p class="lb-foot">Leave is counted in working days: weekends and holidays inside a request are not deducted, and a half day counts as 0.5.</p>'
   +'</div>';
 }

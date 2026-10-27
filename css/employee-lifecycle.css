@@ -379,12 +379,6 @@
    red block; it deepens a step on hover. */
 .ep-save-btn.is-danger{background:var(--st-bad-bg);border:1px solid var(--st-bad-bd);color:var(--st-bad-fg)}
 .ep-save-btn.is-danger:hover{background:#fecaca;border-color:#fca5a5;color:#962f2f}
-/* The row button on the employee listings: a little wider than the Contracts
-   one: a status reads in full (Active, Onboarding); a longer step name ends
-   in "…" and the whole name is on the hover title. Same colour, height
-   and radius as the Contracts button. */
-.ct-action-btn.emp-act-btn{width:126px;justify-content:space-between}
-.ct-action-btn.emp-act-btn span{flex:1;min-width:0;max-width:none;text-align:left}
 /* An asset line that opens to its details: the whole line is the toggle, the
    arrow turns when open, and the details sit under a hairline. */
 .emp-res-toggle{width:100%;border:none;background:none;padding:0;margin:0;font:inherit;text-align:left;cursor:pointer;gap:10px}

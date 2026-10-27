@@ -129,36 +129,36 @@ function lbTone(avail,limit){
 /* ── The two tables ───────────────────────────────────────────────────── */
 function lbYearTableHTML(rows){
   if(!rows.length)return lbNoPolicyHTML();
-  const t={y:0,ya:0,yp:0,yv:0,cu:0,cb:0};
-  rows.forEach(function(r){t.y+=r.yearly;t.ya+=r.yAvailed;t.yp+=r.yPending;t.yv+=r.yAvailable;t.cu+=r.cfUsed;t.cb+=r.cfBalance;});
+  /* The Yearly/Monthly filter above already says which period this is, so
+     the headings do not repeat it. "Available" is the policy's allowance;
+     what is left after availed and pending is the figure card above. */
+  const t={y:0,ya:0,yp:0,cb:0};
+  rows.forEach(function(r){t.y+=r.yearly;t.ya+=r.yAvailed;t.yp+=r.yPending;t.cb+=r.cfBalance;});
   return '<div class="lb-table-wrap"><table class="lb-table"><thead><tr>'
-    +'<th>Leave Type</th><th class="n">Yearly Limit</th><th class="n">Yearly Availed</th><th class="n">Yearly Pending</th>'
-    +'<th class="n">Yearly Available</th><th class="n">Carry Forward Used</th><th class="n">Carry Forward Balance</th>'
+    +'<th>Leave Type</th><th class="n">Available</th><th class="n">Availed</th><th class="n">Pending</th>'
+    +'<th class="n">Carry Forward Balance</th>'
     +'</tr></thead><tbody>'+rows.map(function(r){
       return '<tr><td class="lb-type">'+sbEsc(r.type)+'</td>'
         +'<td class="n">'+lbFmt(r.yearly)+'</td>'
         +'<td class="n">'+lbFmt(r.yAvailed)+'</td>'
         +'<td class="n">'+(r.yPending?'<span class="lb-pend">'+lbFmt(r.yPending)+'</span>':'0')+'</td>'
-        +'<td class="n"><span class="lb-avail'+lbTone(r.yAvailable,r.yearly)+'">'+lbFmt(r.yAvailable)+'</span></td>'
-        +'<td class="n">'+(r.cfCap?lbFmt(r.cfUsed):'<span class="lb-na" title="This policy does not carry days forward">—</span>')+'</td>'
         +'<td class="n">'+(r.cfCap?lbFmt(r.cfBalance)+'<span class="lb-of"> of '+lbFmt(r.cfOpen)+'</span>':'<span class="lb-na" title="This policy does not carry days forward">—</span>')+'</td>'
         +'</tr>';
     }).join('')+'</tbody>'
     +'<tfoot><tr><td>Total</td><td class="n">'+lbFmt(t.y)+'</td><td class="n">'+lbFmt(t.ya)+'</td><td class="n">'+lbFmt(t.yp)+'</td>'
-      +'<td class="n">'+lbFmt(t.yv)+'</td><td class="n">'+lbFmt(t.cu)+'</td><td class="n">'+lbFmt(t.cb)+'</td></tr></tfoot>'
+      +'<td class="n">'+lbFmt(t.cb)+'</td></tr></tfoot>'
     +'</table></div>';
 }
 function lbMonthTableHTML(rows){
   if(!rows.length)return lbNoPolicyHTML();
   return '<div class="lb-table-wrap"><table class="lb-table"><thead><tr>'
-    +'<th>Leave Type</th><th class="n">Monthly Limit</th><th class="n">Monthly Availed</th><th class="n">Monthly Pending</th><th class="n">Monthly Available</th>'
+    +'<th>Leave Type</th><th class="n">Available</th><th class="n">Availed</th><th class="n">Pending</th>'
     +'</tr></thead><tbody>'+rows.map(function(r){
       const none=r.monthly==null;
       return '<tr><td class="lb-type">'+sbEsc(r.type)+'</td>'
         +'<td class="n">'+(none?'<span class="lb-na" title="No monthly cap - only the yearly limit applies">No limit</span>':lbFmt(r.monthly))+'</td>'
         +'<td class="n">'+lbFmt(r.mAvailed)+'</td>'
         +'<td class="n">'+(r.mPending?'<span class="lb-pend">'+lbFmt(r.mPending)+'</span>':'0')+'</td>'
-        +'<td class="n">'+(none?'<span class="lb-na">—</span>':'<span class="lb-avail'+lbTone(r.mAvailable,r.monthly)+'">'+lbFmt(r.mAvailable)+'</span>')+'</td>'
         +'</tr>';
     }).join('')+'</tbody></table></div>';
 }

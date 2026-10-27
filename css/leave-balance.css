@@ -67,11 +67,11 @@
   .lb-card-hd{flex-direction:column}
 }
 
-/* ══ LEAVES & HOLIDAYS (js/leaves-holidays.js) ════════════════════════════
-   The tab on the Employees panel and My Profile, and Company Settings →
-   Leave Balance. Same tables and tones as above; what is here is the
-   Yearly/Monthly filter row, the four figures, the holiday chips, the
-   roster's expandable rows and the balance line in the leave forms. */
+/* ══ LEAVES TAB (js/leaves-holidays.js) ═══════════════════════════════════
+   The Leaves tab on the Employees panel and My Profile.
+   Same tables and tones as above; what is here is the
+   Yearly/Monthly filter row, the four figures and the balance strip in
+   the leave forms. */
 .lh-panel{display:flex;flex-direction:column;gap:12px;min-width:0}
 .lh-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .lh-tools .cs-wrap{width:170px;margin:0}
@@ -80,16 +80,13 @@
 .lh-sec-hd{margin-top:6px}
 .lh-sec-title{font-size:var(--ds-title);font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px}
 .lh-sec-sub{font-size:var(--ds-caption);color:var(--gray);margin-top:3px;line-height:1.45}
-.lh-figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.lh-figs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
 .lh-fig{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--card)}
 .lh-fig-val{font-size:18px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
 .lh-fig-val.is-ok{color:var(--navy)}
 .lh-fig-val.is-wait{color:var(--st-wait-fg)}
+.lh-fig-val.is-out{color:var(--st-bad-fg)}
 .lh-fig-label{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
-.lh-chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-status);font-size:11px;font-weight:600;border:1px solid transparent}
-.lh-chip.is-info{background:var(--st-info-bg);color:var(--st-info-fg);border-color:var(--st-info-bd)}
-.lh-chip.is-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
-.lh-chip.is-idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
 
 
 /* The balance under Leave Type while applying for leave: four figures in one
@@ -109,4 +106,5 @@
 .al-type-bal.is-note b{color:var(--navy)}
 .al-type-bal.is-note.is-bad{color:var(--st-bad-fg);border-color:var(--st-bad-bd);background:var(--st-bad-bg)}
 
+@media (max-width:900px){.lh-figs{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:720px){.lh-figs{grid-template-columns:repeat(2,minmax(0,1fr))}}
