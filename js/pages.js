@@ -161,7 +161,31 @@ function attachTabHTML(scope,id){
       +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
-﻿function openDeSidebar(id){
+/* Bank Details tab (Direct + Global employees): the same bar and table as the
+   Attachments tab, so the panel's listings read alike. */
+function bankTabHTML(rows){
+  const plusSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  const dash='<span style="color:var(--gray)">—</span>';
+  const n=rows.length;
+  return '<div class="att-bar">'
+      +'<span class="att-count">'+n+' account'+(n===1?'':'s')+'</span>'
+      +'<div class="att-bar-actions"><button class="att-link">'+plusSvg+'Add Bank Detail</button></div>'
+    +'</div>'
+    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Location</th><th>Pay Name</th><th>Pay Bank</th>'
+    +'</tr></thead><tbody>'
+    +rows.map(function(r,i){
+      return '<tr>'
+        +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+        +'<td class="csag-td">'+(r.loc?sbEsc(r.loc):dash)+'</td>'
+        +'<td class="csag-td">'+(r.pay?sbEsc(r.pay):dash)+'</td>'
+        +'<td class="csag-td">'+(r.bank?sbEsc(r.bank):dash)+'</td>'
+      +'</tr>';
+    }).join('')
+    +'</tbody></table></div>';
+}
+
+function openDeSidebar(id){
   if(deSelectedId!=null&&String(deSelectedId)!==String(id)&&sbLeaveGuard('de',function(){openDeSidebar(id);}))return;
   deTab=sbKeepTab(deSelectedId,deTab);deSelectedId=id;deEditMode=false;
   const sb=document.getElementById('de-split-sb');if(sb)sb.classList.add('open');
@@ -233,26 +257,7 @@ function renderDeSidebar(){
       {loc:'IND',pay:'Deepak K',bank:'ICICI'},
       {loc:'Germany',pay:'Deena Davloy',bank:'Deutsche Bank'}
     ];
-    const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-    const tdS='padding:9px 10px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-    const dash='<span style="color:#9ca3af">--</span>';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Bank Detail</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">S.no</th>'
-      +'<th style="'+thS+'">Location</th>'
-      +'<th style="'+thS+'">Pay Name</th>'
-      +'<th style="'+thS+'">Pay Bank</th>'
-      +'</tr></thead>'
-      +'<tbody>'+bankData.map((r,i)=>'<tr>'
-        +'<td style="'+tdS+';color:#6b7280">'+(i+1)+'</td>'
-        +'<td style="'+tdS+'">'+(r.loc||dash)+'</td>'
-        +'<td style="'+tdS+';color:'+(r.pay?'var(--orange)':'#9ca3af')+'">'+(r.pay||'--')+'</td>'
-        +'<td style="'+tdS+';color:'+(r.bank?'var(--orange)':'#9ca3af')+'">'+(r.bank||'--')+'</td>'
-        +'</tr>').join('')
-      +'</tbody></table>';
+    body=bankTabHTML(bankData);
   }else if(deTab==='attachments'){
     body=attachTabHTML('de',deSelectedId);
   }else if(deTab==='salary-details'){
@@ -443,23 +448,7 @@ function renderGeSidebar(){
       {loc:'Germany',pay:'Emma Schmidt',bank:'Deutsche Bank'},
       {loc:'Germany',pay:'',bank:''}
     ];
-    const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-    const tdS='padding:9px 10px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-    const dash='<span style="color:#9ca3af">--</span>';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Bank Detail</button>'
-      +'</div>'
-      +'<table style="width:100%;border-collapse:collapse">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">S.no</th><th style="'+thS+'">Location</th><th style="'+thS+'">Pay Name</th><th style="'+thS+'">Pay Bank</th>'
-      +'</tr></thead>'
-      +'<tbody>'+bankData.map((r,i)=>'<tr>'
-        +'<td style="'+tdS+';color:#6b7280">'+(i+1)+'</td>'
-        +'<td style="'+tdS+'">'+(r.loc||dash)+'</td>'
-        +'<td style="'+tdS+';color:'+(r.pay?'var(--orange)':'#9ca3af')+'">'+(r.pay||'--')+'</td>'
-        +'<td style="'+tdS+';color:'+(r.bank?'var(--orange)':'#9ca3af')+'">'+(r.bank||'--')+'</td>'
-        +'</tr>').join('')
-      +'</tbody></table>';
+    body=bankTabHTML(bankData);
   }else if(geTab==='attachments'){
     body=attachTabHTML('ge',geSelectedId);
   }else if(geTab==='salary-details'){

@@ -31,6 +31,7 @@ const CSAG_ICO={
   dl:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   eye:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
   bin:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+  up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
   plus:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   spark:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2z"/></svg>',
   pen:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
@@ -342,15 +343,14 @@ function csagModalHTML(){
 function csAttachmentsTabHTML(){
   const rec=attachRec('cs','entity');
   const files=rec?rec.attachments:[];
-  const dz='ondragover="attachDrag(event,true)" ondragleave="attachDrag(event,false)" ondrop="attachDrop(event,\'cs\',\'entity\')"';
+  const dz='ondragover="attachDrag(event,true)" ondragleave="attachDrag(event,false)" ondrop="attachDrop(event,\'cs\',\'entity\')" '
+    +'onclick="attachPick(\'cs\',\'entity\')" onkeydown="attachKey(event,\'cs\',\'entity\')" role="button" tabindex="0"';
   const agRows=CS_AGREEMENTS.map(function(a,i){
     const done=a.status!=='pending';
     return '<tr class="csag-row">'
       +'<td class="csag-td csag-num">'+(i+1)+'</td>'
-      +'<td class="csag-td"><div class="csag-file">'
-        +'<span class="csag-file-ico csag-ico-'+a.key.toLowerCase()+'">'+CSAG_ICO.doc+'</span>'
-        +'<div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(csagFileName(a))+'">'+sbEsc(csagFileName(a))+'</div>'
-        +'<div class="lp-c-sub">'+(done?'PDF &middot; '+(a.key==='MSA'?'184 KB':'142 KB'):a.title)+'</div></div></div></td>'
+      +'<td class="csag-td"><div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(csagFileName(a))+'">'+sbEsc(csagFileName(a))+'</div>'
+        +'<div class="lp-c-sub">'+(done?(a.key==='MSA'?'184 KB':'142 KB'):a.title)+'</div></div></td>'
       +'<td class="csag-td">'+sbEsc(a.by)+'</td>'
       +'<td class="csag-td"><span class="att-kind">'+a.key+'</span></td>'
       +'<td class="csag-td csag-src">'+(done?'Generated':sbEsc(a.source))+'</td>'
@@ -369,9 +369,8 @@ function csAttachmentsTabHTML(){
   const fileRows=files.map(function(f,i){
     return '<tr>'
       +'<td class="csag-td csag-num">'+(CS_AGREEMENTS.length+i+1)+'</td>'
-      +'<td class="csag-td"><div class="csag-file"><span class="csag-file-ico">'+CSAG_ICO.file+'</span>'
-        +'<div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(f.name)+'">'+sbEsc(f.name)+'</div>'
-        +'<div class="lp-c-sub">'+(f.size||'—')+'</div></div></div></td>'
+      +'<td class="csag-td"><div class="csag-file-txt"><div class="lp-c-main" title="'+attrSafe(f.name)+'">'+sbEsc(f.name)+'</div>'
+        +'<div class="lp-c-sub">'+(f.size||'—')+'</div></div></td>'
       +'<td class="csag-td">'+sbEsc(f.by||'—')+'</td>'
       +'<td class="csag-td"><span class="att-kind">'+sbEsc(f.type||attachKind(f.name))+'</span></td>'
       +'<td class="csag-td csag-src">'+sbEsc(f.source||'—')+'</td>'
@@ -385,14 +384,18 @@ function csAttachmentsTabHTML(){
         +(typeof esUpActionCell==='function'?esUpActionCell(f):'')
       +'</td></tr>';
   }).join('');
-  return '<div class="att-bar csag-bar">'
+  /* Same bar, slim drop zone and table as every other Attachments tab (see
+     attachTabHTML in pages.js) - only the agreement rows are extra. */
+  const n=CS_AGREEMENTS.length+files.length;
+  return '<div class="att-bar">'
+      +'<span class="att-count">'+n+' file'+(n===1?'':'s')+'</span>'
       +'<div class="att-bar-actions">'
         +'<button class="att-link" onclick="attachDownloadAll(\'cs\',\'entity\')">'+CSAG_ICO.dl+'Download All</button>'
-        +'<button class="att-link" onclick="attachPick(\'cs\',\'entity\')">'+CSAG_ICO.plus+'Add Attachment</button>'
       +'</div></div>'
-    /* The table is the drop target now that the zone has made way for the
-       listing - a drag still lands, it just lands on the list it adds to. */
-    +'<div class="att-table-wrap csag-table-wrap" '+dz+'><table class="att-table csag-table csag-table--files"><thead><tr>'
+    +'<div class="att-zone att-zone-sm" '+dz+'>'
+      +'<span class="att-zone-ico-sm">'+CSAG_ICO.up+'</span>'
+      +'<span>Drop files here, or click to browse</span></div>'
+    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table csag-table--files"><thead><tr>'
       +'<th>Sr. No</th><th>File Name</th><th>Uploaded By</th><th>Type</th><th>Source</th><th class="csag-act">Action</th>'
     +'</tr></thead><tbody>'+agRows+fileRows+'</tbody></table></div>';
 }

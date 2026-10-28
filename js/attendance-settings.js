@@ -997,26 +997,30 @@ function csBranchTabHTML(){
 
 function csBranchListHTML(){
   const locs=csAtt.locations||[];
-  const thS='padding:8px 10px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-  const tdS='padding:9px 10px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-  const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  /* Drawn with the same bar and table as the Attachments tab (.att-bar,
+     .att-table / .csag-table) so every listing in the panel reads alike. */
+  const editSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const plusSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   const rows=locs.length
     ? locs.map(function(l,i){
         const on=(l.status||'Active')==='Active';
         return '<tr>'
-          +'<td style="'+tdS+';color:#f97316;font-weight:600">'+(i+1)+'</td>'
-          +'<td style="'+tdS+';font-weight:500">'+attrSafe(l.name)+'</td>'
-          +'<td style="'+tdS+';font-size:11.5px;color:#6b7280">'+attrSafe(l.address)+'</td>'
-          +'<td style="'+tdS+';white-space:nowrap">'+csAttInt(l.radius,100)+' m</td>'
-          +'<td style="'+tdS+'"><span style="color:'+(on?'#16a34a':'#9ca3af')+';font-weight:600;font-size:12.5px">'+(on?'Active':'Inactive')+'</span></td>'
-          +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:#9ca3af;padding:3px;line-height:0" title="Edit branch" onclick="csBrOpen('+i+')">'+editSvg+'</button></td>'
+          +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+          +'<td class="csag-td"><div class="lp-c-main">'+attrSafe(l.name)+'</div></td>'
+          +'<td class="csag-td csag-src csa-br-addr">'+attrSafe(l.address)+'</td>'
+          +'<td class="csag-td">'+csAttInt(l.radius,100)+' m</td>'
+          +'<td class="csag-td"><span class="lp-status-badge tone-'+(on?'ok':'idle')+'">'+(on?'Active':'Inactive')+'</span></td>'
+          +'<td class="csag-td csag-act"><button class="att-row-btn" title="Edit branch" onclick="csBrOpen('+i+')">'+editSvg+'</button></td>'
         +'</tr>';
       }).join('')
-    : '<tr><td colspan="6" style="'+tdS+';text-align:center;color:#9ca3af;padding:28px">No branches yet.</td></tr>';
-  return '<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="csBrOpen(-1)">+ Add Branch</button></div>'
-    +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">'
-    +'<thead><tr><th style="'+thS+'">SR NO</th><th style="'+thS+'">Branch Name</th><th style="'+thS+'">Location</th><th style="'+thS+'">Radius</th><th style="'+thS+'">Status</th><th style="'+thS+'">ACTION</th></tr></thead>'
-    +'<tbody>'+rows+'</tbody></table>';
+    : '<tr><td colspan="6" class="csag-td" style="text-align:center;color:var(--gray);padding:28px">No branches yet.</td></tr>';
+  return '<div class="att-bar">'
+      +'<span class="att-count">'+locs.length+' branch'+(locs.length===1?'':'es')+'</span>'
+      +'<div class="att-bar-actions"><button class="att-link" onclick="csBrOpen(-1)">'+plusSvg+'Add Branch</button></div>'
+    +'</div>'
+    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Branch Name</th><th>Location</th><th>Radius</th><th>Status</th><th class="csag-act">Action</th>'
+    +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 
 function csBranchFormHTML(){

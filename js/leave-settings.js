@@ -132,28 +132,32 @@ const cslTypes=[
   {name:'Earned Leave',yearly:18,monthly:1.5,cf:30,probation:'No',prorate:'Yes',status:'Active'}
 ];
 function cslTableHTML(){
-  const thS='padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border)';
-  const tdS='padding:8px 9px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-  const editSvg='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-  const yn=function(v){
-    return '<span style="color:'+(v==='Yes'?'var(--st-ok-fg)':'var(--gray)')+';font-weight:600">'+v+'</span>';
-  };
-  return '<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:12px">'
-    +'<thead><tr><th style="'+thS+'">SR</th><th style="'+thS+'">Type</th><th style="'+thS+'">Yearly</th>'
-    +'<th style="'+thS+'">Monthly</th><th style="'+thS+'">CF Limit</th><th style="'+thS+'">Probation</th>'
-    +'<th style="'+thS+'">Prorate</th><th style="'+thS+'">Status</th><th style="'+thS+'">Action</th></tr></thead>'
-    +'<tbody>'+cslTypes.map(function(t,i){
+  /* Drawn with the same bar and table as the Attachments tab (.att-bar,
+     .att-table / .csag-table) so every listing in the panel reads alike. */
+  const editSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  const plusSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  const yn=function(v){return v==='Yes'?'Yes':'<span style="color:var(--gray)">'+v+'</span>';};
+  const n=cslTypes.length;
+  return '<div class="att-bar">'
+      +'<span class="att-count">'+n+' leave type'+(n===1?'':'s')+'</span>'
+      +'<div class="att-bar-actions"><button class="att-link" onclick="cslAddType()">'+plusSvg+'Add Leave Type</button></div>'
+    +'</div>'
+    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Type</th><th>Yearly</th><th>Monthly</th><th>CF Limit</th>'
+      +'<th>Probation</th><th>Prorate</th><th>Status</th><th class="csag-act">Action</th>'
+    +'</tr></thead><tbody>'+cslTypes.map(function(t,i){
+      const on=t.status==='Active';
       return '<tr>'
-        +'<td style="'+tdS+';font-weight:600;color:var(--navy)">'+(i+1)+'</td>'
-        +'<td style="'+tdS+';font-weight:600">'+attrSafe(t.name)+'</td>'
-        +'<td style="'+tdS+'">'+t.yearly+'</td><td style="'+tdS+'">'+t.monthly+'</td>'
-        +'<td style="'+tdS+'">'+t.cf+'</td>'
-        +'<td style="'+tdS+'">'+yn(t.probation)+'</td>'
-        +'<td style="'+tdS+'">'+yn(t.prorate)+'</td>'
-        +'<td style="'+tdS+'"><span style="color:var(--st-ok-fg);font-weight:600">'+t.status+'</span></td>'
-        +'<td style="'+tdS+'"><button style="background:none;border:none;cursor:pointer;color:var(--navy);padding:2px;line-height:0" title="Edit '+attrSafe(t.name)+'">'+editSvg+'</button></td>'
+        +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+        +'<td class="csag-td"><div class="lp-c-main">'+attrSafe(t.name)+'</div></td>'
+        +'<td class="csag-td">'+t.yearly+'</td><td class="csag-td">'+t.monthly+'</td>'
+        +'<td class="csag-td">'+t.cf+'</td>'
+        +'<td class="csag-td">'+yn(t.probation)+'</td>'
+        +'<td class="csag-td">'+yn(t.prorate)+'</td>'
+        +'<td class="csag-td"><span class="lp-status-badge tone-'+(on?'ok':'idle')+'">'+attrSafe(t.status)+'</span></td>'
+        +'<td class="csag-td csag-act"><button class="att-row-btn" title="Edit '+attrSafe(t.name)+'">'+editSvg+'</button></td>'
       +'</tr>';
-    }).join('')+'</tbody></table>';
+    }).join('')+'</tbody></table></div>';
 }
 
 // ── VIEW MODE ──
@@ -199,9 +203,7 @@ function cslViewHTML(){
     +cslFc(CSL_ICO.user,'Level 2 Approver',lv>=2?attrSafe(m.level2Approver):'—')
     +'</div>';
 
-  out+=cslSub('Leaves List',
-      '<button type="button" class="csa-add-btn" onclick="cslAddType()">+ Add Leave Type</button>')
-    +cslTableHTML();
+  out+=cslSub('Leaves List')+cslTableHTML();
   return '<div class="csl-view">'+out+'</div>';
 }
 
