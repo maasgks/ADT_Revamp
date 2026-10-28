@@ -1166,6 +1166,9 @@ function buildAddLeaveModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
       +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p>'
+    /* Balance by type first - filled in by alRefreshBal() once an employee is
+       picked (js/leaves-holidays.js). */
+    +alBalStripHTML()
     +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
 
     // Row 1: Employee + Leave Type
@@ -1179,7 +1182,7 @@ function buildAddLeaveModalHTML(){
     +'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Leave Type <span class="req">*</span></label>'
     +apCS('al-type',leaveTypes,'','Select','alRefreshBal')
-    /* Filled by alRefreshBal() (js/leaves-holidays.js) once a type is picked. */
+    /* Exceptions only (type not in policy) - see lhTypeBal(). */
     +'<div class="al-type-bal" id="al-type-bal"></div></div>'
     +'</div></div>'
 
@@ -7671,8 +7674,9 @@ function buildProfTabContent(){
       {label:'System alerts',desc:'Critical platform and security alerts',on:true},
     ];
     const toggle=(on)=>`<div class="prof-toggle${on?' on':''}"></div>`;
-    tabContent=`<div class="prof-body">
-      <div class="prof-left">
+    tabContent=`<div class="prof-body prof-body--rows">
+      <!-- Paired rows, not two free columns: each left card shares a row
+           with the right card beside it, so their tops and bottoms line up. -->
         <div class="ep-form-card">
           <div class="prof-section-hdr"><span class="policy-section-title">Personal Information</span></div>
           <div class="prof-field-grid">
@@ -7682,6 +7686,15 @@ function buildProfTabContent(){
             ${fc(iGlobe,'Country','India')}
             ${fc(iCal,'Date of Birth','15 Mar 1990')}
             ${fc(iUser,'Gender','Female')}
+          </div>
+        </div>
+        <div class="ep-form-card prof-stats-card">
+          <div class="prof-section-hdr"><span class="policy-section-title">Activity Overview</span></div>
+          <div class="prof-stats-grid">
+            <div class="prof-stat"><div class="prof-stat-num" style="color:var(--orange)">24</div><div class="prof-stat-lbl">Contracts Managed</div></div>
+            <div class="prof-stat"><div class="prof-stat-num" style="color:#16a34a">8</div><div class="prof-stat-lbl">Policies Configured</div></div>
+            <div class="prof-stat"><div class="prof-stat-num" style="color:#2563eb">142</div><div class="prof-stat-lbl">Actions This Month</div></div>
+            <div class="prof-stat"><div class="prof-stat-num" style="color:#7c3aed">3</div><div class="prof-stat-lbl">Teams Managed</div></div>
           </div>
         </div>
         <div class="ep-form-card">
@@ -7696,6 +7709,12 @@ function buildProfTabContent(){
           </div>
         </div>
         <div class="ep-form-card">
+          <div class="prof-section-hdr"><span class="policy-section-title">Notification Preferences</span>${iBell}</div>
+          <div class="prof-notif-list">
+            ${notifRows.map(n=>`<div class="prof-notif-row"><div><div class="prof-notif-label">${n.label}</div><div class="prof-notif-desc">${n.desc}</div></div>${toggle(n.on)}</div>`).join('')}
+          </div>
+        </div>
+        <div class="ep-form-card">
           <div class="prof-section-hdr"><span class="policy-section-title">Security</span></div>
           <div class="prof-field-grid">
             ${fc(iLock,'Password','••••••••••  <span style="font-size:11px;color:var(--orange);cursor:pointer;font-weight:600;margin-left:6px">Change</span>')}
@@ -7704,30 +7723,12 @@ function buildProfTabContent(){
             ${fc(iShield,'Active Sessions','<span style="font-size:12px">1 device &nbsp;<span style="color:var(--orange);cursor:pointer;font-weight:600">Manage</span></span>')}
           </div>
         </div>
-      </div>
-      <div class="prof-right">
-        <div class="ep-form-card prof-stats-card">
-          <div class="prof-section-hdr"><span class="policy-section-title">Activity Overview</span></div>
-          <div class="prof-stats-grid">
-            <div class="prof-stat"><div class="prof-stat-num" style="color:var(--orange)">24</div><div class="prof-stat-lbl">Contracts Managed</div></div>
-            <div class="prof-stat"><div class="prof-stat-num" style="color:#16a34a">8</div><div class="prof-stat-lbl">Policies Configured</div></div>
-            <div class="prof-stat"><div class="prof-stat-num" style="color:#2563eb">142</div><div class="prof-stat-lbl">Actions This Month</div></div>
-            <div class="prof-stat"><div class="prof-stat-num" style="color:#7c3aed">3</div><div class="prof-stat-lbl">Teams Managed</div></div>
-          </div>
-        </div>
-        <div class="ep-form-card">
-          <div class="prof-section-hdr"><span class="policy-section-title">Notification Preferences</span>${iBell}</div>
-          <div class="prof-notif-list">
-            ${notifRows.map(n=>`<div class="prof-notif-row"><div><div class="prof-notif-label">${n.label}</div><div class="prof-notif-desc">${n.desc}</div></div>${toggle(n.on)}</div>`).join('')}
-          </div>
-        </div>
         <div class="ep-form-card">
           <div class="prof-section-hdr"><span class="policy-section-title">Recent Activity</span></div>
           <div class="prof-activity-list">
             ${activities.map((a,i)=>`<div class="prof-activity-row"><div class="prof-activity-dot${i===0?' active':''}"></div><div class="prof-activity-body"><div class="prof-activity-action">${a.action}</div><div class="prof-activity-time">${a.time}</div></div></div>`).join('')}
           </div>
         </div>
-      </div>
     </div>`;
   }
 
@@ -7822,23 +7823,105 @@ function buildProfTabContent(){
   }
 
   else if(profTab==='change-password'){
-    // The standard field: same label, height, border and corner radius as every other form.
-    const inp=(id,label,ph)=>`<div class="ep-form-group"><label class="ep-form-label" for="${id}">${label}</label><input class="ep-form-input" id="${id}" type="password" placeholder="${ph}"></div>`;
-    tabContent=`<div class="ep-form-card">
+    /* Form on the left, the rules on the right. The rules are a checklist
+       that ticks itself off as the new password is typed, rather than one
+       sentence to read and remember - see cpCheck(). */
+    const inp=(id,label,ph,extra)=>`<div class="ep-form-group">
+        <label class="ep-form-label" for="${id}">${label} <span class="req">*</span></label>
+        <div class="cp-input-wrap">
+          <input class="ep-form-input" id="${id}" type="password" placeholder="${ph}" autocomplete="${id==='cp-current'?'current-password':'new-password'}" oninput="cpCheck()">
+          <button type="button" class="cp-eye" title="Show password" aria-label="Show password" onclick="cpEye('${id}',this)">${CP_EYE}</button>
+        </div>${extra||''}
+      </div>`;
+    const rule=(k,l)=>`<li class="cp-rule" data-cp="${k}"><span class="cp-rule-dot">${iCheck}</span>${l}</li>`;
+    tabContent=`<div class="ep-form-card cp-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Change Password</span></div>
-      <div style="display:flex;flex-direction:column;gap:16px;max-width:480px">
-        ${inp('cp-current','Current Password','Enter current password')}
-        ${inp('cp-new','New Password','Enter new password')}
-        ${inp('cp-confirm','Confirm New Password','Re-enter new password')}
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--r-control);font-size:12.5px;color:#15803d">
-          ${iCheck} Password must be at least 8 characters with uppercase, number and special character.
+      <p class="cp-sub">Choose a strong password you don&rsquo;t use anywhere else. You&rsquo;ll stay signed in on this device.</p>
+      <div class="cp-layout">
+        <div class="cp-form">
+          ${inp('cp-current','Current Password','Enter current password')}
+          ${inp('cp-new','New Password','Enter new password',
+            `<div class="cp-meter" id="cp-meter"><div class="cp-meter-bar"><span></span><span></span><span></span><span></span></div><span class="cp-meter-lbl" id="cp-meter-lbl">Enter a password</span></div>`)}
+          ${inp('cp-confirm','Confirm New Password','Re-enter new password',
+            `<div class="cp-match" id="cp-match"></div>`)}
         </div>
-        <button class="ep-save-btn" style="align-self:flex-start">Update Password</button>
+        <aside class="cp-rules">
+          <div class="cp-rules-title">Password requirements</div>
+          <ul>
+            ${rule('len','At least 8 characters')}
+            ${rule('up','One uppercase letter')}
+            ${rule('low','One lowercase letter')}
+            ${rule('num','One number')}
+            ${rule('sym','One special character')}
+            ${rule('diff','Different from current password')}
+          </ul>
+        </aside>
+      </div>
+      <div class="cp-foot">
+        <button class="ep-cancel-btn" onclick="cpReset()">Cancel</button>
+        <button class="ep-save-btn" onclick="cpSubmit()">Update Password</button>
       </div>
     </div>`;
   }
 
   return tabContent;
+}
+
+/* ── Change Password tab ── */
+const CP_EYE='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const CP_EYE_OFF='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function cpVal(id){const el=document.getElementById(id);return el?el.value:'';}
+function cpEye(id,btn){
+  const el=document.getElementById(id);if(!el)return;
+  const show=el.type==='password';
+  el.type=show?'text':'password';
+  btn.innerHTML=show?CP_EYE_OFF:CP_EYE;
+  btn.title=show?'Hide password':'Show password';btn.setAttribute('aria-label',btn.title);
+}
+function cpRules(cur,nw){
+  return {len:nw.length>=8,up:/[A-Z]/.test(nw),low:/[a-z]/.test(nw),num:/\d/.test(nw),
+    sym:/[^A-Za-z0-9]/.test(nw),diff:!!nw&&nw!==cur};
+}
+// Ticks the checklist, fills the meter and says whether the two entries match.
+function cpCheck(){
+  const cur=cpVal('cp-current'),nw=cpVal('cp-new'),cf=cpVal('cp-confirm');
+  const r=cpRules(cur,nw);
+  document.querySelectorAll('.cp-rule').forEach(function(li){li.classList.toggle('is-ok',!!r[li.dataset.cp]);});
+  const met=['len','up','low','num','sym'].filter(function(k){return r[k];}).length;
+  const lvl=!nw?0:met<=2?1:met===3?2:met===4?3:4;
+  const meter=document.getElementById('cp-meter');
+  if(meter){meter.dataset.lvl=lvl;document.getElementById('cp-meter-lbl').textContent=['Enter a password','Weak','Fair','Good','Strong'][lvl];}
+  const m=document.getElementById('cp-match');
+  if(m){
+    m.className='cp-match'+(cf?(cf===nw?' is-ok':' is-bad'):'');
+    m.textContent=cf?(cf===nw?'Passwords match':'Passwords do not match'):'';
+  }
+  document.querySelectorAll('.cp-card .cp-input-wrap.is-err').forEach(function(w){
+    if(w.querySelector('input').value)w.classList.remove('is-err');
+  });
+}
+function cpReset(){
+  ['cp-current','cp-new','cp-confirm'].forEach(function(id){const el=document.getElementById(id);if(el){el.value='';el.type='password';}});
+  document.querySelectorAll('.cp-eye').forEach(function(b){b.innerHTML=CP_EYE;});
+  document.querySelectorAll('.cp-card .is-err').forEach(function(w){w.classList.remove('is-err');});
+  cpCheck();
+}
+function cpSubmit(){
+  const cur=cpVal('cp-current'),nw=cpVal('cp-new'),cf=cpVal('cp-confirm');
+  const empty=['cp-current','cp-new','cp-confirm'].filter(function(id){return !cpVal(id);});
+  empty.forEach(function(id){document.getElementById(id).closest('.cp-input-wrap').classList.add('is-err');});
+  if(empty.length){showToast('Some details are missing','error','Fill in all three password fields.');return;}
+  const r=cpRules(cur,nw);
+  if(!Object.keys(r).every(function(k){return r[k];})){
+    document.getElementById('cp-new').closest('.cp-input-wrap').classList.add('is-err');
+    showToast('Password too weak','error','The new password must meet every requirement listed.');return;
+  }
+  if(nw!==cf){
+    document.getElementById('cp-confirm').closest('.cp-input-wrap').classList.add('is-err');
+    showToast('Passwords do not match','error','Re-enter the new password exactly.');return;
+  }
+  cpReset();
+  showToast('Password updated','success','Your password has been changed.');
 }
 
 // ── COMPANY SETTINGS PAGE ──

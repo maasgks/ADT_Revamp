@@ -63,6 +63,12 @@ function aaChipsHTML(key,list,ph){
     +'<input type="email" id="aa-'+key+'-inp" placeholder="'+ph+'" onkeydown="aaChipKey(event,\''+key+'\')" onblur="aaChipCommit(\''+key+'\')">'
     +'</div>';
 }
+/* The fixed list plus any type the person's policy names, so picking a
+   balance card always lands on an option that exists. */
+function aaLeaveTypeOpts(){
+  const own=typeof lbRows==='function'?lbRows(LB_ME).map(function(r){return r.type;}):[];
+  return AA_LEAVE_TYPES.concat(own.filter(function(t){return AA_LEAVE_TYPES.indexOf(t)<0;}));
+}
 function buildApplyApplicationHTML(){
   if(!aaForm)aaForm=aaBlank();
   const f=aaForm,isLeave=f.type==='Leave'||!f.type,one=f.days==='one';
@@ -72,6 +78,7 @@ function buildApplyApplicationHTML(){
     +'<div class="aa-top"><button class="ep-back" onclick="closeApplyApplication()">'+back+' Back</button></div>'
     +'<h1 class="aa-title">Apply Application</h1>'
     +'<p class="aa-sub">Request leave or time away for approval. Fields marked <span class="req">*</span> are required.</p>'
+    +aaBalStripHTML()   // balance by type, above the form (js/leaves-holidays.js)
 
     +'<section class="ep-form-card">'
       +'<div class="aa-sec-title">Application Details</div>'
@@ -79,7 +86,7 @@ function buildApplyApplicationHTML(){
       +'<div class="ep-form-grid">'
         +aaField('Application Type',true,apCS('aa-type',AA_TYPES,f.type,'Select application type','aaPick'),{key:'type'})
         +aaField('Select Days',false,'<div class="segmented">'+seg('one','One Day')+seg('multi','Multiple Days')+'</div>',{key:'days'})
-        +aaField('Leave Type',true,apCS('aa-leave-type',AA_LEAVE_TYPES,f.leaveType,'Select leave type','aaPick')+aaBalHTML(),{key:'leaveType',hidden:!isLeave})
+        +aaField('Leave Type',true,apCS('aa-leave-type',aaLeaveTypeOpts(),f.leaveType,'Select leave type','aaPick')+aaBalHTML(),{key:'leaveType',hidden:!isLeave})
         +aaField('Leave Hours',false,apCS('aa-hours',AA_HOURS,f.hours,'Select leave hours','aaPick'),{key:'hours',hidden:!one,hint:'A half day counts as 0.5 of your balance.'})
         +aaField(one?'Date':'From',true,'<input type="date" class="ep-form-input" id="aa-from" value="'+f.from+'" onchange="aaSetDate(\'from\',this.value)">',{key:'from'})
         +aaField('To',true,'<input type="date" class="ep-form-input" id="aa-to" value="'+f.to+'" min="'+f.from+'" onchange="aaSetDate(\'to\',this.value)">',{key:'to',hidden:one,err:'Pick an end date on or after the start date.'})

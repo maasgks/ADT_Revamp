@@ -1949,6 +1949,9 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .cs-status-active{color:var(--st-ok-fg);font-weight:600;font-size:13px}
 /* ── MY PROFILE PAGE ── */
 .prof-page{gap:20px}
+/* The profile is a page to read, not a form to fill: it gets the room the
+   form pages' 820px cap (.ep-page in leaves.css) would take away. */
+.ep-page.prof-page{max-width:1200px}
 .prof-hero-card{display:flex;align-items:center;gap:20px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px 28px;flex-wrap:wrap}
 .prof-avatar-wrap{position:relative;flex-shrink:0}
 .prof-avatar{width:72px;height:72px;border-radius:50%;background:var(--ol);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;color:var(--orange);border:3px solid #d1d5db}
@@ -1964,6 +1967,13 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .prof-body{display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:start}
 @media(max-width:900px){.prof-body{grid-template-columns:1fr}}
 .prof-left,.prof-right{display:flex;flex-direction:column;gap:18px}
+/* Basic Details: the cards sit in the grid directly, two to a row, and each
+   pair stretches to the taller of the two - so the left and right cards start
+   and end on the same line instead of drifting apart down the page. */
+.prof-body--rows{align-items:stretch}
+.prof-body--rows>.ep-form-card{margin:0}
+.prof-body--rows .prof-stats-grid{height:calc(100% - 38px);grid-auto-rows:1fr}
+.prof-body--rows .prof-stat{display:flex;flex-direction:column;justify-content:center}
 .prof-section-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
 .prof-section-hdr .policy-section-title{margin-bottom:0}
 .prof-section-hdr svg{color:var(--gray)}
@@ -1973,7 +1983,42 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
    to twice the width of every other field in the profile, so it fills by size
    instead and its fields end up the same width as the ones next door. */
 .prof-field-grid-wide{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
-.prof-field{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--light)}
+/* ── Profile → Change Password ── */
+.cp-sub{margin:-8px 0 18px;font-size:12.5px;color:var(--gray);line-height:1.5}
+.cp-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.cp-form{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cp-form .ep-form-group{margin:0}
+.cp-input-wrap{position:relative}
+.cp-input-wrap .ep-form-input{padding-right:42px}
+.cp-input-wrap.is-err .ep-form-input{border-color:var(--st-bad-fg)}
+.cp-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+  border:none;background:none;border-radius:6px;color:#94a3b8;cursor:pointer}
+.cp-eye:hover{background:var(--light);color:var(--navy)}
+.cp-meter{display:flex;align-items:center;gap:10px;margin-top:8px}
+.cp-meter-bar{flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.cp-meter-bar span{height:4px;border-radius:99px;background:#e5e7eb;transition:background .2s ease}
+.cp-meter-lbl{font-size:11.5px;color:var(--gray);min-width:96px;text-align:right}
+.cp-meter[data-lvl="1"] .cp-meter-bar span:nth-child(-n+1){background:var(--st-bad-fg)}
+.cp-meter[data-lvl="2"] .cp-meter-bar span:nth-child(-n+2){background:var(--st-wait-fg)}
+.cp-meter[data-lvl="3"] .cp-meter-bar span:nth-child(-n+3){background:#65a30d}
+.cp-meter[data-lvl="4"] .cp-meter-bar span{background:var(--st-ok-fg)}
+.cp-meter[data-lvl="1"] .cp-meter-lbl{color:var(--st-bad-fg)}
+.cp-meter[data-lvl="4"] .cp-meter-lbl{color:var(--st-ok-fg)}
+.cp-match{margin-top:6px;font-size:11.5px;min-height:16px}
+.cp-match.is-ok{color:var(--st-ok-fg)}
+.cp-match.is-bad{color:var(--st-bad-fg)}
+.cp-rules{padding:16px 18px;border:1px solid var(--border);border-radius:10px;background:var(--light)}
+.cp-rules-title{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--navy);margin-bottom:12px}
+.cp-rules ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.cp-rule{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--gray);transition:color .15s ease}
+.cp-rule-dot{width:18px;height:18px;border-radius:50%;border:1.5px solid #cbd5e1;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:transparent;transition:all .15s ease}
+.cp-rule-dot svg{width:10px;height:10px;stroke-width:3.5;stroke:transparent}
+.cp-rule.is-ok .cp-rule-dot svg{stroke:#fff}
+.cp-rule.is-ok{color:var(--navy)}
+.cp-rule.is-ok .cp-rule-dot{background:var(--st-ok-fg);border-color:var(--st-ok-fg);color:#fff}
+.cp-foot{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;padding-top:16px;border-top:1px solid var(--border)}
+@media(max-width:800px){.cp-layout{grid-template-columns:1fr}}
+.prof-field{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--light)}
 .prof-field-icon{width:32px;height:32px;border-radius:8px;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gray)}
 .prof-field-body{min-width:0}
 .prof-field-label{font-size:10.5px;font-weight:600;color:var(--gray);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
