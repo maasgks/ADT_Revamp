@@ -184,6 +184,12 @@ function bankTabHTML(rows){
     }).join('')
     +'</tbody></table></div>';
 }
+// Salary Details tab's "Salary Schedule" (Direct + Global employees).
+function salScheduleTableHTML(){
+  return '<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Salary From</th><th>Salary To</th><th>Amount</th>'
+    +'</tr></thead><tbody><tr><td colspan="4" class="csag-td csag-empty">No salary history</td></tr></tbody></table></div>';
+}
 
 function openDeSidebar(id){
   if(deSelectedId!=null&&String(deSelectedId)!==String(id)&&sbLeaveGuard('de',function(){openDeSidebar(id);}))return;
@@ -261,7 +267,6 @@ function renderDeSidebar(){
   }else if(deTab==='attachments'){
     body=attachTabHTML('de',deSelectedId);
   }else if(deTab==='salary-details'){
-    const thS='padding:7px 9px;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;text-align:left';
     body='<div style="margin-bottom:16px">'
         +'<div style="font-size:15px;font-weight:700;color:var(--navy)">Salary Details</div>'
         +'<div style="font-size:12px;color:var(--orange);margin-top:2px">Configure employee payment details</div>'
@@ -306,15 +311,7 @@ function renderDeSidebar(){
       // 5. Salary Schedule history
       +'<div class="ep-form-card" style="margin-bottom:16px">'
         +'<div class="ep-form-title">Salary Schedule</div>'
-        +'<table style="width:100%;border-collapse:collapse">'
-          +'<thead><tr>'
-          +'<th style="'+thS+'">SR. NO</th>'
-          +'<th style="'+thS+'">Salary From</th>'
-          +'<th style="'+thS+'">Salary To</th>'
-          +'<th style="'+thS+'">Amount</th>'
-          +'</tr></thead>'
-          +'<tbody><tr><td colspan="4" style="padding:22px 8px;text-align:center;font-size:12px;color:#9ca3af">No salary history</td></tr></tbody>'
-        +'</table>'
+        +salScheduleTableHTML()
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:10px">'
         +'<button class="ep-cancel-btn">Cancel</button>'
@@ -452,7 +449,6 @@ function renderGeSidebar(){
   }else if(geTab==='attachments'){
     body=attachTabHTML('ge',geSelectedId);
   }else if(geTab==='salary-details'){
-    const thS='padding:7px 9px;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;text-align:left';
     body='<div style="margin-bottom:16px">'
         +'<div style="font-size:15px;font-weight:700;color:var(--navy)">Salary Details</div>'
         +'<div style="font-size:12px;color:var(--orange);margin-top:2px">Configure employee payment details</div>'
@@ -481,9 +477,7 @@ function renderGeSidebar(){
       +'</div>'
       +'<div class="ep-form-card" style="margin-bottom:16px">'
         +'<div class="ep-form-title">Salary Schedule</div>'
-        +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
-        +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">Salary From</th><th style="'+thS+'">Salary To</th><th style="'+thS+'">Amount</th>'
-        +'</tr></thead><tbody><tr><td colspan="4" style="padding:22px 8px;text-align:center;font-size:12px;color:#9ca3af">No salary history</td></tr></tbody></table>'
+        +salScheduleTableHTML()
       +'</div>'
       +'<div style="display:flex;justify-content:flex-end;gap:10px"><button class="ep-cancel-btn">Cancel</button><button class="ep-save-btn">Save</button></div>';
   }else if(geTab==='leaves-holidays'){
@@ -600,30 +594,30 @@ function renderTmSidebar(){
       +fc(iUser,'Created By',v(team.createdBy))+fc(iCal,'Joining Date',v(team.joinDate))
       +'</div>';
   }else if(tmTab==='team-members'){
-    const thS='padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
-    const tdS='padding:10px 10px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9';
     const editIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     const delIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
-    body='<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-      +'<button style="color:var(--orange);background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">+ Add Team Members</button>'
+    const plusIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    const nM=team.membersList.length;
+    body='<div class="att-bar">'
+        +'<span class="att-count">'+nM+' member'+(nM===1?'':'s')+'</span>'
+        +'<div class="att-bar-actions"><button class="att-link">'+plusIco+'Add Team Members</button></div>'
       +'</div>'
-      +'<table style="width:100%;border-collapse:collapse">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">SR. NO</th><th style="'+thS+'">Name</th><th style="'+thS+'">Role</th><th style="'+thS+'">Designation</th><th style="'+thS+'">Action</th>'
+      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Name</th><th>Role</th><th>Designation</th><th class="csag-act">Action</th>'
       +'</tr></thead>'
-      +'<tbody>'+(team.membersList.length
+      +'<tbody>'+(nM
         ?team.membersList.map((m,i)=>'<tr>'
-          +'<td style="'+tdS+';color:#6b7280">'+(i+1)+'</td>'
-          +'<td style="'+tdS+';font-weight:600">'+m.name+'</td>'
-          +'<td style="'+tdS+';color:var(--orange);font-weight:500">'+m.role+'</td>'
-          +'<td style="'+tdS+'">'+(m.desig&&m.desig!=='--'?m.desig:'<span style="color:#9ca3af">--</span>')+'</td>'
-          +'<td style="'+tdS+'"><div style="display:flex;gap:10px;align-items:center">'
-          +'<button style="border:none;background:none;cursor:pointer;color:#64748b;padding:0" title="Edit">'+editIco+'</button>'
-          +'<button style="border:none;background:none;cursor:pointer;color:#b83a3a;padding:0" title="Delete">'+delIco+'</button>'
-          +'</div></td>'
+          +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+          +'<td class="csag-td"><div class="lp-c-main">'+m.name+'</div></td>'
+          +'<td class="csag-td">'+m.role+'</td>'
+          +'<td class="csag-td">'+(m.desig&&m.desig!=='--'?m.desig:'<span style="color:var(--gray)">—</span>')+'</td>'
+          +'<td class="csag-td csag-act">'
+          +'<button class="att-row-btn" title="Edit">'+editIco+'</button>'
+          +'<button class="att-row-btn is-danger" title="Delete">'+delIco+'</button>'
+          +'</td>'
           +'</tr>').join('')
-        :'<tr><td colspan="5" style="padding:28px 10px;text-align:center;font-size:13px;color:#9ca3af">No members assigned</td></tr>')
-      +'</tbody></table>';
+        :'<tr><td colspan="5" class="csag-td csag-empty">No members assigned</td></tr>')
+      +'</tbody></table></div>';
   }else if(tmTab==='history'){
     body=sbHistoryHTML(team);
   }else if(tmTab==='logs'){
@@ -1596,17 +1590,15 @@ function renderPmSidebar(){
   }else if(pmTab==='attachments'){
     body=attachTabHTML('pm',pmSelectedId);
   }else if(pmTab==='timesheets'){
-    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
     const statCard=(label,val,color)=>'<div class="pm-ts-stat"><div class="pm-ts-stat-val" style="color:'+color+'">'+val+'</div><div class="pm-ts-stat-lbl">'+label+'</div></div>';
     body='<div class="pm-ts-stats">'
       +statCard('Total','0','var(--navy)')+statCard('Pending','0','var(--gray)')+statCard('Approved','0','var(--green)')+statCard('Rejected','0','var(--red)')
       +'</div>'
-      +'<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">TIMESHEET</th><th style="'+thS+'">PERIOD</th><th style="'+thS+'">DAYS</th><th style="'+thS+'">TOTAL HOURS</th><th style="'+thS+'">RATE</th><th style="'+thS+'">PAY TYPE</th><th style="'+thS+'">STATUS</th><th style="'+thS+'">ACTIONS</th>'
+      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Timesheet</th><th>Period</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Pay Type</th><th>Status</th><th class="csag-act">Action</th>'
       +'</tr></thead>'
-      +'<tbody><tr><td colspan="8" style="text-align:center;padding:24px;font-size:13px;color:#9ca3af">No timesheet entries for this order.</td></tr></tbody>'
-      +'</table>';
+      +'<tbody><tr><td colspan="8" class="csag-td csag-empty">No timesheet entries for this order.</td></tr></tbody>'
+      +'</table></div>';
   }else if(pmTab==='receivable'){
     const yrOpts=[2026,2025,2024].map(y=>'<option'+(y===2026?' selected':'')+'>'+y+'</option>').join('');
     const plusIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -2254,22 +2246,22 @@ function renderCtSidebar(){
       +cf('Total Monthly Gross Salary',cm.totalMonthlyGross)
       +'</div>';
   }else if(ctTab==='compliance'){
-    const thS='padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--navy);background:#f8fafc;border-bottom:1px solid var(--border)';
-    const tdS='padding:10px 12px;font-size:13px;color:var(--navy);border-bottom:1px solid #f1f5f9';
-    const upIco='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
-    body='<table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">'
-      +'<thead><tr>'
-      +'<th style="'+thS+'">S.NO</th><th style="'+thS+'">Compliance Item</th><th style="'+thS+'">Note</th><th style="'+thS+'">Status</th><th style="'+thS+'">Documents</th><th style="'+thS+'">ACTION</th>'
+    const upIco='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+    const nC=c.complianceItems.length;
+    body='<div class="att-bar"><span class="att-count">'+nC+' item'+(nC===1?'':'s')+'</span></div>'
+      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
+      +'<th>Sr. No</th><th>Compliance Item</th><th>Note</th><th>Status</th><th>Documents</th><th class="csag-act">Action</th>'
       +'</tr></thead>'
-      +'<tbody>'+c.complianceItems.map((ci,i)=>'<tr>'
-        +'<td style="'+tdS+';color:#6b7280">'+(i+1)+'</td>'
-        +'<td style="'+tdS+';font-weight:600">'+ci.item+'</td>'
-        +'<td style="'+tdS+';font-weight:500">'+ci.note+'</td>'
-        +'<td style="'+tdS+'">'+ci.status+'</td>'
-        +'<td style="'+tdS+'"><span style="color:var(--navy);font-size:12px;cursor:pointer">Upload your document</span></td>'
-        +'<td style="'+tdS+'"><button style="border:none;background:none;cursor:pointer;color:var(--navy);padding:0" title="Upload">'+upIco+'</button></td>'
+      +'<tbody>'+(nC?c.complianceItems.map((ci,i)=>'<tr>'
+        +'<td class="csag-td csag-num">'+(i+1)+'</td>'
+        +'<td class="csag-td"><div class="lp-c-main">'+ci.item+'</div></td>'
+        +'<td class="csag-td">'+ci.note+'</td>'
+        +'<td class="csag-td">'+ci.status+'</td>'
+        +'<td class="csag-td csag-src">Upload your document</td>'
+        +'<td class="csag-td csag-act"><button class="att-row-btn" title="Upload">'+upIco+'</button></td>'
         +'</tr>').join('')
-      +'</tbody></table>';
+        :'<tr><td colspan="6" class="csag-td csag-empty">No compliance items.</td></tr>')
+      +'</tbody></table></div>';
   }else if(ctTab==='history'){
     body=sbHistoryHTML(c);
   }else if(ctTab==='logs'){
@@ -7803,28 +7795,23 @@ function buildProfTabContent(){
 
   else if(profTab==='salary-slip'){
     const months=['June 2026','May 2026','April 2026','March 2026','February 2026','January 2026','December 2025','November 2025','October 2025','September 2025','August 2025','July 2025'];
-    const thS='padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px';
-    const rows=months.map((m,i)=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:10px 14px;font-size:13px;color:#6b7280">${i+1}</td>
-      <td style="padding:10px 14px;font-size:13px;font-weight:600;color:var(--navy)">${m}</td>
-      <td style="padding:10px 14px;font-size:13px;color:#374151">Pallavi Parate</td>
-      <td style="padding:10px 14px;font-size:13px;color:#374151">EMP-00211</td>
-      <td style="padding:10px 14px"><span style="background:var(--st-ok-bg);color:var(--st-ok-fg);border:1.5px solid var(--st-ok-bd);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600">Generated</span></td>
-      <td style="padding:10px 14px"><button style="display:flex;align-items:center;gap:5px;background:none;border:1.5px solid var(--border);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer;font-family:inherit">${iDl} Download</button></td>
+    const rows=months.map((m,i)=>`<tr>
+      <td class="csag-td csag-num">${i+1}</td>
+      <td class="csag-td"><div class="lp-c-main">${m}</div></td>
+      <td class="csag-td">Pallavi Parate</td>
+      <td class="csag-td">EMP-00211</td>
+      <td class="csag-td"><span class="lp-status-badge tone-ok">Generated</span></td>
+      <td class="csag-td csag-act"><button class="att-row-btn" title="Download ${m}">${iDl}</button></td>
     </tr>`).join('');
     tabContent=`<div class="ep-form-card">
       <div class="prof-section-hdr"><span class="policy-section-title">Salary Slips</span></div>
-      <table style="width:100%;border-collapse:collapse">
+      <div class="att-bar"><span class="att-count">${months.length} slips</span></div>
+      <div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table">
         <thead><tr>
-          <th style="${thS}">SR</th>
-          <th style="${thS}">Month</th>
-          <th style="${thS}">Employee</th>
-          <th style="${thS}">Employee ID</th>
-          <th style="${thS}">Status</th>
-          <th style="${thS}">Action</th>
+          <th>Sr. No</th><th>Month</th><th>Employee</th><th>Employee ID</th><th>Status</th><th class="csag-act">Action</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-      </table>
+      </table></div>
     </div>`;
   }
 

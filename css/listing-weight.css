@@ -10,10 +10,10 @@
    not items. Buttons keep their own weight. Status pills drop to 500 so the
    status column reads like the rest of the row. */
 :is(.lp-table,.att-table,.csag-table,.lpl-table,.listing-table,.at-table,.at-sb-table,
-    .leave-table,.lb-table,.ax-hist,.hdoc-table) tbody td,
+    .leave-table,.lb-table,.ax-hist,.hdoc-table,.ph-slab-table) tbody td,
 :is(.lp-table,.att-table,.csag-table,.lpl-table,.listing-table,.at-table,.at-sb-table,
-    .leave-table,.lb-table,.ax-hist,.hdoc-table) tbody td :is(div,span,b,strong,a):not(.lp-status-badge):not(button *),
+    .leave-table,.lb-table,.ax-hist,.hdoc-table,.ph-slab-table) tbody td :is(div,span,b,strong,a):not(.lp-status-badge):not(button *),
 .lp-c-main{font-weight:400!important}
 
 :is(.lp-table,.att-table,.csag-table,.lpl-table,.listing-table,.at-table,.at-sb-table,
-    .leave-table,.lb-table,.ax-hist,.hdoc-table) tbody td .lp-status-badge{font-weight:500!important}
+    .leave-table,.lb-table,.ax-hist,.hdoc-table,.ph-slab-table) tbody td .lp-status-badge{font-weight:500!important}

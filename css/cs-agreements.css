@@ -95,3 +95,5 @@
 .csag-modal.is-preview .csag-body>*{flex-shrink:0}
 .csag-modal.is-preview .csag-doc-wrap{flex:1 1 auto;min-height:0;max-height:none}
 .csag-modal.is-preview .adt-doc-page{max-width:620px}
+/* Empty row of any listing drawn on .csag-table. */
+.csag-table .csag-td.csag-empty{text-align:center;color:var(--gray);padding:28px 12px;white-space:normal}

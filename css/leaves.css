@@ -1119,6 +1119,8 @@ tr.lp-row-selected>td:first-child,
 .sb-hist .sb-hist-time{color:var(--gray)}
 .sb-hist .sb-hist-old{color:#94a3b8}
 .sb-hist .sb-hist-new{font-weight:600}
+/* Headers read like every other listing in the panel (.att-table / .csag-table). */
+.sb-hist th{font-size:10.5px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px}
 /* ── Workflow step states (wfTimelineHTML) ──
    Done: the green dot and a green line on to the next step. In progress: the
    blue dot, a blue card edge and an "In progress" chip. Not started: a hollow
