@@ -1548,8 +1548,9 @@ function renderPmSidebar(){
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Company ID',s.companyId)+fc(iDoc,'Company Name',s.companyName)
       +fc(iId,'Contact Person ID',s.contactPersonId)+fc(iUser,'Contact Person Name',s.contactPersonName)
-      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Days',s.days)
-      +fc(iDollar,'Rate',s.rate)+fc(iDollar,'Total Amount',s.totalAmount)
+      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Payment Cycle',tsbCycleControlHTML(p))
+      +fc(iDollar,'Rate',s.rate+tsbRateNoteHTML(p))+fc(iCal,'Days',s.days)
+      +fc(iDollar,'Total Amount',s.totalAmount)
       +fc(iCal,'Contract Period',s.contractPeriod)+fc(iPin,'Work Location',s.workLocation)
       +fc(iCal,'Timesheet Period Date',s.tsPeriodDate)+fc(iDoc,'Payment Term',s.paymentTerm)
       +'</div>';
@@ -1593,15 +1594,7 @@ function renderPmSidebar(){
   }else if(pmTab==='attachments'){
     body=attachTabHTML('pm',pmSelectedId);
   }else if(pmTab==='timesheets'){
-    const statCard=(label,val,color)=>'<div class="pm-ts-stat"><div class="pm-ts-stat-val" style="color:'+color+'">'+val+'</div><div class="pm-ts-stat-lbl">'+label+'</div></div>';
-    body='<div class="pm-ts-stats">'
-      +statCard('Total','0','var(--navy)')+statCard('Pending','0','var(--gray)')+statCard('Approved','0','var(--green)')+statCard('Rejected','0','var(--red)')
-      +'</div>'
-      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
-      +'<th>Timesheet</th><th>Period</th><th>Days</th><th>Total Hours</th><th>Rate</th><th>Pay Type</th><th>Status</th><th class="csag-act">Action</th>'
-      +'</tr></thead>'
-      +'<tbody><tr><td colspan="8" class="csag-td csag-empty">No timesheet entries for this order.</td></tr></tbody>'
-      +'</table></div>';
+    body=tsbApprovalTabHTML(p);   // js/ts-billing.js
   }else if(pmTab==='receivable'){
     const yrOpts=[2026,2025,2024].map(y=>'<option'+(y===2026?' selected':'')+'>'+y+'</option>').join('');
     const plusIco='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
@@ -1612,7 +1605,7 @@ function renderPmSidebar(){
       +'</div>'
       +'<button onclick="startAddInvoice()" style="border:none;background:none;color:var(--orange);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit">'+plusIco+' Create Invoice</button>'
       +'</div>'
-      +'<p style="font-size:13px;color:#9ca3af">No receivables found.</p>';
+      +tsbReceivableHTML(p);   // invoice drafts from approved timesheets - js/ts-billing.js
   }else if(pmTab==='history'){
     body=sbHistoryHTML(p);
   }else if(pmTab==='logs'){
@@ -6533,12 +6526,22 @@ function buildTsSidebarHTML(dateStr) {
      it. A day being filled in swaps the two read-only sections for the form —
      the panel does not grow a second place where a day is described. */
   const wk = tsWeekOf(dateStr);
-  const wkStatus = tsWeekStatus(tsMonth.year, tsMonth.month, wk);
+  const unit = tsUnitOf(dateStr);
+  const wkStatus = tsUnitStatus(unit);
+  const wkMeta = tsWeekMeta[unit.key] || {};
   const editing = !!(tsEdit && tsEdit.date === dateStr);
   const editable = tsDayEditable(dateStr);
-  const chip = wkStatus === 'submitted'
-    ? '<span class="ts-wk-chip is-sent">Submitted</span>'
-    : wkStatus === 'locked' ? '<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>' : '';
+  const chip = tsWeekChipHTML(unit, wkStatus);
+  /* A week reopened for correction says so above the controls - and a week
+     sent back says WHY, in the approver's words, since that is the thing to
+     fix. Both are editable, so they sit with Edit entry rather than replace it. */
+  const wkNote = wkStatus === 'rejected'
+    ? '<div class="ts-sb-wknote is-bad"><b>Week '+wk+' was sent back.</b>'
+      + (wkMeta.reason ? ' “'+sbEsc(wkMeta.reason)+'”' : '')
+      + ' Correct it, re-lock it, and resubmit just this week.</div>'
+    : wkStatus === 'unlocked'
+    ? '<div class="ts-sb-wknote"><b>Week '+wk+' is unlocked for correction.</b> Re-lock it from the week column when it is right.</div>'
+    : '';
 
   /* WORK DESCRIPTION, only on a day with work on it. A leave day or an empty
      day has nothing to describe, so it is not invited to. */
@@ -6581,15 +6584,21 @@ function buildTsSidebarHTML(dateStr) {
       ? arBlock
       : '<button class="ts-sb-btn is-wide is-primary" onclick="tsStartEdit(\''+dateStr+'\')">'
         + (att ? TS_ICO.pen+'Edit entry' : TS_ICO.plus+'Add entry')+'</button>';
-  } else if (wkStatus !== 'open') {
+  } else if (!TS_EDITABLE[wkStatus]) {
     // Locked is not an error, so it is stated rather than warned about — and it
-    // names the way back out, which lives on the week rail.
+    // names the way back out, if this person has one.
+    const how = tsUnitAuto(unit) ? ' locked automatically after '+tsFmtDay(tsUnitCutoff(unit))+'.' : ' is locked.';
     actions = '<div class="ts-sb-lockmsg">'+TS_ICO.lock
       + (wkStatus === 'submitted'
-        ? '<span>Week '+wk+' has been submitted for approval. Its days are final.</span>'
-        : '<span>Week '+wk+' is locked. Unlock it from the week column to edit this day.</span>')
+        ? '<span>Week '+wk+' has been submitted for approval'+(wkMeta.sub?' ('+wkMeta.sub+')':'')+'. Its days are read-only.</span>'
+        : wkStatus === 'approved'
+        ? '<span>Week '+wk+' has been approved. Its days are final.</span>'
+        : '<span>Week '+wk+how+' '+(tsCanUnlock()
+            ? 'Unlock it from the week column to correct this day.'
+            : 'HR or a manager can unlock it for correction.')+'</span>')
       + '</div>';
   }
+  actions = wkNote + actions;
 
   return '<div class="ts-sb-head">'
     + '<span class="ts-sb-title">Work Details</span>'
@@ -6656,31 +6665,75 @@ function buildTsMonthPickerHTML() {
    locking is a statement ABOUT those seven days and nowhere else on the page
    is a week addressable.
 
-   Three states, and each shows only what is true of it: an open week can be
-   locked, a locked one can be submitted or let go again, a submitted one is
-   done and says so. Somebody looking at another employee's sheet gets the
-   state and none of the controls. */
+   Each state shows only what is true of it - the moves are the legal ones and
+   nothing else:
+     open      a finished week can be locked (in order, see tsEarlierOpen)
+     locked    can be ticked for submission; HR / a manager can unlock it
+     unlocked  opened for correction; re-locked once it is right
+     submitted waiting on the approver - nothing to do here
+     approved  final, and billed from
+     rejected  sent back with a reason; corrected, re-locked, resubmitted alone
+   Somebody looking at another employee's sheet gets the state, plus unlock /
+   re-lock if their role allows it. */
+function tsWeekChipHTML(u,st){
+  const meta=tsWeekMeta[u.key]||{};
+  const c={
+    locked:['is-locked',TS_ICO.lock+'Locked',tsUnitAuto(u)?'Locked automatically after '+tsFmtDay(tsUnitCutoff(u)):'Locked by hand'],
+    unlocked:['is-unlocked',TS_ICO.unlock+'Unlocked','Unlocked for correction'],
+    submitted:['is-sent','Submitted','Waiting on approval'+(meta.sub?' · '+meta.sub:'')],
+    approved:['is-ok','Approved','Approved'+(meta.sub?' · '+meta.sub:'')],
+    rejected:['is-bad','Rejected','Sent back'+(meta.reason?': '+meta.reason:'')]
+  }[st];
+  return c?'<span class="ts-wk-chip '+c[0]+'" title="'+attrSafe(c[2])+'">'+c[1]+'</span>':'';
+}
 function tsWeekRailHTML(w){
-  const y=tsMonth.year,m=tsMonth.month,st=tsWeekStatus(y,m,w);
-  if(st==='submitted')return '<span class="ts-wk-chip is-sent">Submitted</span>';
-  if(tsReadOnly)return st==='locked'?'<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>':'';
-  if(st==='locked'){
-    return '<div class="ts-wk-line">'
-      +'<span class="ts-wk-chip is-locked">'+TS_ICO.lock+'Locked</span>'
-      +'<button class="ts-wk-icon" onclick="tsUnlockWeek('+w+')" title="Unlock week '+w+'">'+TS_ICO.unlock+'</button>'
-      +'</div>'
-      +'<button class="ts-wk-btn is-primary" onclick="tsSubmitWeek('+w+')" title="Submit week '+w+' for approval">Submit</button>';
+  const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
+  const own=!tsReadOnly,admin=tsCanUnlock(),done=tsWeekStartable(y,m,w);
+  const chip=tsWeekChipHTML(u,st);
+  if(st==='open'){
+    // A week still being worked has nothing to close off yet.
+    if(!own||!done)return '';
+    return '<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock '+tsUnitRange(u)
+      +' now. Left alone it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.">'+TS_ICO.lock+'Lock</button>';
   }
-  // A week that has not started yet has nothing to close off.
-  if(!tsWeekStartable(y,m,w))return '';
-  return '<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock week '+w+' so it can be submitted">'
-    +TS_ICO.lock+'Lock</button>';
+  if(st==='locked'){
+    return '<div class="ts-wk-line">'+chip
+        +(admin?'<button class="ts-wk-icon" onclick="tsUnlockWeek('+w+')" title="Unlock week '+w+' for correction">'+TS_ICO.unlock+'</button>':'')
+      +'</div>'
+      +(tsUnitPickable(u)
+        ?'<label class="ts-wk-pick" title="'+(tsUnitSent(u)?'Resubmit just this week':'Include this week in the submission')+'">'
+          +'<input type="checkbox"'+(tsSel[u.key]?' checked':'')+' onchange="tsToggleSel(\''+u.key+'\','+y+','+m+','+w+')">'
+          +(tsUnitSent(u)?'Resubmit':'Select')+'</label>'
+        :'');
+  }
+  if(st==='unlocked'||st==='rejected'){
+    return chip+((own||admin)&&done
+      ?'<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock week '+w+' again once it is corrected">'+TS_ICO.lock+'Re-lock</button>'
+      :'');
+  }
+  return chip;
+}
+/* Hours over the records a filter keeps, split into regular and overtime by
+   the shift Attendance Settings defines (dsShift). See the Stats note below. */
+function tsHourStats(keep){
+  const s = dsShift(), shift = Math.max(0, (s.end - s.start) / 60);
+  let total = 0, ot = 0, days = 0;
+  Object.keys(tsAttendance).forEach(function(k){
+    const a = tsAttendance[k];
+    if (!keep(k) || !a || a.status !== 'present') return;
+    const h = parseFloat(a.hours) || 0;
+    const off = typeof arNonWorkingDay === 'function' && arNonWorkingDay(k);
+    total += h; days++;
+    ot += off ? h : Math.max(0, h - shift);
+  });
+  return {total: total, ot: ot, working: total - ot, days: days, shift: shift};
 }
 function buildMyTimesheetHTML(viewingOther) {
   // Somebody else's sheet is a record to read, not one to fill in.
   tsReadOnly = !!viewingOther;
   const emp = (viewingOther && atViewedEmp) ? atViewedEmp : tsEmp;
   const y = tsMonth.year, m = tsMonth.month;
+  const cycle = tsCycle();          // Weekly | Monthly, from the Sales Order
   const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const mShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const mName = mNames[m];
@@ -6696,12 +6749,8 @@ function buildMyTimesheetHTML(viewingOther) {
   let startDow = firstDay.getDay();
   const monOff = (startDow === 0) ? 6 : startDow - 1;
 
-  // Stats calc
   // Stats follow the date-range filter — a filter the tiles ignore is a filter
-  // that lies about what you are looking at.
-  const attVals = Object.keys(tsAttendance).filter(tsInRange).map(k => tsAttendance[k]);
-  const presentCount = attVals.filter(a => a.status === 'present').length;
-  const totalHoursNum = attVals.filter(a => a.status === 'present').reduce((s, a) => s + parseFloat(a.hours), 0);
+  // that lies about what you are looking at. Worked out under ── Stats ──.
 
   // ── Filter bar ──
   const filterBar = '<div class="ts-filter-bar">'
@@ -6738,11 +6787,30 @@ function buildMyTimesheetHTML(viewingOther) {
   ).filter(function(v,i,arr){return arr.indexOf(v)===i;}).filter(tsInRange));
 
   // ── Stats ──
+  /* EVERY TILE IS ARITHMETIC ON THE SAVED RECORDS, so a Save changes them on
+     the repaint that follows it - nothing waits for the week to be locked.
+     "Total Working Hours" used to print a count of DAYS under an hours label,
+     and Overtime was a constant 0h. Now:
+       Total Hours          every hour logged in the range
+       Overtime             hours past the shift on a working day, plus every
+                            hour worked on a weekly off or holiday
+       Total Working Hours  the two subtracted - the regular hours
+     "vs last month" compares against the whole of the previous month. */
+  const prevY = m === 0 ? y - 1 : y, prevM = m === 0 ? 11 : m - 1;
+  const prevSpan = tsMonthSpan(prevY, prevM);
+  const cur = tsHourStats(function(k){ return tsInRange(k); });
+  const prev = tsHourStats(function(k){ return k >= prevSpan.from && k <= prevSpan.to; });
+  const prevLeaves = dsMonthTotals((function(){var out=[],dim=new Date(prevY,prevM+1,0).getDate();
+    for(var d=1;d<=dim;d++)out.push(prevY+'-'+tsPad(prevM+1)+'-'+tsPad(d));return out;})()).leaves;
+  const vs = function(a, b, unit){
+    const d = a - b, txt = (d > 0 ? '+' : d < 0 ? '−' : '+') + (unit === 'h' ? Math.abs(d).toFixed(1) + 'h' : Math.abs(d) + (Math.abs(d) === 1 ? ' day' : ' days'));
+    return '<div class="ts-stat-vs '+(d > 0 ? 'pos' : 'neu')+'">'+txt+' vs last month</div>';
+  };
   const statsHtml = '<div class="ts-stats">'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+presentCount+'</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs pos">+'+presentCount+' days vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">'+dsTotals.leaves+'</div><div class="ts-stat-sub">'+(dsTotals.leaves?'Approved absences':'No leaves taken')+'</div><div class="ts-stat-vs neu">+0 days vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+totalHoursNum.toFixed(0)+'h</div><div class="ts-stat-sub">8h average/day</div><div class="ts-stat-vs pos">+0% vs last month</div></div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">0h</div><div class="ts-stat-sub">'+mName+' '+y+'</div><div class="ts-stat-vs neu">+0h vs last month</div></div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+cur.working.toFixed(1)+'h</div><div class="ts-stat-sub">'+cur.days+' day'+(cur.days===1?'':'s')+' worked · '+mName+' '+y+'</div>'+vs(cur.working, prev.working, 'h')+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">'+dsTotals.leaves+'</div><div class="ts-stat-sub">'+(dsTotals.leaves?'Approved absences':'No leaves taken')+'</div>'+vs(dsTotals.leaves, prevLeaves, 'd')+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+cur.total.toFixed(1)+'h</div><div class="ts-stat-sub">'+(cur.days?(cur.total/cur.days).toFixed(1)+'h average/day':'No hours logged')+'</div>'+vs(cur.total, prev.total, 'h')+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">'+cur.ot.toFixed(1)+'h</div><div class="ts-stat-sub">Past the '+cur.shift.toFixed(0)+'h shift, or on an off day</div>'+vs(cur.ot, prev.ot, 'h')+'</div>'
     + '</div>';
 
   // ── Calendar ──
@@ -6763,9 +6831,23 @@ function buildMyTimesheetHTML(viewingOther) {
       const a = tsAttendance[ds];
       if (a && a.status === 'present') wkHours += parseFloat(a.hours);
     }
+    /* On Weekly billing a row at either end of the month can be half of a
+       week that carries on in the next (or began in the last) month. The grid
+       still draws only this month's days - the rest are not repeated here -
+       but the rail says where the billing week really runs, because Lock
+       and Submit act on all seven days. */
+    const unit = tsUnit(y, m, w+1);
+    const uFirst = unit.dates[0], uLast = unit.dates[unit.dates.length-1];
+    const mKey = y+'-'+String(m+1).padStart(2,'0');
+    const spanTxt = uLast.slice(0,7) !== mKey ? 'to '+tsUnitRange(unit).split(' – ')[1]
+      : uFirst.slice(0,7) !== mKey ? 'from '+tsUnitRange(unit).split(' – ')[0] : '';
+    // A locked week's empty total reads 0, not a dash: the week is settled and
+    // nothing was logged. It is a display value - nothing is written.
+    const wkLocked = !TS_EDITABLE[tsUnitStatus(unit)];
     calRows += '<div class="ts-cal-row">';
     calRows += '<div class="ts-week-cell"><span class="ts-wk-label">Week '+(w+1)+'</span>'
-      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':'&mdash;')+'</span>'
+      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
+      + (spanTxt ? '<span class="ts-wk-span" title="This billing week runs '+tsUnitRange(unit)+'">'+spanTxt+'</span>' : '')
       + tsWeekRailHTML(w+1)
       + '</div>';
     for (let col = 0; col < 7; col++) {
@@ -6858,6 +6940,11 @@ function buildMyTimesheetHTML(viewingOther) {
           ? '<span class="ts-day-pill closed" title="'+attrSafe(closed.label)+'">'+closed.label+'</span>'
           : '<span class="ts-day-pill absent">Absent</span>';
       }
+      /* LOCKED, AND NOTHING LOGGED: the hours read 0 rather than blank, so a
+         settled week has a figure in every box. Display only - no record is
+         created, and it is greyed so it never reads as entered time. */
+      if (dayLocked && !isFuture && (!att || att.status === 'absent'))
+        body = '<span class="ts-day-hrs is-zero" title="No hours recorded">0.00h</span>' + body;
       // Claim, or the claim's status, on a day the calendar says is closed.
       if (inRange && !isFuture) body += arCellHTML(dateStr);
 
@@ -6877,7 +6964,12 @@ function buildMyTimesheetHTML(viewingOther) {
 
   const calHtml = '<div class="ts-cal-card">'
     + '<div class="ts-cal-head">'
-    + '<div class="ts-cal-title">'+mName+' '+y+' <span class="ts-inprog">In Progress</span>'+arHeaderChipHTML()+'</div>'
+    + '<div class="ts-cal-title">'+mName+' '+y+' <span class="ts-inprog">In Progress</span>'+arHeaderChipHTML()
+      /* Which way this sheet is billed decides what Lock and Submit act on, so
+         it is named where the grid starts. It is set on the Sales Order, not
+         here - the chip says where. */
+      + (tsOrder() ? '<span class="ts-cycle-chip" title="Set on Sales Order #'+tsOrder().orderId+' › Sales Details › Payment Cycle">'+cycle+' billing · Order #'+tsOrder().orderId+'</span>' : '')
+      + '</div>'
     /* The header carries the month's totals and the FOOT carries the key. The
        four-item legend used to sit up here beside the month name, which put
        the explanation of the grid above the grid and left no room to say what
@@ -6898,19 +6990,35 @@ function buildMyTimesheetHTML(viewingOther) {
       + '</div>'
     : '';
 
-  /* The footer submits the weeks that are ready, so it says how many that is.
-     It used to be a button with no handler under a grid with no lock. */
-  let lockedCount=0,sentCount=0;
-  for(let wi=1;wi<=totalWeeks;wi++){
-    const st=tsWeekStatus(y,m,wi);
-    if(st==='locked')lockedCount++;else if(st==='submitted')sentCount++;
+  /* THE FOOTER FOLLOWS THE PAYMENT CYCLE.
+     Weekly  - each locked week is ticked in its own rail and goes as its own
+               period; the footer counts the ticks.
+     Monthly - one "Select Entire Month" box and one Submit. The box only ticks
+               once every week of the month is locked, and when it cannot it
+               says which weeks are holding it up. A week sent back and
+               corrected is ticked on its own ("Resubmit") and goes alone. */
+  const tally={};
+  for(let wi=1;wi<=totalWeeks;wi++){const st=tsWeekStatus(y,m,wi);tally[st]=(tally[st]||0)+1;}
+  const picked=Object.keys(tsSel).length;
+  const tallyTxt=['submitted','approved','rejected'].filter(function(k){return tally[k];})
+    .map(function(k){return tally[k]+' '+k;}).join(' · ');
+  let footLead='';
+  if(!tsReadOnly&&cycle==='Monthly'){
+    const mc=tsMonthCheck(y,m);
+    footLead='<label class="ts-month-pick'+(mc.ok?'':' is-off')+'" title="'+attrSafe(mc.ok?'Submit all '+totalWeeks+' weeks of '+mName+' as one period':mc.reason)+'">'
+      +'<input type="checkbox"'+(tsMonthSel&&mc.ok?' checked':'')+(mc.ok?'':' disabled')+' onchange="tsToggleMonthSel()">'
+      +'<span>Select Entire Month</span></label>';
+    footLead+='<span class="ts-foot-note">'
+      +(mc.ok?(tsMonthSel?mName+' '+y+' · '+totalWeeks+' weeks selected':'Every week is locked — '+mName+' can be submitted')
+        :mc.reason)
+      +(picked?' · '+picked+' corrected week'+(picked===1?'':'s')+' to resubmit':'')
+      +(tallyTxt?' · '+tallyTxt:'')+'</span>';
+  }else if(!tsReadOnly){
+    footLead='<span class="ts-foot-note">'
+      +(picked?picked+' week'+(picked===1?'':'s')+' selected':(tally.locked?'Tick a locked week to submit it':'Lock a finished week to submit it'))
+      +(tallyTxt?' · '+tallyTxt:'')+'</span>';
   }
-  const footNote = tsReadOnly ? '' : '<span class="ts-foot-note">'
-    + (lockedCount
-      ? lockedCount+' week'+(lockedCount===1?'':'s')+' locked and ready to submit'
-      : 'Lock a week to submit it for approval')
-    + (sentCount?' · '+sentCount+' already submitted':'')
-    + '</span>';
+  const footNote = footLead;
 
   const backBar = viewingOther
     ? '<div class="ts-back-bar"><button class="ep-back" onclick="atBackToAllTimesheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to All Timesheet</button></div>'
@@ -6923,7 +7031,7 @@ function buildMyTimesheetHTML(viewingOther) {
     + statsHtml
     + calHtml
     + '<div class="ts-footer">'+footNote
-      +'<button class="ts-submit-btn" onclick="tsSubmitLockedWeeks()">Submit for Approval</button></div>'
+      +(tsReadOnly?'':'<button class="ts-submit-btn" onclick="tsSubmitLockedWeeks()">Submit for Approval</button>')+'</div>'
     + '</div>'
     + overlayHTML;
 }

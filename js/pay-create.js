@@ -140,6 +140,9 @@ function buildCreateInvoiceModalHTML(){
       +apCD('pm-new-end','','Select date')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Rate Type <span class="req">*</span></label>'
       +customSelect('pm-new-rate-type','Monthly',['Monthly','Daily','Hourly','Fixed'],'Select Rate Type')+'</div>'
+    // How approved timesheets on this order are billed - see js/ts-billing.js.
+    +'<div class="ep-form-group"><label class="ep-form-label">Payment Cycle <span class="req">*</span></label>'
+      +customSelect('pm-new-cycle','Monthly',['Weekly','Monthly'],'Select Payment Cycle')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Amount <span class="req">*</span></label>'
       +'<input type="number" min="0" step="0.01" class="ep-form-input" id="pm-new-amount" placeholder="In the country\'s currency"></div>'
     +'</div>'
@@ -155,6 +158,7 @@ function submitAddInvoice(){
   const name=v('pm-new-name'),company=v('pm-new-company');
   const type=getCustomSelectValue('pm-new-type'),country=getCustomSelectValue('pm-new-country');
   const rateType=getCustomSelectValue('pm-new-rate-type')||'Monthly';
+  const cycle=getCustomSelectValue('pm-new-cycle')==='Weekly'?'Weekly':'Monthly';
   const startIso=getCDValue('pm-new-start'),endIso=getCDValue('pm-new-end');
   const amount=parseFloat(v('pm-new-amount'));
   if(!name)return payFlash('Please enter the Worker Name');
@@ -181,7 +185,8 @@ function submitAddInvoice(){
     workingCountry:country,orderCategory:'international',
     emp:{empId:'—',name:name,email:'—',mobile:'—',status:'Pending Onboarding',createdOn:s.date+' | '+s.time},
     sales:{companyId:'—',companyName:company,contactPersonId:'—',contactPersonName:CURRENT_USER,rateType:rateType,
-      days:'0',rate:money,totalAmount:money,contractPeriod:String(days),workLocation:country,tsPeriodDate:'—',paymentTerm:'0'},
+      days:'0',rate:money,totalAmount:money,contractPeriod:String(days),workLocation:country,tsPeriodDate:'—',paymentTerm:'0',
+      paymentCycle:cycle,currency:cur,rateSchedule:[{from:startIso,amount:amount}]},
     user:{
       company:{userId:'—',concernPersonName:CURRENT_USER,companyName:company,firstName:'—',lastName:'—',email:'—',mobile:'—',altMobile:'—',website:'—',address:'—'},
       concern:{key:'—',name:CURRENT_USER,mobile:'—',email:'—',date:s.date+' | '+s.time,createBy:CURRENT_USER,address:'—'}

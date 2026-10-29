@@ -1629,10 +1629,12 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-cal-legend{display:flex;align-items:center;gap:14px}
 .ts-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);font-weight:500}
 .ts-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ts-col-hdrs{display:grid;grid-template-columns:92px repeat(5,1fr) 84px 84px;background:var(--light);border-bottom:1px solid var(--border)}
+/* Seven equal day columns. SAT and SUN used to be a fixed 84px against 1fr for
+   the weekdays, so weekend boxes came out narrower than the rest of the row. */
+.ts-col-hdrs{display:grid;grid-template-columns:92px repeat(7,minmax(0,1fr));background:var(--light);border-bottom:1px solid var(--border)}
 .ts-col-hdr{padding:9px 10px;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--gray);text-align:center}
 .ts-col-hdr.we{color:#d97706;background:rgba(254,243,226,.6)}
-.ts-cal-row{display:grid;grid-template-columns:92px repeat(5,1fr) 84px 84px;border-bottom:1px solid var(--border)}
+.ts-cal-row{display:grid;grid-template-columns:92px repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border)}
 .ts-cal-row:last-child{border-bottom:none}
 .ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 6px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}

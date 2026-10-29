@@ -62,6 +62,9 @@
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
 <link rel="stylesheet" href="css/timesheet-calendar.css">
+<!-- Timesheet billing: week lock states, submission, approval, invoice drafts.
+     After timesheet-calendar.css so the rail chips win on load order. -->
+<link rel="stylesheet" href="css/ts-billing.css">
 <!-- LAST: settles control height and button shape across every creation form,
      popup and page alike. Must win over the per-screen sheets above. -->
 <link rel="stylesheet" href="css/form-system.css">
@@ -2244,6 +2247,9 @@
 <!-- All Timesheet Salary tab + payslip. Reads atPeriod/atEmp (pages.js, core.js)
      and payheadsData for the PF / PT slabs. -->
 <script src="js/at-salary.js"></script>
+<!-- Timesheet submit / approve / invoice (Sales Order Timesheets + Receivable
+     tabs). After at-salary.js: the invoice reuses its AT_COMPANY and .psl look. -->
+<script src="js/ts-billing.js"></script>
 <script src="js/apply-application.js"></script>
 <!-- After pages.js (it calls apCD, showToast and aiGenCommercial) and before
      renderer.js, which dispatches contract-immigration and contract-contractor

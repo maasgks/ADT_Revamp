@@ -3941,9 +3941,16 @@ const alLogsData={
 let alSelectedId=null,alTab='basic-details';
 const paymentsData=[
   {id:1,orderId:'1116',name:'TestEmp Antar',amountDue:'INR 0.00',type:'EOR - Employee',orderStatus:'Onboarding',invoiceStatus:'Paid',
-   key:'1116',dealId:'94130',entityName:'Closedhi',addedFrom:'agency',createdTime:'02 Jun 2026 | 10:43 am',courseId:'2981',courseName:'JIRA',lastUpdated:'--',startFrom:'01 Jun 2026',endTo:'01 Aug 2026',workingCountry:'Belgium',orderCategory:'international',
+   key:'1116',dealId:'94130',entityName:'Closedhi',addedFrom:'agency',createdTime:'02 Jun 2026 | 10:43 am',courseId:'2981',courseName:'JIRA',lastUpdated:'--',startFrom:'01 May 2026',endTo:'01 Aug 2026',workingCountry:'Belgium',orderCategory:'international',
    emp:{empId:'8691456',name:'TestEmp Antar',email:'antar@testemp.com',mobile:'+91 9999999996',status:'Pending Onboarding',createdOn:'01 Jun 2026 | 02:54 pm'},
-   sales:{companyId:'27659',companyName:'Closedhi',contactPersonId:'46518',contactPersonName:'shaun test1',rateType:'Monthly',days:'0',rate:'INR 1,00,000.00',totalAmount:'INR 1,00,000.00',contractPeriod:'61',workLocation:'Belgium',tsPeriodDate:'—',paymentTerm:'0'},
+   sales:{companyId:'27659',companyName:'Closedhi',contactPersonId:'46518',contactPersonName:'shaun test1',rateType:'Monthly',days:'0',rate:'INR 1,00,000.00',totalAmount:'INR 1,00,000.00',contractPeriod:'92',workLocation:'Belgium',tsPeriodDate:'—',paymentTerm:'0',
+     /* How approved timesheets are billed - one invoice per week, or one per
+        month. My Timesheet reads it (tsCycle) to decide what is locked and
+        submitted as a unit; js/ts-billing.js reads it to build invoice drafts.
+        The rate is revised on Thursday 18 Jun, so the week of 15-21 Jun is a
+        Weekly period that crosses a rate change. */
+     paymentCycle:'Weekly',currency:'INR',
+     rateSchedule:[{from:'2026-01-01',amount:95000},{from:'2026-06-18',amount:100000}]},
    user:{
      company:{userId:'27659',concernPersonName:'shaun test1',companyName:'Closedhi',firstName:'shaun',lastName:'test1',email:'shaun.varghese@opendhi.com',mobile:'+91 9949860707',altMobile:'—',website:'—',address:'Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India'},
      concern:{key:'46518',name:'shaun test1',mobile:'+91 9949860707',email:'shaun.varghese@opendhi.com',date:'12 Apr 2026 | 08:53 pm',createBy:'shaun test1',address:'—'}
@@ -3952,7 +3959,8 @@ const paymentsData=[
   {id:2,orderId:'1114',name:'Elon Musk',amountDue:'EUR 0.00',type:'EOR - Employee',orderStatus:'Onboarding',invoiceStatus:'Unpaid',
    key:'1114',dealId:'94128',entityName:'SpaceX EOR Ltd.',addedFrom:'agency',createdTime:'01 Jun 2026 | 09:00 am',courseId:'2975',courseName:'Python',lastUpdated:'--',startFrom:'01 Jun 2026',endTo:'31 Dec 2026',workingCountry:'USA',orderCategory:'international',
    emp:{empId:'8691455',name:'Elon Musk',email:'elon@spacex.com',mobile:'+1 555 000 0000',status:'Pending Onboarding',createdOn:'01 Jun 2026 | 09:30 am'},
-   sales:{companyId:'27660',companyName:'SpaceX EOR Ltd.',contactPersonId:'46520',contactPersonName:'Gwynne Shotwell',rateType:'Monthly',days:'0',rate:'EUR 8,500.00',totalAmount:'EUR 8,500.00',contractPeriod:'184',workLocation:'USA',tsPeriodDate:'—',paymentTerm:'0'},
+   sales:{companyId:'27660',companyName:'SpaceX EOR Ltd.',contactPersonId:'46520',contactPersonName:'Gwynne Shotwell',rateType:'Monthly',days:'0',rate:'EUR 8,500.00',totalAmount:'EUR 8,500.00',contractPeriod:'184',workLocation:'USA',tsPeriodDate:'—',paymentTerm:'0',
+     paymentCycle:'Monthly',currency:'EUR',rateSchedule:[{from:'2026-01-01',amount:8500}]},
    user:{
      company:{userId:'27660',concernPersonName:'Gwynne Shotwell',companyName:'SpaceX EOR Ltd.',firstName:'Gwynne',lastName:'Shotwell',email:'gwynne@spacex.com',mobile:'+1 555 000 0001',altMobile:'—',website:'—',address:'1 Rocket Rd, Hawthorne, CA 90250, United States'},
      concern:{key:'46520',name:'Gwynne Shotwell',mobile:'+1 555 000 0001',email:'gwynne@spacex.com',date:'03 Jun 2026 | 11:20 am',createBy:'Gwynne Shotwell',address:'—'}
@@ -4795,7 +4803,7 @@ const chatsData=[
       key:inv,dealId:'—',entityName:entity,addedFrom:'billing',createdTime:date+' 2026 | 10:00 am',courseId:'—',courseName:'—',lastUpdated:'--',
       startFrom:date+' 2026',endTo:'—',workingCountry:country,orderCategory:'international',
       emp:{empId:'—',name:'—',email:'—',mobile:'—',status:'—',createdOn:'—'},
-      sales:{companyId:'—',companyName:entity,contactPersonId:'—',contactPersonName:'Accounts Team',rateType:'Monthly',days:'0',rate:'INR '+amt+'.00',totalAmount:'INR '+amt+'.00',contractPeriod:'—',workLocation:country,tsPeriodDate:'—',paymentTerm:'30'},
+      sales:{companyId:'—',companyName:entity,contactPersonId:'—',contactPersonName:'Accounts Team',rateType:'Monthly',days:'0',rate:'INR '+amt+'.00',totalAmount:'INR '+amt+'.00',contractPeriod:'—',workLocation:country,tsPeriodDate:'—',paymentTerm:'30',paymentCycle:'Monthly',currency:'INR'},
       user:{company:{userId:'—',concernPersonName:'Accounts Team',companyName:entity,firstName:'Accounts',lastName:'Team',email:'accounts@'+who.toLowerCase().replace(/\s+/g,'')+'.com',mobile:'—',altMobile:'—',website:'—',address:'—'},
             concern:{key:'—',name:'Accounts Team',mobile:'—',email:'—',date:date+' 2026',createBy:'Billing',address:'—'}},
       attachments:[]};
@@ -4966,6 +4974,21 @@ const tsAttendance={
   '2026-06-08':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave'},
   '2026-06-22':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Sick Leave'}
 };
+/* MAY 2026, A MONTH THAT IS OVER. June is the month in progress, so on its own
+   the fixture had nothing that had passed its lock cutoff - no way to see an
+   auto-locked week, or a whole month submitted on Monthly billing. May is
+   filled the way a quiet month looks: every working day off the clock, one
+   casual leave, and Labour Day (a holiday on the calendar) left empty. */
+(function(){
+  for(let d=4;d<=29;d++){
+    const iso='2026-05-'+String(d).padStart(2,'0');
+    const dow=new Date(2026,4,d).getDay();
+    if(dow===0||dow===6)continue;
+    tsAttendance[iso]=d===15
+      ?{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave'}
+      :{in:'09:00 AM',out:'06:00 PM',loc:d%5?'Hyderabad':'Remote',hours:'9.00h',src:'Auto',status:'present'};
+  }
+})();
 function tsOpenDay(d){tsSelectedDay=d;tsMapOpen='';tsEdit=null;renderADTPage();}
 function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage();}
 
@@ -4986,11 +5009,26 @@ function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage(
        the employee saying "this week is final"; only then can it be submitted
        for approval, and until it is submitted it can be unlocked again.
 
-   THE WEEK IS THE UNIT OF SUBMISSION, not the month. That is the whole reason
-   lock exists: approval is a claim about a settled set of days, and a set that
-   can still change underneath the approver is not settled. So submit is only
-   ever offered on a week that is locked, and locking is only offered on a week
-   that has actually started.
+   THE WEEK IS THE UNIT OF LOCKING. That is the whole reason lock exists:
+   approval is a claim about a settled set of days, and a set that can still
+   change underneath the approver is not settled. So submit is only ever
+   offered on a week that is locked, and locking is only offered on a week
+   whose days are all behind it.
+
+   WHAT "A WEEK" IS DEPENDS ON HOW THE ORDER IS BILLED - the Payment Cycle on
+   the Sales Order's Sales Details (tsCycle):
+     · Weekly billing - the whole Monday-Sunday week, keyed by its Monday. A
+       week that runs 29 Jun - 5 Jul is ONE period: June's last row and July's
+       first row are two views of the same lock, never two invoices.
+     · Monthly billing - the part of a week that falls inside the month. June's
+       last row (29-30 Jun) locks on its own on 30 Jun, without taking 1-5 Jul
+       with it, and the month is submitted whole.
+   Either way each month's grid only ever draws its own dates.
+
+   A WEEK LOCKS ITSELF if nobody does. TS_AUTOLOCK_DAYS after its last day the
+   cutoff passes and the week reads Locked (Auto) - derived from the date, not
+   stored, so there is no job that can fail to run. Locking by hand is the
+   early version of the same thing.
 
    TODAY IS FIXED IN THIS PROTOTYPE. The grid's data is June 2026, so "today"
    is a constant rather than a live clock - otherwise every day of the fixture
@@ -5000,9 +5038,29 @@ const TS_TODAY='2026-06-24';
    stored on the attendance record as `desc` beside the times, and capped so a
    day stays a summary rather than a report. */
 const TS_DESC_MAX=500;
+const TS_AUTOLOCK_DAYS=3;
+/* Who may take a lock off (and put it back). The employee locks their own
+   week; only these roles can reopen one - the rest of the app's RBAC, applied
+   to the header's "Logged in as". */
+const TS_UNLOCK_ROLES=['Super Admin','Opendhi Admin','Admin','HR','Reporting Manager'];
 let tsEdit=null;            // {date} while the day panel is in edit mode
-let tsWeekState={};         // 'YYYY-MM-W<n>' -> 'locked' | 'submitted'
+/* unit key -> 'locked' | 'unlocked' | 'submitted' | 'approved' | 'rejected'.
+   No entry = open, or locked by the cutoff once it has passed. Unit keys are
+   'YYYY-MM-W<n>' on Monthly billing and 'W:<monday>' on Weekly. */
+let tsWeekState={};
+let tsWeekMeta={};          // unit key -> {sub, reason} for the panel and rail
 let tsReadOnly=false;       // true while looking at somebody else's timesheet
+let tsSel={};               // Weekly billing: locked weeks ticked for submission
+let tsMonthSel=false;       // Monthly billing: "Select entire month" ticked
+
+// ── Billing cycle: read off the Sales Order this timesheet bills against ──
+const TS_ORDER_ID=1;
+function tsOrder(){return paymentsData.find(function(p){return p.id===TS_ORDER_ID;})||null;}
+function tsCycle(){const o=tsOrder();return o&&o.sales&&o.sales.paymentCycle==='Weekly'?'Weekly':'Monthly';}
+function tsCanUnlock(){return TS_UNLOCK_ROLES.indexOf(currentRole)>=0;}
+
+function tsIso(d){return d.getFullYear()+'-'+tsPad(d.getMonth()+1)+'-'+tsPad(d.getDate());}
+function tsAddDays(iso,n){const p=iso.split('-');return tsIso(new Date(+p[0],+p[1]-1,+p[2]+n));}
 
 // Monday-based, and worked out exactly the way the grid lays its rows out, so
 // "Week 3" in the rail and week 3 here are always the same seven days.
@@ -5021,15 +5079,57 @@ function tsWeekOf(dateStr){
   return Math.floor((tsMonOff(y,m)+d-1)/7)+1;
 }
 function tsWeekKey(y,m,w){return y+'-'+tsPad(m+1)+'-W'+w;}
-function tsWeekStatus(y,m,w){return tsWeekState[tsWeekKey(y,m,w)]||'open';}
-// A week nobody has reached yet cannot be closed off. Anything with at least
-// one day already behind it can.
-function tsWeekStartable(y,m,w){
-  return tsWeekDates(y,m,w).some(function(d){return d<=TS_TODAY;});
+function tsWeekMonday(y,m,w){return tsIso(new Date(y,m,1-tsMonOff(y,m)+(w-1)*7));}
+/* The lock unit behind row w of month m - see the note above. `dates` is every
+   day the lock covers, which on Weekly billing can reach into the next or the
+   previous month. */
+function tsUnit(y,m,w){
+  if(tsCycle()==='Weekly'){
+    const mon=tsWeekMonday(y,m,w),dates=[];
+    for(let i=0;i<7;i++)dates.push(tsAddDays(mon,i));
+    return {key:'W:'+mon,dates:dates,y:y,m:m,w:w};
+  }
+  return {key:tsWeekKey(y,m,w),dates:tsWeekDates(y,m,w),y:y,m:m,w:w};
 }
-function tsDayLocked(dateStr){
-  const p=dateStr.split('-');
-  return tsWeekStatus(+p[0],+p[1]-1,tsWeekOf(dateStr))!=='open';
+function tsUnitOf(dateStr){const p=dateStr.split('-');return tsUnit(+p[0],+p[1]-1,tsWeekOf(dateStr));}
+function tsUnitCutoff(u){return tsAddDays(u.dates[u.dates.length-1],TS_AUTOLOCK_DAYS);}
+function tsUnitAuto(u){return !tsWeekState[u.key]&&TS_TODAY>tsUnitCutoff(u);}
+function tsUnitStatus(u){return tsWeekState[u.key]||(TS_TODAY>tsUnitCutoff(u)?'locked':'open');}
+// Days can be changed only in these; every other status is read-only.
+const TS_EDITABLE={open:1,unlocked:1,rejected:1};
+function tsWeekStatus(y,m,w){return tsUnitStatus(tsUnit(y,m,w));}
+/* Lockable once every day it covers has happened - the month's own days on
+   Monthly billing, the full seven on Weekly. Earlier than that there are days
+   still to be worked; later, the cutoff has done it already. */
+function tsWeekStartable(y,m,w){
+  return tsUnit(y,m,w).dates.every(function(d){return d<=TS_TODAY;});
+}
+function tsDayLocked(dateStr){return !TS_EDITABLE[tsUnitStatus(tsUnitOf(dateStr))];}
+// "29 Jun – 5 Jul" for a unit, used wherever a week has to name its days.
+function tsUnitRange(u){
+  const f=function(d){const p=d.split('-');return (+p[2])+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+p[1]-1];};
+  return f(u.dates[0])+' – '+f(u.dates[u.dates.length-1]);
+}
+/* SEQUENTIAL LOCKING. A week cannot be locked for the first time while an
+   earlier one is still open: an approver would otherwise be asked to sign off
+   week 4 with week 3 still moving. Checks the month's earlier rows and the
+   last row of the month before; returns the first that is not locked. */
+function tsEarlierOpen(y,m,w){
+  const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const cur=tsUnit(y,m,w).key,seen={};seen[cur]=1;
+  const check=[];
+  const py=m===0?y-1:y,pm=m===0?11:m-1;
+  for(let i=tsWeekCount(py,pm);i>=1&&check.length<1;i--){
+    const u=tsUnit(py,pm,i);if(!seen[u.key])check.push(u);
+  }
+  for(let i=1;i<w;i++)check.push(tsUnit(y,m,i));
+  for(let i=0;i<check.length;i++){
+    const u=check[i];
+    if(seen[u.key])continue;seen[u.key]=1;
+    const st=tsUnitStatus(u);
+    if(TS_EDITABLE[st])return {label:'Week '+u.w+' of '+mNames[u.m],range:tsUnitRange(u),state:st==='open'?'open':st};
+  }
+  return null;
 }
 /* One rule, asked in every place that offers a control: this month, not the
    future, not inside a locked week, and not somebody else's sheet. */
@@ -5112,7 +5212,7 @@ function tsSaveEntry(){
   // week could have been locked from the grid behind the panel.
   if(!tsDayEditable(date)){
     tsEdit=null;renderADTPage();
-    showToast('Week is locked','info','Unlock week '+tsWeekOf(date)+' to change this day.');
+    showToast('Week is locked','info','Week '+tsWeekOf(date)+' is read-only. HR or a manager can unlock it for correction.');
     return;
   }
   const inEl=document.getElementById('ts-ed-in');
@@ -5149,65 +5249,145 @@ function tsSaveEntry(){
 }
 
 // ── Locking, unlocking, submitting ────────────────────────────────────────
+/* A working day that has passed with nothing on it - no hours, no leave. Lock
+   and submit both allow them (the employee may simply not have worked) but
+   name them, because a gap nobody meant to leave is the one thing lock makes
+   expensive to fix. */
+function tsUnitMissing(u){
+  return u.dates.filter(function(d){
+    if(d>TS_TODAY)return false;
+    if(typeof arNonWorkingDay==='function'){if(arNonWorkingDay(d))return false;}
+    else{const dow=new Date(d+'T00:00:00').getDay();if(dow===0||dow===6)return false;}
+    const a=tsAttendance[d];
+    return !a||(a.status!=='present'&&a.status!=='leave'&&a.status!=='inprog');
+  });
+}
 function tsLockWeek(w){
-  if(tsReadOnly)return;
-  const y=tsMonth.year,m=tsMonth.month;
-  if(!tsWeekStartable(y,m,w))return;
-  tsWeekState[tsWeekKey(y,m,w)]='locked';
+  const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
+  if(!TS_EDITABLE[st])return;
+  // Open -> Locked is the employee's first lock. Unlocked / Rejected -> Locked
+  // is a re-lock after a correction, which HR or a manager may also do from
+  // the employee's sheet.
+  const relock=st!=='open';
+  if(tsReadOnly&&!(relock&&tsCanUnlock())){
+    showToast('Lock not available','error','Only the employee locks their own week. HR or a manager can re-lock a week they unlocked.');
+    return;
+  }
+  if(!tsWeekStartable(y,m,w)){
+    showToast('Week '+w+' is not over yet','info','It can be locked after '+tsFmtDay(u.dates[u.dates.length-1])
+      +'. Left alone, it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.');
+    return;
+  }
+  if(!relock){
+    const gap=tsEarlierOpen(y,m,w);
+    if(gap){
+      showToast('Lock '+gap.label+' first','error',gap.label+' ('+gap.range+') is still '+gap.state+'. Weeks are locked in order.');
+      return;
+    }
+  }
+  tsWeekState[u.key]='locked';
   tsEdit=null;tsSelectedDay=null;
   renderADTPage();
-  // Locking a week with gaps in it is allowed - the employee may simply not
-  // have worked those days - but they are counted out loud, because a gap
-  // nobody meant to leave is the one thing lock makes expensive to fix.
-  const gaps=tsWeekDates(y,m,w).filter(function(d){
-    if(d>TS_TODAY)return false;
-    const dow=new Date(d+'T00:00:00').getDay();
-    if(dow===0||dow===6)return false;               // weekends are not gaps
-    const a=tsAttendance[d];
-    return !a||a.status!=='present';
-  }).length;
-  showToast('Week '+w+' locked','success',gaps
-    ?gaps+' weekday'+(gaps===1?'':'s')+' with no hours. Unlock to fill '+(gaps===1?'it':'them')+' in.'
-    :'No further edits until it is unlocked. It can be submitted now.');
+  const gaps=tsUnitMissing(u).length;
+  const resend=!!(tsWeekMeta[u.key]&&tsWeekMeta[u.key].sub);
+  showToast('Week '+w+(relock?' re-locked':' locked'),'success',gaps
+    ?gaps+' working day'+(gaps===1?'':'s')+' with no hours. HR or a manager can unlock it if '+(gaps===1?'it needs':'they need')+' filling in.'
+    :resend?'Read-only again. Tick it in the week column to resubmit just this week.'
+    :'Read-only now, and ready to be submitted.');
 }
 function tsUnlockWeek(w){
-  if(tsReadOnly)return;
-  const y=tsMonth.year,m=tsMonth.month;
-  if(tsWeekStatus(y,m,w)!=='locked')return;         // submitted weeks do not come back
-  delete tsWeekState[tsWeekKey(y,m,w)];
-  renderADTPage();
-  showToast('Week '+w+' unlocked','info','Its days can be edited again.');
-}
-function tsSubmitWeek(w){
-  if(tsReadOnly)return;
-  const y=tsMonth.year,m=tsMonth.month;
-  if(tsWeekStatus(y,m,w)!=='locked'){
-    showToast('Lock it first','info','Only a locked week can be submitted for approval.');
+  if(!tsCanUnlock()){
+    showToast('Unlock not available','error','Only HR, a Manager, Admin, Opendhi Admin or Super Admin can unlock a week.');
     return;
   }
-  tsWeekState[tsWeekKey(y,m,w)]='submitted';
-  const hrs=tsWeekDates(y,m,w).reduce(function(s,d){
-    const a=tsAttendance[d];
-    return s+(a&&a.status==='present'?parseFloat(a.hours):0);
-  },0);
+  const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
+  if(st!=='locked'){
+    showToast('Week '+w+' cannot be unlocked','error',st==='submitted'
+      ?'It is waiting on approval - an approver can reject it to send it back.'
+      :'It has been approved and is billed from.');
+    return;
+  }
+  tsWeekState[u.key]='unlocked';
+  delete tsSel[u.key];tsMonthSel=false;
   renderADTPage();
-  showToast('Week '+w+' submitted','success',hrs.toFixed(2)+'h sent for approval.');
+  showToast('Week '+w+' unlocked for correction','info','Its days can be edited. Re-lock it once the correction is made.');
 }
-// The footer button, which used to do nothing at all. It submits every week
-// that is locked and not yet sent - never a week that is still open, because
-// that is exactly the claim lock exists to make.
+
+// ── Submitting ────────────────────────────────────────────────────────────
+function tsMonthUnits(y,m){const out=[];for(let w=1;w<=tsWeekCount(y,m);w++)out.push(tsUnit(y,m,w));return out;}
+function tsUnitSent(u){return !!(tsWeekMeta[u.key]&&tsWeekMeta[u.key].sub);}
+/* What the rail offers a tick on. Weekly billing: any locked week - each is
+   its own period. Monthly billing: the month goes as one, so the only week
+   ticked on its own is one sent back and corrected (it rejoins its month's
+   submission without the rest being sent again). */
+function tsUnitPickable(u){
+  if(tsReadOnly||tsUnitStatus(u)!=='locked')return false;
+  return tsCycle()==='Weekly'||tsUnitSent(u);
+}
+/* Can the whole month be ticked? Every week locked and none of it sent yet.
+   Returns the reason when not - it is what the disabled checkbox says. */
+function tsMonthCheck(y,m){
+  const units=tsMonthUnits(y,m);
+  if(units.some(tsUnitSent))return {ok:false,units:units,reason:'This month has already been submitted. A week sent back is resubmitted from its week column.'};
+  const notLocked=units.filter(function(u){return tsUnitStatus(u)!=='locked';});
+  if(notLocked.length)return {ok:false,units:units,
+    reason:'Week '+notLocked.map(function(u){return u.w;}).join(', ')+(notLocked.length===1?' is':' are')+' not locked yet.'};
+  return {ok:true,units:units,reason:''};
+}
+function tsToggleSel(key,y,m,w){
+  if(tsSel[key])delete tsSel[key];else tsSel[key]={y:y,m:m,w:w};
+  renderADTPage();
+}
+function tsToggleMonthSel(){
+  const c=tsMonthCheck(tsMonth.year,tsMonth.month);
+  if(!c.ok){tsMonthSel=false;renderADTPage();showToast('Month cannot be selected yet','info',c.reason);return;}
+  tsMonthSel=!tsMonthSel;renderADTPage();
+}
+// Why a locked week still cannot go to an approver, or '' when it can.
+function tsUnitBlock(u){
+  const last=u.dates[u.dates.length-1];
+  if(last>TS_TODAY)return 'it runs to '+tsFmtDay(last)+', which has not happened yet';
+  const ip=u.dates.filter(function(d){return tsAttendance[d]&&tsAttendance[d].status==='inprog';});
+  if(ip.length)return tsFmtDay(ip[0])+' has no clock-out';
+  return '';
+}
+/* The footer button. Weekly billing sends each ticked week as its own period;
+   Monthly sends the month as one submission (plus any corrected week ticked
+   on its own). Submissions, approval and invoicing live in js/ts-billing.js. */
 function tsSubmitLockedWeeks(){
   if(tsReadOnly)return;
-  const y=tsMonth.year,m=tsMonth.month,ready=[];
-  for(let w=1;w<=tsWeekCount(y,m);w++)if(tsWeekStatus(y,m,w)==='locked')ready.push(w);
-  if(!ready.length){
-    showToast('Nothing to submit','info','Lock a week first — only a locked week can be submitted.');
+  const y=tsMonth.year,m=tsMonth.month,monthly=tsCycle()==='Monthly';
+  const batches=[];
+  if(monthly&&tsMonthSel){
+    const c=tsMonthCheck(y,m);
+    if(!c.ok){tsMonthSel=false;renderADTPage();showToast('Submission blocked','error',c.reason);return;}
+    batches.push({kind:'Monthly',units:c.units});
+  }
+  Object.keys(tsSel).forEach(function(k){
+    const s=tsSel[k],u=tsUnit(s.y,s.m,s.w);
+    if(tsUnitPickable(u))batches.push({kind:tsUnitSent(u)?'Resubmission':'Weekly',units:[u]});
+  });
+  if(!batches.length){
+    showToast('Nothing selected','info',monthly
+      ?'Tick "Select Entire Month" once every week of the month is locked.'
+      :'Tick a locked week in the week column to submit it.');
     return;
   }
-  ready.forEach(function(w){tsWeekState[tsWeekKey(y,m,w)]='submitted';});
+  for(let i=0;i<batches.length;i++){
+    for(let j=0;j<batches[i].units.length;j++){
+      const u=batches[i].units[j],why=tsUnitBlock(u);
+      if(why){showToast('Submission blocked','error','Week '+u.w+' ('+tsUnitRange(u)+'): '+why+'.');return;}
+    }
+  }
+  const missing=[];
+  batches.forEach(function(b){b.units.forEach(function(u){tsUnitMissing(u).forEach(function(d){missing.push(d);});});});
+  const ids=batches.map(function(b){return tsbSubmit(b.kind,b.units);});
+  tsSel={};tsMonthSel=false;
   renderADTPage();
-  showToast(ready.length+' week'+(ready.length===1?'':'s')+' submitted','success',
-    'Week '+ready.join(', ')+' sent for approval.');
+  const o=tsOrder();
+  showToast(ids.length===1?'Submitted for approval':ids.length+' submissions sent','success',
+    ids.join(', ')+(o?' · on Sales Order #'+o.orderId:'')
+    +(missing.length?' · '+missing.length+' working day'+(missing.length===1?'':'s')+' with no hours went as 0h.':'.'));
 }
 
 // ── TIMESHEET MONTH PICKER ──
@@ -5237,8 +5417,8 @@ function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;if(!tsSyncMonth
 function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;if(!tsSyncMonthPicker())renderADTPage();}
 // Picking a month re-spans the range to that month, so the filter label and the
 // grid can never disagree about which dates are in view.
-function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
-function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
+function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMonthSel=false;tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
+function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMonthSel=false;tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
 
 // ── TIMESHEET DATE-RANGE FILTER ──
 // The range control used to call tsToggleMonthPicker, so clicking a field
