@@ -1638,8 +1638,6 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 6px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}
 .ts-wk-total{font-size:12px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1}
-/* The overtime inside the week total (regular vs overtime, as Deel bills it). */
-.ts-wk-ot{font-size:11px;font-weight:500;color:var(--gray);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ts-wk-total.none{color:#cbd5e1;font-weight:600}
 .ts-day-cell{position:relative;padding:9px 11px;border-right:1px solid var(--border);border-left:3px solid transparent;min-height:72px;display:flex;flex-direction:column;gap:2px;cursor:default;transition:background .12s}
 .ts-day-cell.is-clickable{cursor:pointer}
@@ -1851,6 +1849,11 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-ed-desc:focus{border-color:#94a3b8}
 .ts-ed-desc::placeholder{color:#b0b8c4}
 .ts-ed-count{align-self:flex-end;font-size:var(--ds-caption);color:#94a3b8}
+/* The required Comment on a hand edit: shorter than the description, and red
+   while it is the thing stopping the save. */
+.ts-ed-comment{min-height:64px}
+.ts-ed-comment.is-bad{border-color:var(--st-bad-fg);box-shadow:0 0 0 3px rgba(184,58,58,.1)}
+.ts-ed-req{color:var(--st-bad-fg);margin-left:1px}
 /* Why this day cannot be edited, in the place the Edit button would have been. */
 .ts-sb-lockmsg{
   display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:9px;
@@ -2605,3 +2608,8 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .role-dd-item{flex-direction:column;align-items:flex-start;gap:1px}
 .role-dd-item span{font-size:11px;font-weight:500;color:var(--gray)}
 .role-dd-item.is-current{background:var(--light);font-weight:700}
+/* An unlocked week is waiting on one thing — being locked again — so that step
+   is the solid button and the Unlocked status steps back to grey. */
+.ts-wk-act.is-primary{margin-top:8px;padding:5px 10px;border-radius:var(--r-control);background:var(--btn-ink);color:#fff;
+  font-size:11.5px;transition:background .15s}
+.ts-wk-act.is-primary:hover{text-decoration:none;background:#000}

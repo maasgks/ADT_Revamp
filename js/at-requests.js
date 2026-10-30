@@ -62,7 +62,7 @@ function atReqList(empId){
     Object.keys(typeof tsChangeLog!=='undefined'?tsChangeLog:{}).forEach(function(iso){
       const c=tsChangeLog[iso];
       list.push({id:'ch:'+iso,live:'ch',type:'change',date:iso,label:'Working day',
-        prev:c.prev,in:c.in,out:c.out,hours:c.hours,reason:c.desc,
+        prev:c.prev,in:c.in,out:c.out,hours:c.hours,reason:c.comment||c.desc,   // the employee's required Comment
         status:c.status,requestedAt:c.requestedAt,decided:c.decided});
     });
   }else{

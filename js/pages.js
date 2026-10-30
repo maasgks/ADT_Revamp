@@ -6547,6 +6547,14 @@ function buildTsEditHTML(dateStr){
       +'<textarea id="ts-ed-desc" class="ts-ed-desc" maxlength="'+TS_DESC_MAX+'" oninput="tsDescCount()"'
         +' placeholder="What did you work on today? e.g. Built the export API, reviewed two pull requests">'+sbEsc(att.desc||'')+'</textarea>'
       +'<span class="ts-ed-count" id="ts-ed-count">'+(att.desc||'').length+' / '+TS_DESC_MAX+'</span></div>'
+    /* WHY THE DAY IS BEING CHANGED. Required: a hand edit goes to the manager /
+       HR as a Time Change request (All Timesheet › Requests), and the comment is
+       what they read to decide it. The Work Description says what the day was
+       spent on; this says why its times are being added or corrected. */
+    +'<div class="ts-ed-f"><span class="ts-ed-lbl">Comment <span class="ts-ed-req">*</span></span>'
+      +'<textarea id="ts-ed-comment" class="ts-ed-desc ts-ed-comment" maxlength="'+TS_COMMENT_MAX+'" oninput="tsCommentCount()"'
+        +' placeholder="Why are you '+(att.status==='present'?'changing':'adding')+' this entry? e.g. Forgot to clock out after the client call"></textarea>'
+      +'<span class="ts-ed-count" id="ts-ed-comment-count">0 / '+TS_COMMENT_MAX+'</span></div>'
     +'<div class="ts-ed-total"><span>Total</span><span id="ts-ed-total">'
       +(mins>0?(mins/60).toFixed(2):'0.00')+'h</span></div>'
     +'<div class="ts-ed-err" id="ts-ed-err"></div>'
@@ -6751,7 +6759,7 @@ function tsWeekChipHTML(u,st){
   const meta=tsWeekMeta[u.key]||{};
   const c={
     locked:['idle',TS_ICO.lock+'Locked',tsUnitAuto(u)?'Locked automatically after '+tsFmtDay(tsUnitCutoff(u)):'Locked by hand'],
-    unlocked:['info',TS_ICO.unlock+'Unlocked','Unlocked for correction'],
+    unlocked:['idle',TS_ICO.unlock+'Unlocked','Unlocked for correction'],
     submitted:['wait','Submitted','Waiting on approval'+(meta.sub?' · '+meta.sub:'')],
     approved:['ok','Approved','Approved'+(meta.sub?' · '+meta.sub:'')],
     rejected:['bad','Rejected','Sent back'+(meta.reason?': '+meta.reason:'')]
@@ -6775,10 +6783,9 @@ function tsAllPickHTML(){
   const list=tsPickableWeeks();
   if(!list.length)return '';
   const n=list.filter(function(p){return tsSel[p.key];}).length;
-  return '<label class="ts-wk-head ts-wk-all" title="'+(n===list.length?'Clear selection':'Select all '+list.length+' locked week'+(list.length===1?'':'s'))+'">'
-    +'<input type="checkbox" class="ts-wk-check"'+(n===list.length?' checked':'')
-      +' aria-label="Select all weeks" onchange="tsToggleAllWeeks()">'
-    +'<span>All</span></label>';
+  return '<input type="checkbox" class="ts-wk-check"'+(n===list.length?' checked':'')
+      +' title="'+(n===list.length?'Clear selection':'Select all '+list.length+' locked week'+(list.length===1?'':'s'))+'"'
+      +' aria-label="Select all weeks" onchange="tsToggleAllWeeks()">';
 }
 /* THE WEEK RAIL, AS DEEL AND MULTIPLIER SHOW A PERIOD: one status per week,
    and only the NEXT step in view.
@@ -6791,8 +6798,8 @@ function tsWeekRailHTML(w){
   const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
   const own=!tsReadOnly,admin=tsCanUnlock(),done=tsWeekStartable(y,m,w);
   const chip=tsWeekChipHTML(u,st);
-  const act=function(label,title){
-    return '<button class="ts-wk-act" onclick="tsLockWeek('+w+')" title="'+attrSafe(title)+'">'+TS_ICO.lock+label+'</button>';
+  const act=function(label,title,primary){
+    return '<button class="ts-wk-act'+(primary?' is-primary':'')+'" onclick="tsLockWeek('+w+')" title="'+attrSafe(title)+'">'+TS_ICO.lock+label+'</button>';
   };
   if(st==='open'){
     // A week still being worked has nothing to close off yet.
@@ -6800,7 +6807,7 @@ function tsWeekRailHTML(w){
     return act('Lock week','Lock '+tsUnitRange(u)+' now. Left alone it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.');
   }
   if(st==='unlocked'||st==='rejected'){
-    return chip+((own||admin)&&done?act('Re-lock','Lock week '+w+' again once it is corrected'):'');
+    return chip+((own||admin)&&done?act('Re-lock','Lock week '+w+' again once it is corrected',true):'');
   }
   return chip;
 }
@@ -6934,6 +6941,7 @@ function buildMyTimesheetHTML(viewingOther) {
   // ── Calendar ──
   const eyeSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
   let calRows = '';
+  const tsHasPick = tsPickableWeeks().length > 0; // the selection column shows only when a week can be ticked
   const totalWeeks = Math.ceil((monOff + daysInMonth) / 7);
 
   for (let w = 0; w < totalWeeks; w++) {
@@ -6954,7 +6962,6 @@ function buildMyTimesheetHTML(viewingOther) {
     /* Of the week's hours, how many are overtime — the split Deel bills on
        (regular vs overtime). Same rule as the Overtime tile (tsHourStats), so
        the rail and the tile cannot disagree. Said only when there is some. */
-    const wkOt = wkHours ? tsHourStats(function(k){ return wkDays[k]; }).ot : 0;
     /* On Weekly billing a row at either end of the month can be half of a
        week that carries on in the next (or began in the last) month. The grid
        still draws only this month's days - the rest are not repeated here -
@@ -6968,14 +6975,17 @@ function buildMyTimesheetHTML(viewingOther) {
     // A locked week's empty total reads 0, not a dash: the week is settled and
     // nothing was logged. It is a display value - nothing is written.
     const wkLocked = !TS_EDITABLE[tsUnitStatus(unit)];
-    calRows += '<div class="ts-cal-row">';
     const wkPick = tsWeekPickHTML(w+1);
     const wkPicked = wkPick && tsSel[unit.key];
+    // Selection has its own column on the far left, apart from the week's
+    // figures - the way a table puts its row checkboxes in a column of their own.
+    // A submitted week is out of the employee's hands until it is decided, so its
+    // days fade back; the week column keeps its status in full.
+    calRows += '<div class="ts-cal-row'+(tsHasPick?' has-pick':'')+(wkPicked?' is-picked':'')+(tsUnitStatus(unit)==='submitted'?' is-submitted':'')+'">';
+    if (tsHasPick) calRows += '<div class="ts-pick-cell">'+wkPick+'</div>';
     calRows += '<div class="ts-week-cell'+(wkPicked?' is-picked':'')+'">'
-      + (wkPick ? '<label class="ts-wk-head">'+wkPick+'<span class="ts-wk-label">Week '+(w+1)+'</span></label>'
-                : '<span class="ts-wk-label">Week '+(w+1)+'</span>')
+      + '<span class="ts-wk-label">Week '+(w+1)+'</span>'
       + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
-      + (wkOt >= 0.01 ? '<span class="ts-wk-ot" title="'+wkOt.toFixed(2)+'h overtime · '+(wkHours-wkOt).toFixed(2)+'h regular">incl. '+wkOt.toFixed(1)+'h OT</span>' : '')
       + (spanTxt ? '<span class="ts-wk-span" title="This billing week runs '+tsUnitRange(unit)+'">'+spanTxt+'</span>' : '')
       + tsWeekRailHTML(w+1)
       + tsWeekMenuHTML(w+1)
@@ -7121,7 +7131,7 @@ function buildMyTimesheetHTML(viewingOther) {
       + '<span class="ds-total">Total working days <b>'+dsTotals.working+'</b></span>'
       + '<span class="ds-total">Leaves taken <b>'+dsTotals.leaves+'</b></span>'
     + '</div></div>'
-    + '<div class="ts-col-hdrs"><div class="ts-col-hdr">'+tsAllPickHTML()+'</div><div class="ts-col-hdr">MON</div><div class="ts-col-hdr">TUE</div><div class="ts-col-hdr">WED</div><div class="ts-col-hdr">THU</div><div class="ts-col-hdr">FRI</div><div class="ts-col-hdr we">SAT</div><div class="ts-col-hdr we">SUN</div></div>'
+    + '<div class="ts-col-hdrs'+(tsHasPick?' has-pick':'')+'">'+(tsHasPick?'<div class="ts-col-hdr ts-pick-hdr">'+tsAllPickHTML()+'</div>':'')+'<div class="ts-col-hdr">WEEK</div><div class="ts-col-hdr">MON</div><div class="ts-col-hdr">TUE</div><div class="ts-col-hdr">WED</div><div class="ts-col-hdr">THU</div><div class="ts-col-hdr">FRI</div><div class="ts-col-hdr we">SAT</div><div class="ts-col-hdr we">SUN</div></div>'
     + calRows
     + '</div>';
 

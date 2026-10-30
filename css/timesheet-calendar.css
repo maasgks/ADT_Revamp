@@ -122,3 +122,25 @@
 /* Select all, in the head of the week column. */
 .ts-cal-card .ts-col-hdr .ts-wk-all{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:#94a3b8}
 .ts-cal-card .ts-col-hdr .ts-wk-all:hover{color:var(--navy)}
+
+/* Selection column: its own narrow column on the far left, apart from the
+   week's figures — a table's row-select column. Header tick = select all.
+   Only there when at least one week can be ticked. */
+.ts-cal-card .ts-col-hdrs.has-pick,
+.ts-cal-card .ts-cal-row.has-pick{grid-template-columns:44px 112px repeat(7,minmax(0,1fr))}
+.ts-cal-card .ts-col-hdr.ts-pick-hdr{display:flex;align-items:center;justify-content:center;padding:10px 0}
+.ts-pick-cell{display:flex;align-items:center;justify-content:center;background:#fafbfc;border-right:1px solid #f0f2f5}
+.ts-cal-card .ts-col-hdrs.has-pick .ts-col-hdr:nth-child(2){border-left:1px solid #f0f2f5}
+.ts-cal-card .ts-col-hdrs.has-pick .ts-col-hdr:nth-child(2),
+.ts-cal-card .ts-col-hdrs:not(.has-pick) .ts-col-hdr:first-child{padding-left:14px}
+/* A ticked week shades its whole row — selection column, week rail and all
+   seven days — so it reads as one selected line, as in a table. Important
+   because the day cells carry state backgrounds (weekend, locked, future…)
+   at higher specificity; the selected-day outline is a box-shadow and stays. */
+.ts-cal-card .ts-cal-row.is-picked > *{background:#f1f4f8 !important}
+.ts-cal-card .ts-cal-row.is-picked .ts-day-cell.is-clickable:hover{background:#e9edf3 !important}
+/* Submitted week: its days fade back (still readable, still clickable to view)
+   while the week column keeps the Submitted status at full strength. */
+.ts-cal-card .ts-cal-row.is-submitted .ts-day-cell{background:#fafbfc !important}
+.ts-cal-card .ts-cal-row.is-submitted .ts-day-cell > *{opacity:.4;filter:grayscale(1)}
+.ts-cal-card .ts-cal-row.is-submitted .ts-day-cell:hover > *{opacity:.75}

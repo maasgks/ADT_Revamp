@@ -197,3 +197,40 @@
    count, above Issued Documents. */
 .hdoc-drafts-top{margin-bottom:16px}
 .hdoc-drafts-top .hdoc-rail-empty{padding:18px 16px}
+
+/* ══ FR-07.7 SEND IN MAIL (hdocSendHTML) ═══════════════════════════════════
+   A small dialog over the letter: who it goes to, Send, Cancel. It sits above
+   the create / review page, which stays where it was underneath. */
+.hdoc-send-ov{position:fixed;inset:0;z-index:1300;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(15,23,42,.45);animation:hdoc-send-fade .15s ease-out}
+.hdoc-send{width:100%;max-width:440px;box-sizing:border-box;padding:22px 24px 20px;background:#fff;border-radius:14px;
+  box-shadow:0 20px 50px rgba(15,23,42,.25);display:flex;flex-direction:column;animation:hdoc-send-in .18s ease-out}
+.hdoc-send-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+.hdoc-send-head > div{flex:1;min-width:0}
+.hdoc-send-head h3{margin:0;font-size:16px;font-weight:700;color:var(--navy)}
+.hdoc-send-head p{margin:3px 0 0;font-size:12.5px;color:var(--gray)}
+.hdoc-send-ico{width:36px;height:36px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--ol);color:var(--navy)}
+.hdoc-send-ico svg{width:17px;height:17px}
+.hdoc-send-x{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:none;color:var(--gray);cursor:pointer}
+.hdoc-send-x:hover{background:var(--ol);color:var(--navy)}
+.hdoc-send .ep-form-label{margin-bottom:6px}
+/* A form field, not a toolbar search: same control shape and height as every
+   field in a form card (main.css / form-system.css), not the standalone pill. */
+.hdoc-send .ep-form-input{border-radius:var(--r-control);height:42px;padding:0 12px}
+.hdoc-send .ep-form-input.is-bad{border-color:var(--st-bad-fg);box-shadow:0 0 0 3px rgba(184,58,58,.1)}
+.hdoc-send-hint{margin:7px 0 0;font-size:12px;line-height:1.45;color:var(--gray)}
+.hdoc-send-err{margin:6px 0 0;font-size:12.5px;font-weight:500;color:var(--st-bad-fg)}
+.hdoc-send-btns{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+@keyframes hdoc-send-fade{from{opacity:0}to{opacity:1}}
+@keyframes hdoc-send-in{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.hdoc-send-ov,.hdoc-send{animation:none}}
+/* Final review meta: status, who created it, and — once mailed — who it went to.
+   Each item stays whole; the row wraps between items, never inside one. */
+.hdoc-final-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.hdoc-fm-item{white-space:nowrap;color:var(--gray)}
+.hdoc-fm-item b{font-weight:600;color:var(--navy)}
+.hdoc-fm-sent{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:3px 10px 3px 8px;
+  border:1px solid var(--border);border-radius:var(--r-status);background:#f8fafc;color:var(--gray);font-size:12px}
+.hdoc-fm-sent svg{width:13px;height:13px;flex-shrink:0;color:var(--navy)}
+.hdoc-fm-sent > span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdoc-fm-sent b{font-weight:600;color:var(--navy)}

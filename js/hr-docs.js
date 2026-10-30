@@ -298,7 +298,7 @@ function hdocOpenDoc(id){
   hdocModal={view:d.status==='Draft'?'form':'final',type:d.type,templateId:tplId,docId:d.id,values:Object.assign({},d.values)};
   renderADTPage();
 }
-function hdocClose(){hdocModal=null;renderADTPage();}
+function hdocClose(){hdocModal=null;hdocSend=null;renderADTPage();}
 /* Read every field on the form back into the working values. */
 function hdocSync(){
   if(!hdocModal||hdocModal.view!=='form')return;
@@ -385,6 +385,96 @@ function hdocDownload(){
   document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
   showToast('Downloading','success',a.download);
+}
+/* ══ FR-07.7 SEND IN MAIL ═════════════════════════════════════════════════
+   Send opens a small dialog: To Email Address, Send, Cancel. The address is
+   required. For a letter about an existing employee it is fetched from their
+   record and stays editable; for an Offer Letter — and an Appointment or
+   Internship Letter whose person is not yet an employee — there is no record,
+   so HR types the candidate's address.
+   Sending issues the letter: the same completeness check as Submit (a letter
+   with gaps is not mailed to anyone), a document number, and a note on the
+   document of who it went to and when. */
+let hdocSend=null;   // {email, fromRecord, candidate} while the dialog is open
+const HDOC_CANDIDATE_TYPES=['offer','appointment','internship'];
+function hdocSendPrefill(m){
+  const name=m.values.employee_name;
+  const emp=name?hdocEmp(name):null;
+  if(emp&&emp.email)return {email:emp.email,fromRecord:true};
+  return {email:'',fromRecord:false};
+}
+function hdocOpenSend(){
+  hdocSync();
+  const m=hdocModal;if(!m)return;
+  const tpl=hdocTemplateById(m.templateId);
+  const miss=hdocMissing(tpl,m.values);
+  if(miss.length){
+    showToast('Complete the document first','error',miss.length===1?miss[0]+' is required before it can be sent.':miss.length+' fields are still empty — first: '+miss[0]+'.');
+    if(m.view!=='form'){m.view='form';renderADTPage();}
+    return;
+  }
+  const pre=hdocSendPrefill(m);
+  hdocSend={email:pre.email,fromRecord:pre.fromRecord,
+    candidate:!pre.fromRecord&&HDOC_CANDIDATE_TYPES.indexOf(m.type)>=0};
+  renderADTPage();
+  const el=document.getElementById('hdoc-send-to');
+  if(el)el.focus();   // (type=email inputs do not support setSelectionRange)
+}
+function hdocCloseSend(){hdocSend=null;renderADTPage();}
+function hdocSendInput(el){
+  el.classList.remove('is-bad');
+  const e=document.getElementById('hdoc-send-err');if(e)e.hidden=true;
+}
+function hdocSendKey(ev){if(ev.key==='Enter'){ev.preventDefault();hdocSendMail();}}
+function hdocSendMail(){
+  const el=document.getElementById('hdoc-send-to');
+  const to=el?el.value.trim():'';
+  const err=document.getElementById('hdoc-send-err');
+  const bad=function(msg){if(err){err.textContent=msg;err.hidden=false;}if(el){el.classList.add('is-bad');el.focus();}};
+  if(!to)return bad('Email Address is required.');
+  if(!/^[^s@]+@[^s@]+.[^s@]+$/.test(to))return bad('Enter a valid email address, e.g. name@company.com.');
+  // Issue it first if it has not been (the same path as Submit), then record the send.
+  const m=hdocModal;
+  let d=m.docId?hdocDocs.find(function(x){return x.id===m.docId;}):null;
+  const now=hdocStampNow();
+  if(!d||d.status!=='Submitted'){
+    if(!d){d={id:hdocDocNextId++,no:'',type:m.type,templateId:m.templateId,status:'Draft',createdBy:CURRENT_USER,createdAt:now,updatedAt:now,values:{}};hdocDocs.unshift(d);}
+    d.values=Object.assign({},m.values);d.templateId=m.templateId;
+    if(!d.no)d.no=hdocNextNo(d.type);
+    d.status='Submitted';d.updatedAt=now;d.submittedAt=now;
+    lpLanded('hr-docs',d.id);
+  }
+  d.sentTo=to;d.sentAt=now;d.sentBy=CURRENT_USER;
+  hdocSend=null;
+  hdocModal={view:'final',type:d.type,templateId:d.templateId,docId:d.id,values:Object.assign({},d.values)};
+  renderADTPage();
+  showToast('Sent in mail','success',d.no+' · '+hdocTypeOf(d.type).label+' sent to '+to+'.');
+}
+function hdocSendHTML(){
+  if(!hdocSend||!hdocModal)return '';
+  const t=hdocTypeOf(hdocModal.type);
+  const d=hdocModal.docId?hdocDocs.find(function(x){return x.id===hdocModal.docId;}):null;
+  const who=hdocSubject({values:hdocModal.values});
+  const label=hdocSend.candidate?'Candidate Email Address':'To Email Address';
+  const hint=hdocSend.fromRecord?'Fetched from '+hdocEsc(who)+'’s employee record — you can change it.'
+    :hdocSend.candidate?'This person is not an employee yet, so enter the candidate’s email address.'
+    :'No email is on record for this person — enter it here.';
+  return '<div class="hdoc-send-ov" onclick="hdocCloseSend()">'
+    +'<div class="hdoc-send" role="dialog" aria-modal="true" aria-labelledby="hdoc-send-title" onclick="event.stopPropagation()">'
+      +'<div class="hdoc-send-head"><span class="hdoc-send-ico">'+HDOC_ICO.mail+'</span>'
+        +'<div><h3 id="hdoc-send-title">Send in Mail</h3>'
+        +'<p>'+hdocEsc(t.label)+(who?' for '+hdocEsc(who):'')+(d&&d.no?' · '+hdocEsc(d.no):'')+'</p></div>'
+        +'<button class="hdoc-send-x" onclick="hdocCloseSend()" title="Close" aria-label="Close">'+HDOC_ICO.x+'</button></div>'
+      +'<label class="ep-form-label" for="hdoc-send-to">'+label+' <span class="req">*</span></label>'
+      +'<input class="ep-form-input" id="hdoc-send-to" type="email" autocomplete="email" placeholder="name@company.com"'
+        +' value="'+attrSafe(hdocSend.email)+'" oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)">'
+      +'<p class="hdoc-send-hint">'+hint+'</p>'
+      +'<p class="hdoc-send-err" id="hdoc-send-err" role="alert" hidden></p>'
+      +'<div class="hdoc-send-btns">'
+        +'<button class="ep-cancel-btn" onclick="hdocCloseSend()">Cancel</button>'
+        +'<button class="ep-save-btn" onclick="hdocSendMail()">'+HDOC_ICO.send+' Send</button>'
+      +'</div>'
+    +'</div></div>';
 }
 function hdocDeleteDraft(id,ev){
   if(ev)ev.stopPropagation();
@@ -485,6 +575,7 @@ const HDOC_ICO={
   edit:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
   trash:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   eye:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  send:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
   dl:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   cog:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3.17 14H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9.83 3.17V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 2.82 1.17l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 20.83 9H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
 };
@@ -566,7 +657,7 @@ function hdocDraftsPanel(type){
 }
 
 function buildHrDocsHTML(){
-  return (hdocType?hdocTypeScreenHTML():hdocCardsHTML())+hdocModalHTML();
+  return (hdocType?hdocTypeScreenHTML():hdocCardsHTML())+hdocModalHTML()+hdocSendHTML();
 }
 /* The catalogue. Each type is a row - icon, name, what it is for, how many
    exist - with Create on it, so starting a letter is one click from here
@@ -745,6 +836,7 @@ function hdocModalHTML(){
       '<div class="ct-modal-btns">'
         +'<button class="ep-cancel-btn" onclick="hdocClose()">Cancel</button>'
         +'<button class="ep-cancel-btn" onclick="hdocSaveDraft()">Save as Draft</button>'
+        +'<button class="ep-cancel-btn" onclick="hdocOpenSend()">'+HDOC_ICO.mail+' Send in Mail</button>'
         +'<button class="ep-save-btn" onclick="hdocToPreview()">'+HDOC_ICO.eye+' Preview</button>'
       +'</div>',false);
   }
@@ -762,12 +854,17 @@ function hdocModalHTML(){
   }
   /* final review */
   return hdocModalShell(t.label+' — '+(d?d.no:''),
-    '<span class="lp-status-badge tone-'+statusTone('Submitted')+'">Submitted</span> Final review'
-      +(d?' · created by '+hdocEsc(d.createdBy)+' on '+d.createdAt.split(' | ')[0]:'')+'.',
+    '<span class="hdoc-final-meta">'
+      +'<span class="lp-status-badge tone-'+statusTone('Submitted')+'">Submitted</span>'
+      +'<span class="hdoc-fm-item">Final review'+(d?' · Created by <b>'+hdocEsc(d.createdBy)+'</b> on '+d.createdAt.split(' | ')[0]:'')+'</span>'
+      +(d&&d.sentTo?'<span class="hdoc-fm-sent" title="Sent by '+attrSafe(d.sentBy||'')+' on '+attrSafe(d.sentAt)+'">'+HDOC_ICO.mail
+        +'<span>Sent to <b>'+hdocEsc(d.sentTo)+'</b> · '+d.sentAt.split(' | ')[0]+'</span></span>':'')
+    +'</span>',
     '<div class="hdoc-paper-wrap">'+hdocRenderLetter(tpl,m.values,d&&d.no)+'</div>',
     '<div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="hdocEditFinal()">'+HDOC_ICO.edit+' Edit</button>'
       +'<button class="ep-cancel-btn" onclick="hdocSaveDraft()">Save as Draft</button>'
+      +'<button class="ep-cancel-btn" onclick="hdocOpenSend()">'+HDOC_ICO.mail+' Send in Mail</button>'
       +'<button class="ep-save-btn" onclick="hdocDownload()">'+HDOC_ICO.dl+' Download</button>'
     +'</div>',true);
 }

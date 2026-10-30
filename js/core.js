@@ -4974,7 +4974,7 @@ let tsEmp={name:'Shaun Test1',initials:'ST',role:'Entity Super Admin',empId:'117
    edit replaced (null for a new entry), so a rejection can put it back. */
 let tsChangeLog={
   '2026-06-18':{prev:{in:'09:30 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.50h',src:'Auto',status:'present'},
-    in:'09:30 AM',out:'06:45 PM',hours:'9.25h',desc:'Clock-out was missed — left at 6:45 after the sprint review.',
+    in:'09:30 AM',out:'06:45 PM',hours:'9.25h',comment:'Clock-out was missed — left at 6:45 after the sprint review.',
     status:'Pending Approval',requestedAt:'19 Jun 2026, 09:14 AM'}
 };
 const tsAttendance={
@@ -5079,6 +5079,9 @@ const TS_TODAY='2026-07-06';   // Mon — the first week of July is behind it
    stored on the attendance record as `desc` beside the times, and capped so a
    day stays a summary rather than a report. */
 const TS_DESC_MAX=500;
+/* The required Comment on a hand edit — why the day's times are being added or
+   changed. It travels with the Time Change request to the approver. */
+const TS_COMMENT_MAX=255;
 const TS_AUTOLOCK_DAYS=3;
 /* Who may take a lock off (and put it back). The employee locks their own
    week; only these roles can reopen one - the rest of the app's RBAC, applied
@@ -5251,6 +5254,11 @@ function tsStartEdit(dateStr){
 function tsCancelEdit(){tsEdit=null;renderADTPage();}
 // The description's "N / 500", written straight into the node for the same
 // reason as tsEditPreview: a repaint per keystroke would take the focus away.
+function tsCommentCount(){
+  const t=document.getElementById('ts-ed-comment'),c=document.getElementById('ts-ed-comment-count');
+  if(t&&c)c.textContent=t.value.length+' / '+TS_COMMENT_MAX;
+  if(t&&t.value.trim())t.classList.remove('is-bad');
+}
 function tsDescCount(){
   const t=document.getElementById('ts-ed-desc'),c=document.getElementById('ts-ed-count');
   if(t&&c)c.textContent=t.value.length+' / '+TS_DESC_MAX;
@@ -5297,12 +5305,16 @@ function tsSaveEntry(){
   const had=tsAttendance[date]&&tsAttendance[date].status==='present';
   const descEl=document.getElementById('ts-ed-desc');
   const desc=descEl?descEl.value.trim().slice(0,TS_DESC_MAX):'';
+  // Required: the approver reads this to decide the change.
+  const cmEl=document.getElementById('ts-ed-comment');
+  const comment=cmEl?cmEl.value.trim().slice(0,TS_COMMENT_MAX):'';
+  if(!comment){if(cmEl){cmEl.classList.add('is-bad');cmEl.focus();}return fail('Add a comment saying why you are changing this entry.');}
   // Logged for review. A change still waiting keeps the record it first
   // replaced, so rejecting it goes back to the original and not to a draft.
   const pendingPrev=tsChangeLog[date]&&tsChangeLog[date].status==='Pending Approval';
   const prevRec=pendingPrev?tsChangeLog[date].prev
     :(tsAttendance[date]&&tsAttendance[date].status==='present'?Object.assign({},tsAttendance[date]):null);
-  tsChangeLog[date]={prev:prevRec,in:tsTo12(iv),out:tsTo12(ov),hours:(mins/60).toFixed(2)+'h',desc:desc,
+  tsChangeLog[date]={prev:prevRec,in:tsTo12(iv),out:tsTo12(ov),hours:(mins/60).toFixed(2)+'h',desc:desc,comment:comment,
     status:'Pending Approval',requestedAt:(typeof arNowLabel==='function'?arNowLabel():'')};
   tsAttendance[date]={
     in:tsTo12(iv),out:tsTo12(ov),
