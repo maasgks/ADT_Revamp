@@ -28,6 +28,14 @@ const DP_ITEMS={
     get:function(){return annShow;},
     set:function(v){annShow=v;},
     apply:function(){if(document.getElementById('emp-ann-dash'))annSwap();}
+  },
+  /* reqdocs      on  the Dashboard opens with the Upload required documents
+                      popup (js/req-docs-popup.js)
+                  off the Dashboard opens as usual */
+  reqdocs:{
+    get:function(){return rdShow;},
+    set:function(v){rdShow=v;rdLater=false;},
+    apply:function(){if(page==='dashboard')rdRender();}
   }
 };
 

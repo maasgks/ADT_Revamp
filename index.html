@@ -55,6 +55,7 @@
 <link rel="stylesheet" href="css/announcements.css">
 <link rel="stylesheet" href="css/announcement-admin.css">
 <link rel="stylesheet" href="css/dash-preview.css">
+<link rel="stylesheet" href="css/req-docs-popup.css">
 <link rel="stylesheet" href="css/leave-balance.css">
 <link rel="stylesheet" href="css/logs-view.css">
 <link rel="stylesheet" href="css/form-page.css">
@@ -205,6 +206,12 @@
               <span class="dp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></span>
               <span class="dp-txt"><span class="dp-lbl">Announcements</span>
                 <span class="dp-sub"><span class="dp-when-on"><b>Posts</b> from HR &amp; manager</span><span class="dp-when-off"><b>None</b> · all caught up</span></span></span>
+              <span class="dp-switch" aria-hidden="true"><span class="dp-knob"></span></span>
+            </button>
+            <button type="button" class="dp-row" id="dp-reqdocs" role="switch" aria-checked="false" onclick="dpToggle('reqdocs',event)">
+              <span class="dp-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 12 12 15 15"/><line x1="12" y1="12" x2="12" y2="18"/></svg></span>
+              <span class="dp-txt"><span class="dp-lbl">Required documents</span>
+                <span class="dp-sub"><span class="dp-when-on"><b>Popup</b> on dashboard</span><span class="dp-when-off"><b>Off</b> · no popup</span></span></span>
               <span class="dp-switch" aria-hidden="true"><span class="dp-knob"></span></span>
             </button>
           </div>
@@ -2258,6 +2265,7 @@
 <!-- Governance → Announcements: the admin module that writes what the dashboard
      panel above reads. Before history.js, which wraps its save. -->
 <script src="js/announcement-admin.js"></script>
+<script src="js/req-docs-popup.js"></script>
 <script src="js/dash-preview.js"></script>
 <script src="js/leave-balance.js"></script>
 <!-- After core.js for apCS/apCD and teamsData. The Create New Employee popup;

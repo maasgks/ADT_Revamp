@@ -30,18 +30,34 @@
 
 // ── Vocabulary ──
 const ANM_CATS=['General','HR Update','Holiday','Payroll','Leave & Attendance','Policy','Compliance','Benefits','Training','Event','Portal Update'];
-/* Who an announcement is for: everyone, or named groups of one kind. One kind
-   at a time, so "Engineering + Hyderabad" never has to mean either AND or OR. */
-const ANM_AUD={
-  'All Employees':[],
-  'Department':['Engineering','Product','Finance','HR','Sales','Operations'],
-  'Branch':['Hyderabad','Mumbai','Bengaluru','Remote'],
-  'Employment Type':['Full-time','Contract','Intern'],
-  'Role':['Managers','Team Members']
-};
-const ANM_AUD_TYPES=Object.keys(ANM_AUD);
+/* Who an announcement is for: everyone, or the people who match the groups
+   picked. Four kinds of group - Department, Branch, Employment Type, Role.
+   Within one kind it is OR (Engineering or HR); across kinds it is AND
+   (…and at Hyderabad, and Full-time). A kind left untouched means "any", so
+   "Engineering" alone is every Engineering employee wherever they sit.
+   Every group is read off the employee record, so the form can say how many
+   people a choice reaches. */
+const ANM_AUD_ALL='All Employees',ANM_AUD_PICK='Specific Groups';
+function anmPeople(){
+  return (typeof directEmpData!=='undefined'?directEmpData:[]).filter(function(e){return e.status!=='Inactive';});
+}
+function anmUniq(k){
+  const seen={};
+  anmPeople().forEach(function(e){if(e[k])seen[e[k]]=1;});
+  return Object.keys(seen).sort();
+}
+// The record says "Full time employee" / "Contract employee"; the title says who manages.
+function anmEmpType(e){const d=String(e.desc||'').toLowerCase();return d.indexOf('contract')>=0?'Contract':d.indexOf('intern')>=0?'Intern':'Full-time';}
+function anmEmpRole(e){return /manager|lead|head|director/i.test(e.jobTitle||'')?'Managers':'Team Members';}
+const ANM_DIMS=[
+  {k:'depts',   label:'Department',     any:'Any department',     opts:function(){return anmUniq('dept');},  of:function(e){return e.dept;}},
+  {k:'branches',label:'Branch',         any:'Any branch',         opts:function(){return anmUniq('branch');},of:function(e){return e.branch;}},
+  {k:'types',   label:'Employment Type',any:'Any employment type',opts:function(){return ['Full-time','Contract','Intern'];},of:anmEmpType},
+  {k:'roles',   label:'Role',           any:'Any role',           opts:function(){return ['Managers','Team Members'];},of:anmEmpRole}
+];
+function anmAudBlank(){const o={};ANM_DIMS.forEach(function(d){o[d.k]=[];});return o;}
 // The signed-in employee as the dashboard sees them — what the audience test reads.
-const ANM_ME={'Department':'Engineering','Branch':'Hyderabad','Employment Type':'Full-time','Role':'Team Members'};
+const ANM_ME={dept:'Engineering',branch:'Hyderabad',desc:'Full time employee',jobTitle:'Software Engineer'};
 const ANM_TITLE_MAX=120,ANM_MSG_MAX=1000;
 const ANM_STATE_TONE={Live:'ok',Scheduled:'wait',Expired:'idle',Inactive:'idle'};
 
@@ -104,6 +120,12 @@ function anmStampNow(){const s=stampNow();return s.date+' | '+s.time;}
 // "12 Oct 2026 | 09:24:10 AM" (the store's format, shared with Logs) read as "12 Oct 2026, 09:24 AM".
 function anmStampText(v){return String(v||'—').replace(' | ',', ').replace(/(d{2}:d{2}):d{2}/,'$1');}
 
+annData.forEach(function(a){
+  if(a.depts)return;
+  const was={'Department':'depts','Branch':'branches','Employment Type':'types','Role':'roles'}[a.audType];
+  ANM_DIMS.forEach(function(d){a[d.k]=d.k===was?a.audValues.slice():[];});
+  delete a.audType;delete a.audValues;
+});
 // ── The visibility test (FR-05.4), and the audience test ──
 function anmState(a,now){
   if(a.status!=='Active')return 'Inactive';
@@ -113,11 +135,19 @@ function anmState(a,now){
   if(to&&t>to.getTime())return 'Expired';
   return 'Live';
 }
+function anmIsAll(a){return ANM_DIMS.every(function(d){return !(a[d.k]||[]).length;});}
+// "Engineering, HR · Hyderabad · Full-time" — only the groups that were picked.
 function anmAudText(a){
-  return a.audType==='All Employees'||!a.audValues.length?'All Employees':a.audType+': '+a.audValues.join(', ');
+  if(anmIsAll(a))return ANM_AUD_ALL;
+  return ANM_DIMS.filter(function(d){return a[d.k].length;}).map(function(d){return a[d.k].join(', ');}).join(' · ');
 }
-function anmSeesMe(a){
-  return a.audType==='All Employees'||a.audValues.indexOf(ANM_ME[a.audType])>=0;
+function anmInAud(a,e){
+  return ANM_DIMS.every(function(d){return !a[d.k].length||a[d.k].indexOf(d.of(e))>=0;});
+}
+function anmSeesMe(a){return anmIsAll(a)||anmInAud(a,ANM_ME);}
+// How many employees a choice reaches, from the employee records.
+function anmReach(a){
+  return anmPeople().filter(function(e){return anmIsAll(a)||anmInAud(a,e);}).length;
 }
 // In words, for the panel and the form: when it shows, and until when.
 function anmWindowText(a){
@@ -160,7 +190,7 @@ let anmEditMode=false;
 let anmQ='',anmCatF='',anmAudF='',anmStatusF='',anmStateF='';
 function anmRows(){
   return annData.filter(function(a){
-    return (!anmCatF||a.category===anmCatF)&&(!anmAudF||a.audType===anmAudF)
+    return (!anmCatF||a.category===anmCatF)&&(!anmAudF||(anmAudF===ANM_AUD_ALL)===anmIsAll(a))
       &&(!anmStatusF||a.status===anmStatusF)&&(!anmStateF||anmState(a)===anmStateF);
   }).sort(function(a,b){
     // Pinned first, then the most recent Valid From.
@@ -197,7 +227,7 @@ function buildAnnouncementsHTML(){
           +'<span class="anm-cell-name">'+sbEsc(a.title)+'</span></div>'
           +'<div class="anm-cell-sub">'+a.annId+'</div></td>'
         +'<td style="white-space:nowrap">'+sbEsc(a.category)+'</td>'
-        +'<td><span class="anm-aud'+(a.audType==='All Employees'?' is-all':'')+'" title="'+sbEsc(anmAudText(a))+'">'+sbEsc(anmAudText(a))+'</span></td>'
+        +'<td><span class="anm-aud'+(anmIsAll(a)?' is-all':'')+'" title="'+sbEsc(anmAudText(a))+'">'+sbEsc(anmAudText(a))+'</span></td>'
         +'<td style="white-space:nowrap">'+anmFmt(a.validFrom)+'</td>'
         +'<td style="white-space:nowrap;color:'+(a.validTo?'var(--navy)':'var(--gray)')+'">'+(a.validTo?anmFmt(a.validTo):'No end date')+'</td>'
         +'<td>'+anmStateBadge(a)+'</td>'
@@ -212,7 +242,7 @@ function buildAnnouncementsHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('anm-f-q',anmQ,'Search','applyAnmFilters()')
     +apCS('anm-f-cat',ANM_CATS,anmCatF,'All Categories')
-    +apCS('anm-f-aud',ANM_AUD_TYPES,anmAudF,'All Audiences')
+    +apCS('anm-f-aud',[ANM_AUD_ALL,ANM_AUD_PICK],anmAudF,'All Audiences')
     +apCS('anm-f-status',['Active','Inactive'],anmStatusF,'All Statuses')
     +clearFiltersBtn([anmQ,anmCatF,anmAudF,anmStatusF,anmStateF],'resetAnmFilters()')
     +'<button class="lp-pill-search" onclick="applyAnmFilters()">Search</button>'
@@ -259,7 +289,7 @@ function navAnmTab(tab){
 }
 
 const ANM_ICO={
-  megaphone:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  megaphone:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2v3.6a1 1 0 0 0 .8 1L15 17.5V6.5L3.8 9.2a1 1 0 0 0-.8 1z"/><path d="M6.5 14.9v2.6a2 2 0 0 0 4 0v-1.6"/><path d="M18 9.5a4 4 0 0 1 0 5"/><path d="M20.5 7.5a7 7 0 0 1 0 9"/></svg>',
   tag:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
   users:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   start:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 15 11 17 15 13"/></svg>',
@@ -398,14 +428,15 @@ function anmStartCreate(){
   anmEditId=null;anmEditMode=false;
   // Valid From starts at the current 5-minute mark, so "publish now" is the default.
   const n=new Date();n.setMinutes(Math.floor(n.getMinutes()/5)*5);
-  anmDraft={audType:'All Employees',audValues:[],
+  anmDraft={mode:ANM_AUD_ALL,aud:anmAudBlank(),
     fromDate:n.getFullYear()+'-'+anmPad(n.getMonth()+1)+'-'+anmPad(n.getDate()),fromTime:anmPad(n.getHours())+':'+anmPad(n.getMinutes())};
   anmModalOpen=true;renderADTPage();anmFormSync();
 }
 function anmStartEdit(id){
   const a=anmRec(id);if(!a)return;
   anmEditId=id;anmEditMode=true;anmTab='basic-details';
-  anmDraft={audType:a.audType,audValues:a.audValues.slice()};
+  const aud=anmAudBlank();ANM_DIMS.forEach(function(d){aud[d.k]=(a[d.k]||[]).slice();});
+  anmDraft={mode:anmIsAll(a)?ANM_AUD_ALL:ANM_AUD_PICK,aud:aud};
   isbTab('anm',renderAnmSidebar);anmFormSync();
 }
 function anmCancelEdit(){anmEditMode=false;anmEditId=null;anmDraft=null;isbTab('anm',renderAnmSidebar);}
@@ -414,7 +445,8 @@ function anmCloseForm(){anmModalOpen=false;anmEditId=null;anmDraft=null;renderAD
 /* The same fields as the create page, laid out in the panel's own edit form
    (.lp-sb-edit-form, as Holidays uses) and keeping the same ids, so one
    reader (anmReadForm), one live line (anmFormSync) and one save serve both.
-   Status is not here: it moves from Logs, where the move carries a comment. */
+   Status is not on either form: a new announcement starts Active, and it
+   moves from Logs, where the move carries a comment. */
 function anmEditPanelHTML(a){
   const split=function(dt){const p=(dt||'').split('T');return {d:p[0]||'',t:p[1]||''};};
   const from=split(a.validFrom),to=split(a.validTo);
@@ -430,16 +462,14 @@ function anmEditPanelHTML(a){
       '<textarea class="ep-form-input anm-ta" id="anm-msg" maxlength="'+ANM_MSG_MAX+'" oninput="anmFormSync()">'+sbEsc(a.message)+'</textarea>'
       +'<span class="anm-count" id="anm-msg-n">'+a.message.length+' / '+ANM_MSG_MAX+'</span>',true)
     +f('Category',true,apCS('anm-cat',ANM_CATS,a.category,'Select category'))
-    +f('Target Audience',true,apCS('anm-aud',ANM_AUD_TYPES,anmDraft.audType,'Select audience','anmAudTypePicked'))
-    +'<div class="lp-sb-field" style="grid-column:1/-1" id="anm-aud-vals">'+anmAudChipsHTML()+'</div>'
+    +f('Target Audience',true,anmAudModeHTML()+anmReachBlockHTML(),true)
+    +'<div class="lp-sb-field" style="grid-column:1/-1" id="anm-aud-vals"'+(anmDraft.mode===ANM_AUD_PICK?'':' hidden')+'>'+anmAudPickHTML()+'</div>'
     +f('Valid From Date &amp; Time',true,
       '<div class="anm-dt">'+apCD('anm-from-d',from.d,'Select date','anmFormSync')+tsTimeField('anm-from-t',from.t||'09:00')+'</div>')
     +f('Valid To Date &amp; Time',false,
       '<div class="anm-dt">'+apCD('anm-to-d',to.d,'No end date','anmFormSync')+tsTimeField('anm-to-t',to.t)+'</div>')
     +'<div class="lp-sb-field" style="grid-column:1/-1"><div class="anm-when" id="anm-when"></div></div>'
     +f('Pin Announcement',true,ciRadio('anm-pin',['No','Yes'],a.pinned?'Yes':'No'))
-    +f('Status',true,'<div class="anm-static"><span class="lp-status-badge tone-'+statusTone(a.status)+'">'+a.status+'</span>'
-      +'<span>Changed from <b>Logs</b></span></div>')
     +'</div>'
     +'<div class="lp-sb-form-actions">'
       +'<button class="ep-cancel-btn" onclick="anmCancelEdit()">Cancel</button>'
@@ -447,43 +477,86 @@ function anmEditPanelHTML(a){
     +'</div></div></div>';
 }
 
-function anmAudChipsHTML(){
-  const d=anmDraft||{audType:'All Employees',audValues:[]};
-  const opts=ANM_AUD[d.audType]||[];
-  if(!opts.length)return '<div class="anm-aud-all">'+ANM_ICO.users+'<span>Everyone in the entity will see this announcement.</span></div>';
-  return '<div class="anm-chips">'+opts.map(function(v){
-    const on=d.audValues.indexOf(v)>=0;
-    return '<button type="button" class="anm-chip'+(on?' is-on':'')+'" onclick="anmToggleAud(this,\''+v+'\')">'
-      +'<span class="anm-chip-box"></span>'+v+'</button>';
-  }).join('')+'</div>'
-  +'<div class="anm-hint">Pick one or more. Anyone in <b>any</b> of the ticked '+d.audType.toLowerCase()+'s sees it.</div>';
+/* Target Audience: the switch (everyone / specific groups), beside it one
+   line saying who that reaches and how many, and - for specific groups - a
+   panel with a row per kind of group. Each row's options are tick-chips, so
+   what is picked is visible without opening anything; the row says "Any …"
+   until something in it is ticked. */
+function anmAudModeHTML(){
+  const d=anmDraft||{mode:ANM_AUD_ALL};
+  return '<div class="anm-aud-mode">'+ciRadio('anm-aud-mode',[ANM_AUD_ALL,ANM_AUD_PICK],d.mode,false,'anmAudModePicked()')+'</div>';
 }
-// apCS hook — the audience kind changed, so its list of groups is redrawn.
-function anmAudTypePicked(v){
+function anmReachBlockHTML(){
+  const d=anmDraft;
+  const none=!!(d&&d.mode===ANM_AUD_PICK&&!anmIsAll(d.aud)&&!anmReach(d.aud));
+  return '<div class="anm-reach'+(none?' is-none':'')+'" id="anm-reach">'+anmReachHTML()+'</div>';
+}
+function anmAudPickHTML(){
+  const d=anmDraft||{mode:ANM_AUD_ALL,aud:anmAudBlank()};
+  if(d.mode!==ANM_AUD_PICK)return '';
+  return '<div class="anm-aud-box">'
+    +ANM_DIMS.map(function(dim){
+      const sel=d.aud[dim.k];
+      return '<div class="anm-aud-row">'
+        +'<div class="anm-aud-lbl"><span>'+dim.label+'</span>'
+          +'<span class="anm-aud-state'+(sel.length?' is-set':'')+'" id="anm-aud-st-'+dim.k+'">'+anmDimState(dim,sel)+'</span></div>'
+        +'<div class="anm-chips">'+dim.opts().map(function(v){
+          const on=sel.indexOf(v)>=0;
+          return '<button type="button" class="anm-chip'+(on?' is-on':'')+'" aria-pressed="'+on+'" onclick="anmToggleAud(this,\''+dim.k+'\',\''+sbEsc(v)+'\')">'
+            +'<span class="anm-chip-box"></span>'+sbEsc(v)+'</button>';
+        }).join('')+'</div>'
+      +'</div>';
+    }).join('')
+  +'</div>';
+}
+function anmDimState(dim,sel){return sel.length?sel.length+' selected':dim.any;}
+// The live line beside the switch: who, in words, and how many.
+function anmReachHTML(){
+  const d=anmDraft;
+  if(!d||d.mode!==ANM_AUD_PICK)
+    return ANM_ICO.users+'<span>Everyone in the entity — <b>'+anmReach(anmAudBlank())+' employees</b>.</span>';
+  if(anmIsAll(d.aud))
+    return ANM_ICO.info+'<span>Tick at least one group below. A row left on “Any” includes all of it.</span>';
+  const n=anmReach(d.aud);
+  const who=ANM_DIMS.filter(function(x){return d.aud[x.k].length;}).map(function(x){return d.aud[x.k].join(' or ');}).join(' · ');
+  return ANM_ICO.users+'<span>Reaches <b>'+n+' employee'+(n===1?'':'s')+'</b> — '+sbEsc(who)+'.'
+    +(n?'':' <b class="anm-reach-none">Nobody matches this combination yet.</b>')+'</span>';
+}
+function anmAudModePicked(){
   if(!anmDraft)return;
-  anmDraft.audType=v||'All Employees';anmDraft.audValues=[];
-  const box=document.getElementById('anm-aud-vals');if(box)box.innerHTML=anmAudChipsHTML();
+  anmDraft.mode=ciPicked('anm-aud-mode',ANM_AUD_ALL);
+  const box=document.getElementById('anm-aud-vals');
+  if(box){box.innerHTML=anmAudPickHTML();box.hidden=anmDraft.mode!==ANM_AUD_PICK;}
+  const r=document.getElementById('anm-reach');if(r)r.outerHTML=anmReachBlockHTML();
   anmFormSync();
 }
-function anmToggleAud(btn,v){
-  const i=anmDraft.audValues.indexOf(v);
-  if(i>=0)anmDraft.audValues.splice(i,1);else anmDraft.audValues.push(v);
-  btn.classList.toggle('is-on',i<0);
+function anmToggleAud(btn,k,v){
+  if(!anmDraft)return;
+  const sel=anmDraft.aud[k],i=sel.indexOf(v);
+  if(i>=0)sel.splice(i,1);else sel.push(v);
+  btn.classList.toggle('is-on',i<0);btn.setAttribute('aria-pressed',String(i<0));
+  const dim=ANM_DIMS.find(function(x){return x.k===k;});
+  const st=document.getElementById('anm-aud-st-'+k);
+  if(st){st.textContent=anmDimState(dim,sel);st.classList.toggle('is-set',!!sel.length);}
+  const r=document.getElementById('anm-reach');if(r)r.outerHTML=anmReachBlockHTML();
   anmFormSync();
 }
 // The time pickers (tsTimeField) report back through this hook.
 function tsTpAfter(id){if(String(id).indexOf('anm-')===0)anmFormSync();}
 
+// One kind of group from the draft — nothing when the audience is everyone.
+function anmPicked(k){return anmDraft&&anmDraft.mode===ANM_AUD_PICK?anmDraft.aud[k].slice():[];}
 // What the form would publish, read straight off the fields.
 function anmReadForm(){
   const v=function(id){const el=document.getElementById(id);return el?el.value:'';};
   return {
     title:v('anm-title').trim(),message:v('anm-msg').trim(),category:getCSValue('anm-cat'),
-    audType:anmDraft?anmDraft.audType:'All Employees',audValues:anmDraft?anmDraft.audValues.slice():[],
+    depts:anmPicked('depts'),branches:anmPicked('branches'),types:anmPicked('types'),roles:anmPicked('roles'),
+    audMode:anmDraft?anmDraft.mode:ANM_AUD_ALL,
     validFrom:anmJoin(getCDValue('anm-from-d'),v('anm-from-t')),
     validTo:getCDValue('anm-to-d')?anmJoin(getCDValue('anm-to-d'),v('anm-to-t')||'23:59'):'',
     pinned:ciPicked('anm-pin','No')==='Yes',
-    status:anmEditId?anmRec(anmEditId).status:ciPicked('anm-status','Active')
+    status:anmEditId?anmRec(anmEditId).status:'Active'
   };
 }
 /* Counters and the "when will this show" line — the only things that move as
@@ -513,9 +586,9 @@ function anmFormSync(){
 
 function buildAnmFormHTML(){
   const a=anmEditId?anmRec(anmEditId):null;
-  const d=anmDraft||{audType:'All Employees',audValues:[]};
   const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const split=function(dt){const p=(dt||'').split('T');return {d:p[0]||'',t:p[1]||''};};
+  const d=anmDraft||{};
   const from=a?split(a.validFrom):{d:d.fromDate||'',t:d.fromTime||''};
   const to=a?split(a.validTo):{d:'',t:''};
   const grp=function(label,req,html,full,extra){
@@ -538,17 +611,28 @@ function buildAnmFormHTML(){
       +'<button class="ct-modal-close" onclick="anmCloseForm()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">Posted to the Announcements panel on the employee dashboard, for the audience and dates you set here.</p>'
 
-    +sec('Announcement','What it says and who it is for',
+    /* One two-column grid throughout: full-width fields for what is long
+       (title, message, the group panel), and pairs for what is short
+       (Category | Pin, Target Audience | who it reaches, From | To), so no
+       field sits alone beside an empty half. */
+    +sec('Announcement','What it says',
       '<div class="ep-form-grid">'
       +grp('Announcement Title',true,
         '<input type="text" class="ep-form-input" id="anm-title" maxlength="'+ANM_TITLE_MAX+'" placeholder="e.g. Office closed for Diwali on 8 Nov" value="'+(a?sbEsc(a.title):'')+'" oninput="anmFormSync()">'
         +'<span class="anm-count" id="anm-title-n">'+(a?a.title.length:0)+' / '+ANM_TITLE_MAX+'</span>',true)
+      +grp('Category',true,apCS('anm-cat',ANM_CATS,a?a.category:'','Select category'))
+      +grp('Pin Announcement',true,ciRadio('anm-pin',['No','Yes'],a&&a.pinned?'Yes':'No'),false,
+        '<span class="anm-lbl-tip" title="Pinned announcements are shown first — still only to their audience, and only while valid.">Shown first on the dashboard</span>')
       +grp('Message',true,
         '<textarea class="ep-form-input anm-ta" id="anm-msg" maxlength="'+ANM_MSG_MAX+'" placeholder="Write the announcement employees will read" oninput="anmFormSync()">'+(a?sbEsc(a.message):'')+'</textarea>'
         +'<span class="anm-count" id="anm-msg-n">'+(a?a.message.length:0)+' / '+ANM_MSG_MAX+'</span>',true)
-      +grp('Category',true,apCS('anm-cat',ANM_CATS,a?a.category:'','Select category'))
-      +grp('Target Audience',true,apCS('anm-aud',ANM_AUD_TYPES,d.audType,'Select audience','anmAudTypePicked'))
-      +'<div class="ep-form-group ep-form-full" id="anm-aud-vals">'+anmAudChipsHTML()+'</div>'
+      +'</div>')
+
+    +sec('Audience','Who sees it',
+      '<div class="ep-form-grid">'
+      +grp('Target Audience',true,anmAudModeHTML())
+      +'<div class="ep-form-group"><label class="ep-form-label">Reach</label>'+anmReachBlockHTML()+'</div>'
+      +'<div class="ep-form-group ep-form-full" id="anm-aud-vals"'+(d.mode===ANM_AUD_PICK?'':' hidden')+'>'+anmAudPickHTML()+'</div>'
       +'</div>')
 
     +sec('Validity','When it starts and stops showing',
@@ -558,17 +642,6 @@ function buildAnmFormHTML(){
       +grp('Valid To Date &amp; Time',false,
         '<div class="anm-dt">'+apCD('anm-to-d',to.d,'No end date','anmFormSync')+tsTimeField('anm-to-t',to.t)+'</div>')
       +'<div class="ep-form-group ep-form-full"><div class="anm-when" id="anm-when"></div></div>'
-      +'</div>')
-
-    +sec('Display','How it is shown',
-      '<div class="ep-form-grid">'
-      +grp('Pin Announcement',true,ciRadio('anm-pin',['No','Yes'],a&&a.pinned?'Yes':'No')
-        +'<div class="anm-hint">Pinned announcements are shown first — still only to their audience, and only while valid and Active.</div>')
-      +(a
-        ? grp('Status',true,'<div class="anm-static"><span class="lp-status-badge tone-'+statusTone(a.status)+'">'+a.status+'</span>'
-            +'<span>Change it from the <b>Logs</b> tab, where the move carries a comment.</span></div>')
-        : grp('Status',true,ciRadio('anm-status',['Active','Inactive'],'Active')
-            +'<div class="anm-hint">Inactive saves it without showing it to anyone.</div>'))
       +'</div>')
 
     +audit
@@ -588,8 +661,8 @@ function anmSubmit(){
   if(!f.title)return bad('Announcement Title is required','','anm-title');
   if(!f.message)return bad('Message is required','Write what employees should read.','anm-msg');
   if(!f.category)return bad('Category is required','Pick the category this belongs to.');
-  if(f.audType!=='All Employees'&&!f.audValues.length)
-    return bad('Pick at least one '+f.audType.toLowerCase(),'Or set Target Audience to All Employees.');
+  if(f.audMode===ANM_AUD_PICK&&anmIsAll(f))
+    return bad('Pick at least one group','Tick a department, branch, employment type or role — or set Target Audience to All Employees.');
   if(!anmParse(f.validFrom))return bad('Valid From is required','Pick the date and time it should start showing.');
   if(f.validTo&&anmParse(f.validTo)<=anmParse(f.validFrom))return bad('Valid To must be after Valid From','Check the two dates.');
 
@@ -604,7 +677,7 @@ function anmSubmit(){
     if(a.validFrom!==f.validFrom||a.validTo!==f.validTo)changes.push('validity now '+anmFmt(f.validFrom)+' – '+(f.validTo?anmFmt(f.validTo):'no end date'));
     if(a.pinned!==f.pinned)changes.push(f.pinned?'pinned':'unpinned');
     if(!changes.length){anmCancelEdit();showToast('No changes','info','Nothing was different.');return;}
-    a.title=f.title;a.message=f.message;a.category=f.category;a.audType=f.audType;a.audValues=f.audValues;
+    a.title=f.title;a.message=f.message;a.category=f.category;ANM_DIMS.forEach(function(d){a[d.k]=f[d.k];});
     a.validFrom=f.validFrom;a.validTo=f.validTo;a.pinned=f.pinned;
     a.updatedBy=CURRENT_USER;a.updatedAt=stamp;
     anmEditMode=false;anmEditId=null;anmDraft=null;
@@ -613,7 +686,7 @@ function anmSubmit(){
     return;
   }
   const id=++anmSeq;
-  const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,audType:f.audType,audValues:f.audValues,
+  const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,depts:f.depts,branches:f.branches,types:f.types,roles:f.roles,
     message:f.message,validFrom:f.validFrom,validTo:f.validTo,pinned:f.pinned,status:f.status,from:'hr',
     createdBy:CURRENT_USER,createdAt:stamp,updatedBy:CURRENT_USER,updatedAt:stamp};
   annData.push(a);anmUnread[id]=1;

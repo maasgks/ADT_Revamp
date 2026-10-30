@@ -52,4 +52,3 @@
 .ts-cell-badge.is-claim{margin-top:auto}
 /* A leave day: the leave's name (a type, not a status) and under it where it stands. */
 .ts-leave-row{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0;max-width:100%;margin-top:2px}
-.ts-day-leave{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500;color:#334155}

@@ -224,9 +224,65 @@ function atReqDecide(empId,id,ok){
     const seed=(AT_REQ_SEED[empId]||[]).find(function(x){return x.id===id;});
     if(seed){seed.status=status;seed.decided=stamp;}
   }
+  atReqNotifDone(id);
   renderADTPage();
   const emp=atEmp(empId);
   showToast('Request '+status.toLowerCase(),ok?'success':'info',
     (AT_REQ_TYPE[r.type]||{}).label+' · '+arDateLabel(r.date)+(emp?' · '+emp.name:'')
     +(!ok&&r.type==='change'?' · previous times restored':''));
+}
+
+/* ══ ATTENDANCE CORRECTION → HEADER NOTIFICATION ═══════════════════════════
+   Reuses the existing approval workflow: when an employee submits a
+   correction (a time change from the day panel, or a claim / manual entry
+   from the attendance-request drawer), the applicable approvers — HR and the
+   Reporting Manager, as the approval configuration names them — get a
+   notification under the header bell. Opening it lands on
+   All Timesheets → that employee's panel → Requests tab. Deciding the
+   request (approve or reject) clears it. */
+// The configured approver, as the people who are told. "Manager" in the
+// configuration is the employee's Reporting Manager.
+function atReqRecipients(approver){
+  const out=[];
+  String(approver||'HR / Manager').split('/').forEach(function(p){
+    p=p.trim();if(!p)return;
+    if(/manager/i.test(p))p='Reporting Manager';
+    if(out.indexOf(p)<0)out.push(p);
+  });
+  return out;
+}
+const AT_REQ_KIND_LABEL={change:'Time change',attendance:'Off-day attendance',manual:'Manual entry'};
+function atReqNotify(empId,id,kind,iso,approver){
+  if(typeof notifData==='undefined')return [];
+  const emp=(typeof atEmp==='function'&&atEmp(empId))||(typeof tsEmp!=='undefined'?tsEmp:{name:'Employee'});
+  const to=atReqRecipients(approver);
+  // One notification per request: an edited request replaces its own.
+  for(let i=notifData.length-1;i>=0;i--)if(notifData[i].reqId===id)notifData.splice(i,1);
+  notifData.unshift({
+    name:'Attendance correction from '+emp.name,
+    sub:(AT_REQ_KIND_LABEL[kind]||'Correction')+' · '+new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' · For '+to.join(' & '),
+    time:'Just now',pending:true,
+    reqId:id,empId:empId,go:'at-requests'
+  });
+  if(typeof notifUpdateList==='function')notifUpdateList(true);
+  return to;
+}
+// Approve / Reject settles the request, so its notification is read.
+function atReqNotifDone(id){
+  if(typeof notifData==='undefined')return;
+  notifData.forEach(function(n){if(n.reqId===id)n.pending=false;});
+  if(typeof notifSyncBell==='function')notifSyncBell();
+}
+// Open from the bell: All Timesheets, the employee's panel, Requests tab.
+function atReqOpenFromNotif(i){
+  const n=notifData[i];if(!n||n.go!=='at-requests')return;
+  n.pending=false;
+  notifOpen=false;if(typeof renderNotif==='function')renderNotif();
+  page='all-timesheet';
+  if(typeof atReqFilter!=='undefined')atReqFilter='';
+  renderADTPage();
+  openAtSidebar(n.empId,'requests');
+  atReqFilter='';
+  const row=document.getElementById('at-row-'+n.empId);
+  if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});
 }

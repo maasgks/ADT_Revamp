@@ -73,3 +73,39 @@
 .anm-audit svg{flex-shrink:0}
 .anm-audit b{font-weight:600;color:#475569;margin-right:4px}
 @media (max-width:720px){.anm-dt{grid-template-columns:1fr}}
+
+/* Target Audience: a compact switch, then (for Specific Groups) one panel
+   with a row per kind of group - label and its state on the left, the
+   tick-chips on the right - and the live reach line as the panel's foot. */
+.anm-aud-mode .segmented{width:100%}
+.anm-aud-all b{color:var(--navy);font-weight:600}
+.anm-aud-box{border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden}
+.anm-aud-row{display:grid;grid-template-columns:168px minmax(0,1fr);gap:16px;align-items:start;padding:14px 16px}
+.anm-aud-row+.anm-aud-row{border-top:1px solid #f0f2f5}
+.anm-aud-lbl{display:flex;flex-direction:column;gap:3px;padding-top:7px}
+.anm-aud-lbl>span:first-child{font-size:13px;font-weight:600;color:var(--navy)}
+.anm-aud-state{font-size:11.5px;color:#94a3b8}
+.anm-aud-state.is-set{color:var(--navy);font-weight:600}
+.anm-aud-box .anm-chips{gap:8px}
+.anm-aud-box .anm-chip{height:34px}
+/* Reach sits in the column beside the switch, the same height as it, so the
+   pair reads as one row. */
+.anm-reach{display:flex;align-items:center;gap:8px;min-height:44px;box-sizing:border-box;padding:8px 14px;
+  border:1px solid var(--border);border-radius:var(--r-control);background:#f8fafc;font-size:12.5px;line-height:1.45;color:#475569}
+.anm-reach svg{flex-shrink:0;width:15px;height:15px}
+.anm-reach b{font-weight:600;color:var(--navy)}
+.anm-reach.is-none{background:var(--st-wait-bg);border-color:var(--st-wait-bd);color:var(--st-wait-fg)}
+.anm-reach .anm-reach-none{color:var(--st-wait-fg)}
+@media (max-width:720px){
+  .anm-aud-row{grid-template-columns:1fr;gap:8px}
+  .anm-aud-lbl{flex-direction:row;align-items:baseline;justify-content:space-between;padding-top:0}
+}
+
+.anm-aud-mode .segmented{width:100%}
+/* The panel's edit form stacks: switch, then reach under it. */
+.lp-sb-field .anm-aud-mode+.anm-reach{margin-top:8px}
+#anm-aud-vals[hidden]{display:none}
+/* A short note on the label line, right-aligned, instead of a hint paragraph
+   that made Pin taller than the Category beside it. */
+.anm-form .ep-form-label{display:flex;align-items:baseline;gap:6px}
+.anm-lbl-tip{margin-left:auto;font-size:11.5px;font-weight:400;color:#94a3b8;cursor:help}

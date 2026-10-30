@@ -43,7 +43,7 @@ const LABELS={empId:'Employee ID',dept:'Department',joinDate:'Joining Date',desc
   endTime:'End Time',workingDays:'Working Days',weekOffDays:'Week Off Days',allocationFrequency:'Allocation Frequency',
   approvalLevel:'Leave Approval Level',level1Approver:'Level 1 Approver',level2Approver:'Level 2 Approver',
   countWeeklyOff:'Count Weekly Off as Leave',countHoliday:'Count Holiday as Leave',periodFrom:'Leave Period From',periodTo:'Leave Period To',
-  validFrom:'Valid From',validTo:'Valid To',audType:'Target Audience',audValues:'Audience Groups',pinned:'Pin Announcement'};
+  validFrom:'Valid From',validTo:'Valid To',depts:'Departments',branches:'Branches',types:'Employment Types',roles:'Roles',pinned:'Pin Announcement'};
 function human(k){
   if(LABELS[k])return LABELS[k];
   return String(k).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,function(c){return c.toUpperCase();});

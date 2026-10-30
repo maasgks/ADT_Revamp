@@ -88,6 +88,8 @@ function renderPageContent(target){
     if(typeof annRender==='function')annRender(el);    // The snapshot always has the first tab active — restore the one the user was on.
     if(window.activeDashboardTab&&typeof switchDashboard==='function')switchDashboard(window.activeDashboardTab);
     _attRestore();   // ...and the snapshot is always the idle clock — see _attRestore
+    // The Required documents popup, when its preview switch is on (js/req-docs-popup.js).
+    if(typeof rdRender==='function')rdRender(el);
     return;
   }
   el.innerHTML=buildListingHTML(page);

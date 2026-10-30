@@ -75,7 +75,7 @@ const sbIco={
   wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7V5.5A1.5 1.5 0 0 0 18.5 4H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6"/><path d="M16.5 14h.01"/></svg>',
   card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2"/><path d="M12 15h4"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
-  megaphone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  megaphone:'<svg class="mg-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2v3.6a1 1 0 0 0 .8 1L15 17.5V6.5L3.8 9.2a1 1 0 0 0-.8 1z"/><path d="M6.5 14.9v2.6a2 2 0 0 0 4 0v-1.6"/><path class="mg-wave" d="M18 9.5a4 4 0 0 1 0 5"/><path class="mg-wave" d="M18 9.5a4 4 0 0 1 0 5"/><path class="mg-wave" d="M18 9.5a4 4 0 0 1 0 5"/></svg>',
   chatLines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>',
   ticket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3z"/><path d="M13 5v14"/></svg>',
   cog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
@@ -1679,7 +1679,8 @@ function notifListHTML(){
      Index into notifData, not into the filtered list, so the button still
      points at the right notification while "Only Show Unread" is on. */
   return list.map(n=>{const i=notifData.indexOf(n);
-    return `<div class="np-item${n.pending?' is-unread':''}" data-i="${i}"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
+    const go=n.go?` is-link" role="button" tabindex="0" onclick="atReqOpenFromNotif(${i})" onkeydown="if(event.key==='Enter')atReqOpenFromNotif(${i})`:'';
+    return `<div class="np-item${n.pending?' is-unread':''}${go}" data-i="${i}"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
   }).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>';
 }
 /* One notification read. With "Only Show Unread" on, the row slides out
@@ -5180,6 +5181,40 @@ function tsUnitRange(u){
    earlier one is still open: an approver would otherwise be asked to sign off
    week 4 with week 3 still moving. Checks the month's earlier rows and the
    last row of the month before; returns the first that is not locked. */
+/* ── A small blocking dialog for the timesheet ──
+   For a rule the user must deal with before going on (a toast slides away
+   while they are still reading it). One message, Cancel, and - where there is
+   one - the action that resolves it. */
+let tsDialogFn=null;
+function tsDialog(o){
+  tsDialogClose(true);
+  tsDialogFn=o.primary?o.primary.fn:null;
+  const ico=o.tone==='warn'
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  const el=document.createElement('div');
+  el.id='ts-dlg';el.className='ts-dlg-ov';
+  el.setAttribute('onclick','tsDialogClose()');
+  el.innerHTML='<div class="ts-dlg" role="alertdialog" aria-modal="true" aria-labelledby="ts-dlg-t" aria-describedby="ts-dlg-d" onclick="event.stopPropagation()">'
+    +'<span class="ts-dlg-ico is-'+(o.tone||'info')+'">'+ico+'</span>'
+    +'<h3 id="ts-dlg-t">'+o.title+'</h3>'
+    +'<p id="ts-dlg-d">'+o.text+'</p>'
+    +'<div class="ts-dlg-btns">'
+      +(o.primary?'<button class="ep-cancel-btn" onclick="tsDialogClose()">Cancel</button>'
+        +'<button class="ep-save-btn" id="ts-dlg-go" onclick="tsDialogGo()">'+o.primary.label+'</button>'
+        :'<button class="ep-save-btn" id="ts-dlg-go" onclick="tsDialogClose()">Got it</button>')
+    +'</div></div>';
+  document.body.appendChild(el);
+  requestAnimationFrame(function(){el.classList.add('is-shown');const b=document.getElementById('ts-dlg-go');if(b)b.focus();});
+}
+function tsDialogGo(){const fn=tsDialogFn;tsDialogClose(true);if(fn)fn();}
+function tsDialogClose(now){
+  const el=document.getElementById('ts-dlg');tsDialogFn=null;
+  if(!el)return;
+  if(now){el.remove();return;}
+  el.classList.remove('is-shown');setTimeout(function(){el.remove();},180);
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.getElementById('ts-dlg'))tsDialogClose();});
 function tsEarlierOpen(y,m,w){
   const mNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const cur=tsUnit(y,m,w).key,seen={};seen[cur]=1;
@@ -5193,7 +5228,7 @@ function tsEarlierOpen(y,m,w){
     const u=check[i];
     if(seen[u.key])continue;seen[u.key]=1;
     const st=tsUnitStatus(u);
-    if(TS_EDITABLE[st])return {label:'Week '+u.w+' of '+mNames[u.m],range:tsUnitRange(u),state:st==='open'?'open':st};
+    if(TS_EDITABLE[st])return {label:'Week '+u.w+' of '+mNames[u.m],range:tsUnitRange(u),state:st==='open'?'open':st,y:u.y,m:u.m,w:u.w};
   }
   return null;
 }
@@ -5325,9 +5360,13 @@ function tsSaveEntry(){
     desc:desc                           // optional; never blocks the save
   };
   tsEdit=null;
+  // A change is an attendance correction: it goes through the same approval,
+  // and the approvers are told under the header bell.
+  const told=typeof atReqNotify==='function'
+    ?atReqNotify(tsEmp.empId,'ch:'+date,'change',date,typeof AR_MANUAL_APPROVER!=='undefined'?AR_MANUAL_APPROVER:'HR / Manager'):[];
   renderADTPage();
   showToast(had?'Entry updated':'Entry added','success',
-    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged'+(desc?' · description saved':'')+'.');
+    tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged'+(desc?' · description saved':'')+(told.length?' · sent for approval, '+told.join(' & ')+' notified':'')+'.');
 }
 
 // ── Locking, unlocking, submitting ────────────────────────────────────────
@@ -5363,7 +5402,13 @@ function tsLockWeek(w){
   if(!relock){
     const gap=tsEarlierOpen(y,m,w);
     if(gap){
-      showToast('Lock '+gap.label+' first','error',gap.label+' ('+gap.range+') is still '+gap.state+'. Weeks are locked in order.');
+      // A rule the employee has to act on, so it is a dialog that stays put -
+      // and, when the earlier week is on screen, offers to lock it right here.
+      const here=gap.y===y&&gap.m===m;
+      tsDialog({tone:'warn',
+        title:'Lock '+gap.label+' first',
+        text:'<b>'+gap.label+'</b> ('+gap.range+') is still <b>'+gap.state+'</b>. Weeks are locked in order, so lock it before Week '+w+'.',
+        primary:here?{label:(gap.state==='open'?'Lock':'Re-lock')+' Week '+gap.w,fn:function(){tsLockWeek(gap.w);}}:null});
       return;
     }
   }

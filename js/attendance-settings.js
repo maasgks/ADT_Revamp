@@ -143,8 +143,9 @@ function csAttList(a){return (a&&a.length)?a.join(', '):'—';}
    SELECTION LIVES IN apMSState, not in the markup, because the panel body is
    replaced wholesale on every repaint. */
 const apMSState={};
-function apMS(id,opts,selected,placeholder){
-  apMSState[id]={opts:opts.slice(),sel:(selected||[]).slice(),ph:placeholder||'Select'};
+function apMS(id,opts,selected,placeholder,hook){
+  // hook: name of a function told (with the id) when the selection changes.
+  apMSState[id]={opts:opts.slice(),sel:(selected||[]).slice(),ph:placeholder||'Select',hook:hook||''};
   /* The summary and the empty class are written INTO the markup, not painted
      on afterwards: the control has to be readable the instant the panel body
      is swapped in, and there is no mount hook to paint it from. */
@@ -203,7 +204,12 @@ function msPick(id,val){
   const d=document.getElementById('msd-'+id);
   const t=document.querySelector('[data-msid="'+id+'"]');
   if(d&&t&&d.classList.contains('ms-open'))placeAnchoredMenu(d,t.getBoundingClientRect(),{alignLeft:true,width:t.offsetWidth});
-  csAttOnChange();
+  msChanged(id);
+}
+// A control given a hook reports to it; the attendance form's own do as before.
+function msChanged(id){
+  const h=apMSState[id]&&apMSState[id].hook;
+  if(h&&typeof window[h]==='function')window[h](id);else csAttOnChange();
 }
 function msClear(ev,id){
   if(ev){ev.stopPropagation();ev.preventDefault();}
@@ -212,7 +218,7 @@ function msClear(ev,id){
   s.sel=[];
   msPaint(id);
   msCloseAll();
-  csAttOnChange();
+  msChanged(id);
 }
 function msClearKey(ev,id){
   if(ev.key!=='Enter'&&ev.key!==' ')return;

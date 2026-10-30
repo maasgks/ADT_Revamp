@@ -6886,10 +6886,6 @@ function buildMyTimesheetHTML(viewingOther) {
     + '</div>'
     + '<button class="ts-btn-reset">Reset</button>'
     + '<button class="ts-btn-search">Search</button>'
-    /* Export sits AFTER Search and outlined, not before it and filled: the bar
-       reads left to right as narrow-the-view, then take-it-away, and Search is
-       the affirmative action on it. See css/export-panel.css. */
-    + tsxExportBtn('my')
     + '</div>';
 
   // ── User bar ──
@@ -7061,10 +7057,10 @@ function buildMyTimesheetHTML(viewingOther) {
             : att.pay === 'Paid' ? {t:'Paid',c:'ok'} : null;
           const lvTip = (att.leaveType||'Leave') + (att.leaveStatus ? ' · '+att.leaveStatus : '') + (att.pay ? ' · '+att.pay : '');
           body = '<span class="ts-leave-row" title="'+attrSafe(lvTip)+'">'
-            // The leave TYPE is a name, not a status, so it is plain text; where
-            // the leave stands under it is the app's status badge.
-            + '<span class="ts-day-leave">' + (att.leaveType || 'Leave') + '</span>'
-            + (lvTag ? '<span class="lp-status-badge tone-'+lvTag.c+' ts-cell-badge">'+lvTag.t+'</span>' : '')
+            // The card shows only where the leave stands; its type (Casual,
+            // Sick…) is in the tooltip and the day panel.
+            + (lvTag ? '<span class="lp-status-badge tone-'+lvTag.c+' ts-cell-badge">'+lvTag.t+'</span>'
+                     : '<span class="lp-status-badge tone-idle ts-cell-badge">Leave</span>')
             + '</span>';
         } else {
           // Only the exception is labelled — "Auto" on every present day is
@@ -7380,6 +7376,9 @@ function buildAllTimesheetHTML(){
     +apCS('at-f-month',months,atMonth,'Month')
     +clearFiltersBtn([atTsQuickFilter,atSearchQuery],'resetAtFilters()')
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
+    // Export after Search, as on Employees: narrow the list, then take it away.
+    // The 'all' scope of the timesheet export picks employees from this list.
+    +tsxExportBtn('all')
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'

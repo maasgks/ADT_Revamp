@@ -485,10 +485,13 @@ function arSubmit(){
     location:manual?(prev?prev.location:(ctx&&ctx.location)):undefined,
     note:manual?(prev?prev.note:(ctx&&ctx.note)):undefined
   };
+  // The approvers hear about it under the header bell (All Timesheets › Requests).
+  const told=typeof atReqNotify==='function'&&typeof tsEmp!=='undefined'
+    ?atReqNotify(tsEmp.empId,'ar:'+iso,manual?'manual':'attendance',iso,arApproverFor(iso)):[];
   arClose();
   if(typeof renderADTPage==='function')renderADTPage();
   showToast(existing?'Request updated':'Attendance request submitted','success',
-    arDateLabel(iso)+' · '+span.text+' · sent to '+arApproverFor(iso));
+    arDateLabel(iso)+' · '+span.text+' · '+(told.length?told.join(' & ')+' notified':'sent to '+arApproverFor(iso)));
 }
 function arWithdraw(){
   const iso=arOpenDate;
