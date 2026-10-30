@@ -4994,7 +4994,18 @@ const tsAttendance={
   '2026-06-19':{in:'09:00 AM',out:'06:15 PM',loc:'Hyderabad',hours:'9.25h',src:'Auto',status:'present'},
   '2026-06-20':{in:'09:10 AM',out:'05:50 PM',loc:'Hyderabad',hours:'8.67h',src:'Auto',status:'present'},
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
-  '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'},
+  '2026-06-24':{in:'09:02 AM',out:'06:10 PM',loc:'Hyderabad',hours:'9.13h',src:'Manual',status:'present'},
+  '2026-06-25':{in:'09:00 AM',out:'06:05 PM',loc:'Hyderabad',hours:'9.08h',src:'Auto',status:'present'},
+  '2026-06-26':{in:'09:05 AM',out:'06:00 PM',loc:'Remote',hours:'8.92h',src:'Auto',status:'present'},
+  /* THE WEEK ACROSS THE MONTH EDGE: Mon 29 Jun – Sun 5 Jul. On Weekly billing
+     it is one period — June's last row and July's first row are the same lock. */
+  '2026-06-29':{in:'09:00 AM',out:'06:20 PM',loc:'Hyderabad',hours:'9.33h',src:'Auto',status:'present'},
+  '2026-06-30':{in:'09:10 AM',out:'06:15 PM',loc:'Hyderabad',hours:'9.08h',src:'Auto',status:'present',desc:'Month-end close: reconciled June timesheets with the payroll export.'},
+  '2026-07-01':{in:'09:00 AM',out:'06:00 PM',loc:'Hyderabad',hours:'9.00h',src:'Auto',status:'present'},
+  '2026-07-02':{in:'09:40 AM',out:'06:30 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
+  '2026-07-03':{in:'09:00 AM',out:'07:15 PM',loc:'Remote',hours:'10.25h',src:'Manual',status:'present',desc:'Release prep for the July payroll cycle.'},
+  // Today.
+  '2026-07-06':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'},
   /* Three absences. The fixture had none, so "Leave" was a term the legend
      named and the month could never show — and the Leaves Taken tile above it
      was a hard-coded 0 that no data could ever move. leaveStatus and pay are
@@ -5063,7 +5074,7 @@ function tsCloseDay(){tsSelectedDay=null;tsMapOpen='';tsEdit=null;renderADTPage(
    TODAY IS FIXED IN THIS PROTOTYPE. The grid's data is June 2026, so "today"
    is a constant rather than a live clock - otherwise every day of the fixture
    month would read as the future and none of it could be edited. */
-const TS_TODAY='2026-06-24';
+const TS_TODAY='2026-07-06';   // Mon — the first week of July is behind it
 /* A day's Work Description - what was done, in the employee's words. Optional,
    stored on the attendance record as `desc` beside the times, and capped so a
    day stays a summary rather than a report. */
@@ -5539,7 +5550,8 @@ function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;if(!ts
 // Picking a month re-spans the range to that month, so the filter label and the
 // grid can never disagree about which dates are in view.
 function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsPerSel={};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
-function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsPerSel={};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
+// "This month" is the month TS_TODAY falls in.
+function tsMpThisMonth(ev){if(ev)ev.stopPropagation();const t=TS_TODAY.split('-'),ty=+t[0],tm=+t[1]-1;tsMonth={year:ty,month:tm};tsPerSel={};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(ty,tm);renderADTPage();}
 
 // ── TIMESHEET DATE-RANGE FILTER ──
 // The range control used to call tsToggleMonthPicker, so clicking a field

@@ -41,18 +41,15 @@
 .ds-total{display:inline-flex;align-items:baseline;gap:6px;font-size:11.5px;color:var(--gray)}
 .ds-total b{font-size:13px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
 
-/* A leave day names its leave. .ts-day-pill already has absent / inprog /
-   present; this is the fourth, in the info blue the rail and the tag use. */
-.ts-day-pill.leave{background:var(--st-info-bg);color:var(--st-info-fg);
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
-/* The leave pill and, beside it, where that leave stands: Pending until it is
-   approved, then Paid or Unpaid. The pill gives way first in a narrow cell —
-   the status word is the shorter and the newer fact. */
-.ts-leave-row{display:flex;align-items:center;gap:5px;min-width:0;max-width:100%;margin-top:4px;flex-wrap:wrap}
-.ts-leave-row .ts-day-pill.leave{margin-top:0;min-width:0;flex:0 1 auto}
-.ts-leave-tag{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
-  font-size:9.5px;font-weight:600;line-height:1;white-space:nowrap}
-.ts-leave-tag::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
-.ts-leave-tag.tone-wait{color:#b45309}
-.ts-leave-tag.tone-ok{color:var(--st-ok-fg)}
-.ts-leave-tag.tone-bad{color:var(--st-bad-fg)}
+/* ── Statuses inside a day cell ──
+   Every status in the month grid — In progress, Absent, Late in / Early out,
+   a holiday, a leave's Pending / Paid / Unpaid, a claim's Pending / Approved /
+   Rejected — is the app's own lp-status-badge with its tone, set a size down
+   so it fits a day cell. Ellipsis if a long holiday name runs out of room; the
+   full text is on its title. */
+.ts-cell-badge{display:inline-block;min-width:0;max-width:100%;margin-top:4px;padding:2px 8px;font-size:10.5px;line-height:1.35;
+  align-self:flex-start;overflow:hidden;text-overflow:ellipsis}   /* inline-block: ellipsis does not work on a flex box */
+.ts-cell-badge.is-claim{margin-top:auto}
+/* A leave day: the leave's name (a type, not a status) and under it where it stands. */
+.ts-leave-row{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0;max-width:100%;margin-top:2px}
+.ts-day-leave{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:500;color:#334155}

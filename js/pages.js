@@ -344,12 +344,64 @@ function renderDeSidebar(){
    option that means 'any of these five'. */
 /* Status tiles and the Offboarding group live in employee-lifecycle.js
    (empStatTilesHTML / empStatMatch). */
+/* The rows each tab shows, filters and search applied — one function per tab
+   so the table and its Export can never disagree about what "the list" is. */
+function deListRows(){
+  let rows=directEmpData;
+  if(deDeptFilter)rows=rows.filter(e=>e.dept===deDeptFilter);
+  if(deBranchFilter)rows=rows.filter(e=>e.branch===deBranchFilter);
+  if(deStatusFilter)rows=rows.filter(e=>empStatMatch(e,deStatusFilter));
+  return rows;
+}
+function geListRows(){
+  return geStatusFilter?globalEmpData.filter(e=>empStatMatch(e,geStatusFilter)):globalEmpData;
+}
+/* ── EXPORT: ONE CLICK, NO OPTIONS ──
+   Downloads exactly what the listing is showing — the tab you are on, with
+   its filters and search, every page of it — as an .xlsx, through the same
+   writer the timesheet export uses (tsxWorkbook / tsxSave in ts-export.js). */
+const EMP_EXPORT={
+  de:{title:'Direct Employees',rows:function(){return lpSearchRows(deListRows(),deSearchQuery);},
+    filters:function(){return [deDeptFilter&&'Department: '+deDeptFilter,deBranchFilter&&'Branch: '+deBranchFilter,
+      deStatusFilter&&'Status: '+empStatFilterLabel(deStatusFilter),deSearchQuery&&'Search: "'+deSearchQuery+'"'];},
+    cols:[['Name','name',24],['Employee ID','empId',14],['Job Title','jobTitle',24],['Department','dept',16],['Branch','branch',14],
+      ['Joining Date','joinDate',14],['Email','email',28],['Contact Number','contact',18],['Status','status',18]]},
+  ge:{title:'Global Employees',rows:function(){return lpSearchRows(geListRows(),geSearchQuery);},
+    filters:function(){return [geStatusFilter&&'Status: '+empStatFilterLabel(geStatusFilter),geSearchQuery&&'Search: "'+geSearchQuery+'"'];},
+    cols:[['Name','name',24],['Employee ID','empId',14],['Country','country',16],['Job Title','jobTitle',24],['Worker Type','workerType',14],
+      ['Joining Date','joinDate',14],['Email','email',28],['Contact Number','contact',18],['Status','status',18]]}
+};
+function empStatFilterLabel(v){return empStatIsGroup(v)?EMP_STAT_GROUPS[v]:v;}
+function empExportBtn(kind){
+  return '<button type="button" class="tsx-open-btn" onclick="empExport(\''+kind+'\')" title="Download this list as an Excel file">'
+    +TSX_ICO.download+'Export</button>';
+}
+function empExport(kind){
+  const cfg=EMP_EXPORT[kind];if(!cfg)return;
+  const list=cfg.rows();
+  if(!list.length){showToast('Nothing to export','info','No employees match the current filters.');return;}
+  const s=stampNow();
+  const applied=cfg.filters().filter(Boolean);
+  const sheet={name:cfg.title,title:cfg.title,
+    meta:['Exported '+s.date+', '+s.time+' · '+list.length+' employee'+(list.length===1?'':'s'),
+      applied.length?'Filters: '+applied.join(' · '):'All employees — no filters applied'],
+    columns:[{label:'S. No',w:7,num:1}].concat(cfg.cols.map(function(c){return {label:c[0],w:c[2]};})),
+    rows:list.map(function(e,i){
+      return [i+1].concat(cfg.cols.map(function(c){const v=e[c[1]];return v==null||v===''||v==='--'?'—':String(v);}));
+    })};
+  try{
+    const d=new Date(),pad=function(n){return String(n).padStart(2,'0');};
+    tsxSave(tsxWorkbook([sheet]),cfg.title.replace(/ /g,'_')+'_'+d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'.xlsx');
+  }catch(err){
+    console.error('Employee export failed',err);
+    showToast('Export failed','error','The file could not be created.');return;
+  }
+  const noun=cfg.title.toLowerCase();
+  showToast('Export ready','success',list.length+' '+(list.length===1?noun.replace(/s$/,''):noun)+' downloaded as Excel.');
+}
 function buildDirectListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  let deRows=directEmpData;
-  if(deDeptFilter)deRows=deRows.filter(e=>e.dept===deDeptFilter);
-  if(deBranchFilter)deRows=deRows.filter(e=>e.branch===deBranchFilter);
-  if(deStatusFilter)deRows=deRows.filter(e=>empStatMatch(e,deStatusFilter));
+  const deRows=deListRows();
   if(deSelectedId&&!deRows.some(e=>e.id===deSelectedId))deSelectedId=null;
   const pgn=listPage('direct-employees',[deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery].join('|'),lpSearchRows(deRows,deSearchQuery).map((e,i)=>'<tr class="de-row'+(deSelectedId===e.id?' lp-row-selected':'')+'" id="de-row-'+e.id+'" style="cursor:pointer" onclick="openDeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
@@ -375,6 +427,7 @@ function buildDirectListingHTML(){
     +apCS('de-f-status',EMP_STATUSES,empStatIsGroup(deStatusFilter)?'':deStatusFilter,'Status')
     +clearFiltersBtn([deDeptFilter,deBranchFilter,deStatusFilter,deSearchQuery],'resetDeFilters()')
     +'<button class="lp-pill-search" onclick="applyDeFilters()">Search</button>'
+    +empExportBtn('de')
     +'</div></div>'
     +empStatTilesHTML(directEmpData,deStatusFilter,'deToggleStatFilter')
     +'</div>'
@@ -497,7 +550,7 @@ function renderGeSidebar(){
 }
 function buildGlobalListingHTML(){
   const d='<span style="color:#9ca3af">--</span>';
-  const filtered=geStatusFilter?globalEmpData.filter(e=>empStatMatch(e,geStatusFilter)):globalEmpData;
+  const filtered=geListRows();
   if(geSelectedId&&!filtered.some(e=>e.id===geSelectedId))geSelectedId=null;
   const pgn=listPage('global-employees',geStatusFilter+'|'+geSearchQuery,lpSearchRows(filtered,geSearchQuery).map((e,i)=>'<tr class="ge-row'+(geSelectedId===e.id?' lp-row-selected':'')+'" id="ge-row-'+e.id+'" style="cursor:pointer" onclick="openGeSidebar('+e.id+')">'
     +'<td style="color:var(--gray);font-size:13px">'+(i+1)+'</td>'
@@ -520,6 +573,7 @@ function buildGlobalListingHTML(){
     +apCS('ge-f-status',EMP_STATUSES,empStatIsGroup(geStatusFilter)?'':geStatusFilter,'Status')
     +clearFiltersBtn([geStatusFilter,geSearchQuery],'resetGeFilters()')
     +'<button class="lp-pill-search" onclick="applyGeFilters()">Search</button>'
+    +empExportBtn('ge')
     +'</div></div>'
     +empStatTilesHTML(globalEmpData,geStatusFilter,'geToggleStatFilter')
     +'</div>'
@@ -6560,6 +6614,7 @@ function buildTsSidebarHTML(dateStr) {
         : '<div class="ts-sb-work-text is-empty">No description added for this day.</div>')
       + '</div>'
     : '';
+  const dayMax = (typeof csAtt !== 'undefined' && csAtt && +csAtt.dailyHours) || 8;
   const readBody = '<div class="ts-sb-section"><div class="ts-sb-sec-title"><div class="ts-sb-dot in"></div>Check In</div>'
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+ci+'</span></div>'
     + locRow('in',ci)
@@ -6568,7 +6623,11 @@ function buildTsSidebarHTML(dateStr) {
     + '<div class="ts-sb-field">'+clkSvg+'<span class="ts-sb-flabel">Time</span><span class="ts-sb-fval">'+co+'</span></div>'
     + locRow('out',co)
     + '</div>'
-    + '<div class="ts-sb-total"><span class="ts-sb-total-label">Total Hours</span><span class="ts-sb-total-val">'+(hrs==='--'?'0.00h':hrs)+'</span></div>'
+    /* What was worked, beside the most the entity counts in a day — the Daily
+       Work Hours set in Company Settings › Attendance. */
+    + '<div class="ts-sb-total"><span class="ts-sb-total-txt"><span class="ts-sb-total-label">Actual Work Hours</span>'
+      + '<span class="ts-sb-total-max">Max work hours: '+dayMax+'h</span></span>'
+      + '<span class="ts-sb-total-val">'+(hrs==='--'?'0.00h':hrs)+'<span class="ts-sb-total-of"> / '+dayMax+'h</span></span></div>'
     + workBlock
     + (src ?'<div class="ts-sb-src">Source: <b>'+src+'</b></div>' : '');
 
@@ -6682,16 +6741,22 @@ function buildTsMonthPickerHTML() {
      rejected  sent back with a reason; corrected, re-locked, resubmitted alone
    Somebody looking at another employee's sheet gets the state, plus unlock /
    re-lock if their role allows it. */
+/* THE WEEK'S STATE IS A STATUS, SO IT IS DRAWN AS ONE — the app's own
+   lp-status-badge, toned by who owes the next move (ts-billing.css): Locked
+   idle, Unlocked info, Submitted wait, Approved ok, Rejected bad. What can be
+   DONE to the week (Lock, Unlock, Re-lock) is a labelled button underneath,
+   never a bare padlock beside the badge — a padlock next to "Locked" read as
+   a second copy of the status rather than as the way to undo it. */
 function tsWeekChipHTML(u,st){
   const meta=tsWeekMeta[u.key]||{};
   const c={
-    locked:['is-locked',TS_ICO.lock+'Locked',tsUnitAuto(u)?'Locked automatically after '+tsFmtDay(tsUnitCutoff(u)):'Locked by hand'],
-    unlocked:['is-unlocked',TS_ICO.unlock+'Unlocked','Unlocked for correction'],
-    submitted:['is-sent','Submitted','Waiting on approval'+(meta.sub?' · '+meta.sub:'')],
-    approved:['is-ok','Approved','Approved'+(meta.sub?' · '+meta.sub:'')],
-    rejected:['is-bad','Rejected','Sent back'+(meta.reason?': '+meta.reason:'')]
+    locked:['idle',TS_ICO.lock+'Locked',tsUnitAuto(u)?'Locked automatically after '+tsFmtDay(tsUnitCutoff(u)):'Locked by hand'],
+    unlocked:['info',TS_ICO.unlock+'Unlocked','Unlocked for correction'],
+    submitted:['wait','Submitted','Waiting on approval'+(meta.sub?' · '+meta.sub:'')],
+    approved:['ok','Approved','Approved'+(meta.sub?' · '+meta.sub:'')],
+    rejected:['bad','Rejected','Sent back'+(meta.reason?': '+meta.reason:'')]
   }[st];
-  return c?'<span class="ts-wk-chip '+c[0]+'" title="'+attrSafe(c[2])+'">'+c[1]+'</span>':'';
+  return c?'<span class="lp-status-badge tone-'+c[0]+' ts-wk-status" title="'+attrSafe(c[2])+'">'+c[1]+'</span>':'';
 }
 /* The tick that puts a locked week into the submission. It leads the week's
    label, the way a row's checkbox leads a table row, rather than hanging as a
@@ -6715,29 +6780,57 @@ function tsAllPickHTML(){
       +' aria-label="Select all weeks" onchange="tsToggleAllWeeks()">'
     +'<span>All</span></label>';
 }
+/* THE WEEK RAIL, AS DEEL AND MULTIPLIER SHOW A PERIOD: one status per week,
+   and only the NEXT step in view.
+     · the status is the week's badge, nothing beside it
+     · the next step the employee owns — Lock a finished week, Re-lock a
+       corrected one — is a light text action under it
+     · what only HR or a manager does (Unlock for correction) is not repeated
+       on every row; it lives in the week's "⋯" menu (tsWeekMenuHTML) */
 function tsWeekRailHTML(w){
   const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
   const own=!tsReadOnly,admin=tsCanUnlock(),done=tsWeekStartable(y,m,w);
   const chip=tsWeekChipHTML(u,st);
+  const act=function(label,title){
+    return '<button class="ts-wk-act" onclick="tsLockWeek('+w+')" title="'+attrSafe(title)+'">'+TS_ICO.lock+label+'</button>';
+  };
   if(st==='open'){
     // A week still being worked has nothing to close off yet.
     if(!own||!done)return '';
-    return '<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock '+tsUnitRange(u)
-      +' now. Left alone it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.">'+TS_ICO.lock+'Lock</button>';
-  }
-  if(st==='locked'){
-    // The tick itself sits beside the week's label (tsWeekPickHTML).
-    return '<div class="ts-wk-line">'+chip
-        +(admin?'<button class="ts-wk-icon" onclick="tsUnlockWeek('+w+')" title="Unlock week '+w+' for correction">'+TS_ICO.unlock+'</button>':'')
-      +'</div>';
+    return act('Lock week','Lock '+tsUnitRange(u)+' now. Left alone it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.');
   }
   if(st==='unlocked'||st==='rejected'){
-    return chip+((own||admin)&&done
-      ?'<button class="ts-wk-btn" onclick="tsLockWeek('+w+')" title="Lock week '+w+' again once it is corrected">'+TS_ICO.lock+'Re-lock</button>'
-      :'');
+    return chip+((own||admin)&&done?act('Re-lock','Lock week '+w+' again once it is corrected'):'');
   }
   return chip;
 }
+/* The week's "⋯" menu: the actions only HR or a manager takes. Empty — and
+   so not drawn — for everyone else and for weeks with nothing to do. */
+let tsWkMenu=null;   // the week whose menu is open
+function tsWeekMenuItems(w){
+  const u=tsUnit(tsMonth.year,tsMonth.month,w);
+  if(tsUnitStatus(u)==='locked'&&tsCanUnlock())
+    return [{label:'Unlock for correction',icon:TS_ICO.unlock,call:'tsUnlockWeek('+w+')'}];
+  return [];
+}
+function tsWeekMenuHTML(w){
+  const items=tsWeekMenuItems(w);if(!items.length)return '';
+  const open=tsWkMenu===w;
+  return '<div class="ts-wk-more'+(open?' is-open':'')+'">'
+    +'<button class="ts-wk-more-btn" onclick="tsToggleWkMenu(event,'+w+')" title="More actions for week '+w+'" aria-label="More actions" aria-expanded="'+open+'">'
+      +'<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></button>'
+    +(open?'<div class="ts-wk-pop" role="menu">'+items.map(function(it){
+        return '<button role="menuitem" onclick="event.stopPropagation();tsWkMenu=null;'+it.call+'">'+it.icon+it.label+'</button>';
+      }).join('')+'</div>':'')
+  +'</div>';
+}
+function tsToggleWkMenu(ev,w){
+  ev.stopPropagation();
+  tsWkMenu=tsWkMenu===w?null:w;
+  renderADTPage();
+}
+// A click anywhere else closes an open week menu.
+document.addEventListener('click',function(){if(tsWkMenu!=null){tsWkMenu=null;renderADTPage();}});
 /* Hours over the records a filter keeps, split into regular and overtime by
    the shift Attendance Settings defines (dsShift). See the Stats note below. */
 function tsHourStats(keep){
@@ -6848,14 +6941,20 @@ function buildMyTimesheetHTML(viewingOther) {
     // total is the figure people actually scan a timesheet for, so it goes
     // there instead and the column starts earning its width.
     let wkHours = 0;
+    const wkDays = {};
     for (let c = 0; c < 7; c++) {
       const dn = w * 7 + c + 1 - monOff;
       if (dn < 1 || dn > daysInMonth) continue;
       const ds = y+'-'+String(m+1).padStart(2,'0')+'-'+String(dn).padStart(2,'0');
       if (!tsInRange(ds)) continue;
+      wkDays[ds] = 1;
       const a = tsAttendance[ds];
       if (a && a.status === 'present') wkHours += parseFloat(a.hours);
     }
+    /* Of the week's hours, how many are overtime — the split Deel bills on
+       (regular vs overtime). Same rule as the Overtime tile (tsHourStats), so
+       the rail and the tile cannot disagree. Said only when there is some. */
+    const wkOt = wkHours ? tsHourStats(function(k){ return wkDays[k]; }).ot : 0;
     /* On Weekly billing a row at either end of the month can be half of a
        week that carries on in the next (or began in the last) month. The grid
        still draws only this month's days - the rest are not repeated here -
@@ -6876,8 +6975,10 @@ function buildMyTimesheetHTML(viewingOther) {
       + (wkPick ? '<label class="ts-wk-head">'+wkPick+'<span class="ts-wk-label">Week '+(w+1)+'</span></label>'
                 : '<span class="ts-wk-label">Week '+(w+1)+'</span>')
       + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
+      + (wkOt >= 0.01 ? '<span class="ts-wk-ot" title="'+wkOt.toFixed(2)+'h overtime · '+(wkHours-wkOt).toFixed(2)+'h regular">incl. '+wkOt.toFixed(1)+'h OT</span>' : '')
       + (spanTxt ? '<span class="ts-wk-span" title="This billing week runs '+tsUnitRange(unit)+'">'+spanTxt+'</span>' : '')
       + tsWeekRailHTML(w+1)
+      + tsWeekMenuHTML(w+1)
       + '</div>';
     for (let col = 0; col < 7; col++) {
       const dayNum = w * 7 + col + 1 - monOff;
@@ -6933,10 +7034,10 @@ function buildMyTimesheetHTML(viewingOther) {
         body = '';
       } else if (att) {
         if (att.status === 'inprog') {
-          body = '<span class="ts-day-pill inprog">In progress</span>'
+          body = '<span class="lp-status-badge tone-wait ts-cell-badge">In progress</span>'
             + (att.hours !== '--' ? '<span class="ts-day-hrs">'+att.hours+'</span>' : '');
         } else if (att.status === 'absent') {
-          body = '<span class="ts-day-pill absent">Absent</span>';
+          body = '<span class="lp-status-badge tone-bad ts-cell-badge">Absent</span>';
         } else if (att.status === 'leave') {
           /* A leave day has no hours, so printing att.hours put "--" in the
              cell — the one day of the month that reads as missing data when it
@@ -6950,8 +7051,10 @@ function buildMyTimesheetHTML(viewingOther) {
             : att.pay === 'Paid' ? {t:'Paid',c:'ok'} : null;
           const lvTip = (att.leaveType||'Leave') + (att.leaveStatus ? ' · '+att.leaveStatus : '') + (att.pay ? ' · '+att.pay : '');
           body = '<span class="ts-leave-row" title="'+attrSafe(lvTip)+'">'
-            + '<span class="ts-day-pill leave">' + (att.leaveType || 'Leave') + '</span>'
-            + (lvTag ? '<span class="ts-leave-tag tone-'+lvTag.c+'">'+lvTag.t+'</span>' : '')
+            // The leave TYPE is a name, not a status, so it is plain text; where
+            // the leave stands under it is the app's status badge.
+            + '<span class="ts-day-leave">' + (att.leaveType || 'Leave') + '</span>'
+            + (lvTag ? '<span class="lp-status-badge tone-'+lvTag.c+' ts-cell-badge">'+lvTag.t+'</span>' : '')
             + '</span>';
         } else {
           // Only the exception is labelled — "Auto" on every present day is
@@ -6963,7 +7066,7 @@ function buildMyTimesheetHTML(viewingOther) {
             : dsc.key === 'early-logout' ? 'Early out · '+dsDur(dsc.early)
             : dsc.key === 'late-early' ? 'Late in + Early out' : '';
           body = '<span class="ts-day-hrs">'+att.hours+'</span>'
-            + (flag ? '<span class="ts-day-flag tone-'+dsc.tone+'">'+flag+'</span>' : '')
+            + (flag ? '<span class="lp-status-badge tone-'+dsc.tone+' ts-cell-badge" title="'+attrSafe(flag)+'">'+flag+'</span>' : '')
             + (att.src === 'Manual' ? '<span class="ts-day-src">Manual</span>' : '');
         }
       } else if (isWe) {
@@ -6975,8 +7078,8 @@ function buildMyTimesheetHTML(viewingOther) {
            the same one the Holidays listing and the export read. */
         const closed = arNonWorkingDay(dateStr);
         body = closed
-          ? '<span class="ts-day-pill closed" title="'+attrSafe(closed.label)+'">'+closed.label+'</span>'
-          : '<span class="ts-day-pill absent">Absent</span>';
+          ? '<span class="lp-status-badge tone-idle ts-cell-badge" title="'+attrSafe(closed.label)+'">'+closed.label+'</span>'
+          : '<span class="lp-status-badge tone-bad ts-cell-badge">Absent</span>';
       }
       /* LOCKED, AND NOTHING LOGGED: the hours read 0 rather than blank, so a
          settled week has a figure in every box. Display only - no record is
@@ -7002,11 +7105,13 @@ function buildMyTimesheetHTML(viewingOther) {
 
   const calHtml = '<div class="ts-cal-card">'
     + '<div class="ts-cal-head">'
-    + '<div class="ts-cal-title">'+mName+' '+y+' <span class="ts-inprog">In Progress</span>'+arHeaderChipHTML()
+    + '<div class="ts-cal-title">'+mName+' '+y+arHeaderChipHTML()
       /* Which way this sheet is billed decides what Lock and Submit act on, so
          it is named where the grid starts. It is set on the Sales Order, not
          here - the chip says where. */
-      + (tsOrder() ? '<span class="ts-cycle-chip" title="Set on Sales Order #'+tsOrder().orderId+' › Sales Details › Payment Cycle">'+cycle+' billing · Order #'+tsOrder().orderId+'</span>' : '')
+      // The app's own status badge (lp-status-badge), in the neutral tone: a fact
+      // about the sheet, not a state anyone owes a move on.
+      + (tsOrder() ? '<span class="lp-status-badge tone-idle ts-cycle-chip" title="Set on Sales Order #'+tsOrder().orderId+' › Sales Details › Payment Cycle">'+cycle+' billing · Order #'+tsOrder().orderId+'</span>' : '')
       + '</div>'
     /* The header carries the month's totals and the FOOT carries the key. The
        four-item legend used to sit up here beside the month name, which put
@@ -7066,7 +7171,20 @@ function buildMyTimesheetHTML(viewingOther) {
       +(picked?picked+' week'+(picked===1?'':'s')+' selected':(tally.locked?'Tick a locked week to submit it':'Lock a finished week to submit it'))
       +(tallyTxt?' · '+tallyTxt:'')+'</span>';
   }
-  const footNote = footLead;
+  /* WHAT IS ABOUT TO GO: once something is ticked, the hours in it, split into
+     regular and overtime — Multiplier shows this summary the moment dates are
+     selected, so the approver's number is seen before it is sent. Counted over
+     every day of the ticked weeks / periods, each day once. */
+  const selDays = {};
+  Object.keys(tsSel).forEach(function(k){ const s=tsSel[k]; tsUnit(s.y,s.m,s.w).dates.forEach(function(d){ selDays[d]=1; }); });
+  perPicked.forEach(function(x){ x.c.units.forEach(function(u){ u.dates.forEach(function(d){
+    if (d >= x.p.from && d <= x.p.to) selDays[d]=1; }); }); });
+  const selStats = Object.keys(selDays).length ? tsHourStats(function(k){ return selDays[k]; }) : null;
+  const selSum = selStats && !tsReadOnly
+    ? '<span class="ts-foot-sum">To submit <b>'+selStats.total.toFixed(2)+'h</b>'
+      +'<span>Regular '+selStats.working.toFixed(2)+'h</span><span>Overtime '+selStats.ot.toFixed(2)+'h</span></span>'
+    : '';
+  const footNote = footLead + selSum;
   /* Submit appears only once there is something to submit: a ticked week, or
      on the other cycles a billing period ticked. With nothing picked the button
      could only answer with an error, so the note beside it does the talking. */
@@ -7252,8 +7370,6 @@ function buildAllTimesheetHTML(){
     +apCS('at-f-month',months,atMonth,'Month')
     +clearFiltersBtn([atTsQuickFilter,atSearchQuery],'resetAtFilters()')
     +'<button class="lp-pill-search" onclick="applyAtFilters()">Search</button>'
-    // The listing is a set to begin with, so its export opens on the roster.
-    +tsxExportBtn('all')
     +'</div></div>'
     +'<div class="listing-stats">'
     +'<div class="listing-stat'+(atTsQuickFilter==='Unfilled'?' stat-selected':'')+'" onclick="atToggleTsFilter(\'Unfilled\')"><div class="listing-stat-count" style="color:var(--st-bad-fg)">'+unfilled+'</div><div class="listing-stat-label">Unfilled</div></div>'

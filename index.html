@@ -73,10 +73,45 @@
 <!-- Small screens (tablet / phone). Last, so it only ever narrows the rules above. -->
 <link rel="stylesheet" href="css/responsive.css">
 <!-- No bold text in listing rows; loaded last so it wins over per-cell weights. -->
+<link rel="stylesheet" href="css/login.css">
 <link rel="stylesheet" href="css/listing-weight.css"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
-<div id="v-adt" class="view active">
+<!-- ═══ SIGN IN ═══ The first view on load (js/login.js). Sign in hands over to
+     the ADT view on the Dashboard; Sign Out in the profile menu comes back here. -->
+<div id="v-login" class="view active">
+  <div class="lg-page">
+    <section class="lg-hero">
+      <img class="lg-logo" src="assets/logo.png" alt="ADT">
+      <div class="lg-hero-txt">
+        <h1>Welcome to<br>ADT SOLUTIONS</h1>
+        <p>Secure, reliable, and smart digital solutions to manage your business effortlessly.</p>
+      </div>
+    </section>
+    <section class="lg-side">
+      <form class="lg-card" onsubmit="event.preventDefault();lgSignIn();" novalidate>
+        <h2>Welcome back to ADT!</h2>
+        <p class="lg-sub">Let&rsquo;s pick up right where you left off.</p>
+        <label class="lg-label" for="lg-email">Email Address <span class="req">*</span></label>
+        <input class="lg-input" id="lg-email" type="email" autocomplete="username" value="tarak.swain@opendhi.com">
+        <label class="lg-label" for="lg-pass">Password <span class="req">*</span></label>
+        <div class="lg-pass">
+          <input class="lg-input" id="lg-pass" type="password" autocomplete="current-password" value="Opendhi@123">
+          <button type="button" class="lg-eye" id="lg-eye" onclick="lgTogglePass()" aria-label="Show password" title="Show password"></button>
+        </div>
+        <div class="lg-row-end"><button type="button" class="lg-link" onclick="lgSoon('Password reset')">Forgot Password?</button></div>
+        <button type="submit" class="lg-btn" id="lg-submit">Sign in</button>
+        <div class="lg-or"><span>Or continue with</span></div>
+        <button type="button" class="lg-google" onclick="lgSignIn('google')">
+          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+          Continue with Google
+        </button>
+        <p class="lg-foot">Don&rsquo;t have an account? <button type="button" class="lg-link" onclick="lgSoon('Sign up')">Sign up</button></p>
+      </form>
+    </section>
+  </div>
+</div>
+<div id="v-adt" class="view">
   <div class="topbar">
     <div class="topbar-left" style="font-family: Inter">
       <div class="adt-logo">
@@ -187,7 +222,7 @@
             Help & Support
           </button>
           <div class="hdr-dd-divider"></div>
-          <button class="hdr-dd-item hdr-dd-item-danger" onclick="closeAllHdrDD()">
+          <button class="hdr-dd-item hdr-dd-item-danger" onclick="closeAllHdrDD();lgSignOut()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
           </button>
@@ -2282,6 +2317,8 @@
 <script src="js/tab-slide.js"></script>
 <!-- History tab: wraps the save functions above to record field changes. Last. -->
 <script src="js/history.js"></script>
+<!-- Sign in: the first view, and Sign Out in the profile menu. -->
+<script src="js/login.js"></script>
 <script>
 function switchDashboard(tab){
   window.activeDashboardTab=tab;

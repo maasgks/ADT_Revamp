@@ -1625,7 +1625,6 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-cal-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
 .ts-cal-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
 .ts-cal-title{font-size:14px;font-weight:700;color:var(--navy);display:flex;align-items:center;gap:10px}
-.ts-inprog{font-size:10px;font-weight:600;padding:3px 9px;border-radius:var(--r-status);background:var(--st-wait-bg);color:var(--st-wait-fg)}
 .ts-cal-legend{display:flex;align-items:center;gap:14px}
 .ts-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--gray);font-weight:500}
 .ts-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -1639,6 +1638,8 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-week-cell{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 6px;background:var(--light);border-right:1px solid var(--border)}
 .ts-wk-label{font-size:10px;font-weight:600;color:var(--gray)}
 .ts-wk-total{font-size:12px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1}
+/* The overtime inside the week total (regular vs overtime, as Deel bills it). */
+.ts-wk-ot{font-size:11px;font-weight:500;color:var(--gray);font-variant-numeric:tabular-nums;white-space:nowrap}
 .ts-wk-total.none{color:#cbd5e1;font-weight:600}
 .ts-day-cell{position:relative;padding:9px 11px;border-right:1px solid var(--border);border-left:3px solid transparent;min-height:72px;display:flex;flex-direction:column;gap:2px;cursor:default;transition:background .12s}
 .ts-day-cell.is-clickable{cursor:pointer}
@@ -1666,44 +1667,41 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
    used to pull it into the LEFT corner are mirrored to the right one. */
 .ts-day-num.today{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin:-4px -4px -1px auto;background:var(--orange);border-radius:50%;color:#fff}
 .ts-day-cell.we .ts-day-num{color:#c4a97a}
-.ts-day-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:var(--r-status);display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;width:fit-content;margin-top:2px}
-.ts-day-pill.present{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.ts-day-pill.absent{background:var(--st-bad-bg);color:var(--st-bad-fg)}
-.ts-day-pill.inprog{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.ts-day-pill.future{color:#cbd5e1}
 .ts-day-hrs{font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.15;margin-top:3px;font-variant-numeric:tabular-nums}
 /* Moved to the left corner, which the date has just vacated. Left where it
    was it would sit under the date on every cell it appears on. */
 .ts-day-peek{position:absolute;top:8px;left:10px;color:#9ca3af;opacity:0;transition:opacity .12s;pointer-events:none}
 .ts-day-peek svg{width:12px;height:12px}
 .ts-day-cell:hover .ts-day-peek{opacity:1}
-.ts-day-flag{display:none}  /* shown by css/timesheet-calendar.css */
 .ts-day-src{font-size:9.5px;color:#a5adba;font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-top:auto}
 /* ── Closing a week off ───────────────────────────────────────────────────
    The lock control sits under the week's own total, because that is the figure
    it is making final. Everything here is small and quiet on purpose: it is a
    third line in a 92px rail, not a call to action. */
-.ts-wk-btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:4px;
-  margin-top:2px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;
-  background:#fff;color:var(--navy);font-family:inherit;font-size:10px;font-weight:600;
-  cursor:pointer;white-space:nowrap;transition:border-color .14s,background .14s,color .14s}
-.ts-wk-btn:hover{border-color:#cbd5e1;background:var(--ol)}
-.ts-wk-btn.is-primary{background:var(--navy);border-color:var(--navy);color:#fff}
-.ts-wk-btn.is-primary:hover{background:#1e293b;border-color:#1e293b;color:#fff}
-.ts-wk-btn svg{stroke:currentColor;fill:none}
-.ts-wk-line{display:flex;align-items:center;gap:3px;margin-top:2px}
-.ts-wk-chip{
-  display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r-status);
-  font-size:9px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
-.ts-wk-chip svg{stroke:currentColor;fill:none}
-.ts-wk-chip.is-locked{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.ts-wk-chip.is-sent{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.ts-wk-icon{
-  display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;
-  border:1px solid transparent;border-radius:5px;background:none;color:var(--gray);cursor:pointer}
-.ts-wk-icon:hover{border-color:var(--border);background:#fff;color:var(--navy)}
-.ts-wk-icon svg{stroke:currentColor;fill:none}
+/* ── The week rail's actions (tsWeekRailHTML / tsWeekMenuHTML) ──
+   The next step the employee owns is a light text action under the status;
+   what only HR or a manager does sits in the week's "⋯" menu, shown on hover. */
+.ts-week-cell{position:relative}
+.ts-wk-act{display:inline-flex;align-items:center;gap:5px;margin-top:7px;padding:0;border:0;background:none;
+  font-family:inherit;font-size:11.5px;font-weight:600;color:var(--navy);cursor:pointer;white-space:nowrap}
+.ts-wk-act svg{width:11px;height:11px;stroke:currentColor;fill:none}
+.ts-wk-act:hover{text-decoration:underline;text-underline-offset:2px}
+.ts-wk-more{position:absolute;top:8px;right:6px}
+.ts-wk-more-btn{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;
+  border:0;border-radius:6px;background:none;color:#94a3b8;cursor:pointer;opacity:0;
+  transition:opacity .12s ease,background .12s ease,color .12s ease}
+.ts-week-cell:hover .ts-wk-more-btn,.ts-wk-more.is-open .ts-wk-more-btn,.ts-wk-more-btn:focus-visible{opacity:1}
+.ts-wk-more-btn:hover,.ts-wk-more.is-open .ts-wk-more-btn{background:#e9edf2;color:var(--navy)}
+@media (hover:none){.ts-wk-more-btn{opacity:1}}
+.ts-wk-pop{position:absolute;top:28px;left:0;z-index:30;min-width:200px;padding:4px;background:#fff;
+  border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.12)}
+.ts-wk-pop button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 10px;border:0;border-radius:7px;
+  background:none;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--navy);text-align:left;cursor:pointer;white-space:nowrap}
+.ts-wk-pop button:hover{background:var(--ol)}
+.ts-wk-pop svg{width:13px;height:13px;stroke:currentColor;fill:none;flex-shrink:0}
+/* The week's state: an lp-status-badge (tsWeekChipHTML), sized for the rail. */
+.ts-wk-status{min-width:0;margin-top:4px;padding:2px 9px;gap:4px}
+.ts-wk-status svg{width:10px;height:10px;stroke:currentColor;fill:none;flex-shrink:0}
 /* A locked day is not a disabled one — it still opens, and the panel says why
    it cannot be changed. So it is marked, not greyed: the hover glyph turns
    into a padlock and the cell loses the tint that reads as "editable". */
@@ -1712,6 +1710,11 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-day-cell.is-locked .ts-day-peek{color:var(--st-wait-fg)}
 
 .ts-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;padding:4px 0 8px}
+/* The hours about to be submitted, beside Submit (Multiplier's selection summary). */
+.ts-foot-sum{display:inline-flex;align-items:center;gap:10px;margin-left:auto;padding:6px 12px;border-radius:999px;
+  background:#fff;border:1px solid var(--border);font-size:12.5px;color:var(--gray);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ts-foot-sum b{font-weight:700;color:var(--navy)}
+.ts-foot-sum span{padding-left:10px;border-left:1px solid var(--border)}
 .ts-foot-note{margin-right:auto;font-size:11.5px;color:var(--gray)}
 .ts-submit-btn{padding:10px 26px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
 /* .ts-submit-btn hover: buttons.css owns it (filled). */
@@ -1795,6 +1798,10 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ts-sb-total{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--light);border-radius:10px}
 .ts-sb-total-label{font-size:12px;font-weight:600;color:var(--navy)}
 .ts-sb-total-val{font-size:20px;font-weight:800;color:var(--orange)}
+/* Actual Work Hours beside the entity's daily maximum (buildTsSidebarHTML). */
+.ts-sb-total-txt{display:flex;flex-direction:column;gap:3px}
+.ts-sb-total-max{font-size:11.5px;font-weight:500;color:var(--gray)}
+.ts-sb-total-of{margin-left:3px;font-size:13px;font-weight:600;color:#94a3b8}
 .ts-sb-src{font-size:11px;color:var(--gray);padding:0 2px}
 .ts-sb-head-right{display:flex;align-items:center;gap:8px}
 /* ── Entering a day by hand ───────────────────────────────────────────────

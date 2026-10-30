@@ -27,6 +27,18 @@
 // ── THE RECORD ──
 const CSA_DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const CSA_APPROVERS=['Manager','Reporting Manager','HR','Entity Admin'];
+/* FR-01.7 — OVERTIME ALLOWED = NO: WORK HOURS CAPPING RULE.
+   On the entities below, an entity that does not allow overtime says how a
+   long day is cut back:
+     Cap at Configured Work End Time — hours stop counting at the shift's End Time
+     Cap at Maximum Daily Hours      — hours stop counting at Daily Work Hours
+   Matched by name against the entity in the top bar (hdCurrentEntityName). */
+const CSA_OT_CAPS=['Cap at Configured Work End Time','Cap at Maximum Daily Hours'];
+const CSA_OT_CAP_ENTITIES=['opendhi','dhi hyperlocal'];
+function csAttCapApplies(){
+  const n=(typeof hdCurrentEntityName==='function'?hdCurrentEntityName():'').trim().toLowerCase();
+  return CSA_OT_CAP_ENTITIES.indexOf(n)>=0;
+}
 const CSA_ABSENCE_ACTIONS=[
   'Notify HR & Mark Employee as Absconding',
   'Notify HR & Reporting Manager',
@@ -61,6 +73,7 @@ let csAtt={
   dailyHours:8,
   shiftType:'Fixed',
   overtimeAllowed:false,
+  otCapRule:'Cap at Configured Work End Time',   // used when overtimeAllowed is false (FR-01.7)
   latePolicy:30,
   /* With geolocation on, a clock-in is accepted only inside one of the
      Attendance Locations' radius — there is no separate switch for that.
@@ -685,6 +698,12 @@ function csAttUnit(id,value,unit,min,max,handler){
    the draft is read from the form in one pass at Save, because reading every
    field on every keystroke is work done many times to answer a question asked
    once. */
+// Overtime Allowed changed: the capping rule shows only while it is No.
+function csAttOtPicked(v){
+  const w=document.getElementById('csa-otcap-wrap');
+  if(w)w.hidden=v!=='No';
+  csAttOnChange();
+}
 function csAttOnChange(){
   if(!csAttEdit)return;
   csAttDirty=true;
@@ -706,6 +725,7 @@ function csAttViewHTML(){
     +csAttFc(CSA_ICO.clock,'Daily Work Hours',m.dailyHours+' Hours')
     +csAttFc(CSA_ICO.clock,'Shift Type',attrSafe(m.shiftType))
     +csAttFc(CSA_ICO.trend,'Overtime Allowed',m.overtimeAllowed?'Yes':'No')
+    +(!m.overtimeAllowed&&csAttCapApplies()?csAttFc(CSA_ICO.clock,'Work Hours Capping Rule',attrSafe(m.otCapRule||'—')):'')
     +csAttFc(CSA_ICO.hourglass,'Late Policy',m.latePolicy+' Minutes')
     +csAttFc(CSA_ICO.pin,'Geolocation',m.geolocation?'Enable':'Disable')    +'</div>';
 
@@ -769,7 +789,14 @@ function csAttEditHTML(){
     +csAttGroup('Shift Type',csAttSelect('csa-shift',CSA_SHIFTS,m.shiftType))
     +csAttGroup('Daily Work Hours',csAttUnit('csa-daily',m.dailyHours,'hours',1,24))
     +csAttGroup('Late Policy',csAttUnit('csa-late',m.latePolicy,'mins',0,240))
-    +csAttGroup('Overtime',csAttCheck('csa-ot',m.overtimeAllowed,'Overtime allowed'))
+    /* A Yes / No choice, not a checkbox: picking No is what brings the
+       Work Hours Capping Rule in beside it (csAttOtPicked). */
+    +csAttGroup('Overtime Allowed',sbSelect('csa-ot',['Yes','No'],m.overtimeAllowed?'Yes':'No','csAttOtPicked'))
+    +(csAttCapApplies()
+      ? '<div id="csa-otcap-wrap"'+(m.overtimeAllowed?' hidden':'')+'>'
+        +csAttGroup('Work Hours Capping Rule <span class="req">*</span>',csAttSelect('csa-otcap',CSA_OT_CAPS,m.otCapRule))
+        +'</div>'
+      : '')
     +csAttGroup('Geolocation',csAttCheck('csa-geo',m.geolocation,'Capture location on punch'))  +'</div>');
 
   out+=sec('Working Hours &amp; Grace','<div class="lp-sb-form-grid">'
@@ -889,7 +916,8 @@ function csAttReadForm(){
   d.shiftType=val('csa-shift')||d.shiftType;
   d.dailyHours=Math.max(1,csAttInt(val('csa-daily'),d.dailyHours));
   d.latePolicy=csAttInt(val('csa-late'),d.latePolicy);
-  d.overtimeAllowed=on('csa-ot');
+  d.overtimeAllowed=val('csa-ot')==='Yes';
+  if(val('csa-otcap'))d.otCapRule=val('csa-otcap');
   d.geolocation=on('csa-geo');
   const s=val('csa-start'),e=val('csa-end');
   if(s)d.startTime=s;
@@ -919,6 +947,9 @@ function csAttSave(){
   csAttReadForm();
   const d=csAttDraft;
   if(!d.workingDays.length){showToast('Pick at least one working day','error','Working Hours');return;}
+  if(!d.overtimeAllowed&&csAttCapApplies()&&CSA_OT_CAPS.indexOf(d.otCapRule)<0){
+    showToast('Pick a Work Hours Capping Rule','error','General — required when Overtime Allowed is No.');return;
+  }
   if(d.startTime>=d.endTime){showToast('End time must be after start time','error','Working Hours');return;}
   const clash=d.workingDays.filter(function(x){return d.weekOffDays.indexOf(x)>=0;});
   if(clash.length){

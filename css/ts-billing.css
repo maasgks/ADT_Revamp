@@ -9,11 +9,9 @@
    ========================================================================== */
 
 /* ── Week rail ── */
-.ts-wk-chip.is-locked{background:var(--st-idle-bg);color:var(--st-idle-fg)}
-.ts-wk-chip.is-sent{background:var(--st-wait-bg);color:var(--st-wait-fg)}
-.ts-wk-chip.is-unlocked{background:var(--st-info-bg);color:var(--st-info-fg)}
-.ts-wk-chip.is-ok{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.ts-wk-chip.is-bad{background:var(--st-bad-bg);color:var(--st-bad-fg)}
+/* A week's state is an lp-status-badge toned by who owes the next move
+   (tsWeekChipHTML): Locked idle · Unlocked info · Submitted wait ·
+   Approved ok · Rejected bad. Its actions: .ts-wk-act under it, and the "⋯" menu (main.css). */
 /* Where a Weekly billing week really runs, when it crosses the month edge. */
 .ts-wk-span{font-size:9.5px;font-weight:600;color:var(--gray);white-space:nowrap;line-height:1}
 /* The tick that puts a locked week into the next submission. */
@@ -68,8 +66,9 @@
 .tsb-cycle-desc{display:block;margin-top:2px;font-size:11.5px;font-weight:400;color:var(--gray)}
 
 /* ── Calendar header: how this sheet is billed ── */
-.ts-cycle-chip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 9px;border-radius:999px;
-  background:#f1f5f9;color:#475569;font-size:10.5px;font-weight:600;letter-spacing:.1px;vertical-align:middle;cursor:help}
+/* Drawn by .lp-status-badge.tone-idle like every status pill in the app; this
+   only spaces it from the month name and says it has a tooltip. */
+.ts-cycle-chip{margin-left:4px;min-width:0;vertical-align:middle;cursor:help}
 
 /* ── Footer: Monthly billing's month-level tick ── */
 .ts-month-pick{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--navy);cursor:pointer;user-select:none}

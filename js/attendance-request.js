@@ -221,7 +221,7 @@ function arCellHTML(iso){
        whose hours already stand has them printed by the cell above this. */
     const span=arSpan(req.in,req.out);
     return (!att&&span?'<span class="ts-day-hrs">'+(span.mins/60).toFixed(2)+'h</span>':'')
-      +'<span class="ar-cell-chip tone-'+(AR_STATUS_TONE[req.status]||'idle')+'" '
+      +'<span class="lp-status-badge tone-'+(AR_STATUS_TONE[req.status]||'idle')+' ts-cell-badge is-claim" '
       +'title="'+arEsc(req.status+' · '+arTime12(req.in)+' – '+arTime12(req.out))+'">'
       +(req.status==='Pending Approval'?'Pending':req.status)+'</span>';
   }
@@ -230,7 +230,7 @@ function arCellHTML(iso){
      this flow and somebody said yes, which is why they count in the month's
      totals. Offering "Request" beside them asks for a second claim on hours
      the sheet has already paid; the day says where it stands instead. */
-  if(att)return '<span class="ar-cell-chip tone-ok" title="'
+  if(att)return '<span class="lp-status-badge tone-ok ts-cell-badge is-claim" title="'
     +arEsc('Approved · '+att.in+' – '+att.out)+'">Approved</span>';
   if(!arCanRequest(iso))return '';
   /* ALWAYS VISIBLE, AND SHORT ENOUGH TO FIT. It was revealed on hover, which

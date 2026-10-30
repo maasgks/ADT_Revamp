@@ -24,13 +24,6 @@
 .ar-cell-link svg{width:8px;height:8px;flex-shrink:0;fill:none;stroke:currentColor}
 .ar-cell-link:hover{background:var(--btn-ghost-bg);color:var(--btn-accent);border-color:var(--btn-accent)}
 .ar-cell-link:focus-visible{outline:2px solid var(--btn-accent);outline-offset:1px}
-.ar-cell-chip{display:inline-flex;align-items:center;margin-top:auto;padding:2px 7px;
-  border-radius:var(--r-status);font-size:9px;font-weight:700;letter-spacing:.2px;
-  border:1px solid transparent;width:fit-content}
-.ar-cell-chip.tone-wait{background:var(--st-wait-bg);color:var(--st-wait-fg);border-color:var(--st-wait-bd)}
-.ar-cell-chip.tone-ok{background:var(--st-ok-bg);color:var(--st-ok-fg);border-color:var(--st-ok-bd)}
-.ar-cell-chip.tone-bad{background:var(--st-bad-bg);color:var(--st-bad-fg);border-color:var(--st-bad-bd)}
-.ar-cell-chip.tone-idle{background:var(--st-idle-bg);color:var(--st-idle-fg);border-color:var(--st-idle-bd)}
 /* A day carrying a pending claim gets the same amber rail its chip is, so the
    month can be scanned for them without reading a single cell. */
 .ts-day-cell.ar-pending{border-left-color:var(--st-wait-fg)}
@@ -135,10 +128,6 @@
   .ar-grid{grid-template-columns:1fr}
 }
 
-/* A holiday or a closed weekday in the month grid. Idle grey, not the red of
-   Absent: nobody failed to turn up on Republic Day. */
-.ts-day-pill.closed{background:var(--st-idle-bg);color:var(--st-idle-fg);
-  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
 /* The day panel stacks the claim block above Add entry, so the actions row
    stops being a single button and becomes a column. */
 .ts-sb-actions:has(.ar-panel-block){display:flex;flex-direction:column;gap:10px}

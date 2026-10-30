@@ -39,7 +39,7 @@ const LABELS={empId:'Employee ID',dept:'Department',joinDate:'Joining Date',desc
   startFrom:'Start From',endTo:'End To',workingCountry:'Working Country',orderCategory:'Order Category',invoiceStatus:'Invoice Status',
   orderStatus:'Order Status',amountDue:'Amount Due',yearly:'Yearly Count',monthly:'Monthly Limit',carryForward:'Carry Forward Limit',
   probation:'During Probation',prorate:'Prorate',recurring:'Repeats Every Year',branches:'Applies To',dailyHours:'Daily Work Hours',
-  latePolicy:'Late Policy',shiftType:'Shift Type',overtimeAllowed:'Overtime Allowed',geolocation:'Geolocation',startTime:'Start Time',
+  latePolicy:'Late Policy',shiftType:'Shift Type',overtimeAllowed:'Overtime Allowed',otCapRule:'Work Hours Capping Rule',geolocation:'Geolocation',startTime:'Start Time',
   endTime:'End Time',workingDays:'Working Days',weekOffDays:'Week Off Days',allocationFrequency:'Allocation Frequency',
   approvalLevel:'Leave Approval Level',level1Approver:'Level 1 Approver',level2Approver:'Level 2 Approver',
   countWeeklyOff:'Count Weekly Off as Leave',countHoliday:'Count Holiday as Leave',periodFrom:'Leave Period From',periodTo:'Leave Period To',
