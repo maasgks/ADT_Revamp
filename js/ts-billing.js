@@ -2,8 +2,10 @@
    What happens to a timesheet after it is locked, end to end:
 
      My Timesheet          the employee locks weeks and submits them
-       (js/core.js)        Weekly billing: each week is its own period
-                           Monthly billing: the whole month in one submission
+       (js/core.js)        Weekly: each week is its own period
+                           Biweekly: fixed pairs of weeks
+                           Semi-Monthly: 1–15 and 16–month-end
+                           Monthly: the whole month in one submission
      Sales Order           the approver reviews every week in a submission and
        › Timesheets        approves or rejects each one on its own. A rejected
                            week goes back to the employee with the reason, is
@@ -33,25 +35,59 @@ const TS_APPROVE_ROLES=['Super Admin','Opendhi Admin','Admin','HR','Reporting Ma
 function tsbCanApprove(){return TS_APPROVE_ROLES.indexOf(currentRole)>=0;}
 
 const TSB_MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
-function tsbCycle(p){return p&&p.sales&&p.sales.paymentCycle==='Weekly'?'Weekly':'Monthly';}
+function tsbCycle(p){return tsCycleOf(p&&p.sales&&p.sales.paymentCycle);}
 function tsbShort(iso){const p=iso.split('-');return (+p[2])+' '+TSB_MON[+p[1]-1].slice(0,3);}
 function tsbMoney(cur,n){
   return (cur||'')+' '+Number(n||0).toLocaleString(cur==='INR'?'en-IN':'en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
-// The billing period a week belongs to: the week itself, or its month.
-function tsbPeriodKey(unitKey){return unitKey.indexOf('W:')===0?unitKey:'M:'+unitKey.slice(0,7);}
-function tsbPeriodLabel(pk){
-  if(pk.indexOf('M:')===0){const p=pk.slice(2).split('-');return TSB_MON[+p[1]-1]+' '+p[0];}
-  const mon=pk.slice(2),sun=tsAddDays(mon,6);
-  return tsbShort(mon)+' – '+tsbShort(sun)+' '+sun.slice(0,4);
+/* ── Billing periods ──
+   A period key names its cycle and where it starts:
+     W:<monday>        Weekly        the seven days from that Monday
+     B:<monday>        Biweekly      the fourteen days from that Monday
+     S:<yyyy-mm>-1|2   Semi-Monthly  1–15, or 16 to the month's end
+     M:<yyyy-mm>       Monthly       the calendar month */
+function tsbMonthEnd(ym){const p=ym.split('-');return ym+'-'+tsPad(new Date(+p[0],+p[1],0).getDate());}
+function tsbPeriodRange(pk){
+  const t=pk.charAt(0),v=pk.slice(2);
+  if(t==='W')return {from:v,to:tsAddDays(v,6)};
+  if(t==='B')return {from:v,to:tsAddDays(v,13)};
+  if(t==='S'){const ym=v.slice(0,7);return v.slice(-1)==='1'?{from:ym+'-01',to:ym+'-15'}:{from:ym+'-16',to:tsbMonthEnd(ym)};}
+  return {from:v+'-01',to:tsbMonthEnd(v)};
 }
-// Every unit a period is made of - what has to be approved before it bills.
+function tsbPeriodLabel(pk){
+  if(pk.charAt(0)==='M'){const p=pk.slice(2).split('-');return TSB_MON[+p[1]-1]+' '+p[0];}
+  const r=tsbPeriodRange(pk);
+  return tsbShort(r.from)+' – '+tsbShort(r.to)+' '+r.to.slice(0,4);
+}
+// The period(s) a locked week bills in — two for a row across the 15th on Semi-Monthly.
+function tsbPeriodsFor(cycle,from,to){
+  if(cycle==='Weekly')return ['W:'+from];
+  if(cycle==='Biweekly'){
+    const n=Math.round((new Date(from)-new Date(TS_BIWEEK_ANCHOR))/86400000);
+    return ['B:'+tsAddDays(TS_BIWEEK_ANCHOR,Math.floor(n/14)*14)];
+  }
+  const ym=from.slice(0,7);
+  if(cycle==='Semi-Monthly'){
+    const out=[];
+    if(from<=ym+'-15')out.push('S:'+ym+'-1');
+    if(to>=ym+'-16')out.push('S:'+ym+'-2');
+    return out;
+  }
+  return ['M:'+ym];
+}
+// Every unit a period is made of — what has to be approved before it bills.
 function tsbPeriodUnits(pk){
-  if(pk.indexOf('W:')===0)return [pk];
-  const p=pk.slice(2).split('-'),y=+p[0],m=+p[1]-1,out=[];
-  for(let w=1;w<=tsWeekCount(y,m);w++)out.push(tsWeekKey(y,m,w));
+  const t=pk.charAt(0),r=tsbPeriodRange(pk);
+  if(t==='W')return [pk];
+  if(t==='B')return ['W:'+r.from,'W:'+tsAddDays(r.from,7)];
+  const p=r.from.split('-'),y=+p[0],m=+p[1]-1,out=[];
+  for(let w=1;w<=tsWeekCount(y,m);w++){
+    const d=tsWeekDates(y,m,w);
+    if(d[0]<=r.to&&d[d.length-1]>=r.from)out.push(tsWeekKey(y,m,w));
+  }
   return out;
 }
+const TSB_PERIOD_KINDS={'Biweekly':1,'Semi-Monthly':1,'Monthly':1};
 function tsbTally(dates){
   let h=0,d=0;
   dates.forEach(function(k){const a=tsAttendance[k];if(a&&a.status==='present'){h+=parseFloat(a.hours)||0;d++;}});
@@ -59,21 +95,22 @@ function tsbTally(dates){
 }
 
 /* ── Submitting (called from tsSubmitLockedWeeks in js/core.js) ─────────── */
-function tsbSubmit(kind,units){
+function tsbSubmit(kind,units,period){
   const o=tsOrder(),id='TS-'+(++tsbSeq),st=stampNow();
   const weeks=units.map(function(u){
     const t=tsbTally(u.dates);
     return {key:u.key,w:u.w,y:u.y,m:u.m,from:u.dates[0],to:u.dates[u.dates.length-1],
       days:t.days,hours:t.hours,status:'pending',note:'',by:'',at:''};
   });
-  const pk=tsbPeriodKey(units[0].key);
+  const first=units[0].dates;
+  const pk=period||tsbPeriodsFor(tsCycle(),first[0],first[first.length-1])[0];
   tsbSubs.unshift({id:id,orderId:o?o.id:null,kind:kind,cycle:tsCycle(),period:pk,
     created:st.date+' | '+st.time,by:tsEmp.name,weeks:weeks});
   units.forEach(function(u){tsWeekState[u.key]='submitted';tsWeekMeta[u.key]={sub:id};});
   return id;
 }
 function tsbSubLabel(s){
-  if(s.kind==='Monthly')return tsbPeriodLabel(s.period);
+  if(TSB_PERIOD_KINDS[s.kind])return tsbPeriodLabel(s.period);
   const wk=s.weeks[0];
   return 'Week '+wk.w+' · '+tsbShort(wk.from)+' – '+tsbShort(wk.to);
 }
@@ -132,31 +169,24 @@ function tsbConfirmReject(){
   showToast('Week '+wk.w+' sent back','info','The employee can correct and resubmit just this week.');
 }
 
-/* ── Sales Details: Payment Cycle ───────────────────────────────────────── */
-function tsbCycleControlHTML(p){
-  const c=tsbCycle(p);
-  return '<div class="segmented is-compact tsb-cycle-seg" role="radiogroup" aria-label="Payment cycle">'
-    +['Weekly','Monthly'].map(function(v){
-      return '<button type="button" class="seg-btn'+(c===v?' active':'')+'" role="radio" aria-checked="'+(c===v)+'"'
-        +' onclick="tsbSetCycle('+p.id+',\''+v+'\')">'+v+'</button>';
-    }).join('')+'</div>';
+/* ── Sales Details: Payment Cycle ─────────────────────────────────────────
+   Read as plain text on the tab and changed only through the tab's Edit form
+   (the 'pms' editor in pages.js), like every other field there. These two
+   are the rules that form's Save runs for this one field. */
+// Changing how an order bills under a timesheet still being decided would
+// leave that submission belonging to neither cycle.
+function tsbCycleBlocked(id){
+  return tsbSubs.some(function(s){return s.orderId===id&&s.weeks.some(function(w){return w.status==='pending';});});
 }
-function tsbSetCycle(id,v){
-  const p=paymentsData.find(function(x){return x.id===id;});
-  if(!p||tsbCycle(p)===v)return;
-  // Changing how an order bills under a timesheet still being decided would
-  // leave that submission belonging to neither cycle.
-  const waiting=tsbSubs.some(function(s){return s.orderId===id&&s.weeks.some(function(w){return w.status==='pending';});});
-  if(waiting){
-    showToast('Payment cycle not changed','error','Timesheets on this order are waiting on approval. Approve or reject them first.');
-    return;
-  }
-  p.sales.paymentCycle=v;
-  if(id===TS_ORDER_ID){tsSel={};tsMonthSel=false;}
-  isbTab('pm',renderPmSidebar);
-  showToast('Payment cycle set to '+v,'success',v==='Weekly'
-    ?'Each locked week is submitted and invoiced as its own period.'
-    :'Timesheets are submitted and invoiced a whole month at a time.');
+// After the cycle moves: a selection made under the old cycle means nothing now.
+function tsbCycleChanged(id,v){
+  if(id===TS_ORDER_ID){tsSel={};tsPerSel={};}
+  return {
+    'Weekly':'Each locked week is submitted and invoiced as its own period.',
+    'Biweekly':'Timesheets are submitted and invoiced two weeks at a time.',
+    'Semi-Monthly':'Timesheets are submitted and invoiced twice a month — 1–15 and 16 to month-end.',
+    'Monthly':'Timesheets are submitted and invoiced a whole month at a time.'
+  }[tsCycleOf(v)];
 }
 // "was INR 95,000.00 until 17 Jun" under the current rate, when it has changed.
 function tsbRateNoteHTML(p){
@@ -216,25 +246,28 @@ function tsbDrafts(p){
   const map={},order=[];
   tsbSubs.filter(function(s){return s.orderId===p.id;}).forEach(function(s){
     s.weeks.forEach(function(wk){
-      const pk=tsbPeriodKey(wk.key);
-      if(!map[pk]){map[pk]={key:pk,cycle:pk.indexOf('W:')===0?'Weekly':'Monthly',weeks:{}};order.push(pk);}
-      // Newest submission first, so the first outcome seen is the current one.
-      if(!map[pk].weeks[wk.key])map[pk].weeks[wk.key]=Object.assign({sub:s.id},wk);
+      // A week bills in its cycle's period(s) — on Semi-Monthly a row across
+      // the 15th sits in both halves, each taking only its own days.
+      tsbPeriodsFor(s.cycle||'Monthly',wk.from,wk.to).forEach(function(pk){
+        if(!map[pk]){map[pk]={key:pk,cycle:s.cycle||'Monthly',weeks:{}};order.push(pk);}
+        // Newest submission first, so the first outcome seen is the current one.
+        if(!map[pk].weeks[wk.key])map[pk].weeks[wk.key]=Object.assign({sub:s.id},wk);
+      });
     });
   });
   // Newest billing period first, whatever order they were submitted in.
-  const start=function(pk){return pk.indexOf('M:')===0?pk.slice(2)+'-01':pk.slice(2);};
+  const start=function(pk){return tsbPeriodRange(pk).from;};
   order.sort(function(a,b){return start(b).localeCompare(start(a));});
   return order.map(function(pk){
-    const d=map[pk],units=tsbPeriodUnits(pk);
+    const d=map[pk],units=tsbPeriodUnits(pk),rng=tsbPeriodRange(pk);
     const weeks=units.map(function(k){return d.weeks[k];}).filter(Boolean);
     const approved=weeks.filter(function(w){return w.status==='approved';});
     if(!approved.length)return null;
     const dates=[];
     approved.forEach(function(w){
-      // Only the period's own dates - on Monthly billing the part of a week
-      // inside the month, never the days either side of it.
-      let x=w.from;while(x<=w.to){dates.push(x);x=tsAddDays(x,1);}
+      // Only the period's own dates - the part of a week inside the month or
+      // the half-month, never the days either side of it.
+      let x=w.from;while(x<=w.to){if(x>=rng.from&&x<=rng.to)dates.push(x);x=tsAddDays(x,1);}
     });
     const lines=tsbLines(p,dates);
     const total=lines.reduce(function(t,l){return t+l.amount;},0);

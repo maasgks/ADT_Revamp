@@ -53,12 +53,14 @@
      row-menu rules it extends. -->
 <link rel="stylesheet" href="css/employee-lifecycle.css">
 <link rel="stylesheet" href="css/announcements.css">
+<link rel="stylesheet" href="css/announcement-admin.css">
 <link rel="stylesheet" href="css/dash-preview.css">
 <link rel="stylesheet" href="css/leave-balance.css">
 <link rel="stylesheet" href="css/logs-view.css">
 <link rel="stylesheet" href="css/form-page.css">
 <link rel="stylesheet" href="css/apply-application.css">
 <link rel="stylesheet" href="css/at-salary.css">
+<link rel="stylesheet" href="css/at-requests.css">
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
 <link rel="stylesheet" href="css/timesheet-calendar.css">
@@ -2218,6 +2220,9 @@
      both employee Logs tabs through renderEmpLogsTab(). -->
 <script src="js/employee-lifecycle.js"></script>
 <script src="js/announcements.js"></script>
+<!-- Governance → Announcements: the admin module that writes what the dashboard
+     panel above reads. Before history.js, which wraps its save. -->
+<script src="js/announcement-admin.js"></script>
 <script src="js/dash-preview.js"></script>
 <script src="js/leave-balance.js"></script>
 <!-- After core.js for apCS/apCD and teamsData. The Create New Employee popup;
@@ -2247,6 +2252,9 @@
 <!-- All Timesheet Salary tab + payslip. Reads atPeriod/atEmp (pages.js, core.js)
      and payheadsData for the PF / PT slabs. -->
 <script src="js/at-salary.js"></script>
+<!-- All Timesheet Requests tab. Reads arRequests (attendance-request.js) and
+     tsChangeLog (core.js). -->
+<script src="js/at-requests.js"></script>
 <!-- Timesheet submit / approve / invoice (Sales Order Timesheets + Receivable
      tabs). After at-salary.js: the invoice reuses its AT_COMPANY and .psl look. -->
 <script src="js/ts-billing.js"></script>

@@ -61,6 +61,7 @@ function renderPageContent(target){
   if(page==='leave-policy-edit'){el.innerHTML=buildEditLeavePolicyHTML();return;}
   if(page==='payheads'){el.innerHTML=buildPayheadsPageHTML();return;}
   if(page==='holidays'){el.innerHTML=buildHolidaysPageHTML();return;}
+  if(page==='announcements'){el.innerHTML=buildAnnouncementsHTML();return;}
   if(page==='asset-allocation'){el.innerHTML=buildAssetAllocationHTML();return;}
   if(page==='it-access'){el.innerHTML=buildItAccessHTML();return;}
   if(page==='hr-docs'){el.innerHTML=buildHrDocsHTML();return;}
@@ -235,7 +236,7 @@ function renderADTPage(){
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>startAddLeavePolicy()};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
@@ -826,6 +827,7 @@ var PALETTE_EXTRA=[
   {label:'Add an employee',group:'Create',keys:'new employee people hire staff',run:function(){navigatePage('employees');addListingItem('employees');}},
   {label:'Apply for leave',group:'Create',keys:'new leave request holiday time off',run:function(){navigatePage('all-leaves');startAddLeave();}},
   {label:'Add a leave policy',group:'Create',keys:'new leave policy rule entitlement',run:function(){navigatePage('leave-policies');startAddLeavePolicy();}},
+  {label:'Create an announcement',group:'Create',keys:'new announcement notice broadcast post news update employees',run:function(){navigatePage('announcements');anmStartCreate();}},
   {label:'Add holidays',group:'Create',keys:'new holiday holidays calendar public festival entity day off',run:function(){navigatePage('holidays');startAddHoliday();}},
   {label:'Create a team',group:'Create',keys:'new team group department',run:function(){startAddTeam();}},
   {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},

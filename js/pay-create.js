@@ -142,7 +142,7 @@ function buildCreateInvoiceModalHTML(){
       +customSelect('pm-new-rate-type','Monthly',['Monthly','Daily','Hourly','Fixed'],'Select Rate Type')+'</div>'
     // How approved timesheets on this order are billed - see js/ts-billing.js.
     +'<div class="ep-form-group"><label class="ep-form-label">Payment Cycle <span class="req">*</span></label>'
-      +customSelect('pm-new-cycle','Monthly',['Weekly','Monthly'],'Select Payment Cycle')+'</div>'
+      +csWithHints(customSelect('pm-new-cycle','Monthly',TS_CYCLES.map(function(c){return c.v;}),'Select Payment Cycle'),TS_CYCLE_HINTS)+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Amount <span class="req">*</span></label>'
       +'<input type="number" min="0" step="0.01" class="ep-form-input" id="pm-new-amount" placeholder="In the country\'s currency"></div>'
     +'</div>'
@@ -158,7 +158,7 @@ function submitAddInvoice(){
   const name=v('pm-new-name'),company=v('pm-new-company');
   const type=getCustomSelectValue('pm-new-type'),country=getCustomSelectValue('pm-new-country');
   const rateType=getCustomSelectValue('pm-new-rate-type')||'Monthly';
-  const cycle=getCustomSelectValue('pm-new-cycle')==='Weekly'?'Weekly':'Monthly';
+  const cycle=tsCycleOf(getCustomSelectValue('pm-new-cycle'));
   const startIso=getCDValue('pm-new-start'),endIso=getCDValue('pm-new-end');
   const amount=parseFloat(v('pm-new-amount'));
   if(!name)return payFlash('Please enter the Worker Name');

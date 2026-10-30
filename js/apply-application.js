@@ -78,7 +78,6 @@ function buildApplyApplicationHTML(){
     +'<div class="aa-top"><button class="ep-back" onclick="closeApplyApplication()">'+back+' Back</button></div>'
     +'<h1 class="aa-title">Apply Application</h1>'
     +'<p class="aa-sub">Request leave or time away for approval. Fields marked <span class="req">*</span> are required.</p>'
-    +aaBalStripHTML()   // balance by type, above the form (js/leaves-holidays.js)
 
     +'<section class="ep-form-card">'
       +'<div class="aa-sec-title">Application Details</div>'

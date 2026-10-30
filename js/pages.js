@@ -1166,9 +1166,6 @@ function buildAddLeaveModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
       +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
     +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p>'
-    /* Balance by type first - filled in by alRefreshBal() once an employee is
-       picked (js/leaves-holidays.js). */
-    +alBalStripHTML()
     +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
 
     // Row 1: Employee + Leave Type
@@ -1182,8 +1179,9 @@ function buildAddLeaveModalHTML(){
     +'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Leave Type <span class="req">*</span></label>'
     +apCS('al-type',leaveTypes,'','Select','alRefreshBal')
-    /* Exceptions only (type not in policy) - see lhTypeBal(). */
-    +'<div class="al-type-bal" id="al-type-bal"></div></div>'
+    /* The balance of the type picked, or of every type until one is - see lhTypeBal(). */
+    +(function(){const b=lhTypeBal(currentRole==='Employee'?LB_ME:null,'','','');
+      return '<div class="'+b.cls+'" id="al-type-bal">'+b.html+'</div>';})()+'</div>'
     +'</div></div>'
 
     // Row 2: Duration type radio
@@ -1544,11 +1542,18 @@ function renderPmSidebar(){
       +'</div>';
   }else if(pmTab==='sales-details'){
     const s=p.sales||{};
-    body='<div class="lp-sb-view-header"><span></span>'+editBtn+'</div>'
+    /* The record's header card on top, Edit inside it — the app's standard
+       place for it on every tab. Edit turns this tab into its form in place
+       (the 'pms' editor, registered beside 'pm' below); until then every
+       field, Payment Cycle included, is read-only text. */
+    const hero=function(o){return sbHero(Object.assign({icon:sbIco.receipt,name:'Order #'+p.orderId,
+      meta:[p.name,p.type,p.amountDue],status:sbHeroBadge(p.invoiceStatus)},o));};
+    if(sbIsEditing('pms',p.id))body=hero({editing:true})+sbEditFormHTML('pms',s);
+    else body=hero({edit:sbEditBtnFor('pms',p.id)})
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Company ID',s.companyId)+fc(iDoc,'Company Name',s.companyName)
       +fc(iId,'Contact Person ID',s.contactPersonId)+fc(iUser,'Contact Person Name',s.contactPersonName)
-      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Payment Cycle',tsbCycleControlHTML(p))
+      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Payment Cycle',tsbCycle(p)+'<span class="tsb-cycle-desc">'+tsCycleDesc(tsbCycle(p))+'</span>')
       +fc(iDollar,'Rate',s.rate+tsbRateNoteHTML(p))+fc(iCal,'Days',s.days)
       +fc(iDollar,'Total Amount',s.totalAmount)
       +fc(iCal,'Contract Period',s.contractPeriod)+fc(iPin,'Work Location',s.workLocation)
@@ -6458,6 +6463,8 @@ function tsTpPick(opt,id,part){
   // The minute is the second and last choice, so it closes the list.
   if(part==='m'){drop.classList.remove('cs-open');if(trig)trig.classList.remove('cs-open');}
   tsEditPreview();
+  // Other forms using this field (Announcements) listen here.
+  if(typeof tsTpAfter==='function')tsTpAfter(id);
 }
 /* The form. Two times and a place — the same three facts the panel reads back
    above it, so entering a day and reading one are visibly the same record.
@@ -6686,6 +6693,28 @@ function tsWeekChipHTML(u,st){
   }[st];
   return c?'<span class="ts-wk-chip '+c[0]+'" title="'+attrSafe(c[2])+'">'+c[1]+'</span>':'';
 }
+/* The tick that puts a locked week into the submission. It leads the week's
+   label, the way a row's checkbox leads a table row, rather than hanging as a
+   "Select" line under the status - so the rail reads label, total, status. */
+function tsWeekPickHTML(w){
+  const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w);
+  if(tsReadOnly||tsUnitStatus(u)!=='locked'||!tsUnitPickable(u))return '';
+  return '<input type="checkbox" class="ts-wk-check"'+(tsSel[u.key]?' checked':'')
+    +' title="'+(tsUnitSent(u)?'Resubmit just this week':'Select week '+w+' to submit')+'"'
+    +' aria-label="Select week '+w+'" onchange="tsToggleSel(\''+u.key+'\','+y+','+m+','+w+')">';
+}
+/* "Select all", heading the week column the way a table's header checkbox
+   heads its row checkboxes. Ticked when every pickable week is; absent when
+   no week can be picked. */
+function tsAllPickHTML(){
+  const list=tsPickableWeeks();
+  if(!list.length)return '';
+  const n=list.filter(function(p){return tsSel[p.key];}).length;
+  return '<label class="ts-wk-head ts-wk-all" title="'+(n===list.length?'Clear selection':'Select all '+list.length+' locked week'+(list.length===1?'':'s'))+'">'
+    +'<input type="checkbox" class="ts-wk-check"'+(n===list.length?' checked':'')
+      +' aria-label="Select all weeks" onchange="tsToggleAllWeeks()">'
+    +'<span>All</span></label>';
+}
 function tsWeekRailHTML(w){
   const y=tsMonth.year,m=tsMonth.month,u=tsUnit(y,m,w),st=tsUnitStatus(u);
   const own=!tsReadOnly,admin=tsCanUnlock(),done=tsWeekStartable(y,m,w);
@@ -6697,14 +6726,10 @@ function tsWeekRailHTML(w){
       +' now. Left alone it locks automatically after '+tsFmtDay(tsUnitCutoff(u))+'.">'+TS_ICO.lock+'Lock</button>';
   }
   if(st==='locked'){
+    // The tick itself sits beside the week's label (tsWeekPickHTML).
     return '<div class="ts-wk-line">'+chip
         +(admin?'<button class="ts-wk-icon" onclick="tsUnlockWeek('+w+')" title="Unlock week '+w+' for correction">'+TS_ICO.unlock+'</button>':'')
-      +'</div>'
-      +(tsUnitPickable(u)
-        ?'<label class="ts-wk-pick" title="'+(tsUnitSent(u)?'Resubmit just this week':'Include this week in the submission')+'">'
-          +'<input type="checkbox"'+(tsSel[u.key]?' checked':'')+' onchange="tsToggleSel(\''+u.key+'\','+y+','+m+','+w+')">'
-          +(tsUnitSent(u)?'Resubmit':'Select')+'</label>'
-        :'');
+      +'</div>';
   }
   if(st==='unlocked'||st==='rejected'){
     return chip+((own||admin)&&done
@@ -6733,7 +6758,7 @@ function buildMyTimesheetHTML(viewingOther) {
   tsReadOnly = !!viewingOther;
   const emp = (viewingOther && atViewedEmp) ? atViewedEmp : tsEmp;
   const y = tsMonth.year, m = tsMonth.month;
-  const cycle = tsCycle();          // Weekly | Monthly, from the Sales Order
+  const cycle = tsCycle();          // Weekly | Biweekly | Semi-Monthly | Monthly, from the Sales Order
   const mNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const mShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const mName = mNames[m];
@@ -6845,7 +6870,11 @@ function buildMyTimesheetHTML(viewingOther) {
     // nothing was logged. It is a display value - nothing is written.
     const wkLocked = !TS_EDITABLE[tsUnitStatus(unit)];
     calRows += '<div class="ts-cal-row">';
-    calRows += '<div class="ts-week-cell"><span class="ts-wk-label">Week '+(w+1)+'</span>'
+    const wkPick = tsWeekPickHTML(w+1);
+    const wkPicked = wkPick && tsSel[unit.key];
+    calRows += '<div class="ts-week-cell'+(wkPicked?' is-picked':'')+'">'
+      + (wkPick ? '<label class="ts-wk-head">'+wkPick+'<span class="ts-wk-label">Week '+(w+1)+'</span></label>'
+                : '<span class="ts-wk-label">Week '+(w+1)+'</span>')
       + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
       + (spanTxt ? '<span class="ts-wk-span" title="This billing week runs '+tsUnitRange(unit)+'">'+spanTxt+'</span>' : '')
       + tsWeekRailHTML(w+1)
@@ -6913,8 +6942,17 @@ function buildMyTimesheetHTML(viewingOther) {
              cell — the one day of the month that reads as missing data when it
              is the best-documented day on the sheet. It names the leave, the
              way an absence and a closed day already name themselves. */
-          body = '<span class="ts-day-pill leave" title="'+attrSafe(att.leaveType||'Leave')+'">'
-            + (att.leaveType || 'Leave') + '</span>';
+          /* Beside the pill, one small word: "Pending" while the leave is still
+             waiting on approval, then "Paid" or "Unpaid" once it is granted —
+             the two things payroll needs to know about the day. */
+          const lvTag = att.leaveStatus === 'Pending' ? {t:'Pending',c:'wait'}
+            : att.pay === 'Unpaid' ? {t:'Unpaid',c:'bad'}
+            : att.pay === 'Paid' ? {t:'Paid',c:'ok'} : null;
+          const lvTip = (att.leaveType||'Leave') + (att.leaveStatus ? ' · '+att.leaveStatus : '') + (att.pay ? ' · '+att.pay : '');
+          body = '<span class="ts-leave-row" title="'+attrSafe(lvTip)+'">'
+            + '<span class="ts-day-pill leave">' + (att.leaveType || 'Leave') + '</span>'
+            + (lvTag ? '<span class="ts-leave-tag tone-'+lvTag.c+'">'+lvTag.t+'</span>' : '')
+            + '</span>';
         } else {
           // Only the exception is labelled — "Auto" on every present day is
           // sixteen repetitions of the default.
@@ -6978,7 +7016,7 @@ function buildMyTimesheetHTML(viewingOther) {
       + '<span class="ds-total">Total working days <b>'+dsTotals.working+'</b></span>'
       + '<span class="ds-total">Leaves taken <b>'+dsTotals.leaves+'</b></span>'
     + '</div></div>'
-    + '<div class="ts-col-hdrs"><div class="ts-col-hdr"></div><div class="ts-col-hdr">MON</div><div class="ts-col-hdr">TUE</div><div class="ts-col-hdr">WED</div><div class="ts-col-hdr">THU</div><div class="ts-col-hdr">FRI</div><div class="ts-col-hdr we">SAT</div><div class="ts-col-hdr we">SUN</div></div>'
+    + '<div class="ts-col-hdrs"><div class="ts-col-hdr">'+tsAllPickHTML()+'</div><div class="ts-col-hdr">MON</div><div class="ts-col-hdr">TUE</div><div class="ts-col-hdr">WED</div><div class="ts-col-hdr">THU</div><div class="ts-col-hdr">FRI</div><div class="ts-col-hdr we">SAT</div><div class="ts-col-hdr we">SUN</div></div>'
     + calRows
     + '</div>';
 
@@ -6991,26 +7029,36 @@ function buildMyTimesheetHTML(viewingOther) {
     : '';
 
   /* THE FOOTER FOLLOWS THE PAYMENT CYCLE.
-     Weekly  - each locked week is ticked in its own rail and goes as its own
-               period; the footer counts the ticks.
-     Monthly - one "Select Entire Month" box and one Submit. The box only ticks
-               once every week of the month is locked, and when it cannot it
-               says which weeks are holding it up. A week sent back and
-               corrected is ticked on its own ("Resubmit") and goes alone. */
+     Weekly - each locked week is ticked in its own rail and goes as its own
+              period; the footer counts the ticks.
+     Biweekly / Semi-Monthly / Monthly - one box per billing period touching
+              this month ("Select Entire Month"; "1 – 15 Jun", "16 – 30 Jun";
+              "8 Jun – 21 Jun"…) and one Submit. A box only ticks once that
+              period's weeks are locked, and when it cannot it says which
+              weeks are holding it up. A week sent back and corrected is
+              ticked on its own ("Resubmit") and goes alone. */
   const tally={};
   for(let wi=1;wi<=totalWeeks;wi++){const st=tsWeekStatus(y,m,wi);tally[st]=(tally[st]||0)+1;}
   const picked=Object.keys(tsSel).length;
   const tallyTxt=['submitted','approved','rejected'].filter(function(k){return tally[k];})
     .map(function(k){return tally[k]+' '+k;}).join(' · ');
   let footLead='';
-  if(!tsReadOnly&&cycle==='Monthly'){
-    const mc=tsMonthCheck(y,m);
-    footLead='<label class="ts-month-pick'+(mc.ok?'':' is-off')+'" title="'+attrSafe(mc.ok?'Submit all '+totalWeeks+' weeks of '+mName+' as one period':mc.reason)+'">'
-      +'<input type="checkbox"'+(tsMonthSel&&mc.ok?' checked':'')+(mc.ok?'':' disabled')+' onchange="tsToggleMonthSel()">'
-      +'<span>Select Entire Month</span></label>';
-    footLead+='<span class="ts-foot-note">'
-      +(mc.ok?(tsMonthSel?mName+' '+y+' · '+totalWeeks+' weeks selected':'Every week is locked — '+mName+' can be submitted')
-        :mc.reason)
+  const periods=cycle==='Weekly'?[]:tsPeriodsInMonth(y,m);
+  const perChk=periods.map(function(p){return {p:p,c:tsPeriodCheck(p)};});
+  const perPicked=perChk.filter(function(x){return x.c.ok&&tsPerSel[x.p.key];});
+  if(!tsReadOnly&&periods.length){
+    footLead=perChk.map(function(x){
+      const lbl=cycle==='Monthly'?'Select Entire Month':x.p.label;
+      return '<label class="ts-month-pick'+(x.c.ok?'':' is-off')+'" title="'+attrSafe(x.c.ok?'Submit '+tsDayLbl(x.p.from)+' – '+tsDayLbl(x.p.to)+' as one '+cycle.toLowerCase()+' period':x.c.reason)+'">'
+        +'<input type="checkbox"'+(tsPerSel[x.p.key]&&x.c.ok?' checked':'')+(x.c.ok?'':' disabled')+' onchange="tsTogglePeriodSel(\''+x.p.key+'\')">'
+        +'<span>'+lbl+'</span></label>';
+    }).join('');
+    // One sentence for the lot: what is ticked, or what is holding a period up —
+    // preferring one still to send over one already sent.
+    const first=perChk.find(function(x){return !x.c.ok&&x.c.units.length;})||perChk.find(function(x){return !x.c.ok;});
+    footLead+='<span class="ts-foot-note">'+cycle+' billing · '
+      +(perPicked.length?perPicked.length+' period'+(perPicked.length===1?'':'s')+' selected'
+        :perChk.some(function(x){return x.c.ok;})?'Tick a period to submit it':(first?first.c.reason:''))
       +(picked?' · '+picked+' corrected week'+(picked===1?'':'s')+' to resubmit':'')
       +(tallyTxt?' · '+tallyTxt:'')+'</span>';
   }else if(!tsReadOnly){
@@ -7019,6 +7067,10 @@ function buildMyTimesheetHTML(viewingOther) {
       +(tallyTxt?' · '+tallyTxt:'')+'</span>';
   }
   const footNote = footLead;
+  /* Submit appears only once there is something to submit: a ticked week, or
+     on the other cycles a billing period ticked. With nothing picked the button
+     could only answer with an error, so the note beside it does the talking. */
+  const canSubmit = !tsReadOnly && (picked > 0 || perPicked.length > 0);
 
   const backBar = viewingOther
     ? '<div class="ts-back-bar"><button class="ep-back" onclick="atBackToAllTimesheet()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg> Back to All Timesheet</button></div>'
@@ -7031,7 +7083,7 @@ function buildMyTimesheetHTML(viewingOther) {
     + statsHtml
     + calHtml
     + '<div class="ts-footer">'+footNote
-      +(tsReadOnly?'':'<button class="ts-submit-btn" onclick="tsSubmitLockedWeeks()">Submit for Approval</button>')+'</div>'
+      +(canSubmit?'<button class="ts-submit-btn" onclick="tsSubmitLockedWeeks()">Submit for Approval</button>':'')+'</div>'
     + '</div>'
     + overlayHTML;
 }
@@ -7043,6 +7095,7 @@ function buildMyTimesheetHTML(viewingOther) {
    what a detail view is. Two tabs: what the employee has FILED, and what they
    have been PAID. */
 function openAtSidebar(id,tab){
+  if(id!==atSelectedId&&typeof atReqFilter!=='undefined')atReqFilter='';
   atTab=tab||sbKeepTab(atSelectedId,atTab,'timesheet');atSelectedId=id;
   const sb=document.getElementById('at-split-sb');if(sb)sb.classList.add('open');
   const wrap=document.getElementById('at-split-wrap');if(wrap)wrap.classList.add('has-sb');
@@ -7061,10 +7114,12 @@ function navAtTab(tab){atTab=tab;isbTab('at',renderAtSidebar);}
 
 function renderAtSidebar(){
   const emp=atEmp(atSelectedId);if(!emp)return'';
-  const tabs=[{id:'timesheet',label:'Timesheet'},{id:'salary',label:'Salary'},{id:'payslips',label:'Payslips'}];
+  const tabs=[{id:'timesheet',label:'Timesheet'},{id:'salary',label:'Salary'},{id:'payslips',label:'Payslips'},
+    // The dot says something is waiting before the tab is opened. js/at-requests.js
+    {id:'requests',label:'Requests',dot:atReqDotHTML(emp.empId,'at-tab-dot')}];
   const tabBar='<div class="lp-isb-tabbar">'
     +'<div class="lp-isb-tabs" id="at-isb-tabs">'+tabs.map(function(t){
-      return '<button class="lp-isb-tab'+(atTab===t.id?' active':'')+'" onclick="navAtTab(\''+t.id+'\')">'+t.label+'</button>';
+      return '<button class="lp-isb-tab'+(atTab===t.id?' active':'')+'" onclick="navAtTab(\''+t.id+'\')">'+t.label+(t.dot||'')+'</button>';
     }).join('')+'</div>'
     +'<div class="lp-isb-right"><button class="lp-isb-close" onclick="closeAtSidebar()" title="Close"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'
     +'</div>';
@@ -7076,15 +7131,12 @@ function renderAtSidebar(){
   const iUser='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
   const iCal='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
   const period=atPeriod();
-  const head='<div class="at-sb-head">'
-    +'<div class="at-sb-head-ico">'+iUser+'</div>'
-    +'<div class="at-sb-head-txt">'
-      +'<div class="at-sb-name">'+emp.name+'</div>'
-      +'<div class="at-sb-meta">'+iCal+'<span>'+period.label+'</span>'
-        +'<span class="at-sb-range">'+period.from+' &rarr; '+period.to+'</span></div>'
-    +'</div>'
-    +'<span class="at-sb-empid">'+emp.empId+'</span>'
-    +'</div>';
+  /* The panel's one header is the standard sbHero. A custom strip here made
+     the shared panel code add its own hero above it as well, so the name was
+     printed twice. The month rides in the meta line instead. */
+  const head=sbHero({icon:iUser,name:emp.name,
+    meta:[emp.empId,'<span class="at-sb-period">'+iCal+period.label+' · '+period.from+' &rarr; '+period.to+'</span>'],
+    status:sbHeroBadge(emp.empStatus)});
 
   const thS='padding:9px 12px;text-align:left;font-size:10.5px;font-weight:600;color:#6b7280;background:#f8fafc;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;white-space:nowrap';
   const tdS='padding:11px 12px;font-size:12.5px;color:var(--navy);border-bottom:1px solid #f1f3f5';
@@ -7116,6 +7168,8 @@ function renderAtSidebar(){
       +'</tr></thead><tbody>'+list+'</tbody></table></div>';
   }else if(atTab==='salary'){
     body=atSalTabHTML(emp);   // js/at-salary.js
+  }else if(atTab==='requests'){
+    body=atReqTabHTML(emp);   // js/at-requests.js
   }else{
     const slips=atPayslips(emp.empId);
     const dlIco='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -7231,7 +7285,7 @@ function buildAllTimesheetHTML(){
       +'<td class="at-td" onclick="event.stopPropagation()"><div class="at-actions">'
       +'<button class="at-act-btn" title="View Calendar" onclick="atViewCalendar(\''+emp.empId+'\',\''+emp.name+'\',\''+emp.initials+'\',\''+emp.role+'\')">'+calIco+'</button>'
       +'<button class="at-act-btn" title="Get Salary" onclick="openAtSidebar(\''+emp.empId+'\',\'salary\')">'+salIco+'</button>'
-      +'<button class="at-act-btn" title="View Details" onclick="openAtSidebar(\''+emp.empId+'\')">'+listIco+'</button>'
+      +'<button class="at-act-btn" title="View Details" onclick="openAtSidebar(\''+emp.empId+'\')">'+listIco+atReqDotHTML(emp.empId,'at-req-dot at-act-dot')+'</button>'
       +'</div></td>'
       +'</tr>';
   }),'<tr><td class="at-td" colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No timesheets match this filter.</td></tr>');
@@ -11634,6 +11688,48 @@ sbEditReg('pm',{prefix:'pm',render:renderPmSidebar,noun:'Payment',
     {k:'workingCountry',label:'Working Country',type:'select',opts:function(){return sbUniq(paymentsData,'workingCountry');}},
     {k:'orderCategory',label:'Order Category',type:'select',opts:function(){return sbUniq(paymentsData,'orderCategory',['domestic','international']);}}
   ]});
+/* The same order's Sales Details tab. Its fields live on p.sales, so that is
+   the record this editor edits. Payment Cycle is the one field with a rule of
+   its own (js/ts-billing.js): it cannot move while timesheets on the order are
+   waiting on approval, and moving it clears a selection made under the old
+   cycle. Rate is read-only once the order has a rate schedule — the schedule
+   is where a rate change is dated. */
+let pmsCycleWas=null;
+sbEditReg('pms',{prefix:'pm',render:renderPmSidebar,noun:'Sales details',
+  get:function(id){const p=paymentsData.find(function(x){return x.id===id;});return p?(p.sales||(p.sales={})):null;},
+  title:function(s,id){const p=paymentsData.find(function(x){return x.id===id;});return p?'Order #'+p.orderId:'';},
+  check:function(s,id){
+    pmsCycleWas=tsCycleOf(s.paymentCycle);
+    const next=sbVal('sbed-pms-paymentCycle');
+    if(next&&next!==pmsCycleWas&&tsbCycleBlocked(id)){
+      showToast('Payment cycle not changed','error','Timesheets on this order are waiting on approval. Approve or reject them first.');
+      return false;
+    }
+  },
+  saved:function(s,id){
+    if(tsCycleOf(s.paymentCycle)===pmsCycleWas)return;
+    const why=tsbCycleChanged(id,s.paymentCycle);   // clears the old cycle's selection now
+    // Said after the save's own "updated" toast, so it is the one left on top.
+    setTimeout(function(){showToast('Payment cycle set to '+s.paymentCycle,'info',why);},0);
+  },
+  fields:function(s){
+    const scheduled=(s.rateSchedule||[]).length>0;
+    return [
+      {k:'companyId',label:'Company ID',readonly:true,hint:'From the company'},
+      {k:'companyName',label:'Company Name',req:true},
+      {k:'contactPersonId',label:'Contact Person ID',readonly:true,hint:'From the contact'},
+      {k:'contactPersonName',label:'Contact Person Name'},
+      {k:'rateType',label:'Rate Type',type:'select',opts:['Hourly','Daily','Weekly','Monthly']},
+      {k:'paymentCycle',label:'Payment Cycle',type:'select',opts:TS_CYCLES.map(function(c){return c.v;}),hints:TS_CYCLE_HINTS,req:true},
+      scheduled?{k:'rate',label:'Rate',readonly:true,hint:'Set by the rate schedule'}:{k:'rate',label:'Rate'},
+      {k:'days',label:'Days',type:'number'},
+      {k:'totalAmount',label:'Total Amount'},
+      {k:'contractPeriod',label:'Contract Period'},
+      {k:'workLocation',label:'Work Location'},
+      {k:'tsPeriodDate',label:'Timesheet Period Date'},
+      {k:'paymentTerm',label:'Payment Term'}
+    ];
+  }});
 sbEditReg('ct',{prefix:'ct',render:renderCtSidebar,noun:'Contract',
   get:function(id){return contractsData.find(function(c){return c.id===id;});},
   title:function(c){return c.empName+' \u00b7 Contract '+c.contractId;},

@@ -25,7 +25,7 @@ const HIST=new WeakMap();      // record -> [{by,time,field,old,val}], newest fi
 /* Not fields a person edits: collections, generated text, and stamps that
    every save moves anyway. */
 const SKIP={logs:1,history:1,workflow:1,attachments:1,reqDocs:1,membersList:1,image:1,imageName:1,updatedAt:1,
-  lastUpdated:1,id:1,keyId:1,commercial:1,emp:1,sales:1,notified:1,details:1};
+  lastUpdated:1,updatedBy:1,annId:1,from:1,id:1,keyId:1,commercial:1,emp:1,sales:1,notified:1,details:1};
 const LABELS={empId:'Employee ID',dept:'Department',joinDate:'Joining Date',desc:'Description',contact:'Contact Number',
   countryOfOp:'Country of Operation',empType:'Employment Type',empName:'Name',dob:'Date of Birth',jobDesc:'Job Description',
   workPermit:'Work Permit',payAmount:'Pay Amount',payFrequency:'Pay Frequency',workSchedule:'Work Schedule',empDuration:'Employment Duration',
@@ -42,7 +42,8 @@ const LABELS={empId:'Employee ID',dept:'Department',joinDate:'Joining Date',desc
   latePolicy:'Late Policy',shiftType:'Shift Type',overtimeAllowed:'Overtime Allowed',geolocation:'Geolocation',startTime:'Start Time',
   endTime:'End Time',workingDays:'Working Days',weekOffDays:'Week Off Days',allocationFrequency:'Allocation Frequency',
   approvalLevel:'Leave Approval Level',level1Approver:'Level 1 Approver',level2Approver:'Level 2 Approver',
-  countWeeklyOff:'Count Weekly Off as Leave',countHoliday:'Count Holiday as Leave',periodFrom:'Leave Period From',periodTo:'Leave Period To'};
+  countWeeklyOff:'Count Weekly Off as Leave',countHoliday:'Count Holiday as Leave',periodFrom:'Leave Period From',periodTo:'Leave Period To',
+  validFrom:'Valid From',validTo:'Valid To',audType:'Target Audience',audValues:'Audience Groups',pinned:'Pin Announcement'};
 function human(k){
   if(LABELS[k])return LABELS[k];
   return String(k).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/^./,function(c){return c.toUpperCase();});
@@ -65,6 +66,8 @@ function show(v){
   if(v===null||v===undefined||v===''||v==='--')return '';
   // A stored yyyy-mm-dd reads the way the app writes dates (8 Oct 2026).
   if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&typeof cdLabel==='function')return cdLabel(v)||v;
+  // A stored yyyy-mm-ddThh:mm (Announcements' validity) reads as date and time.
+  if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)&&typeof anmFmt==='function')return anmFmt(v);
   return String(v);
 }
 function stamp(){const s=stampNow();return s.date+', '+s.time;}
@@ -147,6 +150,7 @@ watch('sbSaveEdit',function(key){
   const key=sbEditing&&sbEditing.key;if(!key)return null;
   const out={};sbEditFields(key,rec).forEach(function(f){out[f.k]=f.label;});return out;
 }});
+watch('anmSubmit',function(){return anmEditId?anmRec(anmEditId):null;});
 watch('saveHdEdit',function(){return holidaysData.find(function(h){return h.id===hdSelectedId;});});
 watch('saveLPSidebarEdit',function(){return leavePoliciesData.find(function(p){return p.id===lpSidebarPolicyId;});});
 watch('submitAddAsset',function(){return astEditId?assetsData.find(function(a){return a.id===astEditId;}):null;});

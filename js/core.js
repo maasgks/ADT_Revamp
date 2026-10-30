@@ -75,6 +75,7 @@ const sbIco={
   wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7V5.5A1.5 1.5 0 0 0 18.5 4H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6"/><path d="M16.5 14h.01"/></svg>',
   card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2"/><path d="M12 15h4"/></svg>',
   chat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
+  megaphone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
   chatLines:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a4 4 0 0 1-4 4H7l-4 4V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 10h8"/><path d="M8 14h5"/></svg>',
   ticket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9a3 3 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a3 3 0 0 0 0-6V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3z"/><path d="M13 5v14"/></svg>',
   cog:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
@@ -127,6 +128,8 @@ const sidebarItems=[
     {id:'asset-allocation',label:'Assets',color:'slate',icon:sbIco.laptop},
     {id:'it-access',label:'IT Accesses',color:'slate',icon:sbIco.key}
   ]},
+  // Written here, read on the employee dashboard (js/announcement-admin.js).
+  {id:'announcements',label:'Announcements',color:'slate',icon:sbIco.megaphone},
 
   {section:'Support'},
   {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},
@@ -555,7 +558,7 @@ function logPush(rec,fixture,status,comment,user){
   seedLogs(rec,fixture).unshift({date:s.date,time:s.time,user:user||CURRENT_USER,status:status,action:comment});
 }
 
-function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-immigration')return{title:'New Immigration Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-contractor')return{title:'New Contractor Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-balance')return{title:'Leave Balance',context:'Leave Balance',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employee-add')return{title:'Create New Employee',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
+function getPageMeta(pg){if(pg==='cfg-overview')return{title:'Overview',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-systems')return{title:'Systems',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-system-detail'){const s=cfgSystems.find(x=>x.id===selectedCfgSystemId);return{title:s?s.name:'System',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-system-add')return{title:'Add Custom System',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-data-foundation')return{title:'Data Foundation',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-model-detail'){const m=cfgModels.find(x=>x.id===selectedCfgModelId);return{title:m?m.name:'Model',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-model-add')return{title:'New Model',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-context-journey')return{title:'Context & Journey',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='cfg-journey-detail'){const j=cfgJourneys.find(x=>x.id===selectedCfgJourneyId);return{title:j?j.name:'Journey',context:'Configure',filters:[],columns:[],rows:[]};}if(pg==='cfg-agents')return{title:'Agents',context:'Configure',filters:[],columns:[],rows:[]};if(pg==='ai-executive')return{title:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-detail'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name:'Journey Detail',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-automate-form'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:'Automate Journey',context:j?j.name:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-contract-assistant')return{title:'AI Contract Assistant',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-created')return{title:'Proposal Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-proposal-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-eor'||pg==='contract-peo'||pg==='contract-type-select')return{title:'Create a Contract',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-immigration')return{title:'New Immigration Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='contract-contractor')return{title:'New Contractor Request',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-employee-created')return{title:'Employee Created',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-document')return{title:'Contract Document',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-contract-waiting-approval')return{title:'Waiting for Approval',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-onboarding-run')return{title:'Onboarding',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-journey-complete')return{title:'Journey Complete',context:'Contracts',filters:[],columns:[],rows:[]};if(pg==='ai-active-automation'){const j=aiJourneys.find(x=>x.id===selectedAIJourneyId);return{title:j?j.name+' Automation':'Active Automation',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='ai-run-detail')return{title:'Run '+selectedAIRunId,context:'AI Executive',filters:[],columns:[],rows:[]};if(pg==='ai-journey-run'){const flow=aiRunFlows[aiRunFlowJourneyId];return{title:flow?flow.entryLabel:'AI Executive',context:'AI Executive',filters:[],columns:[],rows:[]};}if(pg==='cost-calculator')return{title:'Cost Calculator',context:'Cost Calculator',filters:[],columns:[],rows:[]};if(pg==='announcements')return{title:'Announcements',context:'Announcements',filters:[],columns:[],rows:[]};if(pg==='holidays')return{title:'Holidays',context:'Holidays',filters:[],columns:[],rows:[]};if(pg==='leave-balance')return{title:'Leave Balance',context:'Leave Balance',filters:[],columns:[],rows:[]};if(pg==='leave-policies')return{title:'Leave Policies',context:'Leave Policies',filters:[],columns:[],rows:[]};if(pg==='leave-policy-edit')return{title:'Edit Leave Policy',context:'Leave Policy',filters:[],columns:[],rows:[]};if(pg==='team-add')return{title:'Create New Team',context:'Teams',filters:[],columns:[],rows:[]};if(pg==='employee-add')return{title:'Create New Employee',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='employees')return{title:'Employees',context:'Employees',filters:[],columns:[],rows:[]};if(pg==='direct')return{title:'Direct Employee',context:'Direct Employee',filters:[],columns:[],rows:[]};if(pg==='global')return{title:'Global Employee',context:'Global Employee',filters:[],columns:[],rows:[]};if(pg==='timesheet')return{title:'Timesheets',context:'Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-timesheet')return{title:'My Timesheet',context:'My Timesheet',filters:[],columns:[],rows:[]};if(pg==='all-timesheet')return{title:'All Timesheet',context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='at-timesheet-view')return{title:(atViewedEmp?atViewedEmp.name+' — Timesheet':'Timesheet'),context:'All Timesheet',filters:[],columns:[],rows:[]};if(pg==='my-profile')return{title:'My Profile',context:'My Profile',filters:[],columns:[],rows:[]};if(pg==='support-tickets')return{title:'Tickets',context:'Tickets',filters:[],columns:[],rows:[]};if(pg==='chats')return{title:'Chats',context:'Chats',filters:[],columns:[],rows:[]};if(pg==='switch-entity')return{title:'Switch Entity',context:'Switch Entity',filters:[],columns:[],rows:[]};if(pg==='compliance')return{title:'Compliance Item',context:'Compliance Item',filters:[],columns:[],rows:[]};if(pg==='rates-rules')return{title:'Rates & Rules',context:'Rates & Rules',filters:[],columns:[],rows:[]};if(pg==='payheads')return{title:'Payheads',context:'Payheads',filters:[],columns:[],rows:[]};if(pg==='contract-templates')return{title:'Contract Templates',context:'Contract Templates',filters:[],columns:[],rows:[]};return supportPageMeta[pg]||supportPageMeta.dashboard;}
 function getPageTitle(pg){
   /* Inside one type's listing the header names that type, so "Contracts"
      only ever means the mixed list or the type cards. */
@@ -644,6 +647,19 @@ function customSelect(id,selected,options,placeholder,variant){
   const optHtml=opts.map(o=>`<button type="button" class="custom-select-option ${o===current?'selected':''}" data-value="${attrSafe(o)}" onclick="selectCustomOption(event,this)"><span class="custom-select-text">${o}</span><svg class="custom-select-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></button>`).join('');
   const muted=current===(placeholder||'');
   return `<div class="custom-select ${variant||''}" id="${safeId}" data-value="${attrSafe(current)}"><button type="button" class="custom-select-trigger" onclick="toggleCustomSelect(event,'${safeId}')"><span class="${muted?'placeholder':''}">${current}</span><svg class="custom-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg></button><div class="custom-select-menu">${optHtml}</div></div>`;
+}
+/* A muted second line under named options of either dropdown (apCS's
+   .cs-option or customSelect's .custom-select-option) — "Biweekly / Every 14
+   days". Only the option row changes: both controls write the option's own
+   value back to the field, so the description never ends up in it.
+   hints: {optionValue: 'description'} */
+function csWithHints(html,hints){
+  Object.keys(hints||{}).forEach(function(k){
+    const d='<small class="cs-opt-hint">'+hints[k]+'</small>';
+    html=html.replace('<span>'+k+'</span>','<span class="cs-opt-col">'+k+d+'</span>')
+      .replace('<span class="custom-select-text">'+k+'</span>','<span class="cs-opt-col"><span class="custom-select-text">'+k+'</span>'+d+'</span>');
+  });
+  return html;
 }
 function closeCustomSelects(exceptId){document.querySelectorAll('.custom-select.open').forEach(s=>{if(!exceptId||s.id!==exceptId)s.classList.remove('open');});}
 function toggleCustomSelect(event,id){
@@ -1095,6 +1111,7 @@ function buildSbEditForm(prefix,fields,rec,onCancel,onSave){
       const opts=(typeof f.opts==='function'?f.opts(rec):f.opts).slice();
       if(raw&&opts.indexOf(raw)<0)opts.unshift(raw);   // never drop an unlisted existing value
       ctl=sbSelect(id,opts,raw);
+      if(f.hints)ctl=csWithHints(ctl,f.hints);         // a description under each option
     }else if(f.type==='bool'){
       ctl=sbSelect(id,['Yes','No'],rec[f.k]?'Yes':'No');
     }else if(f.type==='date'){
@@ -1462,7 +1479,7 @@ function sbKeepEditing(prefix){
 function sbEditBtnFor(key,id){return sbEditBtn("sbStartEdit('"+key+"',"+JSON.stringify(id).replace(/"/g,'&quot;')+")");}
 function sbSaveEdit(key){
   if(!sbEditing||sbEditing.key!==key)return;
-  const ed=SB_EDITORS[key],rec=ed.get(sbEditing.id);if(!rec)return;
+  const id=sbEditing.id,ed=SB_EDITORS[key],rec=ed.get(id);if(!rec)return;
   const fields=sbEditFields(key,rec);
   for(const f of fields){
     if(f.req&&!sbVal('sbed-'+key+'-'+f.k)){
@@ -1471,13 +1488,15 @@ function sbSaveEdit(key){
       return;
     }
   }
+  // A field with a rule of its own (an order's Payment Cycle) can refuse here.
+  if(ed.check&&ed.check(rec,id)===false)return;
   const before=JSON.stringify(rec);
   applySbEdit('sbed-'+key,fields,rec);
   sbEditing=null;
   if(JSON.stringify(rec)===before){sbRepaint(key);showToast('No changes','info','Nothing was different.');return;}
-  if(ed.saved)ed.saved(rec);
+  if(ed.saved)ed.saved(rec,id);
   renderADTPage();          // the listing row shows the same values
-  showToast(ed.noun+' updated','success',ed.title?ed.title(rec):'');
+  showToast(ed.noun+' updated','success',ed.title?ed.title(rec,id):'');
 }
 function saveGeEdit(){
   const emp=globalEmpData.find(e=>e.id===geSelectedId);
@@ -2463,7 +2482,7 @@ const LP_ROW_PREFIX={
   'compliance':'cmp','rates-rules':'rr','contract-templates':'ctp','payheads':'ph',
   'teams':'tm','support-tickets':'tk','all-leaves':'al','leave-policies':'lp',
   'holidays':'hd','direct-employees':'de','global-employees':'ge',
-  'asset-allocation':'ast','it-access':'ita','hr-docs':'hdoc'
+  'asset-allocation':'ast','it-access':'ita','hr-docs':'hdoc','announcements':'anm'
 };
 /* Run at the end of every repaint. The mark is spent on the first paint that
    finds the row, so the flash happens once - on the repaint the add itself
@@ -4949,7 +4968,15 @@ let tsMapOpen='';
 function tsToggleMap(which){tsMapOpen=tsMapOpen===which?'':which;renderADTPage();}
 let tsSelectedDay=null;
 let tsMonth={year:2026,month:5}; // 0-indexed (5=June)
-let tsEmp={name:'Shaun Test1',initials:'ST',role:'Entity Super Admin'};
+let tsEmp={name:'Shaun Test1',initials:'ST',role:'Entity Super Admin',empId:'11754'};
+/* Every edit to a day's times, kept by date for the manager / HR who reviews
+   it on All Timesheet → Requests (js/at-requests.js). prev is the record the
+   edit replaced (null for a new entry), so a rejection can put it back. */
+let tsChangeLog={
+  '2026-06-18':{prev:{in:'09:30 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.50h',src:'Auto',status:'present'},
+    in:'09:30 AM',out:'06:45 PM',hours:'9.25h',desc:'Clock-out was missed — left at 6:45 after the sprint review.',
+    status:'Pending Approval',requestedAt:'19 Jun 2026, 09:14 AM'}
+};
 const tsAttendance={
   '2026-06-01':{in:'09:00 AM',out:'06:15 PM',loc:'Hyderabad',hours:'9.25h',src:'Auto',status:'present'},
   '2026-06-02':{in:'09:15 AM',out:'06:30 PM',loc:'Hyderabad',hours:'9.25h',src:'Manual',status:'present',desc:'Built the week-lock API endpoint and its unit tests.'},
@@ -4968,11 +4995,14 @@ const tsAttendance={
   '2026-06-20':{in:'09:10 AM',out:'05:50 PM',loc:'Hyderabad',hours:'8.67h',src:'Auto',status:'present'},
   '2026-06-23':{in:'09:10 AM',out:'06:00 PM',loc:'Hyderabad',hours:'8.83h',src:'Auto',status:'present'},
   '2026-06-24':{in:'09:02 AM',out:'--',loc:'Hyderabad',hours:'--',src:'Manual',status:'inprog'},
-  /* Two approved absences. The fixture had none, so "Leave" was a term the
-     legend named and the month could never show — and the Leaves Taken tile
-     above it was a hard-coded 0 that no data could ever move. */
-  '2026-06-08':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave'},
-  '2026-06-22':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Sick Leave'}
+  /* Three absences. The fixture had none, so "Leave" was a term the legend
+     named and the month could never show — and the Leaves Taken tile above it
+     was a hard-coded 0 that no data could ever move. leaveStatus and pay are
+     the leave request's own status / subStatus (allLeavesData), so the grid can
+     say whether the day is still waiting on approval and whether it is paid. */
+  '2026-06-08':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave',leaveStatus:'Approved',pay:'Paid'},
+  '2026-06-15':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Unpaid Leave',leaveStatus:'Approved',pay:'Unpaid'},
+  '2026-06-22':{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Sick Leave',leaveStatus:'Pending',pay:'Paid'}
 };
 /* MAY 2026, A MONTH THAT IS OVER. June is the month in progress, so on its own
    the fixture had nothing that had passed its lock cutoff - no way to see an
@@ -4985,7 +5015,7 @@ const tsAttendance={
     const dow=new Date(2026,4,d).getDay();
     if(dow===0||dow===6)continue;
     tsAttendance[iso]=d===15
-      ?{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave'}
+      ?{in:'--',out:'--',loc:'--',hours:'--',src:'Leave',status:'leave',leaveType:'Casual Leave',leaveStatus:'Approved',pay:'Paid'}
       :{in:'09:00 AM',out:'06:00 PM',loc:d%5?'Hyderabad':'Remote',hours:'9.00h',src:'Auto',status:'present'};
   }
 })();
@@ -5051,12 +5081,34 @@ let tsWeekState={};
 let tsWeekMeta={};          // unit key -> {sub, reason} for the panel and rail
 let tsReadOnly=false;       // true while looking at somebody else's timesheet
 let tsSel={};               // Weekly billing: locked weeks ticked for submission
-let tsMonthSel=false;       // Monthly billing: "Select entire month" ticked
+let tsPerSel={};            // Biweekly / Semi-Monthly / Monthly: billing periods ticked, by key
 
 // ── Billing cycle: read off the Sales Order this timesheet bills against ──
 const TS_ORDER_ID=1;
 function tsOrder(){return paymentsData.find(function(p){return p.id===TS_ORDER_ID;})||null;}
-function tsCycle(){const o=tsOrder();return o&&o.sales&&o.sales.paymentCycle==='Weekly'?'Weekly':'Monthly';}
+/* THE FOUR PAYMENT CYCLES. Two lock whole Monday-Sunday weeks (Weekly,
+   Biweekly); two lock the part of each week inside the month (Semi-Monthly,
+   Monthly). What differs is the BILLING PERIOD the locked weeks are sent in:
+     Weekly        each week on its own
+     Biweekly      fixed pairs of weeks, counted from TS_BIWEEK_ANCHOR
+     Semi-Monthly  1–15 and 16–month-end; a week across the 15th is billed by
+                   date — its days to the 15th in the first half, the rest in
+                   the second
+     Monthly       the calendar month */
+const TS_CYCLES=[
+  {v:'Weekly',d:'Every 7 days'},
+  {v:'Biweekly',d:'Every 14 days'},
+  {v:'Semi-Monthly',d:'Twice per month, e.g. 1–15 and 16–month-end'},
+  {v:'Monthly',d:'Once per calendar month'}
+];
+// The Monday every fortnight is counted from, so periods never drift.
+const TS_BIWEEK_ANCHOR='2026-01-05';
+const TS_CYCLE_HINTS={};TS_CYCLES.forEach(function(c){TS_CYCLE_HINTS[c.v]=c.d;});
+function tsCycleOf(v){return TS_CYCLES.some(function(c){return c.v===v;})?v:'Monthly';}
+function tsCycleDesc(v){const c=TS_CYCLES.find(function(x){return x.v===v;});return c?c.d:'';}
+function tsCycle(){const o=tsOrder();return tsCycleOf(o&&o.sales&&o.sales.paymentCycle);}
+// Weekly and Biweekly lock the full seven days, keyed by the Monday.
+function tsWeekBased(c){c=c||tsCycle();return c==='Weekly'||c==='Biweekly';}
 function tsCanUnlock(){return TS_UNLOCK_ROLES.indexOf(currentRole)>=0;}
 
 function tsIso(d){return d.getFullYear()+'-'+tsPad(d.getMonth()+1)+'-'+tsPad(d.getDate());}
@@ -5084,7 +5136,7 @@ function tsWeekMonday(y,m,w){return tsIso(new Date(y,m,1-tsMonOff(y,m)+(w-1)*7))
    day the lock covers, which on Weekly billing can reach into the next or the
    previous month. */
 function tsUnit(y,m,w){
-  if(tsCycle()==='Weekly'){
+  if(tsWeekBased()){
     const mon=tsWeekMonday(y,m,w),dates=[];
     for(let i=0;i<7;i++)dates.push(tsAddDays(mon,i));
     return {key:'W:'+mon,dates:dates,y:y,m:m,w:w};
@@ -5234,6 +5286,13 @@ function tsSaveEntry(){
   const had=tsAttendance[date]&&tsAttendance[date].status==='present';
   const descEl=document.getElementById('ts-ed-desc');
   const desc=descEl?descEl.value.trim().slice(0,TS_DESC_MAX):'';
+  // Logged for review. A change still waiting keeps the record it first
+  // replaced, so rejecting it goes back to the original and not to a draft.
+  const pendingPrev=tsChangeLog[date]&&tsChangeLog[date].status==='Pending Approval';
+  const prevRec=pendingPrev?tsChangeLog[date].prev
+    :(tsAttendance[date]&&tsAttendance[date].status==='present'?Object.assign({},tsAttendance[date]):null);
+  tsChangeLog[date]={prev:prevRec,in:tsTo12(iv),out:tsTo12(ov),hours:(mins/60).toFixed(2)+'h',desc:desc,
+    status:'Pending Approval',requestedAt:(typeof arNowLabel==='function'?arNowLabel():'')};
   tsAttendance[date]={
     in:tsTo12(iv),out:tsTo12(ov),
     loc:locKey||'Hyderabad',
@@ -5308,7 +5367,7 @@ function tsUnlockWeek(w){
     return;
   }
   tsWeekState[u.key]='unlocked';
-  delete tsSel[u.key];tsMonthSel=false;
+  delete tsSel[u.key];tsPerSel={};
   renderADTPage();
   showToast('Week '+w+' unlocked for correction','info','Its days can be edited. Re-lock it once the correction is made.');
 }
@@ -5317,31 +5376,89 @@ function tsUnlockWeek(w){
 function tsMonthUnits(y,m){const out=[];for(let w=1;w<=tsWeekCount(y,m);w++)out.push(tsUnit(y,m,w));return out;}
 function tsUnitSent(u){return !!(tsWeekMeta[u.key]&&tsWeekMeta[u.key].sub);}
 /* What the rail offers a tick on. Weekly billing: any locked week - each is
-   its own period. Monthly billing: the month goes as one, so the only week
-   ticked on its own is one sent back and corrected (it rejoins its month's
-   submission without the rest being sent again). */
+   its own period. Every other cycle sends whole billing periods (picked in the
+   footer), so the only week ticked on its own is one sent back and corrected
+   (it rejoins its period without the rest being sent again). */
 function tsUnitPickable(u){
   if(tsReadOnly||tsUnitStatus(u)!=='locked')return false;
   return tsCycle()==='Weekly'||tsUnitSent(u);
 }
-/* Can the whole month be ticked? Every week locked and none of it sent yet.
-   Returns the reason when not - it is what the disabled checkbox says. */
-function tsMonthCheck(y,m){
-  const units=tsMonthUnits(y,m);
-  if(units.some(tsUnitSent))return {ok:false,units:units,reason:'This month has already been submitted. A week sent back is resubmitted from its week column.'};
-  const notLocked=units.filter(function(u){return tsUnitStatus(u)!=='locked';});
-  if(notLocked.length)return {ok:false,units:units,
-    reason:'Week '+notLocked.map(function(u){return u.w;}).join(', ')+(notLocked.length===1?' is':' are')+' not locked yet.'};
-  return {ok:true,units:units,reason:''};
+/* ── Billing periods (every cycle but Weekly) ──
+   The periods that touch month m, each with the lock units it is made of:
+     Monthly       one, the month
+     Semi-Monthly  two, 1–15 and 16–end (a row across the 15th is in both)
+     Biweekly      every fortnight overlapping the month — one can begin in the
+                   month before or end in the month after */
+const TS_MON3=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function tsDayLbl(iso){const p=iso.split('-');return (+p[2])+' '+TS_MON3[+p[1]-1];}
+function tsPeriodsInMonth(y,m){
+  const c=tsCycle(),mm=tsPad(m+1),last=new Date(y,m+1,0).getDate();
+  const first=y+'-'+mm+'-01',end=y+'-'+mm+'-'+tsPad(last);
+  const rows=function(from,to){
+    const out=[];
+    for(let w=1;w<=tsWeekCount(y,m);w++){const u=tsUnit(y,m,w);if(u.dates[0]<=to&&u.dates[u.dates.length-1]>=from)out.push(u);}
+    return out;
+  };
+  if(c==='Monthly')return [{key:'M:'+y+'-'+mm,from:first,to:end,label:'Entire Month',units:rows(first,end)}];
+  if(c==='Semi-Monthly'){
+    const mid=y+'-'+mm+'-15',nxt=y+'-'+mm+'-16';
+    return [{key:'S:'+y+'-'+mm+'-1',from:first,to:mid,label:'1 – 15 '+TS_MON3[m],units:rows(first,mid)},
+            {key:'S:'+y+'-'+mm+'-2',from:nxt,to:end,label:'16 – '+last+' '+TS_MON3[m],units:rows(nxt,end)}];
+  }
+  if(c==='Biweekly'){
+    const out=[];
+    const span=Math.round((new Date(first)-new Date(TS_BIWEEK_ANCHOR))/86400000);
+    let start=tsAddDays(TS_BIWEEK_ANCHOR,Math.floor(span/14)*14);
+    while(start<=end){
+      const stop=tsAddDays(start,13);
+      const units=[0,7].map(function(o){const mon=tsAddDays(start,o),dates=[];for(let i=0;i<7;i++)dates.push(tsAddDays(mon,i));
+        const p=mon.split('-');return {key:'W:'+mon,dates:dates,y:+p[0],m:+p[1]-1,w:tsWeekOf(mon)};});
+      out.push({key:'B:'+start,from:start,to:stop,label:tsDayLbl(start)+' – '+tsDayLbl(stop),units:units});
+      start=tsAddDays(start,14);
+    }
+    return out;
+  }
+  return [];
+}
+/* Can this period be ticked? Its weeks not yet sent must all be locked, and
+   there must be at least one. A week already sent with the half before (the
+   row across the 15th) simply does not go again. Returns the reason when not —
+   it is what the disabled box says. */
+function tsPeriodCheck(per){
+  const fresh=per.units.filter(function(u){return !tsUnitSent(u);});
+  if(!fresh.length)return {ok:false,units:[],reason:per.label+' has already been submitted. A week sent back is resubmitted from its week column.'};
+  const notLocked=fresh.filter(function(u){return tsUnitStatus(u)!=='locked';});
+  if(notLocked.length)return {ok:false,units:fresh,
+    reason:notLocked.map(function(u){return tsUnitRange(u);}).join(', ')+(notLocked.length===1?' is':' are')+' not locked yet.'};
+  return {ok:true,units:fresh,reason:''};
 }
 function tsToggleSel(key,y,m,w){
   if(tsSel[key])delete tsSel[key];else tsSel[key]={y:y,m:m,w:w};
   renderADTPage();
 }
-function tsToggleMonthSel(){
-  const c=tsMonthCheck(tsMonth.year,tsMonth.month);
-  if(!c.ok){tsMonthSel=false;renderADTPage();showToast('Month cannot be selected yet','info',c.reason);return;}
-  tsMonthSel=!tsMonthSel;renderADTPage();
+/* Select all: every week of the month that has a tick of its own (locked and
+   pickable). With all of them ticked already, it clears them instead. */
+function tsPickableWeeks(){
+  const y=tsMonth.year,m=tsMonth.month,out=[];
+  if(typeof tsReadOnly!=='undefined'&&tsReadOnly)return out;
+  for(let w=1;w<=tsWeekCount(y,m);w++){
+    const u=tsUnit(y,m,w);
+    if(tsUnitStatus(u)==='locked'&&tsUnitPickable(u))out.push({key:u.key,y:y,m:m,w:w});
+  }
+  return out;
+}
+function tsToggleAllWeeks(){
+  const list=tsPickableWeeks();
+  const all=list.length&&list.every(function(p){return tsSel[p.key];});
+  list.forEach(function(p){if(all)delete tsSel[p.key];else tsSel[p.key]={y:p.y,m:p.m,w:p.w};});
+  renderADTPage();
+}
+function tsTogglePeriodSel(key){
+  const per=tsPeriodsInMonth(tsMonth.year,tsMonth.month).find(function(p){return p.key===key;});if(!per)return;
+  const c=tsPeriodCheck(per);
+  if(!c.ok){delete tsPerSel[key];renderADTPage();showToast(per.label+' cannot be selected yet','info',c.reason);return;}
+  if(tsPerSel[key])delete tsPerSel[key];else tsPerSel[key]=1;
+  renderADTPage();
 }
 // Why a locked week still cannot go to an approver, or '' when it can.
 function tsUnitBlock(u){
@@ -5352,24 +5469,28 @@ function tsUnitBlock(u){
   return '';
 }
 /* The footer button. Weekly billing sends each ticked week as its own period;
-   Monthly sends the month as one submission (plus any corrected week ticked
-   on its own). Submissions, approval and invoicing live in js/ts-billing.js. */
+   every other cycle sends each ticked billing period as one submission (plus
+   any corrected week ticked on its own). Submissions, approval and invoicing
+   live in js/ts-billing.js. */
 function tsSubmitLockedWeeks(){
   if(tsReadOnly)return;
-  const y=tsMonth.year,m=tsMonth.month,monthly=tsCycle()==='Monthly';
+  const y=tsMonth.year,m=tsMonth.month,cyc=tsCycle(),periodic=cyc!=='Weekly';
   const batches=[];
-  if(monthly&&tsMonthSel){
-    const c=tsMonthCheck(y,m);
-    if(!c.ok){tsMonthSel=false;renderADTPage();showToast('Submission blocked','error',c.reason);return;}
-    batches.push({kind:'Monthly',units:c.units});
+  if(periodic){
+    const pers=tsPeriodsInMonth(y,m).filter(function(p){return tsPerSel[p.key];});
+    for(let i=0;i<pers.length;i++){
+      const c=tsPeriodCheck(pers[i]);
+      if(!c.ok){delete tsPerSel[pers[i].key];renderADTPage();showToast('Submission blocked','error',c.reason);return;}
+      batches.push({kind:cyc,units:c.units,period:pers[i].key});
+    }
   }
   Object.keys(tsSel).forEach(function(k){
     const s=tsSel[k],u=tsUnit(s.y,s.m,s.w);
     if(tsUnitPickable(u))batches.push({kind:tsUnitSent(u)?'Resubmission':'Weekly',units:[u]});
   });
   if(!batches.length){
-    showToast('Nothing selected','info',monthly
-      ?'Tick "Select Entire Month" once every week of the month is locked.'
+    showToast('Nothing selected','info',periodic
+      ?'Tick a billing period in the footer once its weeks are locked.'
       :'Tick a locked week in the week column to submit it.');
     return;
   }
@@ -5381,8 +5502,8 @@ function tsSubmitLockedWeeks(){
   }
   const missing=[];
   batches.forEach(function(b){b.units.forEach(function(u){tsUnitMissing(u).forEach(function(d){missing.push(d);});});});
-  const ids=batches.map(function(b){return tsbSubmit(b.kind,b.units);});
-  tsSel={};tsMonthSel=false;
+  const ids=batches.map(function(b){return tsbSubmit(b.kind,b.units,b.period);});
+  tsSel={};tsPerSel={};
   renderADTPage();
   const o=tsOrder();
   showToast(ids.length===1?'Submitted for approval':ids.length+' submissions sent','success',
@@ -5417,8 +5538,8 @@ function tsCloseMonthPicker(){if(!tsMpOpen)return;tsMpOpen=false;if(!tsSyncMonth
 function tsMpNavYear(delta,ev){if(ev)ev.stopPropagation();tsMpYear+=delta;if(!tsSyncMonthPicker())renderADTPage();}
 // Picking a month re-spans the range to that month, so the filter label and the
 // grid can never disagree about which dates are in view.
-function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsMonthSel=false;tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
-function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsMonthSel=false;tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
+function tsMpSelectMonth(monthIdx,ev){if(ev)ev.stopPropagation();tsMonth={year:tsMpYear,month:monthIdx};tsPerSel={};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(tsMpYear,monthIdx);renderADTPage();}
+function tsMpThisMonth(ev){if(ev)ev.stopPropagation();tsMonth={year:2026,month:5};tsPerSel={};tsMpOpen=false;tsSelectedDay=null;tsRange=tsMonthSpan(2026,5);renderADTPage();}
 
 // ── TIMESHEET DATE-RANGE FILTER ──
 // The range control used to call tsToggleMonthPicker, so clicking a field

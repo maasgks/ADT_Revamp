@@ -71,8 +71,10 @@ function annSwap(){
 }
 function annSorted(){
   if(!annShow)return [];
+  // Pinned first (FR-05.5), then newest. What is in the list at all — Active,
+  // inside its validity window, for this reader — is decided by anmSync().
   return (typeof empAnnouncements!=='undefined'?empAnnouncements:[]).slice()
-    .sort(function(a,b){return (Date.parse(b.when)||0)-(Date.parse(a.when)||0);});
+    .sort(function(a,b){return (b.pinned?1:0)-(a.pinned?1:0)||(Date.parse(b.when)||0)-(Date.parse(a.when)||0);});
 }
 
 /* The card shows the newest few, each on two lines: the title, then who
@@ -146,6 +148,9 @@ function announcementsHTML(){
     +'</div>';
 }
 function annRender(root){
+  /* Re-read from Governance → Announcements on every paint, so a post that
+     has reached its Valid From (or passed its Valid To) appears or goes. */
+  if(typeof anmSync==='function')anmSync();
   const scope=root||document;
   const host=scope.querySelector?scope.querySelector('#emp-ann-dash'):null;
   if(host)host.innerHTML=announcementsHTML();
@@ -164,7 +169,11 @@ let annFocus=null;
 function annOpen(id){
   annFocus=(id==null)?null:id;
   annFilter='all';
-  if(annFocus!=null&&empAnnouncements[annFocus])empAnnouncements[annFocus].isNew=false;
+  if(annFocus!=null&&empAnnouncements[annFocus]){
+    empAnnouncements[annFocus].isNew=false;
+    // Read is remembered on the source record, so the next sync keeps it read.
+    if(typeof anmUnread!=='undefined')delete anmUnread[empAnnouncements[annFocus].src];
+  }
   let ov=document.getElementById('ann-ov');
   if(!ov){
     ov=document.createElement('div');ov.id='ann-ov';ov.className='ann-ov';

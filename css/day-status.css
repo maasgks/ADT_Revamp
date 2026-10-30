@@ -45,3 +45,14 @@
    present; this is the fourth, in the info blue the rail and the tag use. */
 .ts-day-pill.leave{background:var(--st-info-bg);color:var(--st-info-fg);
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+/* The leave pill and, beside it, where that leave stands: Pending until it is
+   approved, then Paid or Unpaid. The pill gives way first in a narrow cell —
+   the status word is the shorter and the newer fact. */
+.ts-leave-row{display:flex;align-items:center;gap:5px;min-width:0;max-width:100%;margin-top:4px;flex-wrap:wrap}
+.ts-leave-row .ts-day-pill.leave{margin-top:0;min-width:0;flex:0 1 auto}
+.ts-leave-tag{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;
+  font-size:9.5px;font-weight:600;line-height:1;white-space:nowrap}
+.ts-leave-tag::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.ts-leave-tag.tone-wait{color:#b45309}
+.ts-leave-tag.tone-ok{color:var(--st-ok-fg)}
+.ts-leave-tag.tone-bad{color:var(--st-bad-fg)}
