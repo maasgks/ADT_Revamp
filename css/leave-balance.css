@@ -89,18 +89,10 @@
 .lh-fig-label{font-size:var(--ds-caption);color:var(--gray);margin-top:2px}
 
 
-/* The balance under Leave Type while applying for leave: four figures in one
-   neutral strip. Only Available is toned, and only when low or gone. */
+/* The balance under the leave form: one neutral note line (.is-note below).
+   Only the figures that are low or gone are toned. */
 .al-type-bal{display:none}
-.al-type-bal.is-on{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:8px;border:1px solid var(--border);
-  border-radius:var(--r-control);background:#fafbfc;overflow:hidden}
-.al-bal-fig{padding:8px 12px;min-width:0}
-.al-bal-fig+.al-bal-fig{border-left:1px solid var(--border)}
-.al-bal-val{font-size:15px;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;white-space:nowrap}
-.al-bal-val.is-low{color:var(--st-wait-fg)}
-.al-bal-val.is-out{color:var(--st-bad-fg)}
-.al-bal-of{font-size:12px;font-weight:500;color:#94a3b8}
-.al-bal-lbl{font-size:var(--ds-caption);color:var(--gray);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.al-type-bal.is-on{display:block;margin-top:8px;border:1px solid var(--border);border-radius:var(--r-control);background:#fafbfc}
 /* A message instead of figures: no employee picked, or a type not in policy. */
 .al-type-bal.is-note{display:block;padding:9px 12px;font-size:12.5px;color:var(--gray);line-height:1.45}
 .al-type-bal.is-note b{color:var(--navy)}
@@ -115,6 +107,7 @@
 .al-bal-chip b{font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums}
 .al-bal-chip.is-low b{color:var(--st-wait-fg)}
 .al-bal-chip.is-out b{color:var(--st-bad-fg)}
-@media (max-width:560px){.al-type-bal.is-on:not(.is-note){grid-template-columns:repeat(2,minmax(0,1fr))}
-  .al-bal-fig:nth-child(3){border-left:0}
-  .al-bal-fig:nth-child(n+3){border-top:1px solid var(--border)}}
+
+/* Create New Leave: the panel sits under both fields; empty, it takes no room. */
+.al-bal-host{margin-top:16px}
+.al-bal-host:has(> .al-type-bal:not(.is-on)){display:none}

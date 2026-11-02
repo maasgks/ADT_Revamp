@@ -112,3 +112,11 @@
 #tsb-modal .lp-logs-form-textarea{width:100%;min-height:90px;margin-top:6px}
 .tsb-inv-basis{margin-top:1px;font-size:10px;color:#64748b}
 .tsb-table .lp-status-badge{white-space:nowrap}
+
+/* Receivable: six columns that fit the detail panel without a sideways
+   scroll - the rate sits under the charges it produced. */
+.tsb-rcv-table{min-width:0}
+.tsb-rcv-table .csag-td{vertical-align:middle;padding-top:12px;padding-bottom:12px}
+.tsb-rcv-table .tsb-nowrap{white-space:nowrap}
+.tsb-rcv-table .tsb-r{text-align:right}
+.tsb-rcv-table .tsb-acts{gap:8px}

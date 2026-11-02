@@ -217,37 +217,35 @@ function tsbWorkingDays(ym){
   for(let d=1;d<=dim;d++){if(!arNonWorkingDay(y+'-'+tsPad(m+1)+'-'+tsPad(d)))n++;}
   return n;
 }
-/* The invoice lines for a set of approved days. Days are grouped by the rate
-   in force on each one (and, on a monthly rate, by month, since the day rate
-   is the month's rate over that month's working days) - so a week across a
-   rate change bills as two lines, each at its own rate.
+/* The invoice line for a set of approved days. Each day is still priced at
+   the rate in force on it (and, on a monthly rate, by that month's working
+   days), but the invoice shows ONE line for the period - a rate change or a
+   month boundary inside it does not split the bill into several items.
      Hourly   hours × rate
      Daily    days worked × rate
      Monthly  days worked × (monthly rate ÷ working days in that month) */
 function tsbLines(p,dates){
   const rt=(p.sales&&p.sales.rateType)||'Monthly',cur=p.sales&&p.sales.currency;
-  const segs=[],byKey={};
+  const l={from:null,to:null,days:0,hours:0,amount:0,rate:null},wd={};
   dates.slice().sort().forEach(function(d){
     const a=tsAttendance[d];
     if(!a||a.status!=='present')return;
     const rate=tsbRateOn(p,d);if(rate==null)return;
-    const k=rate+'|'+(rt==='Hourly'||rt==='Daily'?'':d.slice(0,7));
-    let s=byKey[k];
-    if(!s){s=byKey[k]={from:d,to:d,rate:rate,month:d.slice(0,7),days:0,hours:0};segs.push(s);}
-    s.to=d;s.days++;s.hours+=parseFloat(a.hours)||0;
+    const h=parseFloat(a.hours)||0;
+    if(!l.from)l.from=d;
+    l.to=d;l.days++;l.hours+=h;l.rate=rate;
+    if(rt==='Hourly')l.amount+=h*rate;
+    else if(rt==='Daily')l.amount+=rate;
+    else{const m=d.slice(0,7);if(wd[m]==null)wd[m]=tsbWorkingDays(m);l.amount+=wd[m]?rate/wd[m]:0;}
   });
-  return segs.map(function(s){
-    let qty,unit,qtyLbl,basis;
-    if(rt==='Hourly'){qty=s.hours;unit=s.rate;qtyLbl=s.hours.toFixed(2)+' h';basis=tsbMoney(cur,s.rate)+' / hour';}
-    else if(rt==='Daily'){qty=s.days;unit=s.rate;qtyLbl=s.days+' d';basis=tsbMoney(cur,s.rate)+' / day';}
-    else{
-      const wd=tsbWorkingDays(s.month);
-      qty=s.days;unit=wd?s.rate/wd:0;qtyLbl=s.days+' d';
-      basis=tsbMoney(cur,s.rate)+' / month ÷ '+wd+' working days';
-    }
-    const amount=Math.round(qty*unit*100)/100;
-    return {from:s.from,to:s.to,qty:qty,qtyLbl:qtyLbl,unit:unit,basis:basis,amount:amount,rate:s.rate,hours:s.hours,days:s.days};
-  });
+  if(!l.days)return [];
+  const qty=rt==='Hourly'?l.hours:l.days;
+  const amount=Math.round(l.amount*100)/100;
+  return [{from:l.from,to:l.to,qty:qty,
+    qtyLbl:rt==='Hourly'?l.hours.toFixed(2)+' h':l.days+' d',
+    unit:qty?amount/qty:0,
+    basis:tsbMoney(cur,l.rate)+' / '+(rt==='Hourly'?'hour':rt==='Daily'?'day':'month'),
+    amount:amount,rate:l.rate,hours:l.hours,days:l.days}];
 }
 
 /* ── Invoice drafts, derived from the approved weeks ────────────────────── */
@@ -362,11 +360,10 @@ function tsbReceivableHTML(p){
       :d.ready?'<span class="lp-status-badge tone-info">Draft</span>'
       :'<span class="lp-status-badge tone-wait">Draft</span><div class="tsb-sub">'+d.approved+' of '+d.units+' weeks approved</div>';
     return '<tr>'
-      +'<td class="csag-td"><b>'+d.label+'</b><div class="tsb-sub">'+d.cycle+' billing</div></td>'
+      +'<td class="csag-td tsb-nowrap"><b>'+d.label+'</b></td>'
       +'<td class="csag-td">Order #'+p.orderId+'<div class="tsb-sub">'+d.subs.join(', ')+' · Wk '+d.weeks.join(', ')+'</div></td>'
-      +'<td class="csag-td">'+qty+' d<div class="tsb-sub">'+hrs.toFixed(2)+'h</div></td>'
-      +'<td class="csag-td">'+rates.map(function(r){return '<span class="tsb-num">'+r+'</span>';}).join('<br>')+(rates.length>1?'<div class="tsb-sub tsb-split">Rate changed in period</div>':'')+'</td>'
-      +'<td class="csag-td tsb-num"><b>'+tsbMoney(cur,d.total)+'</b></td>'
+      +'<td class="csag-td tsb-nowrap">'+qty+' d<div class="tsb-sub">'+hrs.toFixed(2)+'h</div></td>'
+      +'<td class="csag-td tsb-nowrap tsb-r"><b>'+tsbMoney(cur,d.total)+'</b><div class="tsb-sub">@ '+rates.join(', ')+(p.sales&&p.sales.rateType==='Hourly'?' / hour':' / day')+'</div></td>'
       +'<td class="csag-td">'+status+'</td>'
       +'<td class="csag-td csag-act"><div class="tsb-acts">'
         +'<button class="at-sb-icon-btn" title="Preview invoice" onclick="tsbOpenPreview('+p.id+',\''+d.key+'\')">'+eye+'</button>'
@@ -375,8 +372,8 @@ function tsbReceivableHTML(p){
       +'</tr>';
   }).join('');
   return '<div class="tsb-rcv-title">Invoice Drafts <span>from approved timesheets</span></div>'
-    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table tsb-table"><thead><tr>'
-    +'<th>Billing Period</th><th>Source</th><th>Quantity</th><th>Rate</th><th>Charges</th><th>Status</th><th class="csag-act">Action</th>'
+    +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table tsb-table tsb-rcv-table"><thead><tr>'
+    +'<th>Billing Period</th><th>Source</th><th>Quantity</th><th class="tsb-r">Charges</th><th>Status</th><th class="csag-act">Action</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
 }
 function tsbFindDraft(orderId,pk){
@@ -406,7 +403,6 @@ function tsbOpenPreview(orderId,pk){tsbModal={kind:'preview',orderId:orderId,per
 function tsbInvoiceHTML(p,d){
   const cur=p.sales.currency,co=(typeof AT_COMPANY!=='undefined')?AT_COMPANY:{name:'Open Dhi Private Limited',formerly:'',address:''};
   const kv=function(k,v){return '<div class="psl-kv"><span>'+k+'</span><b>'+v+'</b></div>';};
-  const rates=[];d.lines.forEach(function(l){if(rates.indexOf(l.rate)<0)rates.push(l.rate);});
   const body=d.lines.map(function(l,i){
     return '<tr><td>'+(i+1)+'</td>'
       +'<td>Timesheet services · '+p.emp.name+'<div class="tsb-inv-basis">'+l.basis+'</div></td>'
@@ -428,7 +424,6 @@ function tsbInvoiceHTML(p,d){
     +'<table class="psl-table"><thead><tr><th>#</th><th>Description</th><th>Period</th><th class="psl-num">Qty</th><th class="psl-num">Rate</th><th class="psl-num">Amount</th></tr></thead>'
       +'<tbody>'+body+'</tbody>'
       +'<tfoot><tr><td colspan="5">Total ('+cur+')</td><td class="psl-num">'+tsbMoney(cur,d.total)+'</td></tr></tfoot></table>'
-    +(rates.length>1?'<div class="psl-net">The rate changed during this period, so it is billed in '+d.lines.length+' lines - each day at the rate in force on that day.</div>':'')
     +'<div class="psl-foot">'+(d.inv?'This is a system-generated invoice.':'Draft - not issued. Figures update as timesheet weeks are approved.')+'</div>'
     +'</div>';
 }

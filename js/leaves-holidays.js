@@ -143,7 +143,8 @@ function alSelectedType(){
 function lhBalMonth(from){
   return from&&+from.slice(0,4)===LB_YEAR?+from.slice(5,7)-1:+LB_TODAY.split('-')[1]-1;
 }
-/* who: a leave-data name or null; type: the type picked; typed: the name as
+/* who: a leave-data name or null; type: the type picked (the line is the same
+   whatever it is); typed: the name as
    picked in the form (for the not-found note); from: ISO date. */
 function lhTypeBal(who,type,typed,from){
   const off={cls:'al-type-bal',html:''};
@@ -152,32 +153,15 @@ function lhTypeBal(who,type,typed,from){
   }
   const month=lhBalMonth(from);
   const rows=lbRows(who,month);
-  const whose=typed?sbEsc(who)+'&rsquo;s':'your';
   if(!rows.length)return {cls:'al-type-bal is-on is-note is-bad',
     html:(typed?sbEsc(who)+' has':'You have')+' no active leave policy &mdash; any leave requested would be loss of pay.'};
-  if(!type){
-    return {cls:'al-type-bal is-on is-note',
-      html:'<span class="al-bal-k">Days left</span>'+rows.map(function(r){
-        const left=r.yAvailable+r.cfBalance;
-        return '<span class="al-bal-chip'+(left<=0?' is-out':left<=2?' is-low':'')+'">'+sbEsc(r.type)+' <b>'+lbFmt(left)+'</b></span>';
-      }).join('')};
-  }
-  const r=rows.find(function(x){return x.type===type;});
-  if(!r)return {cls:'al-type-bal is-on is-note is-bad',
-    html:'<b>'+sbEsc(type)+'</b> is not in '+whose+' active leave policy &mdash; this request would be loss of pay.'};
-  const left=r.yAvailable+r.cfBalance,total=r.yearly+r.cfOpen;
-  const tone=function(n){return n<=0?' is-out':n<=2?' is-low':'';};
-  const fig=function(val,of,lbl,cls,tip){
-    return '<div class="al-bal-fig"'+(tip?' title="'+tip+'"':'')+'><div class="al-bal-val'+(cls||'')+'">'+val
-      +(of!=null?'<span class="al-bal-of"> / '+lbFmt(of)+'</span>':'')+'</div><div class="al-bal-lbl">'+lbl+'</div></div>';
-  };
-  return {cls:'al-type-bal is-on',html:
-    fig(lbFmt(left),total,'Available',tone(left),r.cfBalance?'Includes '+lbFmt(r.cfBalance)+' days carried forward':'')
-    +fig(lbFmt(r.yAvailed+r.cfUsed),null,'Used in '+LB_YEAR)
-    +fig(lbFmt(r.yPending),null,'Pending')
-    +(r.monthly!=null
-      ?fig(lbFmt(r.mAvailable),r.monthly,LB_MONTHS[month]+' limit left',tone(r.mAvailable))
-      :fig('&mdash;',null,'No monthly limit'))};
+  /* Days left of every type in the employee's policy, on one line - the same
+     whichever type is picked, so the form never changes shape under you. */
+  return {cls:'al-type-bal is-on is-note',
+    html:'<span class="al-bal-k">Days left</span>'+rows.map(function(r){
+      const left=r.yAvailable+r.cfBalance;
+      return '<span class="al-bal-chip'+(left<=0?' is-out':left<=2?' is-low':'')+'">'+sbEsc(r.type)+' <b>'+lbFmt(left)+'</b></span>';
+    }).join('')};
 }
 function lhPaintBal(box,b){box.className=b.cls;box.innerHTML=b.html;}
 

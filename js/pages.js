@@ -1232,11 +1232,13 @@ function buildAddLeaveModalHTML(){
     +apCS('al-emp',alEmpOptions(),'','Search by name or ID','alPickEmp').replace('<div class="cs-wrap"','<div class="cs-wrap" data-cssearch="1"')
     +'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Leave Type <span class="req">*</span></label>'
-    +apCS('al-type',leaveTypes,'','Select','alRefreshBal')
-    /* The balance of the type picked, or of every type until one is - see lhTypeBal(). */
+    +apCS('al-type',leaveTypes,'','Select','alRefreshBal')+'</div>'
+    +'</div>'
+    /* The balance of the type picked, or of every type until one is - see
+       lhTypeBal(). Full width under both fields, not squeezed under one. */
     +(function(){const b=lhTypeBal(currentRole==='Employee'?LB_ME:null,'','','');
-      return '<div class="'+b.cls+'" id="al-type-bal">'+b.html+'</div>';})()+'</div>'
-    +'</div></div>'
+      return '<div class="al-bal-host"><div class="'+b.cls+'" id="al-type-bal">'+b.html+'</div></div>';})()
+    +'</div>'
 
     // Row 2: Duration type radio
     +'<div class="policy-form-section" style="border-top:1px dashed #e5e7eb">'
@@ -6829,6 +6831,18 @@ function tsToggleWkMenu(ev,w){
 document.addEventListener('click',function(){if(tsWkMenu!=null){tsWkMenu=null;renderADTPage();}});
 /* Hours over the records a filter keeps, split into regular and overtime by
    the shift Attendance Settings defines (dsShift). See the Stats note below. */
+/* THE GRID SHOWS A DAY UP TO THE DAILY WORK HOURS. Attendance Settings sets
+   the expected day (dailyHours, 8 - the 09:00-18:00 window less the break).
+   A day short of it shows what was worked; a day past it shows the full
+   figure and no more. Anything over is still logged, still counts in the
+   Total Hours / Overtime tiles, and is shown in full in the day panel. */
+function tsDayCap(){return (typeof csAtt!=='undefined'&&+csAtt.dailyHours>0)?+csAtt.dailyHours:8;}
+function tsDayHrsHTML(hours){
+  const h=parseFloat(hours);
+  if(isNaN(h))return '<span class="ts-day-hrs">'+hours+'</span>';
+  const cap=tsDayCap();
+  return '<span class="ts-day-hrs"'+(h>cap?' title="'+h.toFixed(2)+'h logged - open the day for the full hours"':'')+'>'+Math.min(h,cap).toFixed(2)+'h</span>';
+}
 function tsHourStats(keep){
   const s = dsShift(), shift = Math.max(0, (s.end - s.start) / 60);
   let total = 0, ot = 0, days = 0;
@@ -6924,7 +6938,7 @@ function buildMyTimesheetHTML(viewingOther) {
     // The rail used to hold a checkbox that was wired to nothing. A week's
     // total is the figure people actually scan a timesheet for, so it goes
     // there instead and the column starts earning its width.
-    let wkHours = 0;
+    let wkHours = 0, wkShown = 0;   // logged, and as the grid shows it (each day capped)
     const wkDays = {};
     for (let c = 0; c < 7; c++) {
       const dn = w * 7 + c + 1 - monOff;
@@ -6933,7 +6947,7 @@ function buildMyTimesheetHTML(viewingOther) {
       if (!tsInRange(ds)) continue;
       wkDays[ds] = 1;
       const a = tsAttendance[ds];
-      if (a && a.status === 'present') wkHours += parseFloat(a.hours);
+      if (a && a.status === 'present') { wkHours += parseFloat(a.hours); wkShown += Math.min(parseFloat(a.hours) || 0, tsDayCap()); }
     }
     /* Of the week's hours, how many are overtime — the split Deel bills on
        (regular vs overtime). Same rule as the Overtime tile (tsHourStats), so
@@ -6961,7 +6975,7 @@ function buildMyTimesheetHTML(viewingOther) {
     if (tsHasPick) calRows += '<div class="ts-pick-cell">'+wkPick+'</div>';
     calRows += '<div class="ts-week-cell'+(wkPicked?' is-picked':'')+'">'
       + '<span class="ts-wk-label">Week '+(w+1)+'</span>'
-      + '<span class="ts-wk-total'+(wkHours?'':' none')+'">'+(wkHours?wkHours.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
+      + '<span class="ts-wk-total'+(wkHours?'':' none')+'"'+(wkHours>wkShown+0.004?' title="'+wkHours.toFixed(2)+'h logged in total - open a day for its full hours"':'')+'>'+(wkHours?wkShown.toFixed(2)+'h':wkLocked?'0.00h':'&mdash;')+'</span>'
       + (spanTxt ? '<span class="ts-wk-span" title="This billing week runs '+tsUnitRange(unit)+'">'+spanTxt+'</span>' : '')
       + tsWeekRailHTML(w+1)
       + tsWeekMenuHTML(w+1)
@@ -7015,7 +7029,7 @@ function buildMyTimesheetHTML(viewingOther) {
          live in that panel, one click away, not on the cell. */
       let body = '';
       if (inRange && !isFuture && att && (att.status === 'present' || att.status === 'inprog') && att.hours !== '--')
-        body = '<span class="ts-day-hrs">'+att.hours+'</span>';
+        body = tsDayHrsHTML(att.hours);
       /* LOCKED, AND NOTHING LOGGED: the hours read 0 rather than blank, so a
          settled week has a figure in every box. Display only - no record is
          created, and it is greyed so it never reads as entered time. */
