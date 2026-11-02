@@ -252,18 +252,22 @@ function atReqRecipients(approver){
   return out;
 }
 const AT_REQ_KIND_LABEL={change:'Time change',attendance:'Off-day attendance',manual:'Manual entry'};
-function atReqNotify(empId,id,kind,iso,approver){
-  if(typeof notifData==='undefined')return [];
+// One bell entry for a correction request; the panel draws it from req.
+function atReqNotifItem(empId,id,kind,iso,approver,reason,time){
   const emp=(typeof atEmp==='function'&&atEmp(empId))||(typeof tsEmp!=='undefined'?tsEmp:{name:'Employee'});
+  const to=atReqRecipients(approver);
+  return {name:'Timesheet correction request',ini:emp.initials||'',time:time,pending:true,
+    reqId:id,empId:empId,go:'at-requests',
+    req:{who:emp.name,kind:AT_REQ_KIND_LABEL[kind]||'Correction',
+      day:new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}),
+      to:to.join(' & '),reason:reason||''}};
+}
+function atReqNotify(empId,id,kind,iso,approver,reason){
+  if(typeof notifData==='undefined')return [];
   const to=atReqRecipients(approver);
   // One notification per request: an edited request replaces its own.
   for(let i=notifData.length-1;i>=0;i--)if(notifData[i].reqId===id)notifData.splice(i,1);
-  notifData.unshift({
-    name:'Attendance correction from '+emp.name,
-    sub:(AT_REQ_KIND_LABEL[kind]||'Correction')+' · '+new Date(iso+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' · For '+to.join(' & '),
-    time:'Just now',pending:true,
-    reqId:id,empId:empId,go:'at-requests'
-  });
+  notifData.unshift(atReqNotifItem(empId,id,kind,iso,approver,reason,'Just now'));
   if(typeof notifUpdateList==='function')notifUpdateList(true);
   return to;
 }
@@ -286,3 +290,21 @@ function atReqOpenFromNotif(i){
   const row=document.getElementById('at-row-'+n.empId);
   if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});
 }
+
+/* The requests already waiting on other employees (AT_REQ_SEED) are on the
+   bell from the start, the same as one filed live - newest first, opening on
+   that employee's Requests tab, cleared when it is decided. */
+(function(){
+  if(typeof notifData==='undefined')return;
+  const items=[];
+  Object.keys(AT_REQ_SEED).forEach(function(empId){
+    AT_REQ_SEED[empId].forEach(function(r){
+      if(r.status!==AT_REQ_PENDING)return;
+      const n=atReqNotifItem(empId,r.id,r.type,r.date,r.approver,r.reason,String(r.requestedAt||'').split(',')[0].replace(/ d{4}$/,''));
+      n.at=r.requestedAt;items.push(n);
+    });
+  });
+  items.sort(function(a,b){return new Date(b.at)-new Date(a.at);});
+  notifData.unshift.apply(notifData,items);
+  if(typeof notifSyncBell==='function')notifSyncBell();
+})();

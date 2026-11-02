@@ -83,14 +83,14 @@ Object.assign(SB_STATUS_TONE,{
    three are entity-configured types used by the Global employees. */
 const EMP_DOC_CATALOG=[
   {id:'resume',name:'Resume',type:'Employment History'},
-  {id:'aadhaar-front',name:'Aadhaar Front',type:'Identity Proof'},
-  {id:'aadhaar-back',name:'Aadhaar Back',type:'Identity Proof'},
-  {id:'pan',name:'PAN',type:'Tax ID'},
+  {id:'aadhaar-front',name:'Aadhaar Card Front',type:'Identity Proof'},
+  {id:'aadhaar-back',name:'Aadhaar Card Back',type:'Identity Proof'},
+  {id:'pan',name:'PAN Card',type:'Tax ID'},
   {id:'passport',name:'Passport',type:'Identity Proof'},
   {id:'address',name:'Address Proof',type:'Address Proof'},
-  {id:'qualification',name:'Qualification Certificate',type:'Educational Certificate'},
-  {id:'photo',name:'Passport Photo',type:'Photograph'},
-  {id:'cheque',name:'Cancelled Cheque',type:'Bank Proof'},
+  {id:'qualification',name:'Educational Certificates',type:'Educational Certificate'},
+  {id:'photo',name:'Passport Photograph',type:'Photograph'},
+  {id:'cheque',name:'Cancelled Cheque / Bank Passbook',type:'Bank Proof'},
   {id:'bankstmt',name:'Bank Statement',type:'Bank Proof'},
   {id:'offer',name:'Previous Offer Letter',type:'Employment History'},
   {id:'relieving',name:'Relieving Letter',type:'Employment History'},
@@ -1828,7 +1828,7 @@ const EMP_LIFE_SEED={
       L('asset-it','14 Jan 2025','04:20:00 PM','Dell Latitude handed over; Microsoft 365 and Jira access granted.',{extra:{details:[D('Asset Allocation','LT-001'),D('IT Access','Microsoft 365, Jira')]}}),
       L('verified','13 Jan 2025','11:10:00 AM','All four documents checked against originals.'),
       L('docs-submitted','12 Jan 2025','06:05:00 PM','',{extra:{details:[D('Submitted By','Testemp Antar'),D('Submitted Date/Time','12 Jan 2025, 06:05:00 PM')]}}),
-      L('doc-request','08 Jan 2025','10:00:00 AM','Standard joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Qualification Certificate','Cancelled Cheque']}}),
+      L('doc-request','08 Jan 2025','10:00:00 AM','Standard joining documents requested.',{extra:{docs:['Aadhaar Card Front','PAN Card','Educational Certificates','Cancelled Cheque / Bank Passbook']}}),
       L('onboarding','08 Jan 2025','09:30:00 AM','Offer accepted. Date of Joining set to 15 Jan 2025.')
     ],
     2:[
@@ -1846,7 +1846,7 @@ const EMP_LIFE_SEED={
       L('asset-it','04 Jun 2024','06:00:00 PM','GitHub access granted. Laptop to follow from the July batch.'),
       L('verified','03 Jun 2024','10:45:00 AM','Documents verified on the first pass.'),
       L('docs-submitted','31 May 2024','08:20:00 PM','',{extra:{details:[D('Submitted By','Anika Shah')]}}),
-      L('doc-request','29 May 2024','09:30:00 AM','Fixed-term joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Cancelled Cheque']}}),
+      L('doc-request','29 May 2024','09:30:00 AM','Fixed-term joining documents requested.',{extra:{docs:['Aadhaar Card Front','PAN Card','Cancelled Cheque / Bank Passbook']}}),
       L('onboarding','28 May 2024','09:15:00 AM','Fixed-term engagement. Date of Joining set to 05 Jun 2024.')
     ],
     4:[
@@ -1866,14 +1866,14 @@ const EMP_LIFE_SEED={
        Allocation & IT Access Completed can be logged - and that tips him to
        Active automatically. */
     5:[
-      L('verified','05 Sep 2026','03:05:00 PM','All documents checked; no issues.',{extra:{details:[D('Accepted Documents','Aadhaar Front, PAN, Relieving Letter')]}}),
+      L('verified','05 Sep 2026','03:05:00 PM','All documents checked; no issues.',{extra:{details:[D('Accepted Documents','Aadhaar Card Front, PAN Card, Relieving Letter')]}}),
       L('docs-submitted','03 Sep 2026','08:10:00 PM','',{extra:{details:[D('Submitted By','Dev Kulkarni'),D('Submitted Date/Time','3 Sep 2026, 08:10:00 PM')]}}),
-      L('doc-request','26 Aug 2026','11:00:00 AM','Joining documents requested.',{extra:{docs:['Aadhaar Front','PAN','Relieving Letter']}}),
+      L('doc-request','26 Aug 2026','11:00:00 AM','Joining documents requested.',{extra:{docs:['Aadhaar Card Front','PAN Card','Relieving Letter']}}),
       L('onboarding','25 Aug 2026','09:40:00 AM','Offer accepted. Date of Joining set to 10 Sep 2026.')
     ],
     /* The Employee Dashboard's employee: one document in, three owed. */
     6:[
-      L('doc-request','03 Sep 2026','10:15:00 AM','Joining documents requested. Please upload before your joining date.',{extra:{docs:['Aadhaar Front','PAN','Qualification Certificate','Cancelled Cheque']}}),
+      L('doc-request','03 Sep 2026','10:15:00 AM','Joining documents requested. Please upload before your joining date.',{extra:{docs:['PAN Card','Aadhaar Card Front','Aadhaar Card Back','Passport Photograph','Cancelled Cheque / Bank Passbook','Educational Certificates']}}),
       L('onboarding','02 Sep 2026','09:15:00 AM','Offer accepted. Date of Joining set to 15 Sep 2026.')
     ],
     7:[
@@ -1923,7 +1923,7 @@ const EMP_LIFE_SEED={
     5:[
       L('doc-rejected','03 Sep 2026','11:20:00 AM','The Codice Fiscale scan is unreadable — please upload a clearer copy.',{extra:{rejected:[{name:'Codice Fiscale',reason:'Illegible / Unreadable'}],details:[D('Rejected Document','Codice Fiscale'),D('Rejection Reason','Illegible / Unreadable')]}}),
       L('docs-submitted','01 Sep 2026','07:40:00 PM','',{extra:{details:[D('Submitted By','Marco Rossi'),D('Submitted Date/Time','1 Sep 2026, 07:40:00 PM')]}}),
-      L('doc-request','29 Aug 2026','10:30:00 AM','Italy EOR joining documents requested.',{extra:{docs:['Passport','Codice Fiscale','Qualification Certificate','Bank Statement']}}),
+      L('doc-request','29 Aug 2026','10:30:00 AM','Italy EOR joining documents requested.',{extra:{docs:['Passport','Codice Fiscale','Educational Certificates','Bank Statement']}}),
       L('onboarding','28 Aug 2026','10:05:00 AM','EOR onboarding initiated for the Italy entity. Date of Joining set to 21 Sep 2026.')
     ],
     /* Everything is in and waiting on Compliance to accept or reject. */
@@ -1945,8 +1945,10 @@ const EMP_REQ_SEED={
     1:[RQ('aadhaar-front','Accepted','aadhaar_antar.pdf'),RQ('pan','Accepted','pan_antar.pdf'),RQ('qualification','Accepted','btech_degree.pdf'),RQ('cheque','Accepted','cheque_icici.jpg')],
     3:[RQ('aadhaar-front','Accepted','anika_aadhaar.pdf'),RQ('pan','Accepted','anika_pan.pdf'),RQ('cheque','Accepted','anika_cheque.jpg')],
     5:[RQ('aadhaar-front','Accepted','dev_aadhaar.pdf',{uploadedAt:'2 Sep 2026',acceptedBy:'Tarak Swain'}),RQ('pan','Accepted','dev_pan.pdf',{uploadedAt:'2 Sep 2026',acceptedBy:'Tarak Swain'}),RQ('relieving','Accepted','dev_relieving_letter.pdf',{uploadedAt:'3 Sep 2026',acceptedBy:'Tarak Swain'})],
-    6:[RQ('aadhaar-front','Uploaded','meera_aadhaar.pdf',{requestedAt:'3 Sep 2026',uploadedAt:'4 Sep 2026, 08:12:00 PM'}),
-       RQ('pan','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('qualification','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('cheque','Pending Upload','',{requestedAt:'3 Sep 2026'})]
+    6:[RQ('pan','Pending Upload','',{requestedAt:'3 Sep 2026'}),
+       RQ('aadhaar-front','Uploaded','meera_aadhaar_front.pdf',{requestedAt:'3 Sep 2026',uploadedAt:'4 Sep 2026, 08:12:00 PM'}),
+       RQ('aadhaar-back','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('photo','Pending Upload','',{requestedAt:'3 Sep 2026'}),
+       RQ('cheque','Pending Upload','',{requestedAt:'3 Sep 2026'}),RQ('qualification','Pending Upload','',{requestedAt:'3 Sep 2026'})]
   },
   ge:{
     1:[RQ('passport','Accepted','emma_passport.pdf'),RQ('permit','Accepted','emma_work_permit_v2.pdf'),RQ('bankstmt','Accepted','emma_bank.pdf')],

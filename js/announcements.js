@@ -93,13 +93,12 @@ const ANN_ARROW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
    list is sorted or filtered. */
 function annId(a){return empAnnouncements.indexOf(a);}
 function annMarks(a){
-  return (a.isNew?'<span class="ann-new" title="New" aria-label="New"></span>':'')
-    +(a.pinned?'<span class="ann-pin" title="Pinned" aria-label="Pinned">'+ANN_PIN+'</span>':'');
+  return (a.pinned?'<span class="ann-pin" title="Pinned" aria-label="Pinned">'+ANN_PIN+'</span>':'');
 }
 function annListHTML(list){
   return '<ul class="ann-list">'+list.slice(0,ANN_VISIBLE).map(function(a){
     const from=a.from==='manager'?'manager':'hr';
-    return '<li><button type="button" class="ann-row'+(a.isNew?' is-new':'')+'" onclick="annOpen('+annId(a)+')">'
+    return '<li><button type="button" class="ann-row" onclick="annOpen('+annId(a)+')">'
       +'<span class="ann-av tone-'+annTone(a.author)+'" aria-hidden="true">'+sbEsc(annInitials(a.author))+'</span>'
       +'<span class="ann-body">'
         +'<span class="ann-head">'+annMarks(a)+'<span class="ann-title">'+sbEsc(a.title)+'</span></span>'
@@ -163,17 +162,12 @@ function annRender(root){
 /* ══ THE READING DRAWER ═══════════════════════════════════════════════════
    Every announcement in full, pinned first then newest, filterable by who
    posted it. Opened at a post, that post is scrolled to and briefly
-   highlighted, and reading it clears its New dot - on the card too. */
+   highlighted. */
 let annFilter='all';
 let annFocus=null;
 function annOpen(id){
   annFocus=(id==null)?null:id;
   annFilter='all';
-  if(annFocus!=null&&empAnnouncements[annFocus]){
-    empAnnouncements[annFocus].isNew=false;
-    // Read is remembered on the source record, so the next sync keeps it read.
-    if(typeof anmUnread!=='undefined')delete anmUnread[empAnnouncements[annFocus].src];
-  }
   let ov=document.getElementById('ann-ov');
   if(!ov){
     ov=document.createElement('div');ov.id='ann-ov';ov.className='ann-ov';

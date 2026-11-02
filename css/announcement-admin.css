@@ -26,19 +26,6 @@
 .anm-window.tone-wait,.anm-when.tone-wait{background:var(--st-wait-bg);border-color:var(--st-wait-bd);color:var(--st-wait-fg)}
 .anm-when.tone-bad{background:var(--st-bad-bg);border-color:var(--st-bad-bd);color:var(--st-bad-fg)}
 
-/* Preview tab: the three tests, then the card as employees get it. */
-.anm-checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
-.anm-checks li{display:flex;align-items:center;gap:9px;font-size:12.5px;color:#334155}
-.anm-chk{width:16px;height:16px;flex-shrink:0;border-radius:50%;background:var(--st-ok-bg);position:relative}
-.anm-chk::after{content:'';position:absolute;left:5px;top:3px;width:4px;height:7px;border:solid var(--st-ok-fg);border-width:0 2px 2px 0;transform:rotate(45deg)}
-.anm-checks li.is-no{color:var(--gray)}
-.anm-checks li.is-no .anm-chk{background:var(--st-idle-bg)}
-.anm-checks li.is-no .anm-chk::after{left:4px;top:7px;width:8px;height:0;border-width:2px 0 0 0;border-color:#94a3b8;transform:none}
-.anm-preview{position:relative;padding:14px;border-radius:12px;background:var(--light);border:1px dashed #d5dbe3}
-.anm-preview.is-off .ann-card{opacity:.55}
-.anm-preview-flag{margin-top:10px;font-size:12px;font-weight:500;color:var(--gray);text-align:center}
-.anm-preview-note{margin:10px 0 0;font-size:12px;color:var(--gray)}
-
 /* ── Form ── */
 /* Flat sections split by a rule: the page already puts the form in a card,
    and a card per section inside it drew a border inside a border. */

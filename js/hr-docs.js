@@ -381,7 +381,7 @@ function hdocDownload(){
   const blob=new Blob(['﻿',html],{type:'application/msword'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=d.no+'_'+hdocSubject(d).replace(/[^A-Za-z0-9]+/g,'_')+'.doc';
+  a.download=hdocAttachName(d);
   document.body.appendChild(a);a.click();
   setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},400);
   showToast('Downloading','success',a.download);
@@ -394,8 +394,180 @@ function hdocDownload(){
    so HR types the candidate's address.
    Sending issues the letter: the same completeness check as Submit (a letter
    with gaps is not mailed to anyone), a document number, and a note on the
-   document of who it went to and when. */
-let hdocSend=null;   // {email, fromRecord, candidate} while the dialog is open
+   document of who it went to and when.
+   FR-07.8 adds the mail itself (From, CC, Subject, Body from the type's Mail
+   Template, the document attached) - see MAIL CONFIGURATION below. */
+/* ══ FR-07.8 MAIL CONFIGURATION ════════════════════════════════════════════
+   Every document type has one HR Docs Mail Template: From, CC, Subject and
+   Body. Send in Mail opens pre-filled from the template of the document's
+   type, with the generated document attached; HR can adjust the mail for that
+   one send without touching the template.
+
+   The From / CC addresses and the wording below are PLACEHOLDERS. FR-07.8
+   says HR provides and confirms the final values, so each template carries a
+   status: "Awaiting HR Confirmation" until somebody confirms it in Mail
+   Templates, "Confirmed" after. Editing a confirmed template sends it back
+   to awaiting. A send from an unconfirmed template still goes, with a
+   warning in the dialog - the demo should not dead-end on missing copy.
+
+   Subject and Body take {{placeholders}}: the mail-only ones below, plus any
+   field of the document itself ({{designation}}, {{proposed_joining}}...). */
+const HDOC_MAIL_ROLES=HDOC_ADMIN_ROLES.concat(['HR Admin','HR Manager']);
+/* MAIL TEMPLATE SETTINGS ARE HIDDEN FOR NOW - the Mail Templates button on
+   HR Docs and the Mail Template button on each type read this one switch.
+   Send in Mail still pre-fills from each type's template below. Set to true
+   to bring the settings back. */
+const HDOC_MAIL_TPL_UI=false;
+function hdocMailUI(){return HDOC_MAIL_TPL_UI&&HDOC_MAIL_ROLES.indexOf(CURRENT_USER_ROLE)>=0;}
+const HDOC_MAIL_VARS=[
+  {k:'recipient_name',label:'Recipient Name'},
+  {k:'document_type',label:'Document Type'},
+  {k:'document_no',label:'Document No'},
+  {k:'company_name',label:'Company Name'},
+  {k:'sender_name',label:'Sender Name'}
+];
+const HDOC_MAIL_FROM='hr@dhihyperlocal.com';
+const HDOC_MAIL_SIGN='\n\nRegards,\n{{sender_name}}\nHR Team, {{company_name}}';
+const HDOC_MAIL_WORDING={
+  offer:      ['Offer of Employment - {{company_name}}',
+               'Dear {{recipient_name}},\n\nWe are delighted to offer you the position of {{offered_designation}} at {{company_name}}. Please find your Offer Letter ({{document_no}}) attached.\n\nKindly review the terms and confirm your acceptance by {{offer_valid_till}}.'],
+  appointment:['Your Appointment Letter - {{company_name}}',
+               'Dear {{recipient_name}},\n\nWelcome to {{company_name}}. Please find your Appointment Letter ({{document_no}}) attached, setting out the terms of your appointment.\n\nPlease keep it for your records and reach out to HR with any questions.'],
+  internship: ['Your Internship Letter - {{company_name}}',
+               'Dear {{recipient_name}},\n\nPlease find your Internship Letter ({{document_no}}) attached.\n\nThank you for your contribution to {{company_name}}.'],
+  experience: ['Experience Letter - {{document_no}}',
+               'Dear {{recipient_name}},\n\nPlease find your Experience Letter ({{document_no}}) attached.\n\nWe wish you every success in the future.'],
+  relieving:  ['Relieving Letter - {{document_no}}',
+               'Dear {{recipient_name}},\n\nPlease find your Relieving Letter ({{document_no}}) attached, confirming your release from {{company_name}}.\n\nWe wish you the very best.'],
+  increment:  ['Revision of your compensation - {{company_name}}',
+               'Dear {{recipient_name}},\n\nPlease find your Increment Letter ({{document_no}}) attached, with the details of your revised compensation.\n\nCongratulations, and thank you for your contribution.'],
+  confirmation:['Confirmation of your services - {{company_name}}',
+               'Dear {{recipient_name}},\n\nPlease find your Confirmation Letter ({{document_no}}) attached.\n\nCongratulations on completing your probation.'],
+  'warn-leave':['{{document_type}} - {{document_no}}',
+               'Dear {{recipient_name}},\n\nPlease find attached {{document_type}} ({{document_no}}). Kindly read it carefully and respond to HR within the time stated in the letter.'],
+  'warn-perf':['{{document_type}} - {{document_no}}',
+               'Dear {{recipient_name}},\n\nPlease find attached {{document_type}} ({{document_no}}). Kindly read it carefully; your manager and HR will follow up on the improvement plan.']
+};
+const hdocMailTemplates={};
+HDOC_TYPES.forEach(function(t){
+  const w=HDOC_MAIL_WORDING[t.key]||['{{document_type}} - {{document_no}}','Dear {{recipient_name}},\n\nPlease find your {{document_type}} ({{document_no}}) attached.'];
+  hdocMailTemplates[t.key]={from:HDOC_MAIL_FROM,cc:'',subject:w[0],body:w[1]+HDOC_MAIL_SIGN,
+    status:'Awaiting HR Confirmation',updatedBy:'System',updatedAt:'',confirmedBy:'',confirmedAt:''};
+});
+function hdocMailTpl(type){return hdocMailTemplates[type]||null;}
+function hdocMailConfirmed(type){const t=hdocMailTpl(type);return !!t&&t.status==='Confirmed';}
+function hdocMailFill(str,d){
+  const v=hdocResolve(d.values);
+  const ty=hdocTypeOf(d.type);
+  const extra={recipient_name:hdocSubject(d),document_type:ty?ty.label:'',document_no:d.no||'',
+    company_name:hdocCompany(),sender_name:CURRENT_USER};
+  return String(str||'').replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/gi,function(all,k){
+    if(extra[k]!=null)return extra[k];
+    const val=hdocFmt(k,v[k]);
+    return val||all;
+  });
+}
+function hdocAttachName(d){return d.no+'_'+hdocSubject(d).replace(/[^A-Za-z0-9]+/g,'_')+'.doc';}
+const HDOC_EMAIL_RE=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function hdocSplitEmails(s){return String(s||'').split(/[,;]/).map(function(x){return x.trim();}).filter(Boolean);}
+
+/* ── Mail Templates (configuration) ── */
+function hdocOpenMailList(ev){
+  if(ev)ev.stopPropagation();
+  if(!hdocMailUI())return;
+  hdocModal={view:'mail-list'};renderADTPage();
+}
+function hdocOpenMailEdit(type){
+  if(!hdocMailUI())return;
+  hdocModal={view:'mail-edit',type:type,back:!!(hdocModal&&hdocModal.view==='mail-list')};renderADTPage();
+}
+// Insert goes into whichever of Subject / Body was last focused.
+let hdocMailLastFocus='hdm-body';
+function hdocMailInsert(k){
+  const el=document.getElementById(hdocMailLastFocus)||document.getElementById('hdm-body');
+  if(!el)return;
+  const tok='{{'+k+'}}',s=el.selectionStart!=null?el.selectionStart:el.value.length,e=el.selectionEnd!=null?el.selectionEnd:s;
+  el.value=el.value.slice(0,s)+tok+el.value.slice(e);
+  el.focus();el.selectionStart=el.selectionEnd=s+tok.length;
+}
+function hdocSaveMailTpl(confirm){
+  const m=hdocModal;if(!m||m.view!=='mail-edit')return;
+  const t=hdocMailTpl(m.type),ty=hdocTypeOf(m.type);
+  const val=function(id){const el=document.getElementById(id);return el?el.value.trim():'';};
+  const f={from:val('hdm-from'),cc:val('hdm-cc'),subject:val('hdm-subject'),body:val('hdm-body')};
+  const err=function(id,title,msg){const el=document.getElementById(id);if(el){el.classList.add('is-bad');el.focus();setTimeout(function(){el.classList.remove('is-bad');},1600);}showToast(title,'error',msg);};
+  if(!f.from)return err('hdm-from','From Email Address is required');
+  if(!HDOC_EMAIL_RE.test(f.from))return err('hdm-from','Check the From address','Enter a valid email address, e.g. hr@company.com.');
+  const bad=hdocSplitEmails(f.cc).filter(function(x){return !HDOC_EMAIL_RE.test(x);});
+  if(bad.length)return err('hdm-cc','Check the CC addresses',bad[0]+' is not a valid email address.');
+  if(!f.subject)return err('hdm-subject','Email Subject is required');
+  if(!f.body)return err('hdm-body','Email Body is required');
+  const changed=f.from!==t.from||f.cc!==t.cc||f.subject!==t.subject||f.body!==t.body;
+  const st=hdocStampNow();
+  Object.assign(t,f);
+  if(changed){t.updatedBy=CURRENT_USER;t.updatedAt=st;}
+  if(confirm){t.status='Confirmed';t.confirmedBy=CURRENT_USER;t.confirmedAt=st;}
+  else if(changed&&t.status==='Confirmed'){t.status='Awaiting HR Confirmation';t.confirmedBy='';t.confirmedAt='';}
+  hdocModal=m.back?{view:'mail-list'}:null;
+  renderADTPage();
+  showToast(confirm?'Mail template confirmed':'Mail template saved','success',
+    ty.label+(confirm?' mails now go out with the confirmed wording.':t.status==='Confirmed'?'.':' · awaiting HR confirmation.'));
+}
+function hdocMailBadge(t){
+  return '<span class="lp-status-badge tone-'+(t.status==='Confirmed'?'ok':'wait')+'">'+t.status+'</span>';
+}
+function hdocMailListHTML(){
+  const rows=HDOC_TYPES.map(function(ty){
+    const t=hdocMailTpl(ty.key);
+    return '<tr style="cursor:pointer" onclick="hdocOpenMailEdit(\''+ty.key+'\')">'
+      +'<td><div style="font-weight:600;color:var(--navy)">'+ty.label+'</div>'
+        +'<div class="hdoc-tpl-sub hdoc-mail-subj">'+hdocEsc(t.subject)+'</div></td>'
+      +'<td class="hdoc-mail-addr">'+hdocEsc(t.from)+(t.cc?'<div class="hdoc-tpl-sub">CC '+hdocEsc(t.cc)+'</div>':'')+'</td>'
+      +'<td>'+hdocMailBadge(t)+(t.confirmedBy?'<div class="hdoc-tpl-sub">by '+hdocEsc(t.confirmedBy)+'</div>':'')+'</td>'
+      +'<td style="text-align:right"><button class="att-row-btn" title="Edit mail template" onclick="event.stopPropagation();hdocOpenMailEdit(\''+ty.key+'\')">'+HDOC_ICO.edit+'</button></td></tr>';
+  }).join('');
+  const pending=HDOC_TYPES.filter(function(ty){return !hdocMailConfirmed(ty.key);}).length;
+  return hdocModalShell('Mail Templates',
+    'The mail sent with each HR document: From, CC, Subject and Body. '
+      +(pending?'<b>'+pending+' of '+HDOC_TYPES.length+'</b> still use placeholder wording and need HR to confirm the final values.':'All templates are confirmed by HR.'),
+    '<table class="lp-table hdoc-tpl-table"><thead><tr><th>Document Type</th><th>From</th><th>Status</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>',
+    '<span></span><div class="ct-modal-btns"><button class="ep-save-btn" onclick="hdocClose()">Done</button></div>',true);
+}
+function hdocMailEditHTML(){
+  const m=hdocModal,ty=hdocTypeOf(m.type),t=hdocMailTpl(m.type);
+  const tpl=hdocActiveTemplate(m.type);
+  const docVars=tpl?hdocFormKeys(tpl).filter(function(k){return k!=='employee_name'&&k!=='candidate_name';}).map(function(k){return {k:k,label:hdocFieldDef(k).label};}):[];
+  const chip=function(v){return '<button type="button" class="hdoc-ins" onmousedown="event.preventDefault()" onclick="hdocMailInsert(\''+v.k+'\')" title="Insert {{'+v.k+'}}">'+hdocEsc(v.label)+'</button>';};
+  const meta=t.status==='Confirmed'
+    ?'Confirmed by <b>'+hdocEsc(t.confirmedBy)+'</b> on '+hdocEsc(String(t.confirmedAt).split(' | ')[0])+'. Saving a change sends it back for confirmation.'
+    :'Placeholder values. HR provides the final From, CC, Subject and Body, then confirms them here.';
+  const foc=' onfocus="hdocMailLastFocus=this.id"';
+  hdocMailLastFocus='hdm-body';
+  return hdocModalShell('Mail Template — '+ty.label,
+    '<span class="hdoc-final-meta">'+hdocMailBadge(t)+'<span class="hdoc-fm-item">'+meta+'</span></span>',
+    '<div class="ep-form-grid">'
+      +'<div class="ep-form-group"><label class="ep-form-label" for="hdm-from">From Email Address <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="hdm-from" type="email" value="'+attrSafe(t.from)+'" placeholder="hr@company.com"></div>'
+      +'<div class="ep-form-group"><label class="ep-form-label" for="hdm-cc">CC Email Address</label>'
+        +'<input class="ep-form-input" id="hdm-cc" value="'+attrSafe(t.cc)+'" placeholder="Optional · separate several with commas"></div>'
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="hdm-subject">Email Subject <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="hdm-subject" value="'+attrSafe(t.subject)+'"'+foc+'></div>'
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="hdm-body">Email Body <span class="req">*</span></label>'
+        +'<textarea class="ep-form-input hdoc-tpl-body hdoc-mail-body" id="hdm-body"'+foc+'>'+hdocEsc(t.body)+'</textarea>'
+        +'<div class="hdoc-ins-row"><span class="hdoc-ins-lbl">Insert</span>'+HDOC_MAIL_VARS.map(chip).join('')+'</div>'
+        +(docVars.length?'<div class="hdoc-ins-row"><span class="hdoc-ins-lbl">From the document</span>'+docVars.map(chip).join('')+'</div>':'')
+        +'<p class="hdoc-send-hint">The generated '+ty.label+' is attached to every mail automatically.</p></div>'
+    +'</div>',
+    (m.back?'<button class="ep-cancel-btn" onclick="hdocOpenMailList()">'+HDOC_ICO.back+' All Mail Templates</button>':'<span></span>')
+    +'<div class="ct-modal-btns">'
+      +'<button class="ep-cancel-btn" onclick="'+(m.back?'hdocOpenMailList()':'hdocClose()')+'">Cancel</button>'
+      +'<button class="ep-cancel-btn" onclick="hdocSaveMailTpl(false)">Save</button>'
+      +'<button class="ep-save-btn" onclick="hdocSaveMailTpl(true)">'+(t.status==='Confirmed'?'Save &amp; Keep Confirmed':'Save &amp; Confirm')+'</button>'
+    +'</div>',true,m.back?'hdocOpenMailList()':null);
+}
+
+/* ── Send in Mail ── */
+let hdocSend=null;   // the mail being composed while the dialog is open
 const HDOC_CANDIDATE_TYPES=['offer','appointment','internship'];
 function hdocSendPrefill(m){
   const name=m.values.employee_name;
@@ -406,6 +578,9 @@ function hdocSendPrefill(m){
 function hdocOpenSend(){
   hdocSync();
   const m=hdocModal;if(!m)return;
+  // Only a submitted document goes out - never a draft or one still being created.
+  const doc=m.docId?hdocDocs.find(function(x){return x.id===m.docId;}):null;
+  if(!doc||doc.status!=='Submitted'){showToast('Submit the document first','error','Send in Mail is available once the document is submitted.');return;}
   const tpl=hdocTemplateById(m.templateId);
   const miss=hdocMissing(tpl,m.values);
   if(miss.length){
@@ -413,12 +588,15 @@ function hdocOpenSend(){
     if(m.view!=='form'){m.view='form';renderADTPage();}
     return;
   }
+  const mt=hdocMailTpl(doc.type);
   const pre=hdocSendPrefill(m);
   hdocSend={email:pre.email,fromRecord:pre.fromRecord,
-    candidate:!pre.fromRecord&&HDOC_CANDIDATE_TYPES.indexOf(m.type)>=0};
+    candidate:!pre.fromRecord&&HDOC_CANDIDATE_TYPES.indexOf(m.type)>=0,
+    from:mt.from,cc:mt.cc,subject:hdocMailFill(mt.subject,doc),body:hdocMailFill(mt.body,doc),
+    attachment:hdocAttachName(doc),confirmed:mt.status==='Confirmed'};
   renderADTPage();
   const el=document.getElementById('hdoc-send-to');
-  if(el)el.focus();   // (type=email inputs do not support setSelectionRange)
+  if(el&&!el.value)el.focus();
 }
 function hdocCloseSend(){hdocSend=null;renderADTPage();}
 function hdocSendInput(el){
@@ -427,55 +605,73 @@ function hdocSendInput(el){
 }
 function hdocSendKey(ev){if(ev.key==='Enter'){ev.preventDefault();hdocSendMail();}}
 function hdocSendMail(){
-  const el=document.getElementById('hdoc-send-to');
-  const to=el?el.value.trim():'';
+  const val=function(id){const el=document.getElementById(id);return el?el.value.trim():'';};
+  const to=val('hdoc-send-to'),cc=val('hdoc-send-cc'),subject=val('hdoc-send-subject'),body=val('hdoc-send-body');
   const err=document.getElementById('hdoc-send-err');
-  const bad=function(msg){if(err){err.textContent=msg;err.hidden=false;}if(el){el.classList.add('is-bad');el.focus();}};
-  if(!to)return bad('Email Address is required.');
-  if(!/^[^s@]+@[^s@]+.[^s@]+$/.test(to))return bad('Enter a valid email address, e.g. name@company.com.');
-  // Issue it first if it has not been (the same path as Submit), then record the send.
+  const bad=function(id,msg){if(err){err.textContent=msg;err.hidden=false;}const el=document.getElementById(id);if(el){el.classList.add('is-bad');el.focus();}};
+  if(!to)return bad('hdoc-send-to','Email Address is required.');
+  if(!HDOC_EMAIL_RE.test(to))return bad('hdoc-send-to','Enter a valid email address, e.g. name@company.com.');
+  const badCc=hdocSplitEmails(cc).filter(function(x){return !HDOC_EMAIL_RE.test(x);});
+  if(badCc.length)return bad('hdoc-send-cc',badCc[0]+' is not a valid CC address.');
+  if(!subject)return bad('hdoc-send-subject','Subject is required.');
+  if(!body)return bad('hdoc-send-body','Message is required.');
   const m=hdocModal;
-  let d=m.docId?hdocDocs.find(function(x){return x.id===m.docId;}):null;
+  const d=m.docId?hdocDocs.find(function(x){return x.id===m.docId;}):null;
+  if(!d||d.status!=='Submitted')return;
   const now=hdocStampNow();
-  if(!d||d.status!=='Submitted'){
-    if(!d){d={id:hdocDocNextId++,no:'',type:m.type,templateId:m.templateId,status:'Draft',createdBy:CURRENT_USER,createdAt:now,updatedAt:now,values:{}};hdocDocs.unshift(d);}
-    d.values=Object.assign({},m.values);d.templateId=m.templateId;
-    if(!d.no)d.no=hdocNextNo(d.type);
-    d.status='Submitted';d.updatedAt=now;d.submittedAt=now;
-    lpLanded('hr-docs',d.id);
-  }
+  // Every send is kept on the document, newest first.
+  (d.mails=d.mails||[]).unshift({from:hdocSend.from,to:to,cc:cc,subject:subject,body:body,attachment:hdocSend.attachment,
+    sentAt:now,sentBy:CURRENT_USER,confirmedTpl:hdocSend.confirmed});
   d.sentTo=to;d.sentAt=now;d.sentBy=CURRENT_USER;
   hdocSend=null;
   hdocModal={view:'final',type:d.type,templateId:d.templateId,docId:d.id,values:Object.assign({},d.values)};
   renderADTPage();
-  showToast('Sent in mail','success',d.no+' · '+hdocTypeOf(d.type).label+' sent to '+to+'.');
+  showToast('Sent in mail','success',d.no+' · '+hdocTypeOf(d.type).label+' sent to '+to+(cc?' (CC '+cc+')':'')+'.');
 }
 function hdocSendHTML(){
   if(!hdocSend||!hdocModal)return '';
+  const s=hdocSend;
   const t=hdocTypeOf(hdocModal.type);
   const d=hdocModal.docId?hdocDocs.find(function(x){return x.id===hdocModal.docId;}):null;
   const who=hdocSubject({values:hdocModal.values});
-  const label=hdocSend.candidate?'Candidate Email Address':'To Email Address';
-  const hint=hdocSend.fromRecord?'Fetched from '+hdocEsc(who)+'’s employee record — you can change it.'
-    :hdocSend.candidate?'This person is not an employee yet, so enter the candidate’s email address.'
+  const label=s.candidate?'Candidate Email Address':'To Email Address';
+  const hint=s.fromRecord?'Fetched from '+hdocEsc(who)+'’s employee record — you can change it.'
+    :s.candidate?'This person is not an employee yet, so enter the candidate’s email address.'
     :'No email is on record for this person — enter it here.';
   return '<div class="hdoc-send-ov" onclick="hdocCloseSend()">'
-    +'<div class="hdoc-send" role="dialog" aria-modal="true" aria-labelledby="hdoc-send-title" onclick="event.stopPropagation()">'
+    +'<div class="hdoc-send hdoc-send-wide" role="dialog" aria-modal="true" aria-labelledby="hdoc-send-title" onclick="event.stopPropagation()">'
       +'<div class="hdoc-send-head"><span class="hdoc-send-ico">'+HDOC_ICO.mail+'</span>'
         +'<div><h3 id="hdoc-send-title">Send in Mail</h3>'
         +'<p>'+hdocEsc(t.label)+(who?' for '+hdocEsc(who):'')+(d&&d.no?' · '+hdocEsc(d.no):'')+'</p></div>'
         +'<button class="hdoc-send-x" onclick="hdocCloseSend()" title="Close" aria-label="Close">'+HDOC_ICO.x+'</button></div>'
-      +'<label class="ep-form-label" for="hdoc-send-to">'+label+' <span class="req">*</span></label>'
-      +'<input class="ep-form-input" id="hdoc-send-to" type="email" autocomplete="email" placeholder="name@company.com"'
-        +' value="'+attrSafe(hdocSend.email)+'" oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)">'
-      +'<p class="hdoc-send-hint">'+hint+'</p>'
-      +'<p class="hdoc-send-err" id="hdoc-send-err" role="alert" hidden></p>'
+      /* Header and footer stay put; only the mail between them scrolls. Each
+         field is its own group, so label, control and hint keep one rhythm. */
+      +'<div class="hdoc-send-scroll">'
+        +(s.confirmed||!HDOC_MAIL_TPL_UI?'':'<div class="hdoc-send-warn">'+HDOC_ICO.alert+'<span>The '+hdocEsc(t.label)+' mail template still has placeholder wording awaiting HR confirmation. Review the mail before sending.</span></div>')
+        +'<div class="hdoc-sf"><span class="ep-form-label">From</span><div class="hdoc-send-from">'+hdocEsc(s.from)+'</div></div>'
+        +'<div class="hdoc-sf-row">'
+          +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-to">'+label+' <span class="req">*</span></label>'
+            +'<input class="ep-form-input" id="hdoc-send-to" type="email" autocomplete="email" placeholder="name@company.com"'
+              +' value="'+attrSafe(s.email)+'" oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)"></div>'
+          +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-cc">CC</label>'
+            +'<input class="ep-form-input" id="hdoc-send-cc" value="'+attrSafe(s.cc)+'" placeholder="Optional, comma separated" oninput="hdocSendInput(this)"></div>'
+          +'<p class="hdoc-send-hint">'+hint+'</p>'
+        +'</div>'
+        +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-subject">Subject <span class="req">*</span></label>'
+          +'<input class="ep-form-input" id="hdoc-send-subject" value="'+attrSafe(s.subject)+'" oninput="hdocSendInput(this)"></div>'
+        +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-body">Message <span class="req">*</span></label>'
+          +'<textarea class="ep-form-input hdoc-send-msg" id="hdoc-send-body" oninput="hdocSendInput(this)">'+hdocEsc(s.body)+'</textarea></div>'
+        +'<div class="hdoc-sf"><span class="ep-form-label">Attachment</span>'
+          +'<div class="hdoc-send-att">'+HDOC_ICO.doc+'<span class="hdoc-send-att-name">'+hdocEsc(s.attachment)+'</span><span class="hdoc-send-att-tag">Attached</span></div></div>'
+        +'<p class="hdoc-send-err" id="hdoc-send-err" role="alert" hidden></p>'
+      +'</div>'
       +'<div class="hdoc-send-btns">'
         +'<button class="ep-cancel-btn" onclick="hdocCloseSend()">Cancel</button>'
         +'<button class="ep-save-btn" onclick="hdocSendMail()">'+HDOC_ICO.send+' Send</button>'
       +'</div>'
     +'</div></div>';
 }
+
 function hdocDeleteDraft(id,ev){
   if(ev)ev.stopPropagation();
   const i=hdocDocs.findIndex(function(x){return x.id===id&&x.status==='Draft';});if(i<0)return;
@@ -704,7 +900,9 @@ function hdocCardsHTML(){
         +'<div class="listing-stat"><div class="listing-stat-count">'+HDOC_TYPES.length+'</div><div class="listing-stat-label">Letter Types</div></div>'
         +'<div class="listing-stat"><div class="listing-stat-count" style="color:var(--st-ok-fg)">'+totalIssued+'</div><div class="listing-stat-label">Issued</div></div>'
         +'<div class="listing-stat"><div class="listing-stat-count" style="color:var(--st-wait-fg)">'+totalDrafts+'</div><div class="listing-stat-label">In Draft</div></div>'
-      +'</div></header>'
+      +'</div>'
+      +(hdocMailUI()?'<button class="ep-cancel-btn hdoc-mail-btn" onclick="hdocOpenMailList()">'+HDOC_ICO.mail+' Mail Templates</button>':'')
+    +'</header>'
     +'<div class="hdoc-layout">'
       +'<div class="hdoc-main">'+catalogue+'</div>'
       +'<aside class="hdoc-rail">'
@@ -748,6 +946,7 @@ function hdocTypeScreenHTML(){
       +'</div>'
       +'<div class="hdoc-type-btns">'
         +(hdocTplUI()?'<button class="ep-cancel-btn" onclick="hdocOpenTemplates(\''+t.key+'\')">'+HDOC_ICO.cog+' Templates</button>':'')
+        +(hdocMailUI()?'<button class="ep-cancel-btn" onclick="hdocOpenMailEdit(\''+t.key+'\')">'+HDOC_ICO.mail+' Mail Template</button>':'')
         +'<button class="ep-save-btn" onclick="hdocCreate(\''+t.key+'\')"'+(act?'':' disabled title="No Active Template"')+'>'+HDOC_ICO.plus+' Create '+t.label+'</button>'
       +'</div></header>'
     /* FR-22.1 / 22.6: Saved Drafts first, with its count, then what has been
@@ -807,12 +1006,19 @@ function hdocModalHTML(){
   const m=hdocModal;if(!m)return '';
   if(m.view==='templates')return hdocTemplatesModalHTML();
   if(m.view==='tpl-edit')return hdocTplEditModalHTML();
+  if(m.view==='mail-list')return hdocMailListHTML();
+  if(m.view==='mail-edit')return hdocMailEditHTML();
   const t=hdocTypeOf(m.type),tpl=hdocTemplateById(m.templateId);
   if(!t||!tpl)return '';
   const d=m.docId?hdocDocs.find(function(x){return x.id===m.docId;}):null;
   if(m.view==='form'){
     const v=hdocResolve(m.values);
-    const fields=hdocFormKeys(tpl).map(function(k){
+    /* The Appointment Letter form asks only for what HR enters: its Auto
+       fields are not shown, and still fill the letter from the employee and
+       signatory picked. */
+    const fields=hdocFormKeys(tpl).filter(function(k){
+      return !(m.type==='appointment'&&hdocFieldDef(k).type==='auto');
+    }).map(function(k){
       const f=hdocFieldDef(k),id='hdf-'+k;
       const lbl='<label class="ep-form-label" for="'+id+'">'+hdocEsc(f.label)+(f.req&&f.type!=='auto'?' <span class="req">*</span>':'')
         +(f.type==='auto'?' <span class="hdoc-auto">Auto</span>':'')+'</label>';
@@ -836,7 +1042,6 @@ function hdocModalHTML(){
       '<div class="ct-modal-btns">'
         +'<button class="ep-cancel-btn" onclick="hdocClose()">Cancel</button>'
         +'<button class="ep-cancel-btn" onclick="hdocSaveDraft()">Save as Draft</button>'
-        +'<button class="ep-cancel-btn" onclick="hdocOpenSend()">'+HDOC_ICO.mail+' Send in Mail</button>'
         +'<button class="ep-save-btn" onclick="hdocToPreview()">'+HDOC_ICO.eye+' Preview</button>'
       +'</div>',false);
   }
@@ -857,7 +1062,7 @@ function hdocModalHTML(){
     '<span class="hdoc-final-meta">'
       +'<span class="lp-status-badge tone-'+statusTone('Submitted')+'">Submitted</span>'
       +'<span class="hdoc-fm-item">Final review'+(d?' · Created by <b>'+hdocEsc(d.createdBy)+'</b> on '+d.createdAt.split(' | ')[0]:'')+'</span>'
-      +(d&&d.sentTo?'<span class="hdoc-fm-sent" title="Sent by '+attrSafe(d.sentBy||'')+' on '+attrSafe(d.sentAt)+'">'+HDOC_ICO.mail
+      +(d&&d.sentTo?'<span class="hdoc-fm-sent" title="'+attrSafe('Sent by '+(d.sentBy||'')+' on '+d.sentAt+(d.mails&&d.mails[0]?' · Subject: '+d.mails[0].subject+(d.mails[0].cc?' · CC '+d.mails[0].cc:''):''))+'">'+HDOC_ICO.mail
         +'<span>Sent to <b>'+hdocEsc(d.sentTo)+'</b> · '+d.sentAt.split(' | ')[0]+'</span></span>':'')
     +'</span>',
     '<div class="hdoc-paper-wrap">'+hdocRenderLetter(tpl,m.values,d&&d.no)+'</div>',

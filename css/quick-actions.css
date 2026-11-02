@@ -262,3 +262,11 @@ select.qa-ask-input{height:38px;padding:0 12px;cursor:pointer}
 
 /* The footer keys sit tighter now that there are three of them. */
 #search-overlay .search-footer kbd+kbd{margin-left:2px}
+
+/* ALL TIMESHEETS draws its row lines as the cells' own borders (separate, not
+   collapsed - main.css), so they travel with the pinned ACTION cell. The
+   painted rule above would sit a pixel over that border and read as one dark,
+   double-thick line under the action buttons, so this table does without it. */
+.at-table tbody tr,.at-table th:last-child{--sa-rule:transparent}
+.at-table.is-stuck thead th{box-shadow:inset 0 1px 0 var(--border)}
+.at-table.is-stuck thead th:last-child{box-shadow:inset 0 1px 0 var(--border),var(--sa-edge,0 0 transparent)}

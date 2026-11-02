@@ -1680,7 +1680,14 @@ function notifListHTML(){
      points at the right notification while "Only Show Unread" is on. */
   return list.map(n=>{const i=notifData.indexOf(n);
     const go=n.go?` is-link" role="button" tabindex="0" onclick="atReqOpenFromNotif(${i})" onkeydown="if(event.key==='Enter')atReqOpenFromNotif(${i})`:'';
-    return `<div class="np-item${n.pending?' is-unread':''}${go}" data-i="${i}"><div class="np-avatar">N</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div><div class="np-row2">${n.sub||'Contract ID - '+n.cid}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
+    const r=n.req;
+    /* A correction request reads as: what it is, who asked for which kind,
+       their reason, then the day and who has to approve - not one run-on line. */
+    const detail=r?`<div class="np-req-who"><b>${r.who}</b> · ${r.kind}</div>`
+      +(r.reason?`<div class="np-req-why" title="${attrSafe(r.reason)}">“${r.reason}”</div>`:'')
+      +`<div class="np-req-facts"><span class="np-req-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${r.day}</span>`
+      +`<span class="np-req-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${r.to}</span></div>`:'';
+    return `<div class="np-item${n.pending?' is-unread':''}${go}${r?' is-req':''}" data-i="${i}"><div class="np-avatar">${n.ini||'N'}</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div>${detail}<div class="np-row2">${r?'':(n.sub||'Contract ID - '+n.cid)}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
   }).join('')||'<div style="padding:24px;text-align:center;color:var(--gray);font-size:12px">No unread notifications</div>';
 }
 /* One notification read. With "Only Show Unread" on, the row slides out
@@ -2265,15 +2272,14 @@ var DASH_CARD_COUNT={
      title, text
      category  optional neutral tag ('Holiday', 'Policy', 'Team'…)
      pinned    optional - an amber "Pinned" tag
-     isNew     optional - a green "New" tag
      when      ISO date-time it was posted; sorted on, and shown as
                "2 hours ago" against the clock
    An empty list is a real state, not an error: the panel says the employee is
    caught up. */
 const empAnnouncements=[
-  {from:'hr',author:'Priya Sharma',title:'Diwali holiday announced',category:'Holiday',pinned:true,isNew:true,when:'2026-10-12T09:30:00',
+  {from:'hr',author:'Priya Sharma',title:'Diwali holiday announced',category:'Holiday',pinned:true,when:'2026-10-12T09:30:00',
    text:'The office will remain closed on 8 Nov for Diwali. Please plan your deliverables and update your timesheets before the break.'},
-  {from:'manager',author:'Rajan Kumar',title:'Sprint planning moved to Thursday',category:'Team',isNew:true,when:'2026-10-11T16:10:00',
+  {from:'manager',author:'Rajan Kumar',title:'Sprint planning moved to Thursday',category:'Team',when:'2026-10-11T16:10:00',
    text:'This week’s sprint planning is moving to Thursday at 11:00 AM. Bring your estimates for the open tickets on the board.'},
   {from:'hr',author:'Priya Sharma',title:'Updated leave policy for 2027',category:'Policy',when:'2026-10-09T11:00:00',
    text:'We’ve revised the carry-forward rules for earned leave. Read the updated policy under Leave Policies before the end of the quarter.'},
@@ -3996,7 +4002,7 @@ const pmLogsData={
   2:[{date:'01 Jun 2026',time:'09:00 AM',user:'Gwynne Shotwell',status:'Onboarding',action:'Order created for Elon Musk.'}]
 };
 const pmLogStatusOptions=['Follow Up','Onboarding','Closed','Inactive','Logistic Terminated','Logistic Completed','Offboarding','Finance Termination','Finance Completed','Confirmation Vendor','initial discussion done','Order Extension','Revision'];
-const pmInvoiceFlow=['Unpaid','Pending','Paid','Closed'];
+const pmInvoiceFlow=['Unpaid','Pending','Paid'];
 let pmSelectedId=null,pmTab='basic-details',pmUserSubTab='company-details';
 /* The step picked from the row's Invoice Status menu, carried into the Logs
    tab so the form opens already set to the move the user asked for. Cleared
@@ -4918,10 +4924,10 @@ let profTab='basic-details';
 // records the account already had on file.
 let profAttachments={
   'Resume':{file:'Pallavi_Parate_Resume.pdf',size:'240 KB',date:'12 Jan 2024'},
-  'Passport Photo':{file:'passport_photo.jpg',size:'88 KB',date:'12 Jan 2024'},
-  'Photo Id Proof':{file:'pan_card.pdf',size:'156 KB',date:'14 Jan 2024'},
-  'Aadhar Front':{file:'aadhar_front.jpg',size:'102 KB',date:'14 Jan 2024'},
-  'Aadhar Back':{file:'aadhar_back.jpg',size:'97 KB',date:'14 Jan 2024'}
+  'Passport Photograph':{file:'passport_photo.jpg',size:'88 KB',date:'12 Jan 2024'},
+  'PAN Card':{file:'pan_card.pdf',size:'156 KB',date:'14 Jan 2024'},
+  'Aadhaar Card Front':{file:'aadhaar_front.jpg',size:'102 KB',date:'14 Jan 2024'},
+  'Aadhaar Card Back':{file:'aadhaar_back.jpg',size:'97 KB',date:'14 Jan 2024'}
 };
 let seSelectedEntity='dhi-hyperlocal';
 const entitiesData=[
@@ -5363,7 +5369,7 @@ function tsSaveEntry(){
   // A change is an attendance correction: it goes through the same approval,
   // and the approvers are told under the header bell.
   const told=typeof atReqNotify==='function'
-    ?atReqNotify(tsEmp.empId,'ch:'+date,'change',date,typeof AR_MANUAL_APPROVER!=='undefined'?AR_MANUAL_APPROVER:'HR / Manager'):[];
+    ?atReqNotify(tsEmp.empId,'ch:'+date,'change',date,typeof AR_MANUAL_APPROVER!=='undefined'?AR_MANUAL_APPROVER:'HR / Manager',desc):[];
   renderADTPage();
   showToast(had?'Entry updated':'Entry added','success',
     tsFmtDay(date)+' · '+(mins/60).toFixed(2)+'h logged'+(desc?' · description saved':'')+(told.length?' · sent for approval, '+told.join(' & ')+' notified':'')+'.');

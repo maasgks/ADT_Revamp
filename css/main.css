@@ -1903,7 +1903,7 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 /* clip, not auto-x, for the reason .lp-table-card gives above: it is what lets
    the Timesheet head pin against the page. */
 .at-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:clip}
-.at-table{width:100%;border-collapse:collapse}
+.at-table{width:100%;border-collapse:separate;border-spacing:0}
 .at-th{padding:11px 16px;font-size:11px;font-weight:700;color:var(--gray);text-align:left;letter-spacing:.3px;background:var(--light);border-bottom:1px solid var(--border)}
 .at-td{padding:14px 16px;font-size:13px;color:var(--navy);border-bottom:1px solid var(--border);vertical-align:middle}
 .at-tr:last-child .at-td{border-bottom:none}
@@ -2648,3 +2648,18 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 /* The megaphone carries its sound waves inside the same 24-unit box, so at the
    standard 15px the horn itself reads small - it gets a little more room. */
 .sb-ico-wrap svg.mg-ico{width:19px;height:19px}
+/* Mandatory profile documents (PROF_DOCS_MANDATORY in pages.js). */
+.prof-att-req{display:inline-block;margin-left:7px;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:600;vertical-align:1px;color:var(--st-bad-fg,#b91c1c);background:var(--st-bad-bg,#fef2f2);border:1px solid var(--st-bad-bd,#fecaca)}
+/* Timesheet correction request in the bell: who and what, the reason, then
+   the day and the approvers as small facts, with the actions on their own line. */
+.np-item.is-req .np-row1{margin-bottom:4px}
+.np-req-who{font-size:12px;color:#475569;line-height:1.45}
+.np-req-who b{font-weight:600;color:var(--navy)}
+.np-req-why{margin-top:3px;font-size:11.5px;font-style:italic;color:var(--gray);line-height:1.45;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.np-req-facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.np-req-fact{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:6px;background:#f1f5f9;
+  font-size:11px;font-weight:500;color:#475569;white-space:nowrap}
+.np-req-fact svg{width:11px;height:11px;flex-shrink:0;color:var(--gray)}
+.np-item.is-req .np-row2{margin-top:9px}
+.np-item.is-req .np-row2:empty{display:none}

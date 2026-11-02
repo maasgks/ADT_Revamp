@@ -147,7 +147,7 @@ function tsbApproveAll(subId){
   const done=s.weeks.filter(function(w){return w.status==='pending';}).map(function(w){tsbDecide(subId,w.key,'approved','');return w.w;});
   if(!done.length)return;
   isbTab('pm',renderPmSidebar);
-  showToast(done.length+' week'+(done.length===1?'':'s')+' approved','success',s.id+' · Week '+done.join(', ')+'.');
+  showToast(s.id+' approved','success',tsbSubLabel(s)+'. It now counts towards the invoice draft.');
 }
 function tsbOpenReject(subId,key){
   if(!tsbCanApprove())return;
@@ -162,8 +162,17 @@ function tsbConfirmReject(){
     if(t)t.focus();
     return;
   }
-  const wk=tsbDecide(m.subId,m.key,'rejected',note);
   tsbModal=null;tsbPaint();
+  // '*' is a whole monthly submission: every pending week goes back together.
+  if(m.key==='*'){
+    const s=tsbSubs.find(function(x){return x.id===m.subId;});if(!s)return;
+    const done=s.weeks.filter(function(w){return w.status==='pending';}).map(function(w){return tsbDecide(m.subId,w.key,'rejected',note);});
+    if(!done.length)return;
+    isbTab('pm',renderPmSidebar);
+    showToast(s.id+' sent back','info','The employee can correct and resubmit the timesheet.');
+    return;
+  }
+  const wk=tsbDecide(m.subId,m.key,'rejected',note);
   if(!wk)return;
   isbTab('pm',renderPmSidebar);
   showToast('Week '+wk.w+' sent back','info','The employee can correct and resubmit just this week.');
@@ -282,14 +291,16 @@ function tsbDrafts(p){
 function tsbApprovalTabHTML(p){
   const subs=tsbSubs.filter(function(s){return s.orderId===p.id;});
   const n={all:0,pending:0,approved:0,rejected:0};
-  subs.forEach(function(s){s.weeks.forEach(function(w){n.all++;n[w.status]++;});});
+  // One count per timesheet, matching the one row each gets below.
+  subs.forEach(function(s){
+    const st=s.weeks.map(function(w){return w.status;});
+    n.all++;n[st.indexOf('pending')>=0?'pending':st.indexOf('rejected')>=0?'rejected':'approved']++;
+  });
   const statCard=function(label,val,color){
     return '<div class="pm-ts-stat"><div class="pm-ts-stat-val" style="color:'+color+'">'+val+'</div><div class="pm-ts-stat-lbl">'+label+'</div></div>';};
   const can=tsbCanApprove(),s=p.sales||{};
   const rate=s.rate&&s.rateType?s.rate+' / '+s.rateType:(s.rate||'—');
   const badge=function(label,tone){return '<span class="lp-status-badge tone-'+tone+'">'+label+'</span>';};
-  const wkBadge=function(w){
-    return w.status==='approved'?badge('Approved','ok'):w.status==='rejected'?badge('Rejected','bad'):badge('Pending','wait');};
   const wkActions=function(sub,w){
     if(w.status!=='pending'){
       return '<span class="tsb-decided" title="'+attrSafe((w.by||'')+(w.at?' · '+w.at:''))+'">'
@@ -312,32 +323,25 @@ function tsbApprovalTabHTML(p){
       +'<td class="csag-td">'+days+'</td>'
       +'<td class="csag-td tsb-num">'+hrs.toFixed(2)+'h</td>'
       +'<td class="csag-td">'+badge(st.label,st.tone)+'</td>'
+      /* A monthly submission is approved or rejected as one: a single
+         Approve / Reject decides every pending week in it at once. */
       +'<td class="csag-td csag-act">'+(multi
-        ?(can&&pend?'<button class="hr-action-btn approve" onclick="tsbApproveAll(\''+sub.id+'\')" title="Approve the '+pend+' pending week'+(pend===1?'':'s')+' below">Approve all</button>':'')
+        ?(pend?(can?'<div class="tsb-acts">'
+            +'<button class="hr-action-btn reject" onclick="tsbOpenReject(\''+sub.id+'\',\'*\')">Reject</button>'
+            +'<button class="hr-action-btn approve" onclick="tsbApproveAll(\''+sub.id+'\')">Approve</button></div>'
+          :'<span class="tsb-decided">Awaiting approver</span>')
+          :wkActions(sub,sub.weeks.filter(function(w){return w.status!=='pending';}).pop()))
         :wkActions(sub,sub.weeks[0]))+'</td>'
       +'</tr>';
-    /* A monthly submission is reviewed week by week: each of its weeks gets
-       its own row, its own outcome and its own Approve / Reject, so one bad
-       week does not hold the other four hostage. */
-    if(multi)sub.weeks.forEach(function(w){
-      rows+='<tr class="tsb-week-row">'
-        +'<td class="csag-td"><span class="tsb-week-name">Week '+w.w+'</span></td>'
-        +'<td class="csag-td">'+tsbShort(w.from)+' – '+tsbShort(w.to)+'</td>'
-        +'<td class="csag-td">'+w.days+'</td>'
-        +'<td class="csag-td tsb-num">'+w.hours.toFixed(2)+'h</td>'
-        +'<td class="csag-td">'+wkBadge(w)+'</td>'
-        +'<td class="csag-td csag-act">'+wkActions(sub,w)+'</td>'
-        +'</tr>';
-    });
   });
   if(!rows)rows='<tr><td colspan="6" class="csag-td csag-empty">No timesheets submitted on this order yet.'
     +(p.id===TS_ORDER_ID?' They arrive here from My Timesheet.':'')+'</td></tr>';
   return '<div class="pm-ts-stats">'
-      +statCard('Weeks',n.all,'var(--navy)')+statCard('Pending',n.pending,'var(--gray)')
+      +statCard('Timesheets',n.all,'var(--navy)')+statCard('Pending',n.pending,'var(--gray)')
       +statCard('Approved',n.approved,'var(--green)')+statCard('Rejected',n.rejected,'var(--red)')
     +'</div>'
-    +'<div class="tsb-cycle-line">Billed <b>'+tsbCycle(p)+'</b> at <b>'+rate+'</b> · set in Sales Details'
-      +(can?'':' · <span>Approve / Reject needs HR, a Manager or an Admin role</span>')+'</div>'
+    +'<div class="tsb-cycle-line"><span>Billed <b>'+tsbCycle(p)+'</b> at <b>'+rate+'</b></span><i>·</i><span>Set in Sales Details</span>'
+      +(can?'':'<i>·</i><span>Approve / Reject needs HR, a Manager or an Admin role</span>')+'</div>'
     +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table tsb-table"><thead><tr>'
     +'<th>Timesheet</th><th>Period</th><th>Days</th><th>Total Hours</th><th>Status</th><th class="csag-act">Action</th>'
     +'</tr></thead><tbody>'+rows+'</tbody></table></div>';
@@ -440,17 +444,19 @@ function tsbPaint(){
   let inner='';
   if(m.kind==='reject'){
     const s=tsbSubs.find(function(z){return z.id===m.subId;});
-    const w=s&&s.weeks.find(function(z){return z.key===m.key;});
+    const all=m.key==='*';
+    const w=s&&(all?s.weeks.find(function(z){return z.status==='pending';}):s.weeks.find(function(z){return z.key===m.key;}));
     if(!w){tsbModal=null;host.remove();return;}
     inner='<div class="ct-modal" onclick="event.stopPropagation()">'
-      +'<div class="ct-modal-hdr"><span class="ct-modal-title">Reject week '+w.w+'</span>'+x+'</div>'
-      +'<p class="ct-modal-sub">'+tsbShort(w.from)+' – '+tsbShort(w.to)+' goes back to '+s.by+' to correct. Only this week is sent back'
-        +(s.weeks.length>1?' - the other weeks of '+s.id+' keep their outcome.':'.')+' Say what is wrong; they will see this.</p>'
+      +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(all?'Reject '+s.id:'Reject week '+w.w)+'</span>'+x+'</div>'
+      +(all?'<p class="ct-modal-sub">'+tsbSubLabel(s)+' goes back to '+s.by+' to correct and resubmit. Say what is wrong; they will see this.</p>'
+        :'<p class="ct-modal-sub">'+tsbShort(w.from)+' – '+tsbShort(w.to)+' goes back to '+s.by+' to correct. Only this week is sent back'
+        +(s.weeks.length>1?' - the other weeks of '+s.id+' keep their outcome.':'.')+' Say what is wrong; they will see this.</p>')
       +'<label class="ep-form-label" for="tsb-reject-note">Reason for rejection <span class="req">*</span></label>'
       +'<textarea class="lp-logs-form-textarea" id="tsb-reject-note" placeholder="e.g. 16 Jun shows 9.25h but the client log has 7h - please correct the clock-out"></textarea>'
-      +'<div class="tsb-err" id="tsb-reject-err" hidden>A reason is required to reject a week.</div>'
+      +'<div class="tsb-err" id="tsb-reject-err" hidden>A reason is required to reject '+(all?'a timesheet':'a week')+'.</div>'
       +'<div class="ct-modal-foot"><div class="ct-modal-btns"><button class="btn-outline" onclick="tsbClose()">Cancel</button>'
-        +'<button class="btn-primary" onclick="tsbConfirmReject()">Reject week</button></div></div>'
+        +'<button class="btn-primary" onclick="tsbConfirmReject()">'+(all?'Reject timesheet':'Reject week')+'</button></div></div>'
       +'</div>';
   }else{
     const f=tsbFindDraft(m.orderId,m.period);

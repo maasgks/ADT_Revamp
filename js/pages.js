@@ -1607,8 +1607,8 @@ function renderPmSidebar(){
       +'<div class="lp-sb-detail-grid">'
       +fc(iId,'Company ID',s.companyId)+fc(iDoc,'Company Name',s.companyName)
       +fc(iId,'Contact Person ID',s.contactPersonId)+fc(iUser,'Contact Person Name',s.contactPersonName)
-      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Payment Cycle',tsbCycle(p)+'<span class="tsb-cycle-desc">'+tsCycleDesc(tsbCycle(p))+'</span>')
-      +fc(iDollar,'Rate',s.rate+tsbRateNoteHTML(p))+fc(iCal,'Days',s.days)
+      +fc(iDollar,'Rate Type',s.rateType)+fc(iCal,'Payment Cycle',tsbCycle(p))
+      +fc(iDollar,'Rate',s.rate)+fc(iCal,'Days',s.days)
       +fc(iDollar,'Total Amount',s.totalAmount)
       +fc(iCal,'Contract Period',s.contractPeriod)+fc(iPin,'Work Location',s.workLocation)
       +fc(iCal,'Timesheet Period Date',s.tsPeriodDate)+fc(iDoc,'Payment Term',s.paymentTerm)
@@ -1706,22 +1706,11 @@ function renderPmSidebar(){
 }
 function buildPaymentsHTML(){
   const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const chevDn='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
   const activeCount=paymentsData.filter(p=>p.invoiceStatus==='Paid').length;
   const pendingCount=paymentsData.filter(p=>p.invoiceStatus==='Unpaid'||p.invoiceStatus==='Pending').length;
-  const closedCount=paymentsData.filter(p=>p.invoiceStatus==='Closed').length;
   const filtered=pmInvoiceStatusFilter?(pmInvoiceStatusFilter==='__pending_group__'?paymentsData.filter(p=>p.invoiceStatus==='Unpaid'||p.invoiceStatus==='Pending'):paymentsData.filter(p=>p.invoiceStatus===pmInvoiceStatusFilter)):paymentsData;
   if(pmSelectedId&&!filtered.some(p=>p.id===pmSelectedId))pmSelectedId=null;
   const pgn=listPage('payments',pmInvoiceStatusFilter+'|'+pmSearchQuery,lpSearchRows(filtered,pmSearchQuery).map((p,i)=>{
-    const menuItems=pmInvoiceFlow.map(s=>{
-      const isCurrent=p.invoiceStatus===s;
-      return '<div class="ct-act-item'+(isCurrent?' current':'')+'" '+(isCurrent?'':'onclick="event.stopPropagation();pmPickStatus('+p.id+',\''+s+'\')"')+'>'
-        +'<span class="ct-act-step '+(isCurrent?'current':'next')+'">'+(isCurrent?'<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>':(pmInvoiceFlow.indexOf(s)+1))+'</span>'+s+'</div>';
-    }).join('');
-    const statusBtn='<div class="ct-action-wrap">'
-      +'<button class="ct-action-btn" title="'+attrSafe(p.invoiceStatus)+'" onclick="togglePmAction('+p.id+',event)"><span>'+p.invoiceStatus+'</span>'+chevDn+'</button>'
-      +'<div class="ct-action-menu" id="pm-ctm-'+p.id+'">'+menuItems+'</div>'
-      +'</div>';
     return '<tr class="pm-row'+(pmSelectedId===p.id?' lp-row-selected':'')+'" id="pm-row-'+p.id+'" style="cursor:pointer" onclick="openPmSidebar('+p.id+')">'
       +'<td style="color:#6b7280;font-size:13px">'+(i+1)+'</td>'
       +'<td style="font-weight:600;color:var(--navy)">'+p.orderId+'</td>'
@@ -1729,7 +1718,8 @@ function buildPaymentsHTML(){
       +'<td style="color:var(--orange);font-weight:600">'+p.amountDue+'</td>'
       +'<td>'+p.type+'</td>'
       +'<td><span class="lp-status-badge '+statusClass(p.orderStatus)+'">'+p.orderStatus+'</span></td>'
-      +'<td onclick="event.stopPropagation()">'+statusBtn+'</td>'
+      // A status, read-only here; it is changed from the record's panel.
+      +'<td><span class="lp-status-badge tone-'+statusTone(p.invoiceStatus)+'">'+p.invoiceStatus+'</span></td>'
       +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openPmSidebar('+p.id+')" title="More actions">'+dotsIco+'</button></td>'
       +'</tr>';
   }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No payments match this filter.</td></tr>');
@@ -1741,14 +1731,13 @@ function buildPaymentsHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('pm-f-q',pmSearchQuery,'Search invoice, client','applyPmFilters()')
     +apCS('pm-f-country',['Netherlands','Belgium','USA','India','Germany'],'','Country')
-    +apCS('pm-f-status',['Unpaid','Pending','Paid','Closed'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
+    +apCS('pm-f-status',['Unpaid','Pending','Paid'],pmInvoiceStatusFilter==='__pending_group__'?'':pmInvoiceStatusFilter,'Status')
     +apCD('pm-f-date',pmDateFilter,'Select date')
     +clearFiltersBtn([pmInvoiceStatusFilter,pmSearchQuery],'resetPmFilters()')+'<button class="lp-pill-search" onclick="applyPmFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats" style="flex-shrink:0">'
     +'<div class="listing-stat active'+(pmInvoiceStatusFilter==='Paid'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'Paid\')"><div class="listing-stat-count">'+activeCount+'</div><div class="listing-stat-label">Active</div></div>'
     +'<div class="listing-stat pending'+(pmInvoiceStatusFilter==='__pending_group__'?' stat-selected':'')+'" onclick="pmToggleStatFilter(\'__pending_group__\')"><div class="listing-stat-count">'+pendingCount+'</div><div class="listing-stat-label">Pending</div></div>'
-    +'<div class="listing-stat'+(pmInvoiceStatusFilter==='Closed'?' stat-selected':'')+'" style="border-color:#bfdbfe" onclick="pmToggleStatFilter(\'Closed\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+closedCount+'</div><div class="listing-stat-label">Closed</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
@@ -6916,22 +6905,13 @@ function buildMyTimesheetHTML(viewingOther) {
        Overtime             hours past the shift on a working day, plus every
                             hour worked on a weekly off or holiday
        Total Working Hours  the two subtracted - the regular hours
-     "vs last month" compares against the whole of the previous month. */
-  const prevY = m === 0 ? y - 1 : y, prevM = m === 0 ? 11 : m - 1;
-  const prevSpan = tsMonthSpan(prevY, prevM);
+     The cards show this month only - no comparison with the month before. */
   const cur = tsHourStats(function(k){ return tsInRange(k); });
-  const prev = tsHourStats(function(k){ return k >= prevSpan.from && k <= prevSpan.to; });
-  const prevLeaves = dsMonthTotals((function(){var out=[],dim=new Date(prevY,prevM+1,0).getDate();
-    for(var d=1;d<=dim;d++)out.push(prevY+'-'+tsPad(prevM+1)+'-'+tsPad(d));return out;})()).leaves;
-  const vs = function(a, b, unit){
-    const d = a - b, txt = (d > 0 ? '+' : d < 0 ? '−' : '+') + (unit === 'h' ? Math.abs(d).toFixed(1) + 'h' : Math.abs(d) + (Math.abs(d) === 1 ? ' day' : ' days'));
-    return '<div class="ts-stat-vs '+(d > 0 ? 'pos' : 'neu')+'">'+txt+' vs last month</div>';
-  };
   const statsHtml = '<div class="ts-stats">'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+cur.working.toFixed(1)+'h</div><div class="ts-stat-sub">'+cur.days+' day'+(cur.days===1?'':'s')+' worked · '+mName+' '+y+'</div>'+vs(cur.working, prev.working, 'h')+'</div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">'+dsTotals.leaves+'</div><div class="ts-stat-sub">'+(dsTotals.leaves?'Approved absences':'No leaves taken')+'</div>'+vs(dsTotals.leaves, prevLeaves, 'd')+'</div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+cur.total.toFixed(1)+'h</div><div class="ts-stat-sub">'+(cur.days?(cur.total/cur.days).toFixed(1)+'h average/day':'No hours logged')+'</div>'+vs(cur.total, prev.total, 'h')+'</div>'
-    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">'+cur.ot.toFixed(1)+'h</div><div class="ts-stat-sub">Past the '+cur.shift.toFixed(0)+'h shift, or on an off day</div>'+vs(cur.ot, prev.ot, 'h')+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Working Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div><div class="ts-stat-val">'+cur.working.toFixed(1)+'h</div><div class="ts-stat-sub">'+cur.days+' day'+(cur.days===1?'':'s')+' worked · '+mName+' '+y+'</div>'+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Leaves Taken</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="ts-stat-val">'+dsTotals.leaves+'</div><div class="ts-stat-sub">'+(dsTotals.leaves?'Approved absences':'No leaves taken')+'</div>'+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Total Hours</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="ts-stat-val">'+cur.total.toFixed(1)+'h</div><div class="ts-stat-sub">'+(cur.days?(cur.total/cur.days).toFixed(1)+'h average/day':'No hours logged')+'</div>'+'</div>'
+    + '<div class="ts-stat-card"><div class="ts-stat-top"><span class="ts-stat-label">Overtime</span><div class="ts-stat-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="ts-stat-val">'+cur.ot.toFixed(1)+'h</div><div class="ts-stat-sub">Past the '+cur.shift.toFixed(0)+'h shift, or on an off day</div>'+'</div>'
     + '</div>';
 
   // ── Calendar ──
@@ -7030,70 +7010,17 @@ function buildMyTimesheetHTML(viewingOther) {
       if (arReq && arReq.status === 'Pending Approval') cellCls += ' ar-pending';
       const clickH = clickable ? ' onclick="tsOpenDay(\''+dateStr+'\')"' : '';
 
-      // Weekend cells carry no pill: the tinted column and its SAT/SUN header
-      // already say it, eight times over per month. An empty weekday is the
-      // only thing left that needs an explicit "Absent".
+      /* The grid shows worked hours and nothing else - the figure saved in the
+         day panel. Leave, absence, holidays, late / early flags and claims all
+         live in that panel, one click away, not on the cell. */
       let body = '';
-      if (!inRange || isFuture) {
-        // Outside the filtered range the cell keeps its date and drops its
-        // content, so the range you picked is legible in the grid itself.
-        body = '';
-      } else if (att) {
-        if (att.status === 'inprog') {
-          body = '<span class="lp-status-badge tone-wait ts-cell-badge">In progress</span>'
-            + (att.hours !== '--' ? '<span class="ts-day-hrs">'+att.hours+'</span>' : '');
-        } else if (att.status === 'absent') {
-          body = '<span class="lp-status-badge tone-bad ts-cell-badge">Absent</span>';
-        } else if (att.status === 'leave') {
-          /* A leave day has no hours, so printing att.hours put "--" in the
-             cell — the one day of the month that reads as missing data when it
-             is the best-documented day on the sheet. It names the leave, the
-             way an absence and a closed day already name themselves. */
-          /* Beside the pill, one small word: "Pending" while the leave is still
-             waiting on approval, then "Paid" or "Unpaid" once it is granted —
-             the two things payroll needs to know about the day. */
-          const lvTag = att.leaveStatus === 'Pending' ? {t:'Pending',c:'wait'}
-            : att.pay === 'Unpaid' ? {t:'Unpaid',c:'bad'}
-            : att.pay === 'Paid' ? {t:'Paid',c:'ok'} : null;
-          const lvTip = (att.leaveType||'Leave') + (att.leaveStatus ? ' · '+att.leaveStatus : '') + (att.pay ? ' · '+att.pay : '');
-          body = '<span class="ts-leave-row" title="'+attrSafe(lvTip)+'">'
-            // The card shows only where the leave stands; its type (Casual,
-            // Sick…) is in the tooltip and the day panel.
-            + (lvTag ? '<span class="lp-status-badge tone-'+lvTag.c+' ts-cell-badge">'+lvTag.t+'</span>'
-                     : '<span class="lp-status-badge tone-idle ts-cell-badge">Leave</span>')
-            + '</span>';
-        } else {
-          // Only the exception is labelled — "Auto" on every present day is
-          // sixteen repetitions of the default.
-          /* The rail colour alone says "something was off" without saying
-             what — the flag names it. See css/timesheet-calendar.css. */
-          const dsc = dsClassify(dateStr);
-          const flag = dsc.key === 'late-login' ? 'Late in · '+dsDur(dsc.late)
-            : dsc.key === 'early-logout' ? 'Early out · '+dsDur(dsc.early)
-            : dsc.key === 'late-early' ? 'Late in + Early out' : '';
-          body = '<span class="ts-day-hrs">'+att.hours+'</span>'
-            + (flag ? '<span class="lp-status-badge tone-'+dsc.tone+' ts-cell-badge" title="'+attrSafe(flag)+'">'+flag+'</span>' : '')
-            + (att.src === 'Manual' ? '<span class="ts-day-src">Manual</span>' : '');
-        }
-      } else if (isWe) {
-        body = '';
-      } else {
-        /* A DAY THE ENTITY HAS CLOSED IS NOT AN ABSENCE. Every empty weekday
-           was reading "Absent", public holidays included — so Republic Day
-           looked like somebody had failed to turn up. The holiday calendar is
-           the same one the Holidays listing and the export read. */
-        const closed = arNonWorkingDay(dateStr);
-        body = closed
-          ? '<span class="lp-status-badge tone-idle ts-cell-badge" title="'+attrSafe(closed.label)+'">'+closed.label+'</span>'
-          : '<span class="lp-status-badge tone-bad ts-cell-badge">Absent</span>';
-      }
+      if (inRange && !isFuture && att && (att.status === 'present' || att.status === 'inprog') && att.hours !== '--')
+        body = '<span class="ts-day-hrs">'+att.hours+'</span>';
       /* LOCKED, AND NOTHING LOGGED: the hours read 0 rather than blank, so a
          settled week has a figure in every box. Display only - no record is
          created, and it is greyed so it never reads as entered time. */
       if (dayLocked && !isFuture && (!att || att.status === 'absent'))
-        body = '<span class="ts-day-hrs is-zero" title="No hours recorded">0.00h</span>' + body;
-      // Claim, or the claim's status, on a day the calendar says is closed.
-      if (inRange && !isFuture) body += arCellHTML(dateStr);
+        body = '<span class="ts-day-hrs is-zero" title="No hours recorded">0.00h</span>';
 
       // The whole cell already opens the day panel, so the per-cell "View"
       // link was twenty copies of the affordance the cursor gives for free.
@@ -7786,7 +7713,12 @@ function profPaintTabBody(body){
   body.classList.add("prof-tab-in");
 }
 // ── PROFILE ATTACHMENTS ──
-const PROF_DOCS=['Resume','Relieving Letter','Address Proof','Qualification Proof','Passport Photo','Photo Id Proof','Cancel Cheque','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Aadhar Back','Aadhar Front','Last Offer Letter'];
+// The six every employee must have on file - the same set the dashboard's
+// Upload required documents popup asks for. They lead the list and carry a
+// Mandatory tag; the rest are optional.
+const PROF_DOCS_MANDATORY=['PAN Card','Aadhaar Card Front','Aadhaar Card Back','Passport Photograph','Cancelled Cheque / Bank Passbook','Educational Certificates'];
+const PROF_DOCS=PROF_DOCS_MANDATORY.concat(['Resume','Relieving Letter','Address Proof','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter']);
+function profDocTag(d){return PROF_DOCS_MANDATORY.indexOf(d)>=0?'<span class="prof-att-req">Mandatory</span>':'';}
 /* Uploading or removing an attachment only ever changes what is inside the
    tab, so it repaints the tab body alone. The full page build is the fallback
    for the first paint, when there is no body to write into yet. */
@@ -8040,13 +7972,14 @@ function buildProfTabContent(){
     const uploadedDocs=PROF_DOCS.filter(d=>profAttachMap()[d]).map(d=>Object.assign({name:d},profAttachMap()[d]));
     const pendingDocs=PROF_DOCS.filter(d=>!profAttachMap()[d]);
     const total=PROF_DOCS.length;
+    const mandPending=pendingDocs.filter(d=>PROF_DOCS_MANDATORY.indexOf(d)>=0).length;
     const esc=s=>String(s).replace(/'/g,"\\'");
     const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg>';
     const uploadedItems=uploadedDocs.map(d=>`
       <div class="prof-att-card">
         <span class="prof-att-iconwrap">${iPaperclip}<span class="prof-att-tick">${tick}</span></span>
         <span class="prof-att-body">
-          <span class="prof-att-name">${d.name}</span>
+          <span class="prof-att-name">${d.name}${profDocTag(d.name)}</span>
           <span class="prof-att-meta">${d.file}${d.size?' &middot; '+d.size:''}</span>
           <span class="prof-att-date">Uploaded ${d.date}</span>
         </span>
@@ -8062,7 +7995,7 @@ function buildProfTabContent(){
         ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${sbEsc(d)}')">
         <span class="prof-att-iconwrap">${iPaperclip}</span>
         <span class="prof-att-body">
-          <span class="prof-att-name">${d}</span>
+          <span class="prof-att-name">${d}${profDocTag(d)}</span>
           <span class="prof-att-meta">PDF, JPG, PNG or DOC</span>
         </span>
         <button class="prof-att-up-btn" tabindex="-1" onclick="event.stopPropagation();profPickFile('${sbEsc(d)}')">${iUpload} Upload</button>
@@ -8072,7 +8005,7 @@ function buildProfTabContent(){
       <div class="prof-att-cards">${uploadedItems}</div>
     </div>`:'';
     const pendingCard=pendingDocs.length?`<div class="ep-form-card">
-      <div class="prof-section-hdr"><span class="policy-section-title">Not Uploaded</span><span class="prof-att-count is-wait">${pendingDocs.length} pending</span></div>
+      <div class="prof-section-hdr"><span class="policy-section-title">Not Uploaded</span><span class="prof-att-count is-wait">${pendingDocs.length} pending${mandPending?' · '+mandPending+' mandatory':''}</span></div>
       <p class="prof-att-hint">Click a document or drop a file on it to upload.</p>
       <div class="prof-att-cards">${pendingItems}</div>
     </div>`:`<div class="ep-form-card"><div class="prof-att-empty">${tick} All ${total} documents have been uploaded.</div></div>`;

@@ -6,7 +6,7 @@
 
    Built from the app's standard parts, so it behaves like every listing:
      · listing  — lp filter bar, count tiles that double as filters, lp-table
-     · panel    — lp-split-sb with Basic Details / Preview / Logs / History
+     · panel    — lp-split-sb with Basic Details / Logs / History
                   (no Workflow tab — an announcement has no approval
                   stages; Logs and History cover what happened to it);
                   sbHero header with Edit
@@ -101,8 +101,6 @@ const annData=[
    validFrom:'2026-11-01T09:00',validTo:'',pinned:false,status:'Inactive',from:'hr',
    createdBy:'Shaun Test1',createdAt:'26 Oct 2026 | 12:05:50 PM',updatedBy:'Shaun Test1',updatedAt:'26 Oct 2026 | 12:05:50 PM'}
 ];
-// Posts the dashboard reader has not opened yet (keeps its blue New dot).
-const anmUnread={1:1,2:1};
 
 // ── Time ──
 function anmPad(n){return String(n).padStart(2,'0');}
@@ -149,15 +147,6 @@ function anmSeesMe(a){return anmIsAll(a)||anmInAud(a,ANM_ME);}
 function anmReach(a){
   return anmPeople().filter(function(e){return anmIsAll(a)||anmInAud(a,e);}).length;
 }
-// In words, for the panel and the form: when it shows, and until when.
-function anmWindowText(a){
-  const st=anmState(a);
-  const until=a.validTo?'until '+anmFmt(a.validTo):'until it is made Inactive';
-  if(st==='Inactive')return 'Hidden from employees — it is Inactive. Make it Active from Logs to show it again.';
-  if(st==='Scheduled')return 'Scheduled — goes live on '+anmFmt(a.validFrom)+' and stays '+until+'.';
-  if(st==='Expired')return 'Expired — stopped showing after '+anmFmt(a.validTo)+'.';
-  return 'Live now — showing '+until+'.';
-}
 function anmStateBadge(a){
   const st=anmState(a);
   return '<span class="lp-status-badge tone-'+ANM_STATE_TONE[st]+'">'+st+'</span>';
@@ -175,7 +164,7 @@ function anmSync(){
   vis.forEach(function(a){
     const f=anmParse(a.validFrom);
     empAnnouncements.push({src:a.id,from:a.from||'hr',author:a.createdBy,title:a.title,category:a.category,
-      pinned:!!a.pinned,isNew:!!anmUnread[a.id],
+      pinned:!!a.pinned,
       when:f.getFullYear()+'-'+anmPad(f.getMonth()+1)+'-'+anmPad(f.getDate())+'T'+anmPad(f.getHours())+':'+anmPad(f.getMinutes())+':00',
       text:a.message});
   });
@@ -229,11 +218,10 @@ function buildAnnouncementsHTML(){
         +'<td style="white-space:nowrap">'+sbEsc(a.category)+'</td>'
         +'<td><span class="anm-aud'+(anmIsAll(a)?' is-all':'')+'" title="'+sbEsc(anmAudText(a))+'">'+sbEsc(anmAudText(a))+'</span></td>'
         +'<td style="white-space:nowrap">'+anmFmt(a.validFrom)+'</td>'
-        +'<td style="white-space:nowrap;color:'+(a.validTo?'var(--navy)':'var(--gray)')+'">'+(a.validTo?anmFmt(a.validTo):'No end date')+'</td>'
         +'<td>'+anmStateBadge(a)+'</td>'
         +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAnmSidebar('+a.id+')" title="View Details">'+dotsIco+'</button></td>'
         +'</tr>';
-    }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No announcements match this filter.</td></tr>');
+    }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No announcements match this filter.</td></tr>');
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -252,8 +240,8 @@ function buildAnnouncementsHTML(){
       +tile('Expired','var(--st-idle-fg)')+tile('Inactive','var(--st-idle-fg)')
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="anm-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:980px"><thead><tr><th>S. No</th><th>Announcement</th><th>Category</th><th>Target Audience</th>'
-      +'<th>Valid From</th><th>Valid To</th><th>Visibility</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table" style="min-width:840px"><thead><tr><th>S. No</th><th>Announcement</th><th>Category</th><th>Target Audience</th>'
+      +'<th>Valid From</th><th>Visibility</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -263,7 +251,7 @@ function buildAnnouncementsHTML(){
 }
 
 // ══ DETAIL PANEL ══════════════════════════════════════════════════════════
-const ANM_TABS=[{id:'basic-details',label:'Basic Details'},{id:'preview',label:'Preview'},{id:'logs',label:'Logs'},{id:'history',label:'History'}];
+const ANM_TABS=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'}];
 function anmRec(id){return annData.find(function(a){return a.id===id;})||null;}
 function openAnmSidebar(id,tab){
   if(anmSelectedId!=null&&anmSelectedId!==id&&sbLeaveGuard('anm',function(){openAnmSidebar(id,tab);}))return;
@@ -322,13 +310,11 @@ function renderAnmSidebar(){
   const fc=function(ico,label,val,wide){
     return '<div class="lp-sb-field-card"'+(wide?' style="grid-column:1/-1"':'')+'><div class="lp-sb-field-icon">'+ico+'</div><div class="lp-sb-field-content"><div class="lp-sb-field-label">'+label+'</div><div class="lp-sb-field-value">'+val+'</div></div></div>';
   };
-  const st=anmState(a);
-  const note='<div class="anm-window tone-'+ANM_STATE_TONE[st]+'">'+ANM_ICO.info+'<span>'+anmWindowText(a)+'</span></div>';
   let body='';
   if(anmTab==='basic-details'&&anmEditMode){
     body=hero+anmEditPanelHTML(a);
   }else if(anmTab==='basic-details'){
-    body=hero+note
+    body=hero
       +'<div class="anm-sec-title">Message</div>'
       +'<div class="anm-msg">'+sbEsc(a.message)+'</div>'
       +'<div class="anm-sec-title">Details</div>'
@@ -349,8 +335,6 @@ function renderAnmSidebar(){
         +fc(ANM_ICO.user,'Last Updated By',sbEsc(a.updatedBy))
         +fc(ANM_ICO.clock,'Last Updated Date &amp; Time',sbEsc(anmStampText(a.updatedAt)))
       +'</div>';
-  }else if(anmTab==='preview'){
-    body=hero+anmPreviewHTML(a);
   }else if(anmTab==='logs'){
     const logs=anmSeedLogs(a);
     const form='<div class="lp-logs-form">'
@@ -368,42 +352,6 @@ function renderAnmSidebar(){
     body=sbHistoryHTML(a);
   }
   return tabBar+'<div class="lp-isb-body">'+body+'</div>';
-}
-
-/* PREVIEW: the post exactly as the employee dashboard's drawer draws it
-   (.ann-card from css/announcements.css), with who will and will not see it
-   said above — so whoever writes it can check it before employees do. */
-function anmPreviewHTML(a){
-  const st=anmState(a);
-  const me=anmSeesMe(a);
-  const role=a.from==='manager'?'Manager':'HR';
-  const ini=String(a.createdBy||'').trim().split(/\s+/).slice(0,2).map(function(w){return w.charAt(0);}).join('').toUpperCase();
-  const card='<article class="ann-card'+(a.pinned?' is-pinned':'')+'">'
-    +'<div class="ann-card-top">'
-      +'<span class="ann-av tone-'+annTone(a.createdBy)+'" aria-hidden="true">'+sbEsc(ini)+'</span>'
-      +'<div class="ann-card-who"><b>'+sbEsc(a.createdBy)+'</b><span>'+role+'</span></div>'
-      +'<span class="ann-card-when">'+anmFmt(a.validFrom)+'</span>'
-    +'</div>'
-    +'<h3 class="ann-card-title">'+(a.pinned?'<span class="ann-pin" title="Pinned">'+ANN_PIN+'</span>':'')+'<span>'+sbEsc(a.title)+'</span></h3>'
-    +'<p class="ann-card-text">'+sbEsc(a.message)+'</p>'
-    +'<div class="ann-card-foot">'
-      +(a.pinned?'<span class="ann-tag is-pinned">Pinned</span>':'')
-      +'<span class="ann-tag">'+sbEsc(a.category)+'</span>'
-      +'<span class="ann-card-date">'+anmFmt(a.validFrom)+'</span>'
-    +'</div>'
-  +'</article>';
-  const row=function(ok,txt){return '<li class="'+(ok?'is-ok':'is-no')+'"><span class="anm-chk"></span>'+txt+'</li>';};
-  return '<div class="anm-sec-title">Who sees it</div>'
-    +'<ul class="anm-checks">'
-      +row(a.status==='Active','Status is '+a.status)
-      +row(st!=='Scheduled'&&st!=='Expired','Inside its validity window'+(st==='Scheduled'?' — starts '+anmFmt(a.validFrom):st==='Expired'?' — ended '+anmFmt(a.validTo):''))
-      +row(true,'Audience: '+sbEsc(anmAudText(a)))
-    +'</ul>'
-    +'<div class="anm-sec-title">On the employee dashboard</div>'
-    +'<div class="anm-preview'+(st==='Live'?'':' is-off')+'">'+card
-      +(st==='Live'?'':'<div class="anm-preview-flag">Not showing right now — '+st.toLowerCase()+'</div>')
-    +'</div>'
-    +(st==='Live'&&!me?'<p class="anm-preview-note">You are not in this audience, so it is not on your own dashboard.</p>':'');
 }
 
 // ── Logs ──
@@ -689,7 +637,7 @@ function anmSubmit(){
   const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,depts:f.depts,branches:f.branches,types:f.types,roles:f.roles,
     message:f.message,validFrom:f.validFrom,validTo:f.validTo,pinned:f.pinned,status:f.status,from:'hr',
     createdBy:CURRENT_USER,createdAt:stamp,updatedBy:CURRENT_USER,updatedAt:stamp};
-  annData.push(a);anmUnread[id]=1;
+  annData.push(a);
   anmModalOpen=false;anmDraft=null;
   anmQ='';anmCatF='';anmAudF='';anmStatusF='';anmStateF='';
   lpLanded('announcements',id);

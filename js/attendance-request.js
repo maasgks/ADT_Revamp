@@ -487,7 +487,7 @@ function arSubmit(){
   };
   // The approvers hear about it under the header bell (All Timesheets › Requests).
   const told=typeof atReqNotify==='function'&&typeof tsEmp!=='undefined'
-    ?atReqNotify(tsEmp.empId,'ar:'+iso,manual?'manual':'attendance',iso,arApproverFor(iso)):[];
+    ?atReqNotify(tsEmp.empId,'ar:'+iso,manual?'manual':'attendance',iso,arApproverFor(iso),d.reason.trim()):[];
   arClose();
   if(typeof renderADTPage==='function')renderADTPage();
   showToast(existing?'Request updated':'Attendance request submitted','success',
