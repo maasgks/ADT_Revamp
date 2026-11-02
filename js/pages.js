@@ -7714,8 +7714,8 @@ function profPaintTabBody(body){
 }
 // ── PROFILE ATTACHMENTS ──
 // The six every employee must have on file - the same set the dashboard's
-// Upload required documents popup asks for. They lead the list and carry a
-// Mandatory tag; the rest are optional.
+// Upload required documents popup asks for. They lead the list, and carry a
+// Mandatory tag while they are still to be uploaded; the rest are optional.
 const PROF_DOCS_MANDATORY=['PAN Card','Aadhaar Card Front','Aadhaar Card Back','Passport Photograph','Cancelled Cheque / Bank Passbook','Educational Certificates'];
 const PROF_DOCS=PROF_DOCS_MANDATORY.concat(['Resume','Relieving Letter','Address Proof','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter']);
 function profDocTag(d){return PROF_DOCS_MANDATORY.indexOf(d)>=0?'<span class="prof-att-req">Mandatory</span>':'';}
@@ -7979,7 +7979,7 @@ function buildProfTabContent(){
       <div class="prof-att-card">
         <span class="prof-att-iconwrap">${iPaperclip}<span class="prof-att-tick">${tick}</span></span>
         <span class="prof-att-body">
-          <span class="prof-att-name">${d.name}${profDocTag(d.name)}</span>
+          <span class="prof-att-name">${d.name}</span>
           <span class="prof-att-meta">${d.file}${d.size?' &middot; '+d.size:''}</span>
           <span class="prof-att-date">Uploaded ${d.date}</span>
         </span>
@@ -7995,7 +7995,7 @@ function buildProfTabContent(){
         ondragover="profDragOver(event,this)" ondragleave="profDragLeave(event,this)" ondrop="profDrop(event,this,'${sbEsc(d)}')">
         <span class="prof-att-iconwrap">${iPaperclip}</span>
         <span class="prof-att-body">
-          <span class="prof-att-name">${d}${profDocTag(d)}</span>
+          <span class="prof-att-name prof-att-name-row"><span class="prof-att-name-txt">${d}</span>${profDocTag(d)}</span>
           <span class="prof-att-meta">PDF, JPG, PNG or DOC</span>
         </span>
         <button class="prof-att-up-btn" tabindex="-1" onclick="event.stopPropagation();profPickFile('${sbEsc(d)}')">${iUpload} Upload</button>

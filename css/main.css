@@ -2663,3 +2663,8 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .np-req-fact svg{width:11px;height:11px;flex-shrink:0;color:var(--gray)}
 .np-item.is-req .np-row2{margin-top:9px}
 .np-item.is-req .np-row2:empty{display:none}
+/* A pending card's name keeps its Mandatory tag in view: the name shortens
+   with "…", the tag never does. */
+.prof-att-body .prof-att-name.prof-att-name-row{display:flex;align-items:center;min-width:0;overflow:visible}
+.prof-att-name-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prof-att-name-row .prof-att-req{flex-shrink:0}
