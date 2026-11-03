@@ -1205,7 +1205,7 @@ function startAddLeave(){
 }
 function cancelAddLeave(){alAddModalOpen=false;renderADTPage();}
 function buildAddLeaveModalHTML(){
-  const leaveTypes=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Compensatory Leave'];
+  const leaveTypes=['Casual Leave','Sick Leave','Paid Leave'];
   /* THE SAME STRIP THE REST OF THE APP USES. These three were bare dots drawn
      with inline styles, which made them a third control on a screen that
      already had one. peoRadioSeg() draws them now, so they cannot drift. */

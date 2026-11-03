@@ -6,7 +6,7 @@
    Picks that change WHICH fields show (type, one/multiple days, leave hours)
    repaint the page; typing never does, so focus is never lost mid-word. */
 const AA_TYPES=['Leave','Work From Home'];
-const AA_LEAVE_TYPES=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Leave Without Pay'];
+const AA_LEAVE_TYPES=['Casual Leave','Sick Leave','Paid Leave'];
 const AA_HOURS=['Full Day','Half Day','Short Leave'];
 /* What each takes off the balance, in days. Short Leave is a few hours
    (a quarter day). */
@@ -66,12 +66,9 @@ function aaChipsHTML(key,list,ph){
     +'<input type="email" id="aa-'+key+'-inp" placeholder="'+ph+'" onkeydown="aaChipKey(event,\''+key+'\')" onblur="aaChipCommit(\''+key+'\')">'
     +'</div>';
 }
-/* The fixed list plus any type the person's policy names, so picking a
-   balance card always lands on an option that exists. */
-function aaLeaveTypeOpts(){
-  const own=typeof lbRows==='function'?lbRows(LB_ME).map(function(r){return r.type;}):[];
-  return AA_LEAVE_TYPES.concat(own.filter(function(t){return AA_LEAVE_TYPES.indexOf(t)<0;}));
-}
+/* The three types an employee applies for - the same three the balance
+   cards show (LH_BAL_TYPES). */
+function aaLeaveTypeOpts(){return AA_LEAVE_TYPES.slice();}
 function buildApplyApplicationHTML(){
   if(!aaForm)aaForm=aaBlank();
   const f=aaForm,isLeave=f.type==='Leave'||!f.type,one=f.days==='one';
