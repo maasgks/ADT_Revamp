@@ -1217,9 +1217,15 @@ function buildAddLeaveModalHTML(){
   const uploadIco='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form" onclick="event.stopPropagation()" id="al-add-form">'
+    /* Title on the left, the leave balance tiles on the right - where a
+       listing page sets its status tiles. See lhTypeBal(). */
+    +'<div class="fp-head"><div class="fp-head-main">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Create New Leave</span>'
       +'<button class="ct-modal-close" onclick="cancelAddLeave()">'+xSvg+'</button></div>'
-    +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p>'
+    +'<p class="ct-modal-sub">Who the leave is for, how long it runs, and why.</p></div>'
+    +(function(){const b=lhTypeBal(currentRole==='Employee'?LB_ME:null,'','','');
+      return '<div class="'+b.cls+'" id="al-type-bal">'+b.html+'</div>';})()
+    +'</div>'
     +'<div class="ep-form-card" style="padding:0;overflow:visible;margin-bottom:18px">'
 
     // Row 1: Employee + Leave Type
@@ -1234,10 +1240,6 @@ function buildAddLeaveModalHTML(){
     +'<div class="ep-form-group"><label class="ep-form-label">Leave Type <span class="req">*</span></label>'
     +apCS('al-type',leaveTypes,'','Select','alRefreshBal')+'</div>'
     +'</div>'
-    /* The balance of the type picked, or of every type until one is - see
-       lhTypeBal(). Full width under both fields, not squeezed under one. */
-    +(function(){const b=lhTypeBal(currentRole==='Employee'?LB_ME:null,'','','');
-      return '<div class="al-bal-host"><div class="'+b.cls+'" id="al-type-bal">'+b.html+'</div></div>';})()
     +'</div>'
 
     // Row 2: Duration type radio
@@ -7731,7 +7733,7 @@ function profPaintTabBody(body){
 // Upload required documents popup asks for. They lead the list, and carry a
 // Mandatory tag while they are still to be uploaded; the rest are optional.
 const PROF_DOCS_MANDATORY=['PAN Card','Aadhaar Card Front','Aadhaar Card Back','Passport Photograph','Cancelled Cheque / Bank Passbook','Educational Certificates'];
-const PROF_DOCS=PROF_DOCS_MANDATORY.concat(['Resume','Relieving Letter','Address Proof','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter']);
+const PROF_DOCS=PROF_DOCS_MANDATORY.concat(['Resume','Signed Offer Letter','Relieving Letter','Address Proof','Salary Slip1','Salary Slip2','Salary Slip3','Salary Slip4','Salary Slip5','Salary Slip6','Last Offer Letter']);
 function profDocTag(d){return PROF_DOCS_MANDATORY.indexOf(d)>=0?'<span class="prof-att-req">Mandatory</span>':'';}
 /* Uploading or removing an attachment only ever changes what is inside the
    tab, so it repaints the tab body alone. The full page build is the fallback

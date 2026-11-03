@@ -18,7 +18,7 @@
    from a snapshot, so the panel has to be drawn again each time. */
 
 const ANN_ICO={
-  megaphone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>',
+  megaphone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.2v3.6a1 1 0 0 0 .8 1L15 17.5V6.5L3.8 9.2a1 1 0 0 0-.8 1z"/><path d="M6.5 14.9v2.6a2 2 0 0 0 4 0v-1.6"/><path d="M18 9.5a4 4 0 0 1 0 5"/></svg>',
   check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
 };
 const ANN_ROLE={hr:'HR',manager:'Manager'};

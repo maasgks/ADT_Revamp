@@ -117,6 +117,10 @@ body{font-family:'Inter',sans-serif;background:var(--light);color:var(--navy);ov
    rise as high as the header itself, and the page under it stacks its own
    layers up to 30 (.lp-filter-bar) - at 20 a filter bar's Search button drew
    over an open header menu. Still below every popup and modal (400+). */
+/* ...except while one of its own menus is open: a create/edit form shown as a
+   page (.fp-page, form-page.css) is a fixed layer at 400 under the header, and
+   it painted over the open profile/role/entity/notification menu. */
+.topbar:has(.hdr-dd-panel.open),.topbar:has(.notif-pop:not(.hidden)){z-index:450}
 .topbar-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
 .topbar-center{display:flex;align-items:center;justify-content:center;flex:0 0 auto}
 .topbar-right{display:flex;align-items:center;gap:14px;flex:1;min-width:0;justify-content:flex-end}

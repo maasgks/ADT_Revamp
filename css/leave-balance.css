@@ -108,6 +108,24 @@
 .al-bal-chip.is-low b{color:var(--st-wait-fg)}
 .al-bal-chip.is-out b{color:var(--st-bad-fg)}
 
-/* Create New Leave: the panel sits under both fields; empty, it takes no room. */
-.al-bal-host{margin-top:16px}
-.al-bal-host:has(> .al-type-bal:not(.is-on)){display:none}
+/* Days left as listing-page status tiles (.listing-stats, main.css): the
+   tiles bring their own box, so the panel drops its border and fill. */
+.al-type-bal.is-cards{display:block;border:0;background:none;border-radius:0}
+.al-type-bal.is-cards .listing-stat{min-width:104px}
+.al-type-bal.is-cards .listing-stat-count{color:var(--navy);font-variant-numeric:tabular-nums}
+.al-type-bal.is-cards .listing-stat.is-ok .listing-stat-count{color:var(--st-ok-fg)}
+.al-type-bal.is-cards .listing-stat.is-low .listing-stat-count{color:var(--st-wait-fg)}
+.al-type-bal.is-cards .listing-stat.is-out .listing-stat-count{color:var(--st-bad-fg)}
+.al-type-bal.is-cards .listing-stat:not(.is-ok):not(.is-low):not(.is-out) .listing-stat-count{color:#94a3b8}
+
+/* Apply Application and Create New Leave: the title on the left, the balance
+   tiles on the right of the header row - where a listing page sets its status
+   tiles beside its filters. Empty (no employee picked yet), it takes no room. */
+/* The row owns the gap to the form below, so the tiles (taller than the
+   title block) never sit on the card; its children carry no bottom margin. */
+.fp-head{display:flex;align-items:center;gap:24px;margin-bottom:20px}
+.fp-head-main{flex:1;min-width:0}
+.fp-head .fp-head-main>:last-child{margin-bottom:0}
+.fp-head>.al-type-bal{flex-shrink:0;margin-top:0;max-width:60%}
+.fp-page .fp-head+.fp-card,.fp-page .fp-head+.fp-card-own{margin-top:0}
+@media (max-width:720px){.fp-head{flex-direction:column}.fp-head>.al-type-bal{max-width:100%}}

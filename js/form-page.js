@@ -51,7 +51,10 @@ function fpConvert(modal){
   modal.classList.add('fp-done');
   const overlay=modal.closest('.ct-modal-overlay');
   if(overlay)overlay.classList.add('fp-page');
-  const hdr=modal.querySelector(':scope > .ct-modal-hdr');
+  /* .fp-head: a header row holding the title (and sub-line) on the left and
+     status tiles on the right, the way a listing page sets its tiles beside
+     its filters - Create New Leave's leave balance. */
+  const hdr=modal.querySelector(':scope > .ct-modal-hdr, :scope > .fp-head .ct-modal-hdr');
   const close=hdr&&hdr.querySelector('.ct-modal-close');
   /* Back above the title does what the x did. */
   if(hdr&&!modal.querySelector(':scope > .fp-top')){
@@ -68,7 +71,7 @@ function fpConvert(modal){
   const foot=fpFooterOf(modal);
   if(foot)foot.classList.add('fp-foot');
   const body=Array.prototype.filter.call(modal.children,function(k){
-    return k!==foot&&!k.matches('.fp-top,.ct-modal-hdr,.ct-modal-sub,.fp-card');
+    return k!==foot&&!k.matches('.fp-top,.fp-head,.ct-modal-hdr,.ct-modal-sub,.fp-card');
   });
   /* A form whose body is already one bordered panel (the leave policy's
      sectioned card) keeps it as its card rather than nesting it in another. */

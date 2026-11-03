@@ -56,7 +56,7 @@ function hdocTypeOf(key){return HDOC_TYPES.find(function(t){return t.key===key;}
 /* ── People the letters are about, and who signs them ──────────────────── */
 function hdocEmployees(){
   const de=(typeof directEmpData!=='undefined'?directEmpData:[]).map(function(e){
-    return {name:e.name,empId:e.empId,designation:e.jobTitle,department:e.dept,location:e.branch,joinDate:e.joinDate,email:e.email};
+    return {name:e.name,empId:e.empId,designation:e.jobTitle,department:e.dept,location:e.branch,joinDate:e.joinDate,email:e.email,desc:e.desc};
   });
   const ge=(typeof globalEmpData!=='undefined'?globalEmpData:[]).map(function(e){
     return {name:e.name,empId:e.empId,designation:e.jobTitle,department:e.dept,location:e.country,joinDate:e.joinDate,email:e.email};
@@ -64,16 +64,43 @@ function hdocEmployees(){
   return de.concat(ge);
 }
 function hdocEmp(name){return hdocEmployees().find(function(e){return e.name===name;})||null;}
+/* What a prefill field takes from the employee picked (HDOC_FIELDS .prefill).
+   joinDate is read as dd Mon yyyy; the annual pay is the monthly salary
+   structure (Attendance → Salary) times twelve, where the employee has one. */
+function hdocPrefillVal(src,e){
+  if(!e)return '';
+  if(src==='joinDate'){const d=new Date(e.joinDate);return isNaN(d)?'':cdISO(d);}
+  if(src==='empType'){const s=String(e.desc||'').toLowerCase();
+    return s.indexOf('contract')>=0?'Contract':s.indexOf('part')>=0?'Part Time':s.indexOf('intern')>=0?'Intern':s.indexOf('full')>=0?'Full Time':'';}
+  if(src==='annualPay'){
+    const p=typeof AT_PAY!=='undefined'&&AT_PAY[e.empId];if(!p)return '';
+    return String(12*(p.basic+p.earnings.reduce(function(s,x){return s+(x.amt||0);},0)));
+  }
+  return e[src]||'';
+}
+/* A select's options: a fixed list, or one read off the people on record. */
+function hdocOpts(f){
+  if(f.opts==='designations')return hdocUniq(HDOC_FIELDS.offered_designation.opts.concat(hdocEmployees().map(function(e){return e.designation;})));
+  if(f.opts==='locations')return hdocUniq(['Hyderabad','Bangalore','Mumbai','Delhi','Pune','Chennai','Punjab'].concat(hdocEmployees().map(function(e){return e.location;})));
+  return f.opts;
+}
+function hdocUniq(a){return a.filter(function(x,i){return x&&x!=='--'&&a.indexOf(x)===i;});}
+/* The Active payheads of one category (Earning / Deduction), from Payheads. */
+function hdocPayheads(cat){
+  return (typeof payheadsData!=='undefined'?payheadsData:[])
+    .filter(function(p){return p.category===cat&&p.status==='Active';}).map(function(p){return p.name;});
+}
 const HDOC_SIGNATORIES=[{name:'Pallavi Parate',desig:'HR Manager'},{name:'Shaun Test1',desig:'Director'}];
 function hdocCompany(){
   return (typeof hdCurrentEntityName==='function'&&hdCurrentEntityName())||'Dhi Hyperlocal Pvt Ltd';
 }
 
 /* ── The field catalogue ───────────────────────────────────────────────────
-   type      employee | auto | signatory | date | number | text | textarea | select
+   type      employee | auto | signatory | date | time | number | text | textarea
+             | select | multi | words
    from      for auto fields: which employee (or signatory) value they read   */
 const HDOC_FIELDS={
-  employee_name:      {label:'Employee',type:'employee',req:true},
+  employee_name:      {label:'Employee Name',type:'employee',req:true},
   employee_id:        {label:'Employee ID',type:'auto',from:'empId'},
   designation:        {label:'Designation',type:'auto',from:'designation'},
   department:         {label:'Department',type:'auto',from:'department'},
@@ -84,12 +111,29 @@ const HDOC_FIELDS={
   last_working_day:   {label:'Last Working Day',type:'date',req:true},
   resignation_date:   {label:'Resignation Date',type:'date',req:true},
   candidate_name:     {label:'Candidate Name',type:'text',req:true,ph:'Full name'},
-  candidate_address:  {label:'Candidate Address',type:'textarea',ph:'Postal address'},
-  offered_designation:{label:'Offered Designation',type:'select',req:true,opts:['Software Engineer','Developer','QA Engineer','Product Manager','UX Designer','HR Manager','Finance Analyst','Sales Executive']},
+  salutation:         {label:'Salutation',type:'select',req:true,opts:['Mr.','Ms.','Miss.']},
+  candidate_address:  {label:'Candidate Address',type:'textarea',req:true,ph:'Postal address'},
+  offered_designation:{label:'Designation',type:'select',req:true,opts:['Software Engineer','Developer','QA Engineer','Product Manager','UX Designer','HR Manager','Finance Analyst','Sales Executive']},
   offered_department: {label:'Offered Department',type:'select',req:true,opts:['Engineering','Product','Design','HR','Finance','Sales','Operations']},
-  proposed_joining:   {label:'Proposed Joining Date',type:'date',req:true},
-  offer_valid_till:   {label:'Offer Valid Till',type:'date',req:true},
+  proposed_joining:   {label:'Date of Joining',type:'date',req:true},
+  reporting_time:     {label:'Reporting Time',type:'time',req:true},
+  offer_valid_till:   {label:'Offer Valid Until',type:'date',req:true},
   annual_ctc:         {label:'Annual CTC (₹)',type:'number',req:true,ph:'e.g. 1200000'},
+  annual_compensation:{label:'Annual Compensation (₹)',type:'number',req:true,ph:'e.g. 1200000'},
+  /* words: written out from another field's amount, never typed. */
+  annual_compensation_words:{label:'Annual Compensation in Words',type:'words',from:'annual_compensation'},
+  /* multi: several picks from the active payheads of one category. */
+  earning_heads:      {label:'Earning Heads',type:'multi',req:true,heads:'Earning'},
+  deduction_heads:    {label:'Deduction Heads',type:'multi',heads:'Deduction'},
+  annual_bonus_pct:   {label:'Total Annual Bonus (%)',type:'text',ph:'e.g. 10'},
+  /* Appointment Letter. prefill: filled from the employee when one is picked,
+     and still editable - unlike auto, which is read-only. */
+  employee_location:  {label:'Employee Location',type:'textarea',req:true,ph:'Filled from the employee',prefill:'location'},
+  appt_designation:   {label:'Designation',type:'select',req:true,search:true,opts:'designations',prefill:'designation'},
+  appt_effective_date:{label:'Appointment Effective Date',type:'date',req:true,prefill:'joinDate'},
+  employment_type:    {label:'Employment Type',type:'select',req:true,opts:['Full Time','Part Time','Contract','Intern'],prefill:'empType'},
+  appt_work_location: {label:'Work Location',type:'select',req:true,opts:'locations',prefill:'location'},
+  appt_annual_compensation:{label:'Annual Compensation (₹)',type:'number',req:true,ph:'From the salary structure',prefill:'annualPay'},
   probation_period:   {label:'Probation Period',type:'select',req:true,opts:['3 months','6 months','12 months']},
   notice_period:      {label:'Notice Period',type:'select',req:true,opts:['30 days','60 days','90 days']},
   internship_start:   {label:'Internship Start Date',type:'date',req:true},
@@ -130,7 +174,14 @@ function hdocFormKeys(tpl){
   /* Pickers first, then everything else in template order - the employee
      decides half the form, so it is the first thing asked. */
   const first=keys.filter(function(k){return hdocFieldDef(k).type==='employee';});
-  return first.concat(keys.filter(function(k){return first.indexOf(k)<0;}));
+  const out=first.concat(keys.filter(function(k){return first.indexOf(k)<0;}));
+  /* A template may set the order its form asks in (fieldOrder); anything it
+     does not list keeps its place after the listed ones. */
+  if(tpl.fieldOrder){
+    const at=function(k){const i=tpl.fieldOrder.indexOf(k);return i<0?999+out.indexOf(k):i;};
+    out.sort(function(a,b){return at(a)-at(b);});
+  }
+  return out;
 }
 
 /* ── Templates ─────────────────────────────────────────────────────────── */
@@ -145,11 +196,16 @@ const hdocTemplates=[
   {id:4,type:'internship',name:'Internship Certificate - Standard',heading:'INTERNSHIP CERTIFICATE',status:'Active',updatedBy:'Shaun Test1',updatedAt:'12 Aug 2026',
    body:'Date: {{issue_date}}\n\nTO WHOMSOEVER IT MAY CONCERN\n\nThis is to certify that {{employee_name}} has successfully completed an internship with {{company_name}} in the {{department}} department from {{internship_start}} to {{internship_end}}.\n\nDuring the internship they worked on "{{project_title}}" and showed a keen willingness to learn and a professional approach to their work.\n\nWe wish them all the best for their future.'+SIG_BLOCK},
   {id:5,type:'offer',name:'Offer Letter - Full time',heading:'OFFER OF EMPLOYMENT',status:'Active',updatedBy:'Shaun Test1',updatedAt:'20 Sep 2026',
-   body:'Date: {{issue_date}}\n\n{{candidate_name}}\n{{candidate_address}}\n\nDear {{candidate_name}},\n\nWe are pleased to offer you the position of {{offered_designation}} in the {{offered_department}} department at {{company_name}}.\n\nYour annual Cost to Company (CTC) will be ₹{{annual_ctc}}. Your proposed date of joining is {{proposed_joining}}. You will be on probation for {{probation_period}} from your date of joining.\n\nThis offer is valid until {{offer_valid_till}}. Please sign and return a copy of this letter as your acceptance.\n\nWe look forward to welcoming you to the team.'+SIG_BLOCK},
+   /* The form asks in this order, not in the order the letter uses them. */
+   fieldOrder:['issue_date','candidate_name','salutation','candidate_address','offered_designation','annual_compensation','annual_compensation_words',
+     'proposed_joining','reporting_time','offer_valid_till','signatory_name','earning_heads','deduction_heads','annual_bonus_pct'],
+   body:'Date: {{issue_date}}\n\n{{salutation}} {{candidate_name}}\n{{candidate_address}}\n\nDear {{salutation}} {{candidate_name}},\n\nWe are pleased to offer you the position of {{offered_designation}} at {{company_name}}.\n\nYour annual compensation will be ₹{{annual_compensation}} ({{annual_compensation_words}}), made up of the following heads:\nEarnings: {{earning_heads}}\nDeductions: {{deduction_heads}}\n\nYou will also be eligible for a total annual bonus of {{annual_bonus_pct}}% of your annual compensation, as per company policy.\n\nYour date of joining is {{proposed_joining}}. Please report to the office at {{reporting_time}} on that day.\n\nThis offer is valid until {{offer_valid_till}}. Please sign and return a copy of this letter as your acceptance.\n\nWe look forward to welcoming you to the team.'+SIG_BLOCK},
   {id:6,type:'offer',name:'Offer Letter - 2025 format',heading:'OFFER LETTER',status:'Inactive',updatedBy:'Shaun Test1',updatedAt:'14 Jan 2025',
    body:'Date: {{issue_date}}\n\nDear {{candidate_name}},\n\nWe are happy to offer you the role of {{offered_designation}} at an annual CTC of ₹{{annual_ctc}}, joining on {{proposed_joining}}.'+SIG_BLOCK},
   {id:7,type:'appointment',name:'Appointment Letter - Standard',heading:'LETTER OF APPOINTMENT',status:'Active',updatedBy:'Shaun Test1',updatedAt:'12 Aug 2026',
-   body:'Date: {{issue_date}}\n\n{{employee_name}}\nEmployee ID: {{employee_id}}\n\nDear {{employee_name}},\n\nFurther to your acceptance of our offer, we are pleased to appoint you as {{designation}} in the {{department}} department of {{company_name}}, with effect from {{date_of_joining}}. Your place of work will be {{work_location}}.\n\nYour annual CTC will be ₹{{annual_ctc}}. You will be on probation for {{probation_period}}, after which your services may be confirmed in writing. Either party may end this employment by giving {{notice_period}} notice.\n\nYou will be governed by the policies and rules of the company as amended from time to time.'+SIG_BLOCK},
+   fieldOrder:['issue_date','employee_name','salutation','employee_location','appt_designation','appt_effective_date','employment_type',
+     'appt_work_location','appt_annual_compensation','earning_heads','deduction_heads','annual_bonus_pct','signatory_name'],
+   body:'Date: {{issue_date}}\n\n{{salutation}} {{employee_name}}\n{{employee_location}}\n\nDear {{salutation}} {{employee_name}},\n\nFurther to your acceptance of our offer, we are pleased to appoint you as {{appt_designation}} at {{company_name}} on a {{employment_type}} basis, with effect from {{appt_effective_date}}. Your place of work will be {{appt_work_location}}.\n\nYour annual compensation will be ₹{{appt_annual_compensation}}, made up of the following heads:\nEarnings: {{earning_heads}}\nDeductions: {{deduction_heads}}\n\nYou will also be eligible for a total annual bonus of {{annual_bonus_pct}}% of your annual compensation, as per company policy.\n\nYou will be governed by the policies and rules of the company as amended from time to time.'+SIG_BLOCK},
   {id:8,type:'increment',name:'Increment Letter - Standard',heading:'SALARY REVISION LETTER',status:'Active',updatedBy:'Shaun Test1',updatedAt:'12 Aug 2026',
    body:'Date: {{issue_date}}\n\n{{employee_name}}\nEmployee ID: {{employee_id}}, {{designation}}\n\nDear {{employee_name}},\n\nIn recognition of your contribution, we are pleased to inform you that your annual CTC has been revised from ₹{{previous_ctc}} to ₹{{revised_ctc}} with effect from {{effective_date}}.\n\nAll other terms and conditions of your employment remain unchanged. We look forward to your continued contribution.'+SIG_BLOCK},
   {id:9,type:'confirmation',name:'Confirmation Letter - Standard',heading:'CONFIRMATION OF EMPLOYMENT',status:'Active',updatedBy:'Shaun Test1',updatedAt:'12 Aug 2026',
@@ -170,10 +226,13 @@ const hdocDocs=[
   {id:1,no:'EXP-2026-0001',type:'experience',templateId:1,status:'Submitted',createdBy:'Pallavi Parate',createdAt:'14 Feb 2025 | 11:05 AM',updatedAt:'14 Feb 2025 | 11:20 AM',
    values:{employee_name:'Rahul Mehta',issue_date:'2025-02-14',last_working_day:'2025-02-12',signatory_name:'Pallavi Parate'}},
   {id:2,no:'APT-2026-0001',type:'appointment',templateId:7,status:'Submitted',createdBy:'Pallavi Parate',createdAt:'15 Jan 2025 | 10:00 AM',updatedAt:'15 Jan 2025 | 10:12 AM',
-   values:{employee_name:'Testemp Antar',issue_date:'2025-01-15',annual_ctc:'1200000',probation_period:'6 months',notice_period:'60 days',signatory_name:'Shaun Test1'}},
+   values:{employee_name:'Testemp Antar',issue_date:'2025-01-15',salutation:'Mr.',employee_location:'Punjab',appt_designation:'Software Engineer',
+     appt_effective_date:'2025-01-15',employment_type:'Full Time',appt_work_location:'Punjab',appt_annual_compensation:'1200000',
+     earning_heads:['Basic Salary','House Rent Allowance'],deduction_heads:['Provident Fund','Professional Tax'],signatory_name:'Shaun Test1'}},
   {id:3,no:'OFR-2026-0001',type:'offer',templateId:5,status:'Submitted',createdBy:'Pallavi Parate',createdAt:'28 Aug 2026 | 04:15 PM',updatedAt:'28 Aug 2026 | 04:30 PM',
-   values:{candidate_name:'Meera Iyer',candidate_address:'12 Jubilee Hills, Hyderabad 500033',issue_date:'2026-08-28',offered_designation:'UX Designer',offered_department:'Design',
-     annual_ctc:'1450000',proposed_joining:'2026-09-15',probation_period:'6 months',offer_valid_till:'2026-09-05',signatory_name:'Pallavi Parate'}},
+   values:{candidate_name:'Meera Iyer',salutation:'Ms.',candidate_address:'12 Jubilee Hills, Hyderabad 500033',issue_date:'2026-08-28',offered_designation:'UX Designer',
+     annual_compensation:'1450000',proposed_joining:'2026-09-15',reporting_time:'10:00',offer_valid_till:'2026-09-05',signatory_name:'Pallavi Parate',
+     earning_heads:['Basic Salary','House Rent Allowance'],deduction_heads:['Provident Fund','Professional Tax'],annual_bonus_pct:'10'}},
   {id:4,no:'INC-2026-0001',type:'increment',templateId:8,status:'Submitted',createdBy:'Pallavi Parate',createdAt:'01 Apr 2026 | 09:30 AM',updatedAt:'01 Apr 2026 | 09:45 AM',
    values:{employee_name:'Anika Shah',issue_date:'2026-04-01',previous_ctc:'900000',revised_ctc:'1035000',effective_date:'2026-04-01',signatory_name:'Shaun Test1'}},
   {id:5,no:'',type:'confirmation',templateId:9,status:'Draft',createdBy:'Pallavi Parate',createdAt:'30 Sep 2026 | 03:10 PM',updatedAt:'02 Oct 2026 | 11:40 AM',
@@ -181,7 +240,7 @@ const hdocDocs=[
   {id:6,no:'',type:'warn-leave',templateId:10,status:'Draft',createdBy:'Shaun Test1',createdAt:'03 Oct 2026 | 10:05 AM',updatedAt:'03 Oct 2026 | 10:05 AM',
    values:{employee_name:'Dev Kulkarni',issue_date:'2026-10-03',absence_from:'2026-09-22',absence_to:'2026-09-24',absence_details:''}},
   {id:7,no:'',type:'offer',templateId:5,status:'Draft',createdBy:'Pallavi Parate',createdAt:'04 Oct 2026 | 05:25 PM',updatedAt:'04 Oct 2026 | 05:25 PM',
-   values:{candidate_name:'Karan Verma',offered_designation:'Software Engineer',offered_department:'Engineering',annual_ctc:'1600000'}}
+   values:{candidate_name:'Karan Verma',salutation:'Mr.',offered_designation:'Software Engineer',annual_compensation:'1600000'}}
 ];
 let hdocDocNextId=8;
 function hdocStampNow(){const s=stampNow();return s.date+' | '+s.time.replace(/:\d\d (AM|PM)$/,' $1');}
@@ -209,6 +268,10 @@ function hdocResolve(values){
   });
   const sg=HDOC_SIGNATORIES.find(function(s){return s.name===v.signatory_name;});
   v.signatory_designation=sg?sg.desig:'';
+  Object.keys(HDOC_FIELDS).forEach(function(k){
+    const f=HDOC_FIELDS[k];
+    if(f.type==='words')v[k]=hdocAmountWords(v[f.from]);
+  });
   v.company_name=hdocCompany();
   return v;
 }
@@ -218,7 +281,38 @@ function hdocFmt(key,val){
   const f=hdocFieldDef(key);
   if(f.type==='date')return cdLabel(val)||val;
   if(f.type==='number'){const n=parseFloat(val);return isNaN(n)?val:n.toLocaleString('en-IN');}
+  if(f.type==='multi')return [].concat(val).join(', ');
+  if(f.type==='time'){
+    const m=/^(\d{1,2}):(\d{2})/.exec(val);if(!m)return String(val);
+    const h=+m[1];return ((h%12)||12)+':'+m[2]+' '+(h<12?'AM':'PM');
+  }
   return String(val);
+}
+/* An amount in Indian-system words: 1450000 -> "Rupees Fourteen Lakh Fifty
+   Thousand Only". Whole rupees; paise are dropped. */
+function hdocAmountWords(val){
+  let n=Math.floor(parseFloat(val));
+  if(!isFinite(n)||n<0||String(val).trim()==='')return '';
+  if(n===0)return 'Rupees Zero Only';
+  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen',
+    'Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const two=function(x){return x<20?ones[x]:tens[Math.floor(x/10)]+(x%10?' '+ones[x%10]:'');};
+  const three=function(x){return (x>=100?ones[Math.floor(x/100)]+' Hundred'+(x%100?' ':''):'')+(x%100?two(x%100):'');};
+  const parts=[];
+  [[10000000,'Crore'],[100000,'Lakh'],[1000,'Thousand']].forEach(function(u){
+    const q=Math.floor(n/u[0]);
+    if(q){parts.push((q>=100?hdocAmountWords(q).replace(/^Rupees |\sOnly$/g,''):two(q))+' '+u[1]);n%=u[0];}
+  });
+  if(n)parts.push(three(n));
+  return 'Rupees '+parts.join(' ')+' Only';
+}
+function hdocWordsLive(el){
+  const k=el.id.replace(/^hdf-/,'');
+  Object.keys(HDOC_FIELDS).forEach(function(w){
+    if(HDOC_FIELDS[w].type!=='words'||HDOC_FIELDS[w].from!==k)return;
+    const out=document.getElementById('hdf-'+w);if(out)out.value=hdocAmountWords(el.value);
+  });
 }
 function hdocEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 /* The letter as markup. A placeholder with no value yet is shown as its label
@@ -234,8 +328,19 @@ function hdocRenderLetter(tpl,values,docNo){
         :'<span class="hdoc-miss">'+hdocEsc(hdocFieldDef(k).label)+'</span>';
     });
   };
+  /* A line that uses an OPTIONAL field left empty is left out of the letter
+     (no Deduction Heads, no bonus) - it is not missing, it does not apply. */
+  const optEmpty=function(line){
+    let skip=false;
+    line.replace(/\{\{\s*([a-z0-9_]+)\s*\}\}/g,function(_,k){
+      const f=HDOC_FIELDS[k];
+      if(f&&!f.req&&['text','textarea','number','date','time','select','multi'].indexOf(f.type)>=0&&!hdocFmt(k,v[k]))skip=true;
+    });
+    return skip;
+  };
   const paras=String(tpl.body||'').split(/\n{2,}/).map(function(p){
-    return '<p>'+fill(p).replace(/\n/g,'<br>')+'</p>';
+    const kept=p.split('\n').filter(function(l){return !optEmpty(l);});
+    return kept.length?'<p>'+fill(kept.join('\n')).replace(/\n/g,'<br>')+'</p>':'';
   }).join('');
   return '<div class="hdoc-paper">'
     +'<div class="hdoc-lh"><div class="hdoc-lh-name">'+hdocEsc(v.company_name)+'</div>'
@@ -249,7 +354,7 @@ function hdocMissing(tpl,values){
   const v=hdocResolve(values);
   return hdocFormKeys(tpl).filter(function(k){
     const f=hdocFieldDef(k);
-    if(f.type==='auto')return false;
+    if(f.type==='auto'||f.type==='words')return false;
     return f.req&&!String(v[k]||'').trim();
   }).map(function(k){return hdocFieldDef(k).label;});
 }
@@ -305,16 +410,33 @@ function hdocSync(){
   const tpl=hdocTemplateById(hdocModal.templateId);if(!tpl)return;
   hdocFormKeys(tpl).forEach(function(k){
     const f=hdocFieldDef(k),id='hdf-'+k;
-    if(f.type==='auto')return;
+    if(f.type==='auto'||f.type==='words')return;
     if(f.type==='employee'||f.type==='signatory'||f.type==='select'){
       if(document.getElementById('csw-'+id))hdocModal.values[k]=getCSValue(id);
+    }else if(f.type==='multi'){
+      if(document.getElementById('msw-'+id))hdocModal.values[k]=getMSValue(id);
     }else{
       const el=document.getElementById(id);if(el)hdocModal.values[k]=el.value.trim?el.value.trim():el.value;
     }
   });
 }
-/* Picking an employee or a signatory fills the values read off them. */
-function hdocPickHook(){hdocSync();renderADTPage();}
+/* Picking an employee or a signatory fills the values read off them. A
+   newly picked employee also refills every prefill field from their record;
+   HR can still change each one afterwards. */
+function hdocPickHook(){
+  const m=hdocModal;if(!m)return;
+  const was=m.values.employee_name;
+  hdocSync();
+  const name=m.values.employee_name;
+  if(name&&name!==was){
+    const e=hdocEmp(name),tpl=hdocTemplateById(m.templateId);
+    if(e&&tpl)hdocFormKeys(tpl).forEach(function(k){
+      const f=hdocFieldDef(k);
+      if(f.prefill)m.values[k]=hdocPrefillVal(f.prefill,e);
+    });
+  }
+  renderADTPage();
+}
 function hdocToPreview(){hdocSync();hdocModal.view='preview';renderADTPage();}
 function hdocToForm(){hdocModal.view='form';renderADTPage();}
 /* FR-22.4 / 22.5 / 22.6: Save as Draft keeps the values and the document
@@ -598,12 +720,111 @@ function hdocOpenSend(){
   const el=document.getElementById('hdoc-send-to');
   if(el&&!el.value)el.focus();
 }
-function hdocCloseSend(){hdocSend=null;renderADTPage();}
+function hdocCloseSend(){hdocSugClose();hdocSend=null;renderADTPage();}
 function hdocSendInput(el){
   el.classList.remove('is-bad');
   const e=document.getElementById('hdoc-send-err');if(e)e.hidden=true;
+  if(el.id==='hdoc-send-to'||el.id==='hdoc-send-cc')hdocSuggest(el);
 }
-function hdocSendKey(ev){if(ev.key==='Enter'){ev.preventDefault();hdocSendMail();}}
+function hdocSendKey(ev){
+  if(hdocSugKey(ev))return;
+  if(ev.key==='Enter'&&ev.target.id==='hdoc-send-to'){ev.preventDefault();hdocSendMail();}
+}
+
+/* ── Employee type-ahead on To and CC ──
+   Typing in To or CC drops down matching employees (name, email, ID,
+   department). To takes the whole field; CC matches only the address being
+   typed after the last comma and appends the pick to the list. Free-typed
+   addresses still work - the list is a shortcut, not a restriction. */
+const HDOC_SUG_MAX=6;
+let hdocSugHits=[],hdocSugIdx=0,hdocSugFor=null;
+function hdocSugMark(v,q){
+  const s=String(v==null?'':v),i=q?s.toLowerCase().indexOf(q):-1;
+  if(i<0)return hdocEsc(s);
+  return hdocEsc(s.slice(0,i))+'<mark>'+hdocEsc(s.slice(i,i+q.length))+'</mark>'+hdocEsc(s.slice(i+q.length));
+}
+function hdocSugQuery(el){
+  return (el.id==='hdoc-send-cc'?el.value.split(/[,;]/).pop():el.value).trim().toLowerCase();
+}
+function hdocSuggest(el){
+  const q=hdocSugQuery(el);
+  if(!q){hdocSugClose();return;}
+  // Addresses already in To / CC are not offered again.
+  const used=hdocSplitEmails((document.getElementById('hdoc-send-to')||{}).value+','+(document.getElementById('hdoc-send-cc')||{}).value)
+    .map(function(x){return x.toLowerCase();});
+  const all=hdocEmployees().filter(function(e){
+    if(!e.email||used.indexOf(e.email.toLowerCase())>=0)return false;
+    return [e.name,e.email,e.empId,e.department,e.designation].some(function(f){return f&&String(f).toLowerCase().indexOf(q)>=0;});
+  });
+  // Name matches first - that is what most people type.
+  all.sort(function(x,y){return (y.name.toLowerCase().indexOf(q)>=0?1:0)-(x.name.toLowerCase().indexOf(q)>=0?1:0);});
+  hdocSugHits=all.slice(0,HDOC_SUG_MAX);hdocSugIdx=0;hdocSugFor=el.id;
+  let pop=document.getElementById('hdoc-suggest');
+  if(!pop){
+    pop=document.createElement('div');pop.id='hdoc-suggest';pop.className='ax-suggest hdoc-suggest';pop.setAttribute('role','listbox');
+    document.body.appendChild(pop);
+  }
+  pop.innerHTML=hdocSugHits.length
+    ?hdocSugHits.map(function(e,i){
+        return '<button type="button" role="option" class="ax-sug-row'+(i===0?' is-on':'')+'" data-i="'+i+'"'
+          +' onmousedown="event.preventDefault()" onmouseenter="hdocSugHover('+i+')" onclick="hdocSugPick('+i+')">'
+          +'<span class="hdoc-sug-av">'+hdocEsc(hdocInitials(e.name))+'</span>'
+          +'<span class="ax-sug-main"><span class="ax-sug-name">'+hdocSugMark(e.name,q)+'</span>'
+          +'<span class="ax-sug-sub">'+hdocSugMark(e.email,q)+'</span></span>'
+          +'<span class="ax-sug-side"><span class="ax-sug-who">'+hdocSugMark(e.department||e.designation||'',q)+'</span></span>'
+        +'</button>';
+      }).join('')
+      +'<div class="ax-sug-foot">'+(all.length>HDOC_SUG_MAX?'Top '+HDOC_SUG_MAX+' of '+all.length+' employees':all.length+' employee'+(all.length===1?'':'s'))
+        +'<span><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> add</span></div>'
+    :'<div class="ax-sug-none">No employees match “'+hdocEsc(q)+'”</div>';
+  /* The list stays inside the Send dialog: at least 360px where the dialog
+     has room, but never past its side padding - the CC field sits at the
+     right edge, so a wide list is shifted left to fit. */
+  const r=el.getBoundingClientRect();
+  const dlg=el.closest('.hdoc-send'),d=dlg?dlg.getBoundingClientRect():{left:12,right:window.innerWidth-12,bottom:window.innerHeight-12};
+  const minX=d.left+24,maxX=d.right-24;
+  const w=Math.min(Math.max(r.width,360),maxX-minX);
+  pop.style.left=Math.max(minX,Math.min(r.left,maxX-w))+'px';
+  pop.style.width=w+'px';
+  // Below the field; above it when the list would run past the dialog's bottom.
+  const h=pop.offsetHeight;
+  pop.style.top=(r.bottom+6+h>d.bottom-8&&r.top-6-h>8?r.top-6-h:r.bottom+6)+'px';
+  el.setAttribute('aria-expanded','true');
+}
+function hdocInitials(n){return String(n||'').split(/\s+/).filter(Boolean).slice(0,2).map(function(p){return p[0].toUpperCase();}).join('');}
+function hdocSugClose(){
+  const pop=document.getElementById('hdoc-suggest');if(pop)pop.remove();
+  const el=hdocSugFor&&document.getElementById(hdocSugFor);if(el)el.setAttribute('aria-expanded','false');
+  hdocSugHits=[];hdocSugFor=null;
+}
+function hdocSugHover(i){
+  hdocSugIdx=i;
+  document.querySelectorAll('#hdoc-suggest .ax-sug-row').forEach(function(r){r.classList.toggle('is-on',+r.dataset.i===i);});
+}
+function hdocSugPick(i){
+  const e=hdocSugHits[i],el=hdocSugFor&&document.getElementById(hdocSugFor);if(!e||!el)return;
+  if(el.id==='hdoc-send-cc'){
+    const parts=el.value.split(/[,;]/);parts.pop();
+    el.value=parts.map(function(x){return x.trim();}).filter(Boolean).concat(e.email).join(', ')+', ';
+  }else el.value=e.email;
+  hdocSugClose();
+  el.classList.remove('is-bad');
+  el.focus();el.setSelectionRange(el.value.length,el.value.length);
+}
+/* Up / Down move the highlight, Enter picks it, Escape closes the list.
+   Returns true when the key was the list's, so the field ignores it. */
+function hdocSugKey(ev){
+  if(!document.getElementById('hdoc-suggest')||hdocSugFor!==ev.target.id)return false;
+  if(ev.key==='ArrowDown'||ev.key==='ArrowUp'){
+    ev.preventDefault();
+    if(hdocSugHits.length)hdocSugHover((hdocSugIdx+(ev.key==='ArrowDown'?1:-1)+hdocSugHits.length)%hdocSugHits.length);
+    return true;
+  }
+  if(ev.key==='Enter'&&hdocSugHits.length){ev.preventDefault();hdocSugPick(hdocSugIdx);return true;}
+  if(ev.key==='Escape'){ev.preventDefault();ev.stopPropagation();hdocSugClose();return true;}
+  return false;
+}
+window.addEventListener('resize',function(){hdocSugClose();});
 function hdocSendMail(){
   const val=function(id){const el=document.getElementById(id);return el?el.value.trim():'';};
   const to=val('hdoc-send-to'),cc=val('hdoc-send-cc'),subject=val('hdoc-send-subject'),body=val('hdoc-send-body');
@@ -623,7 +844,7 @@ function hdocSendMail(){
   (d.mails=d.mails||[]).unshift({from:hdocSend.from,to:to,cc:cc,subject:subject,body:body,attachment:hdocSend.attachment,
     sentAt:now,sentBy:CURRENT_USER,confirmedTpl:hdocSend.confirmed});
   d.sentTo=to;d.sentAt=now;d.sentBy=CURRENT_USER;
-  hdocSend=null;
+  hdocSugClose();hdocSend=null;
   hdocModal={view:'final',type:d.type,templateId:d.templateId,docId:d.id,values:Object.assign({},d.values)};
   renderADTPage();
   showToast('Sent in mail','success',d.no+' · '+hdocTypeOf(d.type).label+' sent to '+to+(cc?' (CC '+cc+')':'')+'.');
@@ -646,15 +867,18 @@ function hdocSendHTML(){
         +'<button class="hdoc-send-x" onclick="hdocCloseSend()" title="Close" aria-label="Close">'+HDOC_ICO.x+'</button></div>'
       /* Header and footer stay put; only the mail between them scrolls. Each
          field is its own group, so label, control and hint keep one rhythm. */
-      +'<div class="hdoc-send-scroll">'
+      +'<div class="hdoc-send-scroll" onscroll="hdocSugClose()">'
         +(s.confirmed||!HDOC_MAIL_TPL_UI?'':'<div class="hdoc-send-warn">'+HDOC_ICO.alert+'<span>The '+hdocEsc(t.label)+' mail template still has placeholder wording awaiting HR confirmation. Review the mail before sending.</span></div>')
         +'<div class="hdoc-sf"><span class="ep-form-label">From</span><div class="hdoc-send-from">'+hdocEsc(s.from)+'</div></div>'
         +'<div class="hdoc-sf-row">'
           +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-to">'+label+' <span class="req">*</span></label>'
-            +'<input class="ep-form-input" id="hdoc-send-to" type="email" autocomplete="email" placeholder="name@company.com"'
-              +' value="'+attrSafe(s.email)+'" oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)"></div>'
+            +'<input class="ep-form-input" id="hdoc-send-to" type="email" autocomplete="off" placeholder="Search employee or type email"'
+              +' role="combobox" aria-autocomplete="list" aria-expanded="false"'
+              +' value="'+attrSafe(s.email)+'" oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)" onblur="hdocSugClose()"></div>'
           +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-cc">CC</label>'
-            +'<input class="ep-form-input" id="hdoc-send-cc" value="'+attrSafe(s.cc)+'" placeholder="Optional, comma separated" oninput="hdocSendInput(this)"></div>'
+            +'<input class="ep-form-input" id="hdoc-send-cc" autocomplete="off" value="'+attrSafe(s.cc)+'" placeholder="Search employees, comma separated"'
+              +' role="combobox" aria-autocomplete="list" aria-expanded="false"'
+              +' oninput="hdocSendInput(this)" onkeydown="hdocSendKey(event)" onblur="hdocSugClose()"></div>'
           +'<p class="hdoc-send-hint">'+hint+'</p>'
         +'</div>'
         +'<div class="hdoc-sf"><label class="ep-form-label" for="hdoc-send-subject">Subject <span class="req">*</span></label>'
@@ -1020,17 +1244,23 @@ function hdocModalHTML(){
       return !(m.type==='appointment'&&hdocFieldDef(k).type==='auto');
     }).map(function(k){
       const f=hdocFieldDef(k),id='hdf-'+k;
-      const lbl='<label class="ep-form-label" for="'+id+'">'+hdocEsc(f.label)+(f.req&&f.type!=='auto'?' <span class="req">*</span>':'')
-        +(f.type==='auto'?' <span class="hdoc-auto">Auto</span>':'')+'</label>';
+      const lbl='<label class="ep-form-label" for="'+id+'">'+hdocEsc(f.label)+((f.req||f.type==='words')&&f.type!=='auto'?' <span class="req">*</span>':'')
+        +(f.type==='auto'||f.type==='words'?' <span class="hdoc-auto">Auto</span>':'')+'</label>';
       let ctl='';
       if(f.type==='employee')ctl=apCS(id,hdocEmployees().map(function(e){return e.name;}),m.values[k]||'','Select Employee','hdocPickHook');
       else if(f.type==='signatory')ctl=apCS(id,HDOC_SIGNATORIES.map(function(s){return s.name;}),m.values[k]||'','Select Signatory','hdocPickHook');
-      else if(f.type==='select')ctl=apCS(id,f.opts,m.values[k]||'','Select');
+      else if(f.type==='select'){
+        ctl=apCS(id,hdocOpts(f),m.values[k]||'',f.search?'Search '+f.label.toLowerCase():'Select');
+        if(f.search)ctl=ctl.replace('<div class="cs-wrap"','<div class="cs-wrap" data-cssearch="1"');
+      }
       else if(f.type==='date')ctl=apCD(id,m.values[k]||'','dd-mm-yyyy');
+      else if(f.type==='time')ctl='<input class="ep-form-input" id="'+id+'" type="time" value="'+attrSafe(m.values[k]||'')+'">';
+      else if(f.type==='multi')ctl=apMS(id,hdocPayheads(f.heads),[].concat(m.values[k]||[]),'Select '+f.label.toLowerCase());
+      else if(f.type==='words')ctl='<input class="ep-form-input hdoc-auto-input" id="'+id+'" readonly value="'+attrSafe(v[k]||'')+'" placeholder="Written out from the amount">';
       else if(f.type==='auto')ctl='<input class="ep-form-input hdoc-auto-input" id="'+id+'" readonly value="'+attrSafe(hdocFmt(k,v[k])||'')+'" placeholder="'
         +(f.from==='sigDesig'?'Filled from the signatory':'Filled from the employee')+'">';
       else if(f.type==='textarea')ctl='<textarea class="ep-form-input hdoc-textarea" id="'+id+'" placeholder="'+attrSafe(f.ph||'')+'">'+hdocEsc(m.values[k]||'')+'</textarea>';
-      else ctl='<input class="ep-form-input" id="'+id+'" type="'+(f.type==='number'?'number':'text')+'"'+(f.type==='number'?' min="0"':'')
+      else ctl='<input class="ep-form-input" id="'+id+'" type="'+(f.type==='number'?'number':'text')+'"'+(f.type==='number'?' min="0" oninput="hdocWordsLive(this)"':'')
         +' value="'+attrSafe(m.values[k]||'')+'" placeholder="'+attrSafe(f.ph||'')+'">';
       return '<div class="ep-form-group'+(f.type==='textarea'?' ep-form-full':'')+'">'+lbl+ctl+'</div>';
     }).join('');

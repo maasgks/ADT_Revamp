@@ -155,14 +155,25 @@ function lhTypeBal(who,type,typed,from){
   const rows=lbRows(who,month);
   if(!rows.length)return {cls:'al-type-bal is-on is-note is-bad',
     html:(typed?sbEsc(who)+' has':'You have')+' no active leave policy &mdash; any leave requested would be loss of pay.'};
-  /* Days left of every type in the employee's policy, on one line - the same
-     whichever type is picked, so the form never changes shape under you. */
-  return {cls:'al-type-bal is-on is-note',
-    html:'<span class="al-bal-k">Days left</span>'+rows.map(function(r){
-      const left=r.yAvailable+r.cfBalance;
-      return '<span class="al-bal-chip'+(left<=0?' is-out':left<=2?' is-low':'')+'">'+sbEsc(r.type)+' <b>'+lbFmt(left)+'</b></span>';
-    }).join('')};
+  /* Days left as the listing pages' status tiles - always the same three
+     types, whichever is picked, so the form never changes shape under you.
+     Paid Leave is the policy's paid bucket, whatever the policy calls it. A
+     type the employee's policy does not have reads "—". */
+  return {cls:'al-type-bal is-on is-cards',
+    html:'<div class="listing-stats al-bal-stat">'+LH_BAL_TYPES.map(function(t){
+      const r=rows.find(function(x){return t.match.indexOf(x.type)>=0;});
+      const left=r?r.yAvailable+r.cfBalance:null;
+      const tone=left==null?'':left<=0?' is-out':left<=2?' is-low':' is-ok';
+      return '<div class="listing-stat'+tone+'"'+(r?'':' title="Not in '+(typed?sbEsc(who)+'&rsquo;s':'your')+' leave policy"')+'>'
+        +'<div class="listing-stat-count">'+(left==null?'&mdash;':lbFmt(left))+'</div>'
+        +'<div class="listing-stat-label">'+t.label+'</div></div>';
+    }).join('')+'</div>'};
 }
+const LH_BAL_TYPES=[
+  {label:'Casual Leave',match:['Casual Leave']},
+  {label:'Sick Leave',match:['Sick Leave']},
+  {label:'Paid Leave',match:['Paid Leave','Earned Leave','Privilege Leave']}
+];
 function lhPaintBal(box,b){box.className=b.cls;box.innerHTML=b.html;}
 
 /* Leave Requests → Create New Leave: for the employee typed into the form,

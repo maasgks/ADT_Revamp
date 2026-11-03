@@ -5,9 +5,12 @@
 
    Picks that change WHICH fields show (type, one/multiple days, leave hours)
    repaint the page; typing never does, so focus is never lost mid-word. */
-const AA_TYPES=['Leave','Work From Home','On Duty','Comp Off'];
+const AA_TYPES=['Leave','Work From Home'];
 const AA_LEAVE_TYPES=['Casual Leave','Sick Leave','Earned Leave','Maternity Leave','Paternity Leave','Leave Without Pay'];
-const AA_HOURS=['Full Day','First Half','Second Half'];
+const AA_HOURS=['Full Day','Half Day','Short Leave'];
+/* What each takes off the balance, in days. Short Leave is a few hours
+   (a quarter day). */
+const AA_HOURS_DAYS={'Full Day':1,'Half Day':0.5,'Short Leave':0.25};
 const AA_EMAIL=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 let aaReturnTo='dashboard';
 let aaForm=null;
@@ -76,8 +79,12 @@ function buildApplyApplicationHTML(){
   const back='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>';
   return '<div class="aa-wrap">'
     +'<div class="aa-top"><button class="ep-back" onclick="closeApplyApplication()">'+back+' Back</button></div>'
+    /* Title on the left, the leave balance tiles on the right - where a
+       listing page sets its status tiles. */
+    +'<div class="fp-head"><div class="fp-head-main">'
     +'<h1 class="aa-title">Apply Application</h1>'
-    +'<p class="aa-sub">Request leave or time away for approval. Fields marked <span class="req">*</span> are required.</p>'
+    +'<p class="aa-sub">Request leave or time away for approval. Fields marked <span class="req">*</span> are required.</p></div>'
+    +aaBalHTML()+'</div>'
 
     +'<section class="ep-form-card">'
       +'<div class="aa-sec-title">Application Details</div>'
@@ -85,8 +92,8 @@ function buildApplyApplicationHTML(){
       +'<div class="ep-form-grid">'
         +aaField('Application Type',true,apCS('aa-type',AA_TYPES,f.type,'Select application type','aaPick'),{key:'type'})
         +aaField('Select Days',false,'<div class="segmented">'+seg('one','One Day')+seg('multi','Multiple Days')+'</div>',{key:'days'})
-        +aaField('Leave Type',true,apCS('aa-leave-type',aaLeaveTypeOpts(),f.leaveType,'Select leave type','aaPick')+aaBalHTML(),{key:'leaveType',hidden:!isLeave})
-        +aaField('Leave Hours',false,apCS('aa-hours',AA_HOURS,f.hours,'Select leave hours','aaPick'),{key:'hours',hidden:!one,hint:'A half day counts as 0.5 of your balance.'})
+        +aaField('Leave Type',true,apCS('aa-leave-type',aaLeaveTypeOpts(),f.leaveType,'Select leave type','aaPick'),{key:'leaveType',hidden:!isLeave})
+        +aaField('Leave Hours',false,apCS('aa-hours',AA_HOURS,f.hours,'Select leave hours','aaPick'),{key:'hours',hidden:!one,hint:'A half day counts as 0.5 of your balance, a short leave as 0.25.'})
         +aaField(one?'Date':'From',true,'<input type="date" class="ep-form-input" id="aa-from" value="'+f.from+'" onchange="aaSetDate(\'from\',this.value)">',{key:'from'})
         +aaField('To',true,'<input type="date" class="ep-form-input" id="aa-to" value="'+f.to+'" min="'+f.from+'" onchange="aaSetDate(\'to\',this.value)">',{key:'to',hidden:one,err:'Pick an end date on or after the start date.'})
         +'<div class="ep-form-group ep-form-full"><div class="aa-days" id="aa-days">'+aaDaysLine()+'</div></div>'
@@ -131,7 +138,7 @@ function aaDaysLine(){
   if(f.days==='one'){
     const closed=aaClosedDay(f.from);
     if(closed)return '<span>That date is a <b>'+aaEsc(closed.label)+'</b> &mdash; no working time is taken.</span>';
-    const n=f.hours==='Full Day'?1:0.5;
+    const n=AA_HOURS_DAYS[f.hours]||1;
     return '<span>Duration: <b>'+n+' day'+(n===1?'':'s')+'</b>'+(n<1?' ('+f.hours+')':'')+'</span>';
   }
   if(!f.to)return '';

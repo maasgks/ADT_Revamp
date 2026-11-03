@@ -1682,9 +1682,8 @@ function notifListHTML(){
     const go=n.go?` is-link" role="button" tabindex="0" onclick="atReqOpenFromNotif(${i})" onkeydown="if(event.key==='Enter')atReqOpenFromNotif(${i})`:'';
     const r=n.req;
     /* A correction request reads as: what it is, who asked for which kind,
-       their reason, then the day and who has to approve - not one run-on line. */
+       then the day and who has to approve - not one run-on line. */
     const detail=r?`<div class="np-req-who"><b>${r.who}</b> · ${r.kind}</div>`
-      +(r.reason?`<div class="np-req-why" title="${attrSafe(r.reason)}">“${r.reason}”</div>`:'')
       +`<div class="np-req-facts"><span class="np-req-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>${r.day}</span>`
       +`<span class="np-req-fact"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>${r.to}</span></div>`:'';
     return `<div class="np-item${n.pending?' is-unread':''}${go}${r?' is-req':''}" data-i="${i}"><div class="np-avatar">${n.ini||'N'}</div><div class="np-body"><div class="np-row1"><div class="np-text">${n.name}</div><div class="np-time">${n.time}</div></div>${detail}<div class="np-row2">${r?'':(n.sub||'Contract ID - '+n.cid)}${n.pending?'<span class="np-pending">Pending</span><button type="button" class="np-read" title="Mark as read" aria-label="Mark as read" onclick="event.stopPropagation();notifMarkRead('+i+',this)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mark as read</span></button>':''}</div></div></div>`;
