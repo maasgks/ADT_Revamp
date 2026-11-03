@@ -163,9 +163,12 @@ function lhTypeBal(who,type,typed,from){
     html:'<div class="listing-stats al-bal-stat">'+LH_BAL_TYPES.map(function(t){
       const r=rows.find(function(x){return t.match.indexOf(x.type)>=0;});
       const left=r?r.yAvailable+r.cfBalance:null;
+      // The year's entitlement, carried-forward days included - what "left" is out of.
+      const total=r?r.yearly+r.cfOpen:null;
       const tone=left==null?'':left<=0?' is-out':left<=2?' is-low':' is-ok';
-      return '<div class="listing-stat'+tone+'"'+(r?'':' title="Not in '+(typed?sbEsc(who)+'&rsquo;s':'your')+' leave policy"')+'>'
-        +'<div class="listing-stat-count">'+(left==null?'&mdash;':lbFmt(left))+'</div>'
+      return '<div class="listing-stat'+tone+'" title="'+(r?lbFmt(left)+' of '+lbFmt(total)+' days left'
+          :'Not in '+(typed?sbEsc(who)+'&rsquo;s':'your')+' leave policy')+'">'
+        +'<div class="listing-stat-count">'+(left==null?'&mdash;':lbFmt(left)+'<span class="al-bal-of"><i>/</i>'+lbFmt(total)+'</span>')+'</div>'
         +'<div class="listing-stat-label">'+t.label+'</div></div>';
     }).join('')+'</div>'};
 }

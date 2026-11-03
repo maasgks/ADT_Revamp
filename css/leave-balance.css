@@ -111,11 +111,17 @@
 /* Days left as listing-page status tiles (.listing-stats, main.css): the
    tiles bring their own box, so the panel drops its border and fill. */
 .al-type-bal.is-cards{display:block;border:0;background:none;border-radius:0}
-.al-type-bal.is-cards .listing-stat{min-width:104px}
+.al-type-bal.is-cards .listing-stat{min-width:124px;padding:12px 20px;gap:5px}
+.al-type-bal.is-cards .listing-stat-count{display:flex;align-items:baseline;justify-content:center;gap:0;line-height:1.1}
+.al-type-bal.is-cards .listing-stat-label{font-size:11px;letter-spacing:.1px}
 .al-type-bal.is-cards .listing-stat-count{color:var(--navy);font-variant-numeric:tabular-nums}
 .al-type-bal.is-cards .listing-stat.is-ok .listing-stat-count{color:var(--st-ok-fg)}
 .al-type-bal.is-cards .listing-stat.is-low .listing-stat-count{color:var(--st-wait-fg)}
 .al-type-bal.is-cards .listing-stat.is-out .listing-stat-count{color:var(--st-bad-fg)}
+/* "27/30": days left, then out of how many - smaller and grey. */
+/* Set tight against the figure, so "27/30" reads as one value. */
+.al-type-bal.is-cards .al-bal-of{margin-left:1px;font-size:14px;font-weight:600;color:#94a3b8;letter-spacing:0}
+.al-type-bal.is-cards .al-bal-of i{font-style:normal;margin:0 1px;font-weight:400;color:#cbd5e1}
 .al-type-bal.is-cards .listing-stat:not(.is-ok):not(.is-low):not(.is-out) .listing-stat-count{color:#94a3b8}
 
 /* Apply Application and Create New Leave: the title on the left, the balance
