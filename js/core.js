@@ -2039,7 +2039,12 @@ function isbTab(prefix,render){
     oldBody.replaceWith(newBody);
     /* Move the highlight without touching the buttons themselves. */
     var a=oldTabs.querySelectorAll('.lp-isb-tab'),b=newTabs.querySelectorAll('.lp-isb-tab');
-    for(var i=0;i<a.length;i++)a[i].classList.toggle('active',b[i].classList.contains('active'));
+    for(var i=0;i<a.length;i++){
+      a[i].classList.toggle('active',b[i].classList.contains('active'));
+      /* The label is the same, but a mark on it (the Requests tab's pending
+         dot) belongs to the record now shown, not the one before it. */
+      if(a[i].innerHTML!==b[i].innerHTML)a[i].innerHTML=b[i].innerHTML;
+    }
   }
   sbRestoreAfter(prefix,inner);
   sbMarkDraftTabs();
