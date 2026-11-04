@@ -1,5 +1,5 @@
 /* ══ EXPENSES ═══════════════════════════════════════════════════════════════
-   Reached two ways: Time & Pay → Expense Management → Claims on the rail
+   Reached two ways: Time & Pay → Expense Management → Expenses on the rail
    (next to Capping Limit, js/capping-limit.js), and the profile dropdown
    (index.html) - a claim is also something a person files and follows,
    like Apply Application.

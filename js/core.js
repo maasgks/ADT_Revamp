@@ -112,9 +112,9 @@ const sidebarItems=[
     {id:'payroll',label:'Payroll',color:'green',icon:sbIco.dollar},
     {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt}
   ]},
-  // Claims are filed against a category; Capping Limit is the most one may come to.
+  // Expenses are filed against a category; Capping Limit is the most one may come to.
   {dropdown:'Expense Management',color:'green',icon:sbIco.receipt,children:[
-    {id:'expenses',label:'Claims',color:'green',icon:sbIco.receipt},
+    {id:'expenses',label:'Expenses',color:'green',icon:sbIco.receipt},
     {id:'capping-limit',label:'Capping Limit',color:'green',icon:sbIco.gauge}
   ]},
   {dropdown:'Finance',color:'green',icon:sbIco.wallet,children:[
