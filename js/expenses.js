@@ -26,9 +26,11 @@
 
 /* ── Reference data ────────────────────────────────────────────────────── */
 const EXP_STATUSES=['Draft','Awaiting Approval','Follow-Up','Approved','Rejected','Reimbursed'];
-/* The tiles ARE the status filter (there is no Status dropdown), so every
-   status has one - Draft included, or drafts could never be filtered to. */
-const EXP_TILES=['Draft','Awaiting Approval','Follow-Up','Approved','Reimbursed','Rejected'];
+/* The quick tiles are the claims someone owes the next move on: the
+   approver (Awaiting Approval), the employee (Follow-Up) and finance
+   (Approved, still to be paid). Draft, Rejected and Reimbursed are not yet
+   filed or already closed - they are reached from the Status dropdown. */
+const EXP_TILES=['Awaiting Approval','Follow-Up','Approved'];
 /* Who owes the next move, per status - and the only moves Logs offers. */
 const EXP_MOVES={
   'Draft':['Awaiting Approval'],
@@ -167,10 +169,10 @@ let expModalOpen=false;
                      employee name, ID or email.
      Category      - "all travel claims this month".
      Expense Date  - "what was spent on the 2nd".
-   Status is NOT a dropdown: the tiles under the bar already filter by it, so
-   a dropdown would be a second control for the same thing that could
-   disagree with the selected tile. Claim For (Self / Others) and Currency
-   were dropped - nobody works a queue by either, and both are on the panel. */
+     Status        - every status; the three quick tiles set the same
+                     filter, so the tile and the dropdown always agree.
+   Claim For (Self / Others) and Currency were dropped - nobody works a
+   queue by either, and both are on the panel. */
 function expRows(){
   return expensesData.filter(function(r){
     if(expCatF&&r.category!==expCatF)return false;
@@ -184,6 +186,7 @@ function expToggleStat(v){expStatusF=expStatusF===v?'':v;expSelectedId=null;rend
 function applyExpFilters(){
   const pick=function(id,all){const v=getCSValue(id);return v&&v!==all?v:'';};
   expCatF=pick('exp-f-cat','All Categories');
+  expStatusF=pick('exp-f-status','All Statuses');
   expDateF=getCDValue('exp-f-date');
   expQ=lpSearchValue('exp-f-q');
   expSelectedId=null;renderADTPage();
@@ -633,6 +636,7 @@ function buildExpensesHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('exp-f-q',expQ,'Search expenses','applyExpFilters()')
     +apCS('exp-f-cat',EXP_CATEGORIES,expCatF,'All Categories')
+    +apCS('exp-f-status',EXP_STATUSES,expStatusF,'All Statuses')
     +apCD('exp-f-date',expDateF,'Expense Date')
     +'<button class="lp-pill-search" onclick="applyExpFilters()">Search</button>'
     +'</div></div>'
