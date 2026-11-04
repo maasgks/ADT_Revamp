@@ -629,19 +629,17 @@ function buildExpensesHTML(){
     +dashboardBackHTML()
     +'<div class="exp-top" style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
-    /* Clear Filters sits on the label line, not in the row: the row then has
-       the same width with or without a filter applied, so the tiles beside
-       it never get pushed or squeezed when it appears. */
-    +'<div class="lp-filter-bar-label exp-f-label">Select Filter'+clearFiltersBtn([expCatF,expStatusF,expDateF,expQ],'resetExpFilters()')+'</div>'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('exp-f-q',expQ,'Search expenses','applyExpFilters()')
     +apCS('exp-f-cat',EXP_CATEGORIES,expCatF,'All Categories')
     +apCS('exp-f-status',EXP_STATUSES,expStatusF,'All Statuses')
     +apCD('exp-f-date',expDateF,'Expense Date')
+    +clearFiltersBtn([expCatF,expStatusF,expDateF,expQ],'resetExpFilters()')
     +'<button class="lp-pill-search" onclick="applyExpFilters()">Search</button>'
     +'</div></div>'
-    /* Six tiles: the compact strip (as Tickets), so they share the filter row. */
-    +'<div class="listing-stats is-compact">'+EXP_TILES.map(stat).join('')+'</div></div>'
+    /* Three tiles: the standard strip, equal widths, sharing the filter row. */
+    +'<div class="listing-stats exp-stats">'+EXP_TILES.map(stat).join('')+'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="exp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table ax-table exp-table"><thead><tr><th>S. No</th><th>Expense</th><th>Employee</th><th>Category</th>'
       +'<th>Total Amount</th><th>Date of Exp.</th><th>Status</th><th>Action</th></tr></thead>'

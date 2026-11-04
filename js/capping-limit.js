@@ -336,11 +336,12 @@ function buildCappingLimitHTML(){
     +dashboardBackHTML()
     +'<div class="exp-top cap-top" style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
-    +'<div class="lp-filter-bar-label exp-f-label">Select Filter'+clearFiltersBtn([capLevelF,capCatF,capStatusF,capQ],'resetCapFilters()')+'</div>'
+    +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('cap-f-q',capQ,'Search limits','applyCapFilters()')
     +apCS('cap-f-level',CAP_LEVELS,capLevelF,'All Levels')
     +apCS('cap-f-cat',capCategories(),capCatF,'All Categories')
+    +clearFiltersBtn([capLevelF,capCatF,capStatusF,capQ],'resetCapFilters()')
     +'<button class="lp-pill-search" onclick="applyCapFilters()">Search</button>'
     +'</div></div>'
     +'<div class="listing-stats">'+CAP_TILES.map(stat).join('')+'</div></div>'

@@ -9,30 +9,18 @@
 .exp-table .ax-c-trunc{max-width:165px}
 .exp-table .exp-c-cat,.exp-table .exp-c-emp{max-width:120px}
 
-/* Filters and the six status tiles share one row (as Tickets does). Each
-   control keeps a fixed width that shows its whole placeholder - shrinking
-   them clipped the text and pushed the chevron / calendar icon out of the
-   box. Clear Filters rides on the label line (see buildExpensesHTML), so the
-   row is the same width filtered or not. When it cannot fit, the tiles wrap
-   under the filters, as on every listing. */
-.exp-top .lp-filter-bar{flex:1 0 auto!important;min-width:max-content!important}
-.exp-top .lp-filter-bar-row{flex-wrap:nowrap}
+/* Filters beside the status tiles, laid out as on Contracts: each control
+   keeps a width that shows its whole placeholder (shrinking them clipped
+   the text and pushed the chevron out of the box), and when the row is
+   full - Clear Filters appearing, say - it wraps onto a second line inside
+   the filter bar instead of squeezing. */
 .exp-top .lp-filter-bar-row>*{flex:0 0 auto}
-.lp-page .exp-top .lp-filter-bar .lp-filter-bar-row .lp-search-input{width:170px}
-.exp-top .lp-filter-bar-row .cs-wrap,.exp-top .lp-filter-bar-row .cd-wrap{width:145px}
-.exp-top .listing-stats.is-compact .listing-stat{padding:10px 9px}
-@media (max-width:1100px){
-  .exp-top .lp-filter-bar{min-width:0!important}
-  .exp-top .lp-filter-bar-row{flex-wrap:wrap}
-}
-/* Clear Filters on the label line: a plain link the height of the label, not
-   a bordered pill squeezed into a 13px line. */
-.exp-f-label{display:flex;align-items:center;gap:12px;height:13px}
-.exp-f-label .lp-pill-clear{height:auto;padding:0;border:0!important;background:none!important;box-shadow:none!important;gap:5px;
-  font-size:11.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--navy);line-height:1}
-.exp-f-label .lp-pill-clear:hover{color:var(--btn-accent);text-decoration:underline}
-.exp-f-label .lp-pill-clear svg{width:10px;height:10px}
-.exp-f-label .lp-pill-clear-count{font-size:10px;padding:2px 5px;text-decoration:none}
+.lp-page .exp-top .lp-filter-bar .lp-filter-bar-row .lp-search-input{width:150px}
+.exp-top .lp-filter-bar-row .cs-wrap,.exp-top .lp-filter-bar-row .cd-wrap{width:140px}
+/* Status holds "Awaiting Approval", the longest value a filter can show. */
+.exp-top .lp-filter-bar-row #csw-exp-f-status{width:170px}
+/* Status tiles: the standard strip, equal widths, full-size counts. */
+.exp-top .exp-stats .listing-stat{padding:12px 16px}
 
 /* Expense Summary: one card per line item */
 .exp-sum-total{font-size:12px;color:var(--gray)}
