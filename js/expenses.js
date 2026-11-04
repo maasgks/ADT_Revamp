@@ -42,13 +42,17 @@ const EXP_MOVE_LABELS={'Awaiting Approval':'Submit for Approval','Approved':'App
   'Follow-Up':'Follow-Up','Reimbursed':'Mark Reimbursed'};
 const EXP_LINE_STATUSES=['Pending','Approved','Rejected','Follow-Up'];
 const EXP_LINE_MOVES={'Pending':['Approved','Rejected','Follow-Up'],'Follow-Up':['Pending','Approved','Rejected'],'Approved':[],'Rejected':[]};
-const EXP_CATEGORIES=['Travel Reimbursement','Accommodation','Meals','Internet and Phone','Office Supplies'];
+/* The category picks the sub categories a line item may use. Capping Limit
+   (js/capping-limit.js) sets its limits on these same categories. */
+const EXP_CATEGORIES=['Travel Reimbursement','Meal Allowance','Accommodation','Fuel Reimbursement','Team Outing','Office Events','Office Stationery'];
 const EXP_SUBCATS={
-  'Travel Reimbursement':['One Way','Round Trip','Local Conveyance'],
-  'Accommodation':['Hotel','Guest House','Service Apartment'],
-  'Meals':['Client Meal','Team Meal','Per Diem'],
-  'Internet and Phone':['Broadband','Mobile'],
-  'Office Supplies':['Stationery','Equipment']
+  'Travel Reimbursement':['One Way','Two Way','Intercity Travel - Air','Intercity Travel - Train','Intercity Travel - Bus'],
+  'Meal Allowance':['Breakfast','Lunch','Dinner'],
+  'Accommodation':['Accommodation'],
+  'Fuel Reimbursement':['One Way','Two Way','Bike','Car'],
+  'Team Outing':['Monthly','Quarterly','Annual'],
+  'Office Events':['Monthly','Annual','Festival'],
+  'Office Stationery':['Monthly','Annual','Festival']
 };
 const EXP_CURRENCIES=['INR','GBP','USD','EUR','AED'];
 const EXP_CLAIM_FOR=['Self','Others'];
@@ -60,19 +64,21 @@ const EXP_CUSTOM_COLS=['Test Column 1','Test Column 2'];
 
 /* People an expense can be filed for: the seeds below, then everyone the
    Admin Access modules know (Direct + Global employees included). */
+/* dept and position are what a Capping Limit is pinned to. */
 const EXP_PEOPLE=[
-  {name:'Syed Ayaz',empId:'1200',email:'syed.ayaz@opendhi.com'},
-  {name:'Tarak Swain',empId:'768',email:'tarak.swain@maaserp.com'},
-  {name:'Premnath Jayachandran',empId:'991',email:'premnath.jayachandran@opendhi.com'},
-  {name:'Prem Raj',empId:'731',email:'prem.raj@maaserp.com'},
-  {name:'Meera Iyer',empId:'1042',email:'meera.iyer@opendhi.com'},
-  {name:'Arjun Nair',empId:'655',email:'arjun.nair@maaserp.com'}
+  {name:'Syed Ayaz',empId:'1200',email:'syed.ayaz@opendhi.com',dept:'Operations',position:'Support Specialist'},
+  {name:'Tarak Swain',empId:'768',email:'tarak.swain@maaserp.com',dept:'Sales',position:'Business Analyst'},
+  {name:'Premnath Jayachandran',empId:'991',email:'premnath.jayachandran@opendhi.com',dept:'Engineering',position:'Senior Developer'},
+  {name:'Prem Raj',empId:'731',email:'prem.raj@maaserp.com',dept:'Operations',position:'Ops Manager'},
+  {name:'Meera Iyer',empId:'1042',email:'meera.iyer@opendhi.com',dept:'HR',position:'HR Manager'},
+  {name:'Arjun Nair',empId:'655',email:'arjun.nair@maaserp.com',dept:'Engineering',position:'Software Engineer'}
 ];
 function expPeople(){
   const out=EXP_PEOPLE.slice();
   (typeof axPeople==='function'?axPeople():[]).forEach(function(p){
     if(out.some(function(o){return o.name===p.name;}))return;
-    out.push({name:p.name,empId:p.empId||'',email:p.name.toLowerCase().replace(/[^a-z]+/g,'.').replace(/^\.|\.$/g,'')+'@dhihyperlocal.com'});
+    out.push({name:p.name,empId:p.empId||'',email:p.name.toLowerCase().replace(/[^a-z]+/g,'.').replace(/^\.|\.$/g,'')+'@dhihyperlocal.com',
+      dept:p.dept||'',position:p.desig||''});
   });
   return out;
 }
@@ -87,7 +93,7 @@ const expensesData=[
   {id:1,key:297,title:'Test Hyd to Mum flight ticket',claimFor:'Self',name:'Syed Ayaz',empId:'1200',email:'syed.ayaz@opendhi.com',
    category:'Travel Reimbursement',currency:'INR',appType:'Reimbursement',travelMode:'Flight',notes:'Test Hyd to Mum flight ticket',
    status:'Awaiting Approval',appliedOn:'2026-04-07',reimbursedOn:'',createdBy:'Syed Ayaz',createdAt:'7 Apr 2026 | 01:40:12 PM',
-   lines:[expLine(1,'Test Hyd to Mum flight ticket',6000,'One Way','2026-04-02','2026-04-02','hyd-mum-ticket.pdf','Test Hyd to Mum flight ticket','Follow-Up',
+   lines:[expLine(1,'Test Hyd to Mum flight ticket',6000,'Intercity Travel - Air','2026-04-02','2026-04-02','hyd-mum-ticket.pdf','Test Hyd to Mum flight ticket','Follow-Up',
      {'Test Column 1':'Test Value 1','Test Column 2':'Test Value 2'})]},
   {id:2,key:296,title:'hwd7',claimFor:'Self',name:'Tarak Swain',empId:'768',email:'tarak.swain@maaserp.com',
    category:'Accommodation',currency:'GBP',appType:'Reimbursement',travelMode:'None',notes:'',
@@ -96,36 +102,36 @@ const expensesData=[
   {id:3,key:294,title:'Travel to Pune',claimFor:'Self',name:'Premnath Jayachandran',empId:'991',email:'premnath.jayachandran@opendhi.com',
    category:'Travel Reimbursement',currency:'INR',appType:'Reimbursement',travelMode:'Train',notes:'Client workshop in Pune.',
    status:'Awaiting Approval',appliedOn:'2025-03-17',reimbursedOn:'',createdBy:'Premnath Jayachandran',createdAt:'17 Mar 2025 | 10:12:03 AM',
-   lines:[expLine(1,'Mumbai to Pune train',1240,'One Way','2025-03-13','2025-03-13','pune-train.pdf','Shatabdi, chair car'),
-     expLine(2,'Station to client office cab',652,'Local Conveyance','2025-03-13','2025-03-13','cab-receipt.jpg','')]},
+   lines:[expLine(1,'Mumbai to Pune train',1240,'Intercity Travel - Train','2025-03-13','2025-03-13','pune-train.pdf','Shatabdi, chair car'),
+     expLine(2,'Station to client office cab',652,'One Way','2025-03-13','2025-03-13','cab-receipt.jpg','')]},
   {id:4,key:293,title:'Traveling',claimFor:'Self',name:'Prem Raj',empId:'731',email:'prem.raj@maaserp.com',
    category:'Travel Reimbursement',currency:'INR',appType:'Reimbursement',travelMode:'Cab',notes:'',
    status:'Awaiting Approval',appliedOn:'2024-12-26',reimbursedOn:'',createdBy:'Prem Raj',createdAt:'26 Dec 2024 | 04:22:51 PM',
-   lines:[expLine(1,'Airport drop',472,'Local Conveyance','2024-12-23','2024-12-23','uber-2312.pdf','')]},
+   lines:[expLine(1,'Airport drop',472,'One Way','2024-12-23','2024-12-23','uber-2312.pdf','')]},
   {id:5,key:292,title:'Traveling',claimFor:'Self',name:'Prem Raj',empId:'731',email:'prem.raj@maaserp.com',
    category:'Travel Reimbursement',currency:'INR',appType:'Reimbursement',travelMode:'Cab',notes:'',
    status:'Awaiting Approval',appliedOn:'2024-12-26',reimbursedOn:'',createdBy:'Prem Raj',createdAt:'26 Dec 2024 | 04:10:09 PM',
-   lines:[expLine(1,'Client visit cab',101,'Local Conveyance','2024-12-20','2024-12-20','ola-2012.pdf','')]},
+   lines:[expLine(1,'Client visit cab',101,'Two Way','2024-12-20','2024-12-20','ola-2012.pdf','')]},
   {id:6,key:291,title:'Bangalore client visit',claimFor:'Self',name:'Meera Iyer',empId:'1042',email:'meera.iyer@opendhi.com',
    category:'Accommodation',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'Two nights for the onboarding workshop.',
    status:'Reimbursed',appliedOn:'2024-12-18',reimbursedOn:'2024-12-30',createdBy:'Meera Iyer',createdAt:'18 Dec 2024 | 09:30:00 AM',
-   lines:[expLine(1,'Hotel stay - 2 nights',9800,'Hotel','2024-12-15','2024-12-17','hotel-invoice.pdf','','Approved')]},
+   lines:[expLine(1,'Hotel stay - 2 nights',9800,'Accommodation','2024-12-15','2024-12-17','hotel-invoice.pdf','','Approved')]},
   {id:7,key:289,title:'Team lunch - sprint close',claimFor:'Others',name:'Arjun Nair',empId:'655',email:'arjun.nair@maaserp.com',
-   category:'Meals',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'Filed on behalf of the platform team.',
+   category:'Meal Allowance',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'Filed on behalf of the platform team.',
    status:'Approved',appliedOn:'2024-12-12',reimbursedOn:'',createdBy:'Arjun Nair',createdAt:'12 Dec 2024 | 03:15:44 PM',
-   lines:[expLine(1,'Team lunch',3450,'Team Meal','2024-12-11','2024-12-11','lunch-bill.jpg','8 people','Approved')]},
-  {id:8,key:287,title:'Home broadband - November',claimFor:'Self',name:'Syed Ayaz',empId:'1200',email:'syed.ayaz@opendhi.com',
-   category:'Internet and Phone',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'',
+   lines:[expLine(1,'Team lunch',3450,'Lunch','2024-12-11','2024-12-11','lunch-bill.jpg','8 people','Approved')]},
+  {id:8,key:287,title:'Fuel - client visits, November',claimFor:'Self',name:'Syed Ayaz',empId:'1200',email:'syed.ayaz@opendhi.com',
+   category:'Fuel Reimbursement',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'',
    status:'Rejected',appliedOn:'2024-12-04',reimbursedOn:'',createdBy:'Syed Ayaz',createdAt:'4 Dec 2024 | 10:02:18 AM',
-   lines:[expLine(1,'Broadband bill',1199,'Broadband','2024-11-01','2024-11-30','airtel-nov.pdf','','Rejected')]},
+   lines:[expLine(1,'Fuel for own car',1199,'Car','2024-11-01','2024-11-30','fuel-nov.pdf','','Rejected')]},
   {id:9,key:285,title:'London partner meeting',claimFor:'Self',name:'Tarak Swain',empId:'768',email:'tarak.swain@maaserp.com',
    category:'Travel Reimbursement',currency:'GBP',appType:'Advance',travelMode:'Train',notes:'Advance against the Q4 partner meeting.',
    status:'Follow-Up',appliedOn:'2024-11-26',reimbursedOn:'',createdBy:'Tarak Swain',createdAt:'26 Nov 2024 | 12:45:30 PM',
-   lines:[expLine(1,'London to Reading return',64,'Round Trip','2024-11-28','2024-11-28','gwr-ticket.pdf','')]},
+   lines:[expLine(1,'London to Reading return',64,'Two Way','2024-11-28','2024-11-28','gwr-ticket.pdf','')]},
   {id:10,key:283,title:'Stationery for onboarding kits',claimFor:'Others',name:'Meera Iyer',empId:'1042',email:'meera.iyer@opendhi.com',
-   category:'Office Supplies',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'',
+   category:'Office Stationery',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'',
    status:'Reimbursed',appliedOn:'2024-11-20',reimbursedOn:'2024-11-29',createdBy:'Meera Iyer',createdAt:'20 Nov 2024 | 11:11:11 AM',
-   lines:[expLine(1,'Notebooks and pens',2380,'Stationery','2024-11-18','2024-11-18','stationery.pdf','','Approved')]}
+   lines:[expLine(1,'Notebooks and pens',2380,'Monthly','2024-11-18','2024-11-18','stationery.pdf','','Approved')]}
 ];
 let expNextId=11,expNextKey=298;
 
@@ -239,7 +245,7 @@ function expSeedLogs(r){
   if(['Approved','Reimbursed'].indexOf(r.status)>=0)fx.unshift({date:cdLabel(r.appliedOn),time:'05:10:00 PM',user:'Shaun Test1',status:'Approved',
     action:'Within policy. Approved.'});
   if(r.status==='Rejected')fx.unshift({date:cdLabel(r.appliedOn),time:'05:10:00 PM',user:'Shaun Test1',status:'Rejected',
-    action:'Home broadband is covered by the monthly allowance, not by claims.'});
+    action:'Fuel for client visits is covered by the monthly conveyance allowance.'});
   if(r.status==='Reimbursed')fx.unshift({date:cdLabel(r.reimbursedOn),time:'11:00:00 AM',user:'Finance Admin',status:'Reimbursed',
     action:'Paid with the payroll run.'});
   return seedLogs(r,fx);
@@ -426,7 +432,7 @@ function expSyncBasic(){
   [['claimFor','exp-e-claim'],['name','exp-e-emp'],['category','exp-e-cat'],['currency','exp-e-cur'],['appType','exp-e-app'],['travelMode','exp-e-mode']]
     .forEach(function(p){if(document.getElementById('csw-'+p[1]))expDraft[p[0]]=getCSValue(p[1]);});
 }
-function expFormHook(){expSyncBasic();if(expModalOpen)expSyncLine();renderADTPage();}
+function expFormHook(){expSyncBasic();if(expModalOpen)expSyncLine();expRepaintForm();}
 function expBasicFieldsHTML(){
   const d=expDraft;
   const p=expPerson(d.name);
@@ -434,23 +440,42 @@ function expBasicFieldsHTML(){
   const sel=function(id,label,opts,val,ph,req,hook,cls){
     return '<div class="ep-form-group'+(cls?' '+cls:'')+'"><label class="ep-form-label">'+label+(req?' <span class="req">*</span>':'')+'</label>'+apCS(id,opts,val,ph,hook)+'</div>';
   };
-  return '<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="exp-e-title">Title <span class="req">*</span></label>'
-      +'<input class="ep-form-input" id="exp-e-title" value="'+attrSafe(d.title)+'" placeholder="e.g. Hyderabad to Mumbai flight"></div>'
-    +sel('exp-e-claim','Claim For',EXP_CLAIM_FOR,d.claimFor,'Select',true)
+  /* Laid out as the old claim form: who it is for, the category (with the
+     limit it falls under), then the title and notes. Application Type and
+     Travel Mode are not asked when filing - the sub categories already say
+     how someone travelled - and stay editable from the panel. */
+  return sel('exp-e-claim','Claim For',EXP_CLAIM_FOR,d.claimFor,'Select',true)
     +'<div class="ep-form-group"><label class="ep-form-label">Employee <span class="req">*</span></label>'
       +axCS('exp-e-emp',expPeople().map(function(x){return x.name;}),d.name,'Search Employee','expFormHook')+'</div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Employee Id</label>'
       +'<input class="ep-form-input" readonly value="'+attrSafe(p?p.empId:'')+'" placeholder="Auto — from the employee"></div>'
     +'<div class="ep-form-group"><label class="ep-form-label">Employee Email</label>'
       +'<input class="ep-form-input" readonly value="'+attrSafe(p?p.email:'')+'" placeholder="Auto — from the employee"></div>'
-    +sel('exp-e-cat','Expense Category',EXP_CATEGORIES,d.category,'Select Category',true,'expFormHook')
-    +sel('exp-e-cur','Currency',EXP_CURRENCIES,d.currency,'Select Currency',true)
-    +sel('exp-e-app','Application Type',EXP_APP_TYPES,d.appType,'Select Type',true)
-    +'<div class="ep-form-group'+(travel?'':' exp-dim')+'"><label class="ep-form-label">Travel Mode</label>'
+    +'<div class="ep-form-group"><label class="ep-form-label">Expense Category <span class="req">*</span></label>'
+      +apCS('exp-e-cat',EXP_CATEGORIES,d.category,'Select Category','expFormHook')+expCapHintHTML(d.category,d.name)+'</div>'
+    +sel('exp-e-cur','Currency',EXP_CURRENCIES,d.currency,'Select Currency',true,'expFormHook')
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="exp-e-title">Title <span class="req">*</span></label>'
+      +'<input class="ep-form-input" id="exp-e-title" value="'+attrSafe(d.title)+'" placeholder="e.g. Hyderabad to Mumbai flight"></div>'
+    +(expModalOpen?'':sel('exp-e-app','Application Type',EXP_APP_TYPES,d.appType,'Select Type',true)
+      +'<div class="ep-form-group'+(travel?'':' exp-dim')+'"><label class="ep-form-label">Travel Mode</label>'
       +apCS('exp-e-mode',EXP_TRAVEL_MODES,travel?d.travelMode:'None','Select Travel Mode')
-      +(travel?'':'<div class="ea-hint">Only for Travel Reimbursement.</div>')+'</div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="exp-e-notes">Notes</label>'
+      +(travel?'':'<div class="ea-hint">Only for Travel Reimbursement.</div>')+'</div>')
+    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="exp-e-notes">Notes <span class="exp-opt">(Optional)</span></label>'
       +'<textarea class="ep-form-input ax-notes" id="exp-e-notes" placeholder="What was this for?">'+attrSafe(d.notes||'')+'</textarea></div>';
+}
+/* "Capping limit (TEST TRAVEL): 5,000 INR" under Expense Category - the limit
+   this employee's claim in this category falls under (capFor), and how far
+   over it the items so far come. */
+function expCapHintHTML(category,name){
+  if(!category||typeof capFor!=='function')return '';
+  const cap=capFor(category,name);
+  if(!cap)return '<div class="ea-hint exp-cap">No capping limit on '+category+'.</div>';
+  const total=expModalOpen&&expDraft&&expDraft.lines
+    ?expDraft.lines.reduce(function(s,l){return s+(parseFloat(l.amount)||0);},0)+(parseFloat((expDraft.line||{}).amount)||0)
+    :(expRec(expSelectedId)?expTotal(expRec(expSelectedId)):0);
+  const over=total-cap.amount;
+  return '<div class="ea-hint exp-cap">Capping limit ('+cap.name+'): <b>'+capMoney(cap)+'</b>'
+    +(over>0?'<span class="exp-cap-over"> · items come to '+expMoney(total,cap.currency)+', over by '+expMoney(over,cap.currency)+'</span>':'')+'</div>';
 }
 function expCheckBasic(d){
   const need=[['title','Title'],['claimFor','Claim For'],['name','Employee'],['category','Expense Category'],['currency','Currency'],['appType','Application Type']];
@@ -499,12 +524,12 @@ function expPickProof(input){
   expSyncLine();if(expModalOpen)expSyncBasic();
   const t=expModalOpen?expDraft.line:expDraft;
   t.proof=f.name;t.proofUrl=URL.createObjectURL(f);
-  renderADTPage();
+  expRepaintForm();
 }
 function expClearProof(){
   expSyncLine();if(expModalOpen)expSyncBasic();
   const t=expModalOpen?expDraft.line:expDraft;
-  t.proof='';t.proofUrl='';renderADTPage();
+  t.proof='';t.proofUrl='';expRepaintForm();
 }
 /* The line item's fields - used in the panel and in the + Add popup. */
 function expLineFieldsHTML(cur,category){
@@ -624,41 +649,103 @@ function buildExpensesHTML(){
     +(expModalOpen?buildAddExpenseModalHTML():'');
 }
 
-/* ── + Add: the claim and its first line item, in one popup ────────────── */
+/* ── + Add: the claim and its expense items, in one popup ──────────────────
+   As the old form: the claim on top, then Expense Items. The item being
+   typed is one form; "Add Expense Item" checks it and files it as a card
+   above, ready for the next. Submit takes the cards plus whatever is in the
+   form, so a one-item claim needs no extra click. */
 function startAddExpense(){
   if(page!=='expenses')navigatePage('expenses');
   expDropEdit();
   const me=EXP_PEOPLE[0];
   expDraft={title:'',claimFor:'Self',name:me.name,category:'',currency:'INR',appType:'Reimbursement',travelMode:'None',notes:'',
-    line:expBlankLine()};
+    lines:[],line:expBlankLine()};
   expModalOpen=true;
   renderADTPage();
 }
 function cancelAddExpense(){expModalOpen=false;expDraft=null;renderADTPage();}
-/* The popup keeps the line's fields on expDraft.line; expSyncLine/expLineFieldsHTML
+/* The popup keeps the item being typed on expDraft.line; expSyncLine/expLineFieldsHTML
    work on expDraft, so they are pointed at the line while it is read or drawn. */
 function expWithLine(fn){
   const claim=expDraft;expDraft=claim.line;
   try{return fn();}finally{claim.line=expDraft;expDraft=claim;}
 }
+/* Has anything been typed into the item form? An untouched form is not an item. */
+function expLineTouched(l){return !!(l.title||l.amount||l.subCat||l.start||l.end||l.proof||l.comments);}
+function expAddModalLine(){
+  expSyncBasic();expSyncLine();
+  const d=expDraft;
+  if(!d.category){showToast('Pick the Expense Category first','error','Sub categories come from the category.');return;}
+  if(!expWithLine(function(){return expCheckLine(d.line,d.category);}))return;
+  d.lines.push(Object.assign({},d.line,{cols:Object.assign({},d.line.cols)}));
+  d.line=expBlankLine();
+  expRepaintForm();
+}
+function expRemoveModalLine(i){expSyncBasic();expSyncLine();expDraft.lines.splice(i,1);expRepaintForm();}
+function expModalLinesHTML(d){
+  if(!d.lines.length)return '';
+  return d.lines.map(function(l,i){
+    const fits=(EXP_SUBCATS[d.category]||[]).indexOf(l.subCat)>=0;
+    return '<div class="exp-line exp-mline">'
+      +'<div class="exp-line-hd"><span class="exp-line-n">'+(i+1)+'</span>'
+      +'<div class="exp-line-ttl"><div class="exp-line-name">'+l.title+'</div>'
+      +'<div class="exp-line-amt">'+expMoney(l.amount,d.currency)+' · '+l.subCat+' · '+cdLabel(l.start)
+        +(l.end&&l.end!==l.start?' – '+cdLabel(l.end):'')+(l.proof?' · '+l.proof:'')+'</div>'
+      +(fits?'':'<div class="ea-hint exp-cap-over">'+l.subCat+' is not a sub category of '+d.category+' - remove and add again.</div>')
+      +'</div>'
+      +'<button type="button" class="att-row-btn is-danger" onclick="expRemoveModalLine('+i+')" title="Remove item">'+AX_ICO.trash+'</button>'
+      +'</div></div>';
+  }).join('');
+}
 function buildAddExpenseModalHTML(){
   const d=expDraft;
   const lineFields=expWithLine(function(){return expLineFieldsHTML(d.currency,d.category);});
+  const n=d.lines.length;
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Expense</span>'
       +'<button class="ct-modal-close" onclick="cancelAddExpense()">'+AX_ICO.x+'</button></div>'
-    +'<p class="ct-modal-sub">File an expense claim with its first line item. More line items can be added from the claim&rsquo;s Expense Summary. Fields marked <span class="req">*</span> are required.</p>'
+    +'<p class="ct-modal-sub">File an expense claim and the items it is made of. The claim&rsquo;s dates and total are read off its items. Fields marked <span class="req">*</span> are required.</p>'
     +'<div class="exp-modal-sec">Claim</div>'
-    +'<div class="ep-form-grid">'+expBasicFieldsHTML()+'</div>'
-    +'<div class="exp-modal-sec">First Line Item</div>'
-    +'<div class="ep-form-grid">'+lineFields+'</div>'
+    +'<div class="ep-form-grid" id="exp-m-claim">'+expBasicFieldsHTML()+'</div>'
+    +'<div id="exp-m-items">'
+    +'<div class="exp-modal-sec">Expense Items'+(n?' <span class="ax-count">'+n+'</span>':'')+'</div>'
+    +expModalLinesHTML(d)
+    +'<div class="exp-line is-editing"><div class="exp-line-hd"><div class="exp-line-ttl"><div class="exp-line-name">'
+      +(n?'Item '+(n+1):'Item 1')+'</div></div></div>'
+      +'<div class="ep-form-grid">'+lineFields+'</div>'
+      +'<div class="exp-mline-add"><button type="button" class="btn-outline btn-sm" onclick="expAddModalLine()">'+AX_ICO.plus+' Add Expense Item</button></div>'
+    +'</div></div>'
     +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddExpense()">Cancel</button>'
       +'<button class="btn-outline" onclick="submitAddExpense(false)">Save as Draft</button>'
-      +'<button class="ep-save-btn" onclick="submitAddExpense(true)">Submit for Approval</button>'
+      +'<button class="ep-save-btn" onclick="submitAddExpense(true)">Submit to Claim</button>'
     +'</div></div>'
     +'</div></div>';
+}
+/* REPAINT THE FORM, NOT THE PAGE. A pick in the form (employee, category,
+   currency, a proof, an item added) changes what the form shows - the
+   capping hint, the sub categories - and nothing else on screen. Repainting
+   the whole page for it replayed the page's entrance and dropped the form
+   back to its top. So only the named parts of the open form are swapped, and
+   every scroll position is put back as it was. */
+function formRepaintParts(html,ids){
+  const keep=[].filter.call(document.querySelectorAll('.ct-modal--form, .ct-modal-overlay, #adt-content, .page-content'),
+    function(e){return e.scrollTop>0;}).map(function(e){return [e,e.scrollTop];});
+  const winY=window.scrollY;
+  const tmp=document.createElement('div');tmp.innerHTML=html;
+  let done=0;
+  ids.forEach(function(id){
+    const live=document.getElementById(id),next=tmp.querySelector('#'+id);
+    if(live&&next){live.innerHTML=next.innerHTML;done++;}
+  });
+  keep.forEach(function(k){k[0].scrollTop=k[1];});
+  if(window.scrollY!==winY)window.scrollTo(0,winY);
+  return done===ids.length;
+}
+function expRepaintForm(){
+  if(expModalOpen&&formRepaintParts(buildAddExpenseModalHTML(),['exp-m-claim','exp-m-items']))return;
+  renderADTPage();
 }
 /* The popup's own repaints (employee, category, proof) read both halves first. */
 const _expSyncLineInner=expSyncLine;
@@ -670,17 +757,24 @@ function submitAddExpense(submit){
   expSyncBasic();expSyncLine();
   const d=expDraft;
   if(!expCheckBasic(d))return;
-  const l=d.line;
-  if(!expWithLine(function(){return expCheckLine(l,d.category);}))return;
+  const items=d.lines.slice();
+  /* The form counts as an item when something is typed in it, or when it is the only one. */
+  if(expLineTouched(d.line)||!items.length){
+    if(!expWithLine(function(){return expCheckLine(d.line,d.category);}))return;
+    items.push(d.line);
+  }
+  const bad=items.find(function(l){return (EXP_SUBCATS[d.category]||[]).indexOf(l.subCat)<0;});
+  if(bad){showToast('Sub categories no longer fit','error','"'+bad.title+'" uses '+bad.subCat+', which is not a sub category of '+d.category+'.');return;}
   const p=expPerson(d.name);
   const s=stampNow();
   const r={id:expNextId++,key:expNextKey++,title:d.title,claimFor:d.claimFor,name:d.name,empId:p?p.empId:'',email:p?p.email:'',
     category:d.category,currency:d.currency,appType:d.appType,travelMode:d.travelMode,notes:d.notes,
     status:submit?'Awaiting Approval':'Draft',appliedOn:axToday(),reimbursedOn:'',createdBy:CURRENT_USER,createdAt:axStamp(),
-    lines:[{id:1,title:l.title,amount:parseFloat(l.amount),subCat:l.subCat,start:l.start,end:l.end||l.start,proof:l.proof,proofUrl:l.proofUrl,
-      comments:l.comments,cols:Object.assign({},l.cols),status:'Pending'}]};
+    lines:items.map(function(l,i){return {id:i+1,title:l.title,amount:parseFloat(l.amount),subCat:l.subCat,start:l.start,end:l.end||l.start,
+      proof:l.proof,proofUrl:l.proofUrl,comments:l.comments,cols:Object.assign({},l.cols),status:'Pending'};})};
+  const nItems=r.lines.length+' line item'+(r.lines.length===1?'':'s');
   r.logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:r.status,
-    action:submit?'Submitted for approval with 1 line item.':'Saved as draft.'}];
+    action:submit?'Submitted for approval with '+nItems+'.':'Saved as draft with '+nItems+'.'}];
   expensesData.unshift(r);
   lpLanded('expenses',r.id);
   expModalOpen=false;expDraft=null;

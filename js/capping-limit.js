@@ -45,16 +45,16 @@ function capSeed(id,key,name,level,category,dept,position,employee,currency,amou
     currency:currency,amount:amount,status:status,createdBy:by,createdAt:at,desc:desc||''};
 }
 const cappingData=[
-  capSeed(1,20,'TEST TEAM PARTY SHIV','Department','Meals','Engineering','','','INR',150000,'Active','Tarak Swain','12 Mar 2026 | 11:20:05 AM','TEAM OUTING'),
+  capSeed(1,20,'TEST TEAM PARTY SHIV','Department','Team Outing','Engineering','','','INR',150000,'Active','Tarak Swain','12 Mar 2026 | 11:20:05 AM','TEAM OUTING'),
   capSeed(2,19,'TEST SHIV','Department','Travel Reimbursement','Finance','','','INR',100000,'Active','Tarak Swain','10 Mar 2026 | 04:02:41 PM',''),
   capSeed(3,18,'TEST TRAVEL','Department','Travel Reimbursement','Sales','','','INR',5000,'Active','Tarak Swain','2 Mar 2026 | 10:15:30 AM','Local travel for field sales.'),
   capSeed(4,17,'test SHIV','Department','Accommodation','HR','','','INR',10000,'Active','Tarak Swain','24 Feb 2026 | 12:40:00 PM',''),
-  capSeed(5,16,'shiv test','Department','Office Supplies','Operations','','','INR',50000,'Active','Tarak Swain','20 Feb 2026 | 09:55:12 AM',''),
-  capSeed(6,15,'test','Department','Internet and Phone','Admin','','','INR',2000,'Active','Tarak Swain','18 Feb 2026 | 03:11:48 PM',''),
-  capSeed(7,14,'Asst Bearer Meal','Position','Meals','','Support Specialist','','INR',2500,'Active','Syed Ayaz','5 Feb 2026 | 01:05:00 PM','Daily meal allowance on shift.'),
-  capSeed(8,13,'House keeping Travelling','Department','Travel Reimbursement','Operations','','','INR',2000,'Active','Syed Ayaz','28 Jan 2026 | 10:30:00 AM',''),
-  capSeed(9,12,'Client meal - global','Category','Meals','','','','USD',150,'Inactive','Meera Iyer','14 Jan 2026 | 05:45:20 PM','Replaced by department-level meal limits.'),
-  capSeed(10,11,'Senior developer broadband','Position','Internet and Phone','Engineering','Senior Developer','','INR',1500,'Active','Meera Iyer','8 Jan 2026 | 11:00:00 AM','Monthly home broadband.')
+  capSeed(5,16,'shiv test','Department','Office Stationery','Operations','','','INR',50000,'Active','Tarak Swain','20 Feb 2026 | 09:55:12 AM',''),
+  capSeed(6,15,'test','Department','Meal Allowance','Admin','','','INR',2000,'Active','Tarak Swain','18 Feb 2026 | 03:11:48 PM',''),
+  capSeed(7,14,'Asst Bearer Meal','Position','Meal Allowance','','Support Specialist','','INR',2500,'Active','Syed Ayaz','5 Feb 2026 | 01:05:00 PM','Daily meal allowance on shift.'),
+  capSeed(8,13,'House keeping Travelling','Department','Fuel Reimbursement','Operations','','','INR',2000,'Active','Syed Ayaz','28 Jan 2026 | 10:30:00 AM',''),
+  capSeed(9,12,'Client meal - global','Category','Meal Allowance','','','','USD',150,'Inactive','Meera Iyer','14 Jan 2026 | 05:45:20 PM','Replaced by department-level meal limits.'),
+  capSeed(10,11,'Senior developer fuel','Position','Fuel Reimbursement','Engineering','Senior Developer','','INR',3000,'Active','Meera Iyer','8 Jan 2026 | 11:00:00 AM','Monthly fuel for client visits.')
 ];
 let capNextId=11,capNextKey=21;
 
@@ -207,7 +207,11 @@ function capSync(){
     .forEach(function(p){if(document.getElementById('csw-'+p[1]))capDraft[p[0]]=getCSValue(p[1]);});
 }
 /* Type decides which fields apply, so changing it repaints the form. */
-function capFormHook(){capSync();renderADTPage();}
+function capFormHook(){
+  capSync();
+  if(capModalOpen&&typeof formRepaintParts==='function'&&formRepaintParts(buildAddCapModalHTML(),['cap-m-grid']))return;
+  renderADTPage();
+}
 function capFieldsHTML(){
   const d=capDraft;
   const lv=d.level;
@@ -283,7 +287,7 @@ function buildAddCapModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Capping Limit</span>'
       +'<button class="ct-modal-close" onclick="cancelAddCap()">'+AX_ICO.x+'</button></div>'
     +'<p class="ct-modal-sub">Set the most a claim in one expense category may come to. Type decides who it applies to. Fields marked <span class="req">*</span> are required.</p>'
-    +'<div class="ep-form-grid">'+capFieldsHTML()+'</div>'
+    +'<div class="ep-form-grid" id="cap-m-grid">'+capFieldsHTML()+'</div>'
     +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddCap()">Cancel</button>'
       +'<button class="ep-save-btn" onclick="submitAddCap()">Add Capping Limit</button>'
@@ -349,6 +353,31 @@ function buildCappingLimitHTML(){
     +'<div class="lp-split-sb'+(capSelectedId?' open':'')+'" id="cap-split-sb"><div class="lp-isb" id="cap-isb-inner">'+(capSelectedId?sbRender(renderCapSidebar,'cap'):'')+'</div></div>'
     +'</div></div>'
     +(capModalOpen?buildAddCapModalHTML():'');
+}
+
+/* ── The limit a claim falls under ─────────────────────────────────────────
+   Used by the expense form (js/expenses.js) to show "Capping limit (name):
+   amount" under Expense Category. Of the active limits on the category, the
+   most specific one that fits the employee wins: one set for them by name,
+   then their position, then their department, then the category for
+   everyone. Two at the same rank: the lower amount, the stricter one. */
+function capFor(category,empName){
+  if(!category)return null;
+  const p=empName&&typeof expPerson==='function'?expPerson(empName):null;
+  const dept=p&&p.dept||'',pos=p&&p.position||'';
+  const rank=function(r){
+    if(r.employee)return r.employee===empName?4:-1;
+    if(r.level==='Position')return r.position===pos&&(!r.dept||r.dept===dept)?3:-1;
+    if(r.level==='Department')return r.dept===dept?2:-1;
+    return 1;
+  };
+  let best=null,bestRank=0;
+  cappingData.forEach(function(r){
+    if(r.status!=='Active'||r.category!==category)return;
+    const k=rank(r);
+    if(k>bestRank||(k===bestRank&&k>0&&r.amount<best.amount)){best=r;bestRank=k;}
+  });
+  return best;
 }
 
 /* ── Wiring ────────────────────────────────────────────────────────────── */
