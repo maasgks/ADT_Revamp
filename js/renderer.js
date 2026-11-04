@@ -65,6 +65,7 @@ function renderPageContent(target){
   if(page==='asset-allocation'){el.innerHTML=buildAssetAllocationHTML();return;}
   if(page==='it-access'){el.innerHTML=buildItAccessHTML();return;}
   if(page==='hr-docs'){el.innerHTML=buildHrDocsHTML();return;}
+  if(page==='expenses'){el.innerHTML=buildExpensesHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
   if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
@@ -238,7 +239,7 @@ function renderADTPage(){
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate()};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
@@ -254,6 +255,8 @@ function renderADTPage(){
   if(ccBtn)ccBtn.style.display=ccOK?'':'none';
   const ohBtn=document.getElementById('tb-opt-hol-btn');
   if(ohBtn)ohBtn.style.display=page==='holidays'?'':'none';
+  const expBtn=document.getElementById('tb-exp-export-btn');
+  if(expBtn)expBtn.style.display=page==='expenses'?'':'none';
   /* The sidebar depends on the page, the collapse state and which dropdown is
      open - none of which a filter can touch. Rebuilding it on every repaint was
      the other half of the page-reload feeling, so it is rebuilt only when one of
@@ -838,7 +841,8 @@ var PALETTE_EXTRA=[
 
   /* Tools. */
   {label:'Cost calculator',group:'Tools',keys:'cost calculator salary employer estimate',run:function(){navigatePage('cost-calculator');}},
-  {label:'Switch entity',group:'Tools',keys:'switch entity company change org',run:function(){navigatePage('switch-entity');}}
+  {label:'Switch entity',group:'Tools',keys:'switch entity company change org',run:function(){navigatePage('switch-entity');}},
+  {label:'Expenses',group:'Tools',keys:'expenses expense claim reimbursement travel bill',run:function(){navigatePage('expenses');}}
 ];
 
 /* Destinations come from the rail itself, so a nav item added there shows up

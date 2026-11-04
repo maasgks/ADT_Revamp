@@ -155,6 +155,13 @@ watch('saveHdEdit',function(){return holidaysData.find(function(h){return h.id==
 watch('saveLPSidebarEdit',function(){return leavePoliciesData.find(function(p){return p.id===lpSidebarPolicyId;});});
 watch('submitAddAsset',function(){return astEditId?assetsData.find(function(a){return a.id===astEditId;}):null;});
 watch('submitAddItAccess',function(){return itaEditId?itAccessData.find(function(r){return r.id===itaEditId;}):null;});
+watch('expSaveEdit',function(){return expEditBasic?expRec(expSelectedId):null;});
+watch('expSaveLine',function(){return expLineEdit!=null?expRec(expSelectedId):null;},{state:function(r){
+  const o={};
+  r.lines.forEach(function(l,i){[['title','Title'],['amount','Amount Spent'],['subCat','Sub Category'],['start','Start Date'],
+    ['end','End Date'],['proof','Expense Proof'],['comments','Description']].forEach(function(k){o['Line '+(i+1)+' · '+k[1]]=l[k[0]];});});
+  return o;
+}});
 watch('astConfirmReceipt',function(id){return assetsData.find(function(a){return a.id===id;});});
 // Every module's status move from Logs goes through lpCommitLog(rec, ...); its
 // after-snapshot waits for the rest of that save (an asset's holder, say).

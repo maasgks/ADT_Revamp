@@ -1,0 +1,46 @@
+/* ══ EXPENSES (js/expenses.js) ══════════════════════════════════════════════
+   The page is the standard listing + detail panel (lp-*, .ax-table, sbHero,
+   lpLogsView, wfTimelineHTML). Only what the line items add is here. */
+
+/* Listing */
+.exp-table .exp-c-amt .lp-c-plain{font-variant-numeric:tabular-nums;font-weight:600}
+.exp-table .lp-c-plain.is-none{color:var(--gray)}
+.exp-table .exp-c-nw{white-space:nowrap}
+.exp-table .ax-c-trunc{max-width:240px}
+
+/* Expense Summary: one card per line item */
+.exp-sum-total{font-size:12px;color:var(--gray)}
+.exp-sum-total b{color:var(--navy);font-weight:700;font-variant-numeric:tabular-nums;margin-left:4px}
+.exp-line{border:1px solid var(--border);border-radius:var(--r-card);background:#fff;padding:14px;margin-bottom:12px}
+.exp-line.is-editing{background:#fbfbfc}
+.exp-line .lp-sb-detail-grid{margin-top:12px}
+.exp-line .ep-form-grid{margin-top:12px}
+.exp-line-hd{display:flex;align-items:center;gap:10px}
+.exp-line-n{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--light);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gray)}
+.exp-line-ttl{flex:1;min-width:0}
+.exp-line-name{font-size:13.5px;font-weight:600;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-line-amt{font-size:12px;color:var(--gray);margin-top:2px;font-variant-numeric:tabular-nums}
+.exp-add-line{width:100%;justify-content:center;gap:6px}
+
+/* Expense proof: the file as a link-like chip */
+.exp-proof{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:3px 9px;border:1px solid var(--border);
+  border-radius:var(--r-control);background:#fff;font:inherit;font-size:12px;font-weight:500;color:var(--navy);cursor:pointer}
+.exp-proof span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exp-proof:hover{border-color:var(--navy)}
+.exp-proof-row svg{flex-shrink:0;color:var(--gray)}
+
+/* Logs: Expense / Line Item strip, and the line picker */
+.exp-log-scope{margin-bottom:14px}
+.exp-log-line{margin-bottom:14px}
+
+/* Basic Details note when the claim is closed */
+.exp-note{margin-bottom:14px}
+
+/* A field that does not apply yet: dimmed, with a hint saying why */
+.exp-dim .cs-wrap{opacity:.45;pointer-events:none}
+
+/* + Add popup: two sections, Claim and First Line Item */
+.exp-modal-sec{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--gray);
+  margin:4px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.ep-form-grid+.exp-modal-sec{margin-top:26px}
