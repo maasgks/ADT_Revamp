@@ -66,6 +66,7 @@ function renderPageContent(target){
   if(page==='it-access'){el.innerHTML=buildItAccessHTML();return;}
   if(page==='hr-docs'){el.innerHTML=buildHrDocsHTML();return;}
   if(page==='expenses'){el.innerHTML=buildExpensesHTML();return;}
+  if(page==='capping-limit'){el.innerHTML=buildCappingLimitHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
   if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
@@ -239,7 +240,7 @@ function renderADTPage(){
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense()};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense(),'capping-limit':()=>startAddCap()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
@@ -841,8 +842,7 @@ var PALETTE_EXTRA=[
 
   /* Tools. */
   {label:'Cost calculator',group:'Tools',keys:'cost calculator salary employer estimate',run:function(){navigatePage('cost-calculator');}},
-  {label:'Switch entity',group:'Tools',keys:'switch entity company change org',run:function(){navigatePage('switch-entity');}},
-  {label:'Expenses',group:'Tools',keys:'expenses expense claim reimbursement travel bill',run:function(){navigatePage('expenses');}}
+  {label:'Switch entity',group:'Tools',keys:'switch entity company change org',run:function(){navigatePage('switch-entity');}}
 ];
 
 /* Destinations come from the rail itself, so a nav item added there shows up

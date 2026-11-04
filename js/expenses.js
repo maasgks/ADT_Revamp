@@ -1,6 +1,8 @@
 /* ══ EXPENSES ═══════════════════════════════════════════════════════════════
-   Reached from the profile dropdown (index.html), not the rail: an expense
-   claim is something a person files and follows, like Apply Application.
+   Reached two ways: Time & Pay → Expense Management → Claims on the rail
+   (next to Capping Limit, js/capping-limit.js), and the profile dropdown
+   (index.html) - a claim is also something a person files and follows,
+   like Apply Application.
 
    Built from the parts every other listing uses - lpSearchField + apCS
    filters and listing-stats tiles above an .lp-table in an .lp-split-wrap, the
@@ -24,7 +26,9 @@
 
 /* ── Reference data ────────────────────────────────────────────────────── */
 const EXP_STATUSES=['Draft','Awaiting Approval','Follow-Up','Approved','Rejected','Reimbursed'];
-const EXP_TILES=['Awaiting Approval','Follow-Up','Approved','Reimbursed','Rejected'];
+/* The tiles ARE the status filter (there is no Status dropdown), so every
+   status has one - Draft included, or drafts could never be filtered to. */
+const EXP_TILES=['Draft','Awaiting Approval','Follow-Up','Approved','Reimbursed','Rejected'];
 /* Who owes the next move, per status - and the only moves Logs offers. */
 const EXP_MOVES={
   'Draft':['Awaiting Approval'],
@@ -144,20 +148,27 @@ const EXP_ICO={
 
 /* ── State ─────────────────────────────────────────────────────────────── */
 let expSelectedId=null,expTab='basic-details';
-let expClaimF='',expCatF='',expStatusF='',expCurF='',expDateF='',expQ='';
+let expCatF='',expStatusF='',expDateF='',expQ='';
 let expLogScope='expense',expLogLineId=null;
 /* One edit at a time: the claim's basic details, or one line item ('new' for
    + Add Line Item). The draft is read back from the form on every repaint. */
 let expEditBasic=false,expLineEdit=null,expDraft=null,expDraftOrig='';
 let expModalOpen=false;
 
-/* ── Filters ───────────────────────────────────────────────────────────── */
+/* ── Filters ───────────────────────────────────────────────────────────────
+   Only the filters someone actually reaches for:
+     Search        - a claim is looked up by what you know: title, key,
+                     employee name, ID or email.
+     Category      - "all travel claims this month".
+     Expense Date  - "what was spent on the 2nd".
+   Status is NOT a dropdown: the tiles under the bar already filter by it, so
+   a dropdown would be a second control for the same thing that could
+   disagree with the selected tile. Claim For (Self / Others) and Currency
+   were dropped - nobody works a queue by either, and both are on the panel. */
 function expRows(){
   return expensesData.filter(function(r){
-    if(expClaimF&&r.claimFor!==expClaimF)return false;
     if(expCatF&&r.category!==expCatF)return false;
     if(expStatusF&&r.status!==expStatusF)return false;
-    if(expCurF&&r.currency!==expCurF)return false;
     /* Expense Date: any claim with a line item spanning that day. */
     if(expDateF&&!r.lines.some(function(l){return l.start<=expDateF&&(l.end||l.start)>=expDateF;}))return false;
     return true;
@@ -166,15 +177,12 @@ function expRows(){
 function expToggleStat(v){expStatusF=expStatusF===v?'':v;expSelectedId=null;renderADTPage();}
 function applyExpFilters(){
   const pick=function(id,all){const v=getCSValue(id);return v&&v!==all?v:'';};
-  expClaimF=pick('exp-f-claim','All Claims');
   expCatF=pick('exp-f-cat','All Categories');
-  expStatusF=pick('exp-f-status','All Statuses');
-  expCurF=pick('exp-f-cur','All Currencies');
   expDateF=getCDValue('exp-f-date');
   expQ=lpSearchValue('exp-f-q');
   expSelectedId=null;renderADTPage();
 }
-function resetExpFilters(){expClaimF='';expCatF='';expStatusF='';expCurF='';expDateF='';expQ='';expSelectedId=null;renderADTPage();}
+function resetExpFilters(){expCatF='';expStatusF='';expDateF='';expQ='';expSelectedId=null;renderADTPage();}
 
 /* Export Filtered: exactly the rows the filters leave, as a CSV. */
 function expExport(){
@@ -569,7 +577,7 @@ function buildExpensesHTML(){
   const count=function(s){return expensesData.filter(function(r){return r.status===s;}).length;};
   const shown=lpSearchRows(expRows(),expQ);
   if(expSelectedId&&!shown.some(function(r){return r.id===expSelectedId;}))expSelectedId=null;
-  const pgn=listPage('expenses',[expClaimF,expCatF,expStatusF,expCurF,expDateF,expQ].join('|'),shown.map(function(r,i){
+  const pgn=listPage('expenses',[expCatF,expStatusF,expDateF,expQ].join('|'),shown.map(function(r,i){
     /* The listing answers "which claim, whose, how much, where is it". Email,
        Employee Id, Claim For, Application Type, end date, Applied On and
        Reimbursed On are all in the panel's Basic Details. */
@@ -577,8 +585,8 @@ function buildExpensesHTML(){
     return '<tr class="exp-row'+(expSelectedId===r.id?' lp-row-selected':'')+'" id="exp-row-'+r.id+'" style="cursor:pointer" onclick="openExpSidebar('+r.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
       +'<td><div class="lp-c-main ax-c-link ax-c-trunc" title="'+attrSafe(r.title)+'">'+r.title+'</div><div class="lp-c-sub">'+expKey(r)+'</div></td>'
-      +'<td><div class="lp-c-plain">'+r.name+'</div></td>'
-      +'<td><div class="lp-c-plain">'+r.category+'</div></td>'
+      +'<td><div class="lp-c-plain ax-c-trunc exp-c-emp" title="'+attrSafe(r.name)+'">'+r.name+'</div></td>'
+      +'<td><div class="lp-c-plain ax-c-trunc exp-c-cat" title="'+attrSafe(r.category)+'">'+r.category+'</div></td>'
       +'<td class="exp-c-amt exp-c-nw"><div class="lp-c-plain">'+expMoney(expTotal(r),r.currency)+'</div></td>'
       +'<td class="exp-c-nw"><div class="lp-c-plain'+(s?'':' is-none')+'">'+(s?cdLabel(s):'—')+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
@@ -591,20 +599,20 @@ function buildExpensesHTML(){
   };
   return '<div class="lp-page">'
     +dashboardBackHTML()
-    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
+    +'<div class="exp-top" style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
     +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
-    +'<div class="lp-filter-bar-label">Select Filter</div>'
+    /* Clear Filters sits on the label line, not in the row: the row then has
+       the same width with or without a filter applied, so the tiles beside
+       it never get pushed or squeezed when it appears. */
+    +'<div class="lp-filter-bar-label exp-f-label">Select Filter'+clearFiltersBtn([expCatF,expStatusF,expDateF,expQ],'resetExpFilters()')+'</div>'
     +'<div class="lp-filter-bar-row">'
-    +lpSearchField('exp-f-q',expQ,'Search title, key, employee ID, email','applyExpFilters()')
-    +apCS('exp-f-claim',EXP_CLAIM_FOR,expClaimF,'All Claims')
+    +lpSearchField('exp-f-q',expQ,'Search expenses','applyExpFilters()')
     +apCS('exp-f-cat',EXP_CATEGORIES,expCatF,'All Categories')
-    +apCS('exp-f-status',EXP_STATUSES,expStatusF,'All Statuses')
-    +apCS('exp-f-cur',EXP_CURRENCIES,expCurF,'All Currencies')
     +apCD('exp-f-date',expDateF,'Expense Date')
-    +clearFiltersBtn([expClaimF,expCatF,expStatusF,expCurF,expDateF,expQ],'resetExpFilters()')
     +'<button class="lp-pill-search" onclick="applyExpFilters()">Search</button>'
     +'</div></div>'
-    +'<div class="listing-stats">'+EXP_TILES.map(stat).join('')+'</div></div>'
+    /* Six tiles: the compact strip (as Tickets), so they share the filter row. */
+    +'<div class="listing-stats is-compact">'+EXP_TILES.map(stat).join('')+'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="exp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table ax-table exp-table"><thead><tr><th>S. No</th><th>Expense</th><th>Employee</th><th>Category</th>'
       +'<th>Total Amount</th><th>Date of Exp.</th><th>Status</th><th>Action</th></tr></thead>'

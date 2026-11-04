@@ -6,7 +6,29 @@
 .exp-table .exp-c-amt .lp-c-plain{font-variant-numeric:tabular-nums;font-weight:600}
 .exp-table .lp-c-plain.is-none{color:var(--gray)}
 .exp-table .exp-c-nw{white-space:nowrap}
-.exp-table .ax-c-trunc{max-width:240px}
+.exp-table .ax-c-trunc{max-width:165px}
+.exp-table .exp-c-cat,.exp-table .exp-c-emp{max-width:120px}
+
+/* Filters and the six status tiles share one row (as Tickets does). Each
+   control keeps a fixed width that shows its whole placeholder - shrinking
+   them clipped the text and pushed the chevron / calendar icon out of the
+   box. Clear Filters rides on the label line (see buildExpensesHTML), so the
+   row is the same width filtered or not. When it cannot fit, the tiles wrap
+   under the filters, as on every listing. */
+.exp-top .lp-filter-bar{flex:1 0 auto!important;min-width:max-content!important}
+.exp-top .lp-filter-bar-row{flex-wrap:nowrap}
+.exp-top .lp-filter-bar-row>*{flex:0 0 auto}
+.lp-page .exp-top .lp-filter-bar .lp-filter-bar-row .lp-search-input{width:170px}
+.exp-top .lp-filter-bar-row .cs-wrap,.exp-top .lp-filter-bar-row .cd-wrap{width:145px}
+.exp-top .listing-stats.is-compact .listing-stat{padding:10px 9px}
+@media (max-width:1100px){
+  .exp-top .lp-filter-bar{min-width:0!important}
+  .exp-top .lp-filter-bar-row{flex-wrap:wrap}
+}
+.exp-f-label{display:flex;align-items:center;gap:10px}
+.exp-f-label .lp-pill-clear{height:22px;margin:-6px 0;padding:0 8px;gap:5px;font-size:11.5px;text-transform:none;letter-spacing:0}
+.exp-f-label .lp-pill-clear svg{width:10px;height:10px}
+.exp-f-label .lp-pill-clear-count{font-size:10px;padding:2px 5px}
 
 /* Expense Summary: one card per line item */
 .exp-sum-total{font-size:12px;color:var(--gray)}

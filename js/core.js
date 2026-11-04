@@ -71,6 +71,7 @@ const sbIco={
   calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>',
   calStar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 12.6l1.15 2.35 2.6.38-1.88 1.83.44 2.59L12 18.53l-2.31 1.22.44-2.59-1.88-1.83 2.6-.38z"/></svg>',
   dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  gauge:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>',
   receipt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1V2l-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="13" y2="15"/></svg>',
   wallet:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 7V5.5A1.5 1.5 0 0 0 18.5 4H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V6"/><path d="M16.5 14h.01"/></svg>',
   card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><path d="M6 15h2"/><path d="M12 15h4"/></svg>',
@@ -110,6 +111,11 @@ const sidebarItems=[
   {dropdown:'Payroll Management',color:'green',icon:sbIco.dollar,children:[
     {id:'payroll',label:'Payroll',color:'green',icon:sbIco.dollar},
     {id:'payheads',label:'Payheads',color:'green',icon:sbIco.receipt}
+  ]},
+  // Claims are filed against a category; Capping Limit is the most one may come to.
+  {dropdown:'Expense Management',color:'green',icon:sbIco.receipt,children:[
+    {id:'expenses',label:'Claims',color:'green',icon:sbIco.receipt},
+    {id:'capping-limit',label:'Capping Limit',color:'green',icon:sbIco.gauge}
   ]},
   {dropdown:'Finance',color:'green',icon:sbIco.wallet,children:[
     {id:'payments',label:'Payments',color:'green',icon:sbIco.card}
