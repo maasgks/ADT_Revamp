@@ -1450,7 +1450,7 @@ function toggleEmpAction(kind,id,e){
   var m=document.getElementById(mid);if(!m)return;
   var willOpen=!m.classList.contains('open');
   m.classList.toggle('open');
-  if(willOpen&&e){var wrap=e.target.closest('.ct-action-wrap');if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());}
+  if(willOpen&&e){var wrap=e.target.closest('.ct-action-wrap');if(wrap)placeActionMenu(m,wrap);}
 }
 function empOpenLogsTab(kind,id){
   document.querySelectorAll('.ct-action-menu').forEach(function(m){m.classList.remove('open');});

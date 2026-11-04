@@ -1201,3 +1201,8 @@ tr.lp-row-selected>td:first-child,
 .al-bal-stat .listing-stat{cursor:default;min-width:110px}
 .al-bal-stat .listing-stat:hover{background:transparent}
 .al-bal-stat .listing-stat:active{transform:none}
+
+/* ── Row logs (js/row-logs.js) ──────────────────────────────────────────────
+   The row menu reuses the Contracts menu as it is (.ct-act-item / .ct-act-step);
+   only the popup's Expense / Line Item switch needs spacing. */
+.rl-modal .rl-scope{margin:0 0 16px}

@@ -748,6 +748,18 @@ function menuBounds(){
   }
   return {top:top,bottom:window.innerHeight-MENU_EDGE};
 }
+/* A row's Action menu (Contracts, the employee journey, every listing's
+   status pill) opens under its status pill - left edges lined up, at least
+   as wide as the pill - not under the whole Action cell, which pushed it
+   right, under the ☰ beside the pill. Above it when there is no room below,
+   as placeAnchoredMenu decides. */
+function placeActionMenu(menu,wrap){
+  if(!menu||!wrap)return;
+  var btn=wrap.querySelector('.ct-action-btn')||wrap;
+  var r=btn.getBoundingClientRect();
+  menu.style.minWidth=Math.round(r.width)+'px';
+  placeAnchoredMenu(menu,r,{alignLeft:true});
+}
 function placeAnchoredMenu(menu,anchor,opts){
   if(!menu||!anchor)return;
   opts=opts||{};
@@ -2598,7 +2610,10 @@ function buildListingHTML(pg){
   const pgn=listPage(pg,statusFilter+'|'+q,lpSearchRows(rows,q).map(row=>
     `<tr class="lp-row${selId!=null&&String(selId)===String(row[0])?' lp-row-selected':''}" data-row-id="${row[0]}" style="cursor:pointer" onclick="${openCall(row)}">`
       +row.map((cell,ci)=>buildListingCell(cell,cols[ci])).join('')
-      +`<td><button class="lp-action-btn" title="View details" onclick="event.stopPropagation();${openCall(row)}">${hamburger}</button></td>`
+      /* A listing without a Status column has no move to offer: just the ☰. */
+      +(statusIdx>=0&&typeof rowLogCell==='function'
+        ?'<td onclick="event.stopPropagation()">'+rowLogCell(isPr?'payroll':'lst:'+pg,row[0])+'</td>'
+        :`<td><button class="lp-action-btn" title="View details" onclick="event.stopPropagation();${openCall(row)}">${hamburger}</button></td>`)
     +`</tr>`),
     `<tr><td colspan="${cols.length+1}" style="padding:24px;text-align:center;color:var(--gray)">No records match this filter.</td></tr>`);
   const sbOpen=isPr?!!prSelectedId:(lstSelectedPg===pg&&lstSelectedId!=null);

@@ -217,11 +217,11 @@ function buildAnnouncementsHTML(){
           +'<div class="anm-cell-sub">'+a.annId+'</div></td>'
         +'<td style="white-space:nowrap">'+sbEsc(a.category)+'</td>'
         +'<td><span class="anm-aud'+(anmIsAll(a)?' is-all':'')+'" title="'+sbEsc(anmAudText(a))+'">'+sbEsc(anmAudText(a))+'</span></td>'
-        +'<td style="white-space:nowrap">'+anmFmt(a.validFrom)+'</td>'
+        // Valid From / To are on the panel's Basic Details.
         +'<td>'+anmStateBadge(a)+'</td>'
-        +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAnmSidebar('+a.id+')" title="View Details">'+dotsIco+'</button></td>'
+        +'<td onclick="event.stopPropagation()">'+rowLogCell('announcements',a.id)+'</td>'
         +'</tr>';
-    }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No announcements match this filter.</td></tr>');
+    }),'<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray)">No announcements match this filter.</td></tr>');
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -241,7 +241,7 @@ function buildAnnouncementsHTML(){
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="anm-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table" style="min-width:840px"><thead><tr><th>S. No</th><th>Announcement</th><th>Category</th><th>Target Audience</th>'
-      +'<th>Valid From</th><th>Visibility</th><th>Action</th></tr></thead>'
+      +'<th>Visibility</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'

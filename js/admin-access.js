@@ -541,7 +541,7 @@ function buildAssetAllocationHTML(){
       +'<td><div class="lp-c-plain">'+a.category+'</div></td>'
       +'<td><div class="lp-c-plain'+(a.assignedTo?'':' is-none')+'">'+(a.assignedTo||'Unassigned')+'</div><div class="lp-c-sub">'+a.branch+'</div></td>'
       +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openAstSidebar('+a.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('asset-allocation',a.id)+'</td>'
       +'</tr>';
   }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No assets match this filter.</td></tr>');
   const stat=function(s){const color='var(--st-'+statusTone(s)+'-fg)';
@@ -1069,10 +1069,10 @@ function buildItAccessHTML(){
       +'<td><div class="lp-c-plain ax-c-trunc" title="'+attrSafe(r.login)+'">'+r.login+'</div><div class="lp-c-sub">'+(r.role||'—')+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
       +'<td><div class="lp-c-plain">'+axDate(r.effective)+'</div><div class="lp-c-sub">'+(r.expiry?'Review '+axDate(r.expiry):'No expiry')+'</div></td>'
-      +'<td><div class="lp-c-plain'+(r.provisionedBy?'':' is-none')+'">'+(r.provisionedBy||'Not provisioned')+'</div></td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openItaSidebar('+r.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
+      // Provisioned By is on the panel's Basic Details.
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('it-access',r.id)+'</td>'
       +'</tr>';
-  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No access records match this filter.</td></tr>');
+  }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No access records match this filter.</td></tr>');
   const stat=function(s){const color='var(--st-'+statusTone(s)+'-fg)';
     return '<div class="listing-stat'+(itaStatusF===s?' stat-selected':'')+'" onclick="itaToggleStat(\''+s+'\')">'
       +'<div class="listing-stat-count" style="color:'+color+'">'+count(s)+'</div><div class="listing-stat-label">'+s+'</div></div>';
@@ -1096,7 +1096,7 @@ function buildItAccessHTML(){
     +'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="ita-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table ax-table"><thead><tr><th>S. No</th><th>Employee Name</th><th>System</th>'
-      +'<th>Login ID</th><th>Access Status</th><th>Effective Date</th><th>Provisioned By</th><th>Action</th></tr></thead>'
+      +'<th>Login ID</th><th>Access Status</th><th>Effective Date</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'

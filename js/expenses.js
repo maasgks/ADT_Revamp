@@ -607,20 +607,18 @@ function buildExpensesHTML(){
   if(expSelectedId&&!shown.some(function(r){return r.id===expSelectedId;}))expSelectedId=null;
   const pgn=listPage('expenses',[expCatF,expStatusF,expDateF,expQ].join('|'),shown.map(function(r,i){
     /* The listing answers "which claim, whose, how much, where is it". Email,
-       Employee Id, Claim For, Application Type, end date, Applied On and
-       Reimbursed On are all in the panel's Basic Details. */
-    const s=expStart(r);
+       Employee Id, Claim For, Application Type, the expense dates, Applied On
+       and Reimbursed On are all in the panel's Basic Details. */
     return '<tr class="exp-row'+(expSelectedId===r.id?' lp-row-selected':'')+'" id="exp-row-'+r.id+'" style="cursor:pointer" onclick="openExpSidebar('+r.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
       +'<td><div class="lp-c-main ax-c-link ax-c-trunc" title="'+attrSafe(r.title)+'">'+r.title+'</div><div class="lp-c-sub">'+expKey(r)+'</div></td>'
       +'<td><div class="lp-c-plain ax-c-trunc exp-c-emp" title="'+attrSafe(r.name)+'">'+r.name+'</div></td>'
       +'<td><div class="lp-c-plain ax-c-trunc exp-c-cat" title="'+attrSafe(r.category)+'">'+r.category+'</div></td>'
       +'<td class="exp-c-amt exp-c-nw"><div class="lp-c-plain">'+expMoney(expTotal(r),r.currency)+'</div></td>'
-      +'<td class="exp-c-nw"><div class="lp-c-plain'+(s?'':' is-none')+'">'+(s?cdLabel(s):'—')+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openExpSidebar('+r.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('expenses',r.id)+'</td>'
       +'</tr>';
-  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No expenses match this filter.</td></tr>');
+  }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No expenses match this filter.</td></tr>');
   const stat=function(s){
     return '<div class="listing-stat'+(expStatusF===s?' stat-selected':'')+'" onclick="expToggleStat(\''+s+'\')">'
       +'<div class="listing-stat-count" style="color:var(--st-'+statusTone(s)+'-fg)">'+count(s)+'</div><div class="listing-stat-label">'+s+'</div></div>';
@@ -642,7 +640,7 @@ function buildExpensesHTML(){
     +'<div class="listing-stats exp-stats">'+EXP_TILES.map(stat).join('')+'</div></div>'
     +'<div class="lp-split-wrap ax-split-wrap" style="margin-top:14px" id="exp-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table ax-table exp-table"><thead><tr><th>S. No</th><th>Expense</th><th>Employee</th><th>Category</th>'
-      +'<th>Total Amount</th><th>Date of Exp.</th><th>Status</th><th>Action</th></tr></thead>'
+      +'<th>Total Amount</th><th>Status</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'

@@ -325,7 +325,7 @@ function buildCappingLimitHTML(){
       +'<td><div class="lp-c-plain ax-c-trunc" title="'+attrSafe(r.category)+'">'+r.category+'</div></td>'
       +'<td class="cap-c-amt"><div class="lp-c-plain">'+capMoney(r)+'</div></td>'
       +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openCapSidebar('+r.id+')" title="View Details">'+AX_ICO.dots+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('capping-limit',r.id)+'</td>'
       +'</tr>';
   }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No capping limits match this filter.</td></tr>');
   const stat=function(s){

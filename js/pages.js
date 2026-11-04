@@ -727,7 +727,7 @@ function buildTeamsListingHTML(){
     +'<td>'+(t.country||d)+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+t.members+'</td>'
     +'<td><span class="lp-status-badge '+t.status.toLowerCase()+'">'+t.status+'</span></td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openTmSidebar('+t.id+')"><svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg></button></td>'
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('teams',t.id)+'</td>'
     +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No teams match this filter.</td></tr>');
   const sbInner=tmSelectedId?renderTmSidebar():'';
   return '<div class="lp-page">'
@@ -1345,7 +1345,7 @@ function buildAllLeavesHTML(){
     +'<td>'+l.leaveHours+'</td>'
     +'<td>'+l.leaveFrom+'</td>'
     +'<td>'+l.leaveTo+'</td>'
-    +'<td><span class="lp-status-badge '+(stClass[l.status]||'pending')+'">'+l.status+'</span></td>'    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openAlSidebar('+l.id+')" title="More actions">'+hamburger+'</button></td>'
+    +'<td><span class="lp-status-badge '+(stClass[l.status]||'pending')+'">'+l.status+'</span></td>'    +'<td onclick="event.stopPropagation()">'+rowLogCell('all-leaves',l.id)+'</td>'
     +'</tr>'),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No leave requests match this filter.</td></tr>');
   const approvedCount=allLeavesData.filter(l=>l.status==='Approved').length;
   const unapprovedCount=allLeavesData.filter(l=>l.status==='Unapproved').length;
@@ -1385,7 +1385,7 @@ function togglePmAction(id,e){
   m.classList.toggle('open');
   if(willOpen&&e){
     const wrap=e.target.closest('.ct-action-wrap');
-    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
+    if(wrap)placeActionMenu(m,wrap);
   }
 }
 function alToggleStatFilter(v){
@@ -1724,7 +1724,7 @@ function buildPaymentsHTML(){
       +'<td><span class="lp-status-badge '+statusClass(p.orderStatus)+'">'+p.orderStatus+'</span></td>'
       // A status, read-only here; it is changed from the record's panel.
       +'<td><span class="lp-status-badge tone-'+statusTone(p.invoiceStatus)+'">'+p.invoiceStatus+'</span></td>'
-      +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openPmSidebar('+p.id+')" title="More actions">'+dotsIco+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('payments',p.id)+'</td>'
       +'</tr>';
   }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No payments match this filter.</td></tr>');
   const sbInner=pmSelectedId?renderPmSidebar():'';
@@ -1765,7 +1765,7 @@ function toggleCtAction(id,e){
   m.classList.toggle('open');
   if(willOpen&&e){
     const wrap=e.target.closest('.ct-action-wrap');
-    if(wrap)placeAnchoredMenu(m,wrap.getBoundingClientRect());
+    if(wrap)placeActionMenu(m,wrap);
   }
 }
 // ── TICKETS SIDEBAR ──
@@ -2619,7 +2619,7 @@ function buildComplianceItemsHTML(){
     +'<td><span style="color:var(--orange);font-weight:500">'+r.item+'</span></td>'
     +'<td>'+r.model+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openComplianceSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('compliance',r.id)+'</td>'
     +'</tr>'),
     '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=complianceSelectedId?renderComplianceSidebar():'';
@@ -3490,7 +3490,7 @@ function buildOcaListingHTML(){
       +'<td><div class="lp-c-plain'+(urgent?' is-urgent':'')+'">'+dv+'</div>'
         +'<div class="lp-c-sub">'+ocaDateLabel(r)+'</div></td>'
       +'<td><span class="lp-status-badge tone-'+statusTone(r.status)+'">'+r.status+'</span></td>'
-      +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openOcaSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('oca',r.id)+'</td>'
       +'</tr>';
   }).join('')
    :'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--gray)">No compliance documents in this status.</td></tr>';
@@ -3637,7 +3637,7 @@ function buildRatesRulesHTML(){
     +'<td>'+r.applicableTo+'</td>'
     +'<td style="font-weight:600;color:var(--navy)">'+r.valueRate+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openRatesRuleSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('rates-rules',r.id)+'</td>'
     +'</tr>'),
     '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ratesRuleSelectedId?renderRatesRuleSidebar():'';
@@ -3901,7 +3901,7 @@ function buildContractTemplatesHTML(){
     +'<td>'+r.country+'</td>'
     +'<td>'+r.category+'</td>'
     +'<td><span class="lp-status-badge '+r.status.toLowerCase()+'">'+r.status+'</span></td>'
-    +'<td><button class="lp-action-btn" onclick="event.stopPropagation();openCtpSidebar('+r.id+')" title="More actions">'+hamburgerIco+'</button></td>'
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('contract-templates',r.id)+'</td>'
     +'</tr>'),
     '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--gray)">No records match this filter.</td></tr>');
   const sbInner=ctpSelectedId?renderCtpSidebar():'';
@@ -5099,7 +5099,7 @@ function buildPayheadsPageHTML(){
       +'<td>'+p.calcOn+'</td>'
       +'<td>'+phRuleText(p)+'</td>'
       +'<td><span class="lp-status-badge tone-'+statusTone(p.status)+'">'+p.status+'</span></td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openPhSidebar('+p.id+')" title="View Details">'+dotsIco+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('payheads',p.id)+'</td>'
       +'</tr>';
   }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No payheads match this filter.</td></tr>');
   return '<div class="lp-page">'
@@ -5589,18 +5589,17 @@ function buildHolidaysPageHTML(){
         +'<td class="lp-c-n">'+(i+1)+'</td>'
         +'<td><span style="color:var(--orange);font-weight:500">'+h.name+'</span>'
           +(h.id===nextId?'<span class="hd-next-chip" title="The next holiday coming up">Next</span>':'')+'</td>'
-        +'<td style="white-space:nowrap">'+hdDateLabel(h.date)+'</td>'
-        +'<td style="color:var(--gray);white-space:nowrap">'+(hdDayName(h.date)||'—')
-          +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')+'</td>'
+        /* Date and its weekday in one cell; Repeats is on the panel. */
+        +'<td style="white-space:nowrap"><div class="lp-c-plain">'+hdDateLabel(h.date)+'</div><div class="lp-c-sub">'+(hdDayName(h.date)||'—')
+          +(hdIsWeekend(h.date)?'<span class="hd-weekend-chip" title="Falls on a weekend — no working day is lost">Weekend</span>':'')+'</div></td>'
         +'<td>'+hdTypeBadge(h.type)+'</td>'
         // Entity-wide recedes, named branches carry weight — the cell answers
         // "is this one mine?" before it answers "which offices".
         +'<td>'+hdBranchChipsHTML(h)+'</td>'
-        +'<td style="color:'+(h.recurring?'var(--navy)':'var(--gray)')+'">'+(h.recurring?'Yearly':'One-off')+'</td>'
         +'<td><span class="lp-status-badge tone-'+statusTone(h.status)+'">'+h.status+'</span></td>'
-        +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openHdSidebar('+h.id+')" title="View Details">'+dotsIco+'</button></td>'
+        +'<td onclick="event.stopPropagation()">'+rowLogCell('holidays',h.id)+'</td>'
         +'</tr>';
-    }),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No holidays match this filter.</td></tr>');
+    }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No holidays match this filter.</td></tr>');
   return '<div class="lp-page">'
     +dashboardBackHTML()
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -5620,7 +5619,7 @@ function buildHolidaysPageHTML(){
     +'<div class="listing-stat'+(hdStatusFilter==='Inactive'?' stat-selected':'')+'" onclick="hdToggleStatFilter(\'Inactive\')"><div class="listing-stat-count" style="color:var(--st-idle-fg)">'+inactive+'</div><div class="listing-stat-label">Inactive</div></div>'
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="hd-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Day</th><th>Type</th><th>Applies To</th><th>Repeats</th><th>Status</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table" style="min-width:880px"><thead><tr><th>S. No</th><th>Holiday</th><th>Date</th><th>Type</th><th>Applies To</th><th>Status</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -6065,13 +6064,10 @@ function buildLeavePoliciesHTML(){
     +'<td>'+numVal(p.yearly)+'</td>'
     +'<td>'+numVal(p.monthly)+'</td>'
     +'<td>'+numVal(p.carryForward)+'</td>'
-    +'<td>'+ynCell(p.probation)+'</td>'
-    +'<td>'+ynCell(p.prorate)+'</td>'
+    /* During Probation and Prorate are on the panel's Basic Details. */
     +'<td><span class="lp-status-badge '+p.status.toLowerCase()+'">'+p.status+'</span></td>'
-    +'<td><button class="lp-action-btn" title="View Details" onclick="event.stopPropagation();openLPSidebar('+p.id+')">'
-    +'<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>'
-    +'</button></td>'
-    +'</tr>'),'<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--gray)">No leave policies match this filter.</td></tr>');
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('leave-policies',p.id)+'</td>'
+    +'</tr>'),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No leave policies match this filter.</td></tr>');
   const sbInner=lpSidebarPolicyId?sbRender(renderLPSidebar,'leave-policy'):'';
   return '<div class="lp-page">'
     +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
@@ -6094,7 +6090,7 @@ function buildLeavePoliciesHTML(){
     +'<div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
     +'<table class="lp-table"><thead><tr>'
     +'<th>SR. NO</th><th>TYPE NAME</th><th>YEARLY COUNT</th><th>MONTHLY LIMIT</th>'
-    +'<th>CARRY FORWARD LIMIT</th><th>PROBATION ALLOWED</th><th>PRORATE</th><th>STATUS</th><th>ACTION</th>'
+    +'<th>CARRY FORWARD LIMIT</th><th>STATUS</th><th>ACTION</th>'
     +'</tr></thead><tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -9082,15 +9078,15 @@ function buildTicketsPageHTML(){
         +(raiser?'<div class="lp-c-sub">via '+raiser+'</div>':'')+'</td>'
       +'<td><span class="lp-c-clip" title="'+attrSafe(t.title)+'">'+t.title+'</span>'
         +'<div class="lp-c-sub">'+t.category+'</div></td>'
-      +'<td class="lp-c-n">'+t.createdAt+'</td>'
+      // Created At is on the panel's Basic Details.
       +'<td>'+tkStatusBadge(t.status)+'</td>'
       // Unassigned is the state this queue is actually managed by, so it is
       // called out rather than left as an empty cell.
       +'<td class="lp-c-tight"><div class="lp-c-plain'+(unassigned?' is-urgent':'')+'" title="'+attrSafe(tkOwner(t))+'">'
         +(unassigned?'Unassigned':tkOwnerShort(t))+'</div></td>'
-      +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openTkSidebar('+t.id+')" title="View Details">'+dotsIco+'</button></td>'
+      +'<td onclick="event.stopPropagation()">'+rowLogCell('support-tickets',t.id)+'</td>'
       +'</tr>';
-  }),'<tr><td colspan="8" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>');
+  }),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No tickets match this filter.</td></tr>');
   const sbInner=tkSelectedId?renderTkSidebar():'';
   const stat=function(key,count,label,colour){
     return '<div class="listing-stat'+(tkQuickStatusFilter===key?' stat-selected':'')+'"'
@@ -9120,7 +9116,7 @@ function buildTicketsPageHTML(){
     +stat('__unresolved__',tkScope().filter(tkIsUnresolved).length,'Unresolved','var(--st-wait-fg)')
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table lp-table-2line sr-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client</th><th>Title</th><th>Created At</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
+    +'<table class="lp-table lp-table-2line sr-table"><thead><tr><th>S.No</th><th>Ticket ID</th><th>Client</th><th>Title</th><th>Status</th><th>Next Action On</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
@@ -9291,7 +9287,7 @@ function buildChatsPageHTML(){
     +'<td style="color:#64748b;font-size:13px">'+c.assignedTo+'</td>'
     +'<td style="font-size:12px;color:#64748b">'+c.lastActivity+'</td>'
     +'<td>'+chatStatusBadge(c.status)+'</td>'
-    +'<td onclick="event.stopPropagation()"><button class="lp-action-btn" onclick="openChatSidebar('+c.id+')" title="View Details">'+dotsIco+'</button></td>'
+    +'<td onclick="event.stopPropagation()">'+rowLogCell('chats',c.id)+'</td>'
     +'</tr>'
   )),'<tr><td colspan="7" style="padding:24px;text-align:center;color:var(--gray)">No chats match this filter.</td></tr>');
   const sbInner=chatSelectedId?renderChatSidebar():'';
