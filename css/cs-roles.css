@@ -1,0 +1,9 @@
+/* ══ COMPANY SETTINGS · ROLES & ACCESS (js/cs-roles.js) ═════════════════════
+   The inline Add / Edit Role form above the roles table. Same card as the
+   RBAC Workspaces add-team form (.ws-add). */
+.csr-add{border:1px solid var(--border);border-radius:var(--r-card);background:var(--light);padding:14px;margin-bottom:14px}
+.csr-add-hd{margin-bottom:12px}
+.csr-kind{margin-bottom:14px}
+.csr-seg{display:inline-flex}
+.csr-add .lp-sb-form-actions{margin-top:12px}
+.csag-table tr.csr-editing td{background:var(--light)}

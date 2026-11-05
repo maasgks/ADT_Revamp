@@ -8256,40 +8256,19 @@ function renderCsSidebar(){
   let body='';
 
   if(csTab==='basic-details'){
-    /* Each row of the listing is its own setting, so Basic Details shows the
-       details of the setting that was opened, not always the entity profile. */
+    /* The listing holds one row, the entity you are signed in to, so Basic
+       Details is that entity's profile. Row: S. No, Entity, Entity ID, Type,
+       Country, Owner, Updated, Status. */
     const row=(getPageMeta('settings').rows||[]).find(r=>r[0]===csSelectedItem)||[];
-    const setting=row[1]||'Entity Profile';
-    // Setting and Status are on the header card above the grid.
-    const common=fc(iEnt,'Area',row[2]||dash)
-      +fc(iPerson,'Owner',row[3]||dash)+fc(iCal,'Last Updated',row[4]||dash);
-    const CS_SETTING_FIELDS={
-      'Entity Profile':()=>fc(iEnt,'Entity ID','293')+fc(iCity,'Entity Name','Closedhi')
-        +fcW(iMap,'Address','Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India')
-        +fc(iCity,'City','Hyderabad')
-        +fc(iGlobe,'Country','India')+fc(iCal,'Created Time','12 Apr 2026 | 08:53 PM')
-        +fc(iPerson,'Created By','Shaun Test1')+fc(iId,'Employee ID Pre fix','CLD')
-        +fc(iImg,'Entity Logo',dash)+fc(iDoc,'Header',dash)
-        +fc(iDoc,'Footer',dash),
-      'Bank Details':()=>common+fc(iGlobe,'Country / Location','India')+fc(iPerson,'Pay Name','Closedhi')
-        +fc(iBank,'Pay Bank','ICIC')+fc(iHash,'Account Number','223445565666')
-        +fc(iKey,'IFSC Code','ICFHDE123')+fc(iDollar,'Currency','INR'),
-      'Permissions':()=>common+fc(iKey,'Roles Defined','6')+fc(iPerson,'Default Role','Employee')
-        +fc(iKey,'Two-Factor Login','Required for admins')+fc(iCal,'Session Timeout','30 minutes')+fc(iPerson,'Admins','3')
-        +fcW(iComment,'Notes','Role changes need Super Admin approval and are recorded in Logs.'),
-      'Notifications':()=>common+fc(iMail,'Email Alerts','On')+fc(iComment,'In-app Alerts','On')
-        +fc(iCal,'Daily Digest','09:00 AM')+fc(iFlash,'Approval Reminders','Every 24 hours')+fc(iPhone,'SMS Alerts','Off')
-        +fcW(iMail,'Sender Address','no-reply@closedhi.com'),
-      'Billing Contacts':()=>common+fc(iPerson,'Contact Name','Finance Ops')+fc(iMail,'Email','billing@closedhi.com')
-        +fc(iPhone,'Phone Number','9949860707')+fc(iCal,'Invoice Cycle','Monthly')+fc(iHash,'GST Number','36AABCC1234F1Z5')
-        +fcW(iMap,'Billing Address','Kukatpally, Hyderabad, Telangana 500085, India'),
-      'Audit Logs':()=>common+fc(iCal,'Retention','365 days')+fc(iDoc,'Export Format','CSV')
-        +fc(iFlash,'Tracked Events','All admin actions')+fc(iCal,'Last Export','01 May 2026')
-    };
-    const fields=(CS_SETTING_FIELDS[setting]||(()=>common))();
-    const CS_SETTING_ICO={'Entity Profile':sbIco.building,'Bank Details':sbIco.database,'Permissions':sbIco.shieldCheck,
-      'Notifications':sbIco.sliders,'Billing Contacts':sbIco.users,'Audit Logs':sbIco.fileText};
-    body=sbHero({icon:CS_SETTING_ICO[setting]||sbIco.grid,name:setting,meta:[row[2],row[3]],status:sbHeroBadge(row[5]),edit:editBtn})
+    const name=row[1]||'Opendhi';
+    const fields=fc(iEnt,'Entity ID',row[2]||dash)+fc(iCity,'Entity Name',name)
+      +fc(iFlash,'Entity Type',row[3]||dash)+fc(iGlobe,'Country',row[4]||dash)
+      +fcW(iMap,'Address','Flat No: 41204, Olive Block Indu Fortune Fields, Railway Station, Gardenia, near HITECH city, Phase 13, Kukatpally Housing Board Colony, Kukatpally, Hyderabad, Telangana 500085, India')
+      +fc(iCity,'City','Hyderabad')+fc(iPerson,'Owner',row[5]||dash)
+      +fc(iCal,'Created Time','12 Apr 2026 | 08:53 PM')+fc(iPerson,'Created By','Shaun Test1')
+      +fc(iCal,'Last Updated',row[6]||dash)+fc(iId,'Employee ID Pre fix','OPD')
+      +fc(iImg,'Entity Logo',dash)+fc(iDoc,'Header',dash)+fc(iDoc,'Footer',dash);
+    body=sbHero({icon:sbIco.building,name:name,meta:[row[2],row[3],row[4]],status:sbHeroBadge(row[7]),edit:editBtn})
       +'<div class="lp-sb-detail-grid">'+fields+'</div>';
   }
   else if(csTab==='attachments'){
@@ -8302,7 +8281,7 @@ function renderCsSidebar(){
     const dlIco='<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Banking Details</span>'+editBtn+'</div>'
       +'<div class="lp-sb-detail-grid">'
-      +fc(iGlobe,'Country / Location','India')+fc(iPerson,'Pay Name','Closedhi')
+      +fc(iGlobe,'Country / Location','India')+fc(iPerson,'Pay Name','Opendhi')
       +fc(iBank,'Pay Bank','ICIC')+fc(iHash,'Account Number','223445565666')
       +fc(iKey,'IFSC Code','ICFHDE123')+fc(iFlash,'Swift Code','ICFHDE123')
       +fc(iDollar,'Currency','INR')+fc(iMail,'Email','shaun.varghese@opendhi.com')
@@ -8327,50 +8306,7 @@ function renderCsSidebar(){
     body=subBar+sub;
   }
   else if(csTab==='roles-access'){
-    /* WAS: a hand-rolled table with its styles repeated inline on every cell,
-       an orange serial column that meant nothing, role names coloured by hand,
-       a header cell labelled "assigned to" in lower case and a fourth header
-       with no label at all. None of it matched the tables on the tabs either
-       side of it, and none of it could be restyled without editing each cell.
-
-       NOW: .csag-table, the same table the Attachments tab draws, with the
-       person cell built the way every person cell in the app is built - name
-       over a grey sub-line - and the role as a .lp-status-badge, because a
-       role IS the status of an assignment. */
-    const CS_ROLES=[
-      {role:'Entity Super Admin',tone:'ok',   user:'Shaun Test1',    email:'shaun@testemp.com',   scope:'Full access to this entity',    added:'12 Apr 2026'},
-      {role:'Direct Employee',   tone:'info', user:'Antar Testemp',  email:'antar@testemp.com',   scope:'Own profile, timesheet, leave', added:'18 Apr 2026'},
-      {role:'Direct Employee',   tone:'info', user:'Shaun J',        email:'shaun.j@testemp.com', scope:'Own profile, timesheet, leave', added:'22 Apr 2026'},
-      {role:'Direct Employee',   tone:'info', user:'Default Name',   email:'default@testemp.com', scope:'Own profile, timesheet, leave', added:'30 Apr 2026'}
-    ];
-    const editSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-    const binSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
-    const plusSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
-    const initials=(n)=>n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
-    body='<div class="att-bar csag-bar">'
-        +'<div class="att-bar-actions"><button class="att-link" onclick="showToast(\'Add Role\',\'info\',\'Role assignment is not wired in this prototype.\')">'
-        +plusSvg+'Add Role</button></div></div>'
-      +'<div class="att-table-wrap csag-table-wrap"><table class="att-table csag-table"><thead><tr>'
-        +'<th>Sr. No</th><th>User</th><th>Role</th><th>Access Scope</th><th>Added On</th><th class="csag-act">Action</th>'
-      +'</tr></thead><tbody>'
-      +CS_ROLES.map(function(r,i){
-          return '<tr>'
-            +'<td class="csag-td csag-num">'+(i+1)+'</td>'
-            +'<td class="csag-td"><div class="csag-file">'
-              +'<span class="cs-role-av">'+initials(r.user)+'</span>'
-              +'<div class="csag-file-txt"><div class="lp-c-main">'+sbEsc(r.user)+'</div>'
-              +'<div class="lp-c-sub">'+sbEsc(r.email)+'</div></div></div></td>'
-            +'<td class="csag-td"><span class="lp-status-badge tone-'+r.tone+'">'+sbEsc(r.role)+'</span></td>'
-            +'<td class="csag-td cs-role-scope">'+sbEsc(r.scope)+'</td>'
-            +'<td class="csag-td">'+sbEsc(r.added)+'</td>'
-            +'<td class="csag-td csag-act">'
-              +'<button class="att-row-btn" title="Edit role">'+editSvg+'</button>'
-              +(r.role==='Entity Super Admin'
-                ?''   /* the last super admin cannot be removed, so no button promises it */
-                :'<button class="att-row-btn is-danger" title="Remove role">'+binSvg+'</button>')
-            +'</td></tr>';
-        }).join('')
-      +'</tbody></table></div>';
+    body=csRolesTabHTML();   // js/cs-roles.js: the table and the inline Add / Edit Role form
   }
   else if(csTab==='payroll'){
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Payroll Settings</span>'+editBtn+'</div>'
