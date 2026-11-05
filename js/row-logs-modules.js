@@ -111,6 +111,26 @@ rlRegister('capping-limit',{pre:'cap',
   sub:function(r){return capKey(r)+' &middot; '+r.name;}});
 
 // ── Governance ──
+rlRegister('rbac-templates',{pre:'rb',
+  rec:function(id){return rbRec(Number(id));},
+  status:function(r){return r.status;},
+  moves:function(r){return rbMoves(r);},
+  label:function(v){return RB_MOVE_LABELS[v]||v;},
+  save:function(id){rbSaveLog(Number(id));},
+  count:function(r){return len(r.logs);},
+  open:function(id){openRbSidebar(Number(id));},
+  logs:function(id){openRbSidebar(Number(id),'logs');},
+  sub:function(r){return rbKey(r)+' &middot; '+r.name;}});
+rlRegister('rbac-workspaces',{pre:'ws',
+  rec:function(id){return wsRec(Number(id));},
+  status:function(r){return r.status;},
+  moves:function(r){return wsMoves(r);},
+  label:function(v){return WS_MOVE_LABELS[v]||v;},
+  save:function(id){wsSaveLog(Number(id));},
+  count:function(r){return len(r.logs);},
+  open:function(id){openWsSidebar(Number(id));},
+  logs:function(id){openWsSidebar(Number(id),'logs');},
+  sub:function(r){return wsKey(r)+' &middot; '+r.name;}});
 rlRegister('compliance',{pre:'cmp',
   rec:function(id){return find(complianceItemsData,id);},
   status:function(r){return r.status;},

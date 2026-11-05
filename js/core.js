@@ -134,6 +134,12 @@ const sidebarItems=[
     {id:'asset-allocation',label:'Assets',color:'slate',icon:sbIco.laptop},
     {id:'it-access',label:'IT Accesses',color:'slate',icon:sbIco.key}
   ]},
+  // Who can do what: workspaces hold teams, a team applies a template
+  // (js/rbac-workspaces.js, js/rbac-templates.js).
+  {dropdown:'RBAC',color:'slate',icon:sbIco.shieldCheck,children:[
+    {id:'rbac-workspaces',label:'Workspaces',color:'slate',icon:sbIco.building},
+    {id:'rbac-templates',label:'Templates',color:'slate',icon:sbIco.shieldCheck}
+  ]},
   // Written here, read on the employee dashboard (js/announcement-admin.js).
   {id:'announcements',label:'Announcements',color:'slate',icon:sbIco.megaphone},
 

@@ -67,6 +67,8 @@ function renderPageContent(target){
   if(page==='hr-docs'){el.innerHTML=buildHrDocsHTML();return;}
   if(page==='expenses'){el.innerHTML=buildExpensesHTML();return;}
   if(page==='capping-limit'){el.innerHTML=buildCappingLimitHTML();return;}
+  if(page==='rbac-templates'){el.innerHTML=buildRbacTemplatesHTML();return;}
+  if(page==='rbac-workspaces'){el.innerHTML=buildRbacWorkspacesHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
   if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
@@ -240,7 +242,7 @@ function renderADTPage(){
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense(),'capping-limit':()=>startAddCap()};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense(),'capping-limit':()=>startAddCap(),'rbac-templates':()=>startAddRb(),'rbac-workspaces':()=>startAddWs()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }

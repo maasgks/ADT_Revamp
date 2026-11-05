@@ -163,6 +163,10 @@ watch('expSaveLine',function(){return expLineEdit!=null?expRec(expSelectedId):nu
   return o;
 }});
 watch('capSaveEdit',function(){return capEditing?capRec(capSelectedId):null;},{labels:function(){return {level:'Type',dept:'Department',amount:'Amount Limit',desc:'Description',employee:'Individual'};}});
+watch('rbSaveEdit',function(){return rbEditing?rbRec(rbSelectedId):null;},{state:function(t){
+  return {'Template Name':t.name,'Module':t.module,'Description':t.desc,'Permissions':t.perms.length+' ('+t.perms.join(', ')+')'};
+}});
+watch('wsSaveEdit',function(){return wsEditing?wsRec(wsSelectedId):null;},{labels:function(){return {name:'Workspace Name',module:'Module',email:'Contact Email',desc:'Description'};}});
 watch('astConfirmReceipt',function(id){return assetsData.find(function(a){return a.id===id;});});
 // Every module's status move from Logs goes through lpCommitLog(rec, ...); its
 // after-snapshot waits for the rest of that save (an asset's holder, say).
