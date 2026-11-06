@@ -47,7 +47,7 @@ const EC_KIND={
 };
 const EC_TILES=['Active','Inactive'];
 const EC_MOVES={'Active':['Inactive','Deleted'],'Inactive':['Active','Deleted'],'Deleted':[]};
-const EC_MOVE_LABELS={'Active':'Reactivate','Inactive':'Deactivate','Deleted':'Delete'};
+const EC_MOVE_LABELS={'Active':'Mark Active','Inactive':'Mark Inactive','Deleted':'Delete'};
 
 /* ── State ─────────────────────────────────────────────────────────────── */
 function ecFresh(){return {sel:null,tab:'basic-details',q:'',statusF:'',catF:'',editing:false,draft:null,orig:'',modal:false};}
@@ -152,9 +152,9 @@ function ecSeedLogs(k,r){
 }
 function ecWorkflow(k,r){
   const noun=EC_KIND[k].noun;
-  const T={'Active':noun+' Active','Inactive':noun+' Deactivated','Deleted':noun+' Deleted'};
+  const T={'Active':noun+' Active','Inactive':noun+' Inactive','Deleted':noun+' Deleted'};
   const done=wfDoneFromLogs(ecSeedLogs(k,r),function(st){return T[st]||st;});
-  const LEFT={'Inactive':[{title:'Reactivate or Delete',owner:'Company Admin'}]};
+  const LEFT={'Inactive':[{title:'Mark Active or Delete',owner:'Company Admin'}]};
   return wfPlan(done,LEFT[r.status]||[]);
 }
 function ecRender(k){
@@ -196,7 +196,7 @@ function ecLogFormHTML(k,r){
   const K=EC_KIND[k],pre=K.pre,moves=ecMoves(k,r),block=ecBlockers(k,r);
   return '<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+r.status+'</div>'
-    +'<p class="lp-logs-form-sub">Activate, deactivate or delete this '+K.low+' and say why'
+    +'<p class="lp-logs-form-sub">Mark this '+K.low+' active or inactive, or delete it, and say why'
       +(block.length?'. Delete is available once nothing uses it - '+block.join(' and ')+' still '+(block.length===1&&/^1 /.test(block[0])?'does':'do')+'.':'')+'</p>'
     +lpLogStatusField(pre+'-log-status-sel',r.status,[r.status].concat(moves))
     +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'

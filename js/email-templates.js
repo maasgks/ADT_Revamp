@@ -28,7 +28,7 @@ const ET_TYPES=['Plain','HTML'];
 const ET_FIELDS=['First_Name','Last_Name','Employee_Name','Company_Name','Entity_Name','Reporting_Manager','Effective_Date','Login_Link'];
 const ET_TILES=['Active','Inactive'];
 const ET_MOVES={'Active':['Inactive','Deleted'],'Inactive':['Active','Deleted'],'Deleted':[]};
-const ET_MOVE_LABELS={'Active':'Reactivate','Inactive':'Deactivate','Deleted':'Delete'};
+const ET_MOVE_LABELS={'Active':'Mark Active','Inactive':'Mark Inactive','Deleted':'Delete'};
 
 /* ── Seed data ─────────────────────────────────────────────────────────── */
 function etSeed(id,name,aud,process,service,type,subject,status,by,at,content){
@@ -162,10 +162,10 @@ function etSeedLogs(t){
   if(t.status==='Inactive')fx.unshift({date:p[0],time:'06:00:00 PM',user:'Shaun Test1',status:'Inactive',action:'No longer in use.'});
   return seedLogs(t,fx);
 }
-const ET_STEP_TITLE={'Active':'Template Active','Inactive':'Template Deactivated','Deleted':'Template Deleted'};
+const ET_STEP_TITLE={'Active':'Template Active','Inactive':'Template Inactive','Deleted':'Template Deleted'};
 function etWorkflow(t){
   const done=wfDoneFromLogs(etSeedLogs(t),function(st){return ET_STEP_TITLE[st]||st;});
-  const LEFT={'Inactive':[{title:'Reactivate or Delete',owner:'Company Admin'}]};
+  const LEFT={'Inactive':[{title:'Mark Active or Delete',owner:'Company Admin'}]};
   return wfPlan(done,LEFT[t.status]||[]);
 }
 /* Deleting a template an event sends would leave that event with no email. */
@@ -214,7 +214,7 @@ function etLogFormHTML(t,moves){
   const n=etEvents(t).length;
   return '<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+t.status+'</div>'
-    +'<p class="lp-logs-form-sub">Activate, deactivate or delete this template and say why'
+    +'<p class="lp-logs-form-sub">Mark this template active or inactive, or delete it, and say why'
       +(n?'. Delete is available once no event uses it - '+etPlural(n,'event')+' still '+(n===1?'sends':'send')+' it.':'')+'</p>'
     +lpLogStatusField('et-log-status-sel',t.status,[t.status].concat(moves))
     +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'

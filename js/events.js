@@ -42,7 +42,7 @@ const EV_TABLES={
 };
 const EV_TILES=['Active','Inactive'];
 const EV_MOVES={'Active':['Inactive','Deleted'],'Inactive':['Active','Deleted'],'Deleted':[]};
-const EV_MOVE_LABELS={'Active':'Reactivate','Inactive':'Deactivate','Deleted':'Delete'};
+const EV_MOVE_LABELS={'Active':'Mark Active','Inactive':'Mark Inactive','Deleted':'Delete'};
 
 /* ── Seed data (the old screen's rows, then one for each other audience) ── */
 function evSeed(id,key,number,type,aud,catId,subId,service,process,table,c,rule,comment,tplId,subject,status,by,at,opts){
@@ -176,10 +176,10 @@ function evSeedLogs(e){
   if(e.status==='Inactive')fx.unshift({date:p[0],time:'06:30:00 PM',user:'Shaun Test1',status:'Inactive',action:'No longer in use.'});
   return seedLogs(e,fx);
 }
-const EV_STEP_TITLE={'Active':'Event Active','Inactive':'Event Deactivated','Deleted':'Event Deleted'};
+const EV_STEP_TITLE={'Active':'Event Active','Inactive':'Event Inactive','Deleted':'Event Deleted'};
 function evWorkflow(e){
   const done=wfDoneFromLogs(evSeedLogs(e),function(st){return EV_STEP_TITLE[st]||st;});
-  const LEFT={'Inactive':[{title:'Reactivate or Delete',owner:'Company Admin'}]};
+  const LEFT={'Inactive':[{title:'Mark Active or Delete',owner:'Company Admin'}]};
   return wfPlan(done,LEFT[e.status]||[]);
 }
 function evMoves(e){return EV_MOVES[e.status]||[];}
@@ -218,7 +218,7 @@ function renderEvSidebar(){
     const off=tpl&&tpl.status!=='Active';
     body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Email This Event Sends</span>'
         +(tpl?'<span class="ax-count"><a class="rb-link" onclick="etGoTo('+tpl.id+')">'+etKey(tpl)+' · '+sbEsc(tpl.name)+'</a></span>':'')+'</div>'
-      +(off?'<div class="ev-warn">'+tpl.name+' is '+tpl.status+', so this event has no email to send until it is reactivated.</div>':'')
+      +(off?'<div class="ev-warn">'+tpl.name+' is '+tpl.status+', so this event has no email to send until it is marked Active.</div>':'')
       +(tpl?etPreviewHTML(tpl,e.subject):'<div class="lp-wf-empty">No template linked. Use Edit on Basic Details to link one.</div>');
   }else if(evTab==='logs'){
     body=lpLogsView(evSeedLogs(e),evLogFormHTML(e),{labels:EV_MOVE_LABELS});
@@ -232,7 +232,7 @@ function renderEvSidebar(){
 function evLogFormHTML(e){
   return '<div class="lp-logs-form">'
     +'<div class="lp-logs-form-header"><span class="lp-log-dot"></span>'+e.status+'</div>'
-    +'<p class="lp-logs-form-sub">Activate, deactivate or delete this event and say why</p>'
+    +'<p class="lp-logs-form-sub">Mark this event active or inactive, or delete it, and say why</p>'
     +lpLogStatusField('ev-log-status-sel',e.status,[e.status].concat(evMoves(e)))
     +'<div class="lp-logs-form-label">Comment <span class="lp-logs-form-req">*</span></div>'
     +'<textarea class="lp-logs-form-textarea" id="ev-log-comment-inp" placeholder="Enter comment"></textarea>'
@@ -329,7 +329,7 @@ function evSaveAdd(key){
   const list=key==='cat'?ecLive('cat'):ecSubsOf(cat?cat.id:0);
   const twin=list.find(function(x){return x.name.toLowerCase()===val.toLowerCase();});
   if(twin){
-    if(twin.status!=='Active'){showToast(twin.name+' is '+twin.status,'info','Reactivate it from its own page to use it.');return;}
+    if(twin.status!=='Active'){showToast(twin.name+' is '+twin.status,'info','Mark it Active from its own page to use it.');return;}
     showToast(val+' already exists','info','It has been selected for you.');
     if(key==='cat'){d.cat=twin.name;d.sub='';}else d.sub=twin.name;
   }else{
@@ -350,48 +350,52 @@ function evFieldsHTML(){
   const sel=function(id,text,opts,val,ph,req,hook){return '<div class="ep-form-group">'+label(text,req)+apCS(id,opts,val,ph,hook)+'</div>';};
   /* A dimmed field says what it is waiting for. */
   const dep=function(on,inner,why){return '<div class="ep-form-group'+(on?'':' exp-dim')+'">'+inner+(on?'':'<div class="ea-hint">'+why+'</div>')+'</div>';};
-  const sec=function(title,sub){return '<div class="ep-form-group ep-form-full ev-sec"><div class="ev-sec-t">'+title+'</div><div class="ev-sec-s">'+sub+'</div></div>';};
+  /* The leave policy form's sections. ep-form-full lets one sit in the panel's
+     own grid when the form is edited there. */
+  const sec=function(title,body){return '<div class="policy-form-section ev-fsec ep-form-full"><div class="policy-section-title">'+title+'</div><div class="ep-form-grid">'+body+'</div></div>';};
   const fields=evFieldsOf(d.table);
   const fields2=fields.filter(function(f){return f!==d.f1;});
   const tplOpts=emailTemplatesData.filter(function(t){return t.status==='Active'||t.name===d.tpl;}).map(function(t){return t.name;}).reverse();
-  return sec('Event','What the event is and who it is for.')
-    +sel('ev-e-type','Event Type',EV_TYPES,d.type,'Select Event Type',true)
-    +'<div class="ep-form-group"><label class="ep-form-label" for="ev-e-number">Event Number <span class="req">*</span></label>'
-      +'<input class="ep-form-input" id="ev-e-number" type="number" min="1" step="1" value="'+attrSafe(d.number)+'" placeholder="Event Number"></div>'
-    +'<div class="ep-form-group">'+axAddLabel('Event Category',true,'cat','evOpenAdd')
-      +apCS('ev-e-cat',ecCatOptions(d.cat),d.cat,'Select Category','evFormHook')
-      +axInlineAdd('ev','cat',evAddOpen,'Category Name','evSaveAdd','evCancelAdd')+'</div>'
-    +dep(!!d.cat,axAddLabel('Event Sub Category',true,d.cat?'sub':'','evOpenAdd')
-      +axCS('ev-e-sub',ecSubOptions(d.cat,d.sub),d.sub,'Select Sub Category')
-      +axInlineAdd('ev','sub',evAddOpen,'Sub Category Name','evSaveAdd','evCancelAdd'),'Pick a Category first.')
-    +sel('ev-e-for','Event For',ET_FOR,d.aud,'Select Event For',true)
-    +(evModalOpen?sel('ev-e-status','Status',EV_TILES,d.status,'Select Status',true):'')
-    +sec('Trigger','When it fires. Field and Data Levels narrow it down and are optional.')
-    +sel('ev-e-service','Service Group',ET_SERVICES,d.service,'Select Service Group',true)
-    +sel('ev-e-process','Process Type',ET_PROCESS,d.process,'Select Process Type',true)
-    +'<div class="ep-form-group ep-form-full">'+label('Table Level',true)+apCS('ev-e-table',Object.keys(EV_TABLES),d.table,'Select Table Level','evFormHook')+'</div>'
-    +dep(!!d.table,label('Field Level One')+axCS('ev-e-f1',fields,d.f1,'Select Field','evFormHook'),'Pick a Table Level first.')
-    +dep(!!d.f1,label('Data Level One',!!d.f1)+axCS('ev-e-d1',evDataOf(d.table,d.f1),d.d1,'Select Value'),'Pick Field Level One first.')
-    +dep(!!d.f1,label('Field Level Two')+axCS('ev-e-f2',fields2,d.f2,'Select Field','evFormHook'),'Pick Field Level One first.')
-    +dep(!!d.f2,label('Data Level Two',!!d.f2)+axCS('ev-e-d2',evDataOf(d.table,d.f2),d.d2,'Select Value'),'Pick Field Level Two first.')
-    +sec('Rule','What the event is meant to do, in words.')
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ev-e-rule">Business Rule <span class="req">*</span></label>'
-      +'<textarea class="ep-form-input ax-notes" id="ev-e-rule" placeholder="e.g. Tell HR when the closing team updates a deal">'+sbEsc(d.rule)+'</textarea></div>'
-    +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ev-e-comment">Trigger Comment <span class="req">*</span></label>'
-      +'<textarea class="ep-form-input ax-notes" id="ev-e-comment" placeholder="e.g. Sent to HR once, when the status changes">'+sbEsc(d.comment)+'</textarea></div>'
-    +'<div class="ep-form-group ep-form-full ev-opts">'
-      +'<label class="hdoc-check"><input type="checkbox" id="ev-e-schedule"'+(d.schedule?' checked':'')+'><span>Schedule Event</span></label>'
-      +'<label class="hdoc-check"><input type="checkbox" id="ev-e-promo"'+(d.promo?' checked':'')+'><span>Promotion</span></label>'
-    +'</div>'
-    +sec('Email','What it sends. The subject comes from the template and can be reworded here.')
-    +'<div class="ep-form-group">'+axAddLabel('Event Template',false,'tpl','evOpenAdd')
-      +axCS('ev-e-tpl',tplOpts,d.tpl,'Select Template','evFormHook')+'</div>'
-    +'<div class="ep-form-group'+(d.tpl?'':' exp-dim')+'"><label class="ep-form-label" for="ev-e-subject">Template Subject'+(d.tpl?' <span class="req">*</span>':'')+'</label>'
-      +'<input class="ep-form-input" id="ev-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject" oninput="evPreviewLive()"'+(d.tpl?'':' disabled')+'>'
-      +(d.tpl?'':'<div class="ea-hint">Pick a Template first.</div>')+'</div>'
-    +'<div class="ep-form-group ep-form-full et-pv-wrap">'
-      +'<button type="button" class="btn-outline" id="ev-pv-btn" onclick="evPreviewToggle()"'+(d.tpl?'':' disabled title="Pick a Template first"')+'>'+(evPreviewOpen?'Hide Preview':'Preview Email')+'</button>'
-      +'<div class="et-pv" id="ev-pv">'+evPreviewBody()+'</div></div>';
+  return sec('Event Details',
+      sel('ev-e-type','Event Type',EV_TYPES,d.type,'Select Event Type',true)
+      +'<div class="ep-form-group"><label class="ep-form-label" for="ev-e-number">Event Number <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="ev-e-number" type="number" min="1" step="1" value="'+attrSafe(d.number)+'" placeholder="Event Number"></div>'
+      /* Status is only asked when adding; alone on its row, Event For takes the width. */
+      +'<div class="ep-form-group'+(evModalOpen?'':' ep-form-full')+'">'+label('Event For',true)+apCS('ev-e-for',ET_FOR,d.aud,'Select Event For')+'</div>'
+      +(evModalOpen?sel('ev-e-status','Status',EV_TILES,d.status,'Select Status',true):''))
+    +sec('Category',
+      '<div class="ep-form-group">'+axAddLabel('Event Category',true,'cat','evOpenAdd')
+        +apCS('ev-e-cat',ecCatOptions(d.cat),d.cat,'Select Category','evFormHook')
+        +axInlineAdd('ev','cat',evAddOpen,'Category Name','evSaveAdd','evCancelAdd')+'</div>'
+      +dep(!!d.cat,axAddLabel('Event Sub Category',true,d.cat?'sub':'','evOpenAdd')
+        +axCS('ev-e-sub',ecSubOptions(d.cat,d.sub),d.sub,'Select Sub Category')
+        +axInlineAdd('ev','sub',evAddOpen,'Sub Category Name','evSaveAdd','evCancelAdd'),'Pick a Category first.'))
+    +sec('Trigger',
+      sel('ev-e-service','Service Group',ET_SERVICES,d.service,'Select Service Group',true)
+      +sel('ev-e-process','Process Type',ET_PROCESS,d.process,'Select Process Type',true)
+      +'<div class="ep-form-group ep-form-full">'+label('Table Level',true)+apCS('ev-e-table',Object.keys(EV_TABLES),d.table,'Select Table Level','evFormHook')+'</div>'
+      +dep(!!d.table,label('Field Level One')+axCS('ev-e-f1',fields,d.f1,'Select Field','evFormHook'),'Pick a Table Level first.')
+      +dep(!!d.f1,label('Data Level One',!!d.f1)+axCS('ev-e-d1',evDataOf(d.table,d.f1),d.d1,'Select Value'),'Pick Field Level One first.')
+      +dep(!!d.f1,label('Field Level Two')+axCS('ev-e-f2',fields2,d.f2,'Select Field','evFormHook'),'Pick Field Level One first.')
+      +dep(!!d.f2,label('Data Level Two',!!d.f2)+axCS('ev-e-d2',evDataOf(d.table,d.f2),d.d2,'Select Value'),'Pick Field Level Two first.')
+      +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ev-e-comment">Trigger Comment <span class="req">*</span></label>'
+        +'<textarea class="ep-form-input ax-notes" id="ev-e-comment" placeholder="e.g. Sent to HR once, when the status changes">'+sbEsc(d.comment)+'</textarea></div>')
+    +sec('Rule and Options',
+      '<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ev-e-rule">Business Rule <span class="req">*</span></label>'
+        +'<textarea class="ep-form-input ax-notes" id="ev-e-rule" placeholder="e.g. Tell HR when the closing team updates a deal">'+sbEsc(d.rule)+'</textarea></div>'
+      +'<div class="ep-form-group ep-form-full ev-opts">'
+        +'<label class="hdoc-check"><input type="checkbox" id="ev-e-schedule"'+(d.schedule?' checked':'')+'><span>Schedule Event</span></label>'
+        +'<label class="hdoc-check"><input type="checkbox" id="ev-e-promo"'+(d.promo?' checked':'')+'><span>Promotion</span></label>'
+      +'</div>')
+    +sec('Email',
+      '<div class="ep-form-group">'+axAddLabel('Event Template',false,'tpl','evOpenAdd')
+        +axCS('ev-e-tpl',tplOpts,d.tpl,'Select Template','evFormHook')+'</div>'
+      +'<div class="ep-form-group'+(d.tpl?'':' exp-dim')+'"><label class="ep-form-label" for="ev-e-subject">Template Subject'+(d.tpl?' <span class="req">*</span>':'')+'</label>'
+        +'<input class="ep-form-input" id="ev-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject" oninput="evPreviewLive()"'+(d.tpl?'':' disabled')+'>'
+        +(d.tpl?'':'<div class="ea-hint">Pick a Template first.</div>')+'</div>'
+      +'<div class="ep-form-group ep-form-full et-pv-wrap">'
+        +'<button type="button" class="btn-outline" id="ev-pv-btn" onclick="evPreviewToggle()"'+(d.tpl?'':' disabled title="Pick a Template first"')+'>'+(evPreviewOpen?'Hide Preview':'Preview Email')+'</button>'
+        +'<div class="et-pv" id="ev-pv">'+evPreviewBody()+'</div></div>');
 }
 function evCheck(d){
   const need=[['type','Event Type'],['number','Event Number'],['cat','Event Category'],['sub','Event Sub Category'],['aud','Event For'],
@@ -436,7 +440,7 @@ function buildAddEvModalHTML(){
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Event</span>'
       +'<button class="ct-modal-close" onclick="cancelAddEv()">'+AX_ICO.x+'</button></div>'
     +'<p class="ct-modal-sub">When a record reaches a state, send an email to an audience. Fields marked <span class="req">*</span> are required.</p>'
-    +'<div class="ep-form-grid" id="ev-m-grid">'+evFieldsHTML()+'</div>'
+    +'<div class="ep-form-card ev-form-card" id="ev-m-grid">'+evFieldsHTML()+'</div>'
     +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddEv()">Cancel</button>'
       +'<button class="ep-save-btn" onclick="submitAddEv()">Add Event</button>'
