@@ -66,6 +66,8 @@
 .et-body img,.et-mail-body img{max-width:100%;height:auto}
 
 /* The mail preview */
+.et-pv-wrap .btn-outline{align-self:flex-start}
+.et-pv:not(:empty){margin-top:12px}
 .et-mail{border:1px solid var(--border);border-radius:var(--r-card);background:var(--card);overflow:hidden}
 .et-mail-hd{padding:10px 16px;background:var(--light);border-bottom:1px solid var(--border)}
 .et-mail-row{display:flex;gap:12px;padding:3px 0;font-size:12.5px;color:var(--navy)}

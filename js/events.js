@@ -96,7 +96,7 @@ const EV_ICO={
 /* ── State ─────────────────────────────────────────────────────────────── */
 let evSelectedId=null,evTab='basic-details';
 let evForF='',evCatF='',evSubF='',evProcessF='',evServiceF='',evStatusF='',evQ='';
-let evEditing=false,evDraft=null,evDraftOrig='',evModalOpen=false,evAddOpen='';
+let evEditing=false,evDraft=null,evDraftOrig='',evModalOpen=false,evAddOpen='',evPreviewOpen=false;
 
 /* ── Filters ───────────────────────────────────────────────────────────── */
 function evRows(){
@@ -137,7 +137,7 @@ function evFilterCatHook(val){
 }
 
 /* ── Detail panel ──────────────────────────────────────────────────────── */
-function evDropEdit(){evEditing=false;evDraft=null;evAddOpen='';}
+function evDropEdit(){evEditing=false;evDraft=null;evAddOpen='';evPreviewOpen=false;}
 function openEvSidebar(id,tab){
   if(evSelectedId!=null&&evSelectedId!==id&&sbLeaveGuard('ev',function(){openEvSidebar(id,tab);}))return;
   if(evSelectedId!==id)evDropEdit();
@@ -290,9 +290,27 @@ function evFormHook(val,csid){
   if(csid==='ev-e-table'){d.f1='';d.d1='';d.f2='';d.d2='';}
   if(csid==='ev-e-f1'){d.d1='';if(!val||d.f2===val){d.f2='';d.d2='';}}
   if(csid==='ev-e-f2')d.d2='';
-  if(csid==='ev-e-tpl'){const t=etByName(val);d.subject=t?t.subject:'';}
+  if(csid==='ev-e-tpl'){const t=etByName(val);d.subject=t?t.subject:'';if(!t)evPreviewOpen=false;}
   evRepaint();
 }
+/* The email this event would send: the template, under this event's subject.
+   Only the preview's own box is repainted, so typing keeps its caret. */
+function evPreviewBody(){
+  const d=evDraft,t=d&&d.tpl?etByName(d.tpl):null;
+  return evPreviewOpen&&t?etPreviewHTML(t,d.subject||'No subject yet'):'';
+}
+function evPreviewPaint(){
+  const box=document.getElementById('ev-pv'),btn=document.getElementById('ev-pv-btn');
+  if(box)box.innerHTML=evPreviewBody();
+  if(btn)btn.textContent=evPreviewOpen?'Hide Preview':'Preview Email';
+}
+function evPreviewToggle(){
+  evSync();
+  evPreviewOpen=!evPreviewOpen;
+  evPreviewPaint();
+  if(evPreviewOpen)etPreviewShow('ev-pv');
+}
+function evPreviewLive(){if(evPreviewOpen){evSync();evPreviewPaint();}}
 /* The inline + Add on Category and Sub Category; Template opens its full form. */
 function evOpenAdd(key){
   evSync();
@@ -369,8 +387,11 @@ function evFieldsHTML(){
     +'<div class="ep-form-group">'+axAddLabel('Event Template',false,'tpl','evOpenAdd')
       +axCS('ev-e-tpl',tplOpts,d.tpl,'Select Template','evFormHook')+'</div>'
     +'<div class="ep-form-group'+(d.tpl?'':' exp-dim')+'"><label class="ep-form-label" for="ev-e-subject">Template Subject'+(d.tpl?' <span class="req">*</span>':'')+'</label>'
-      +'<input class="ep-form-input" id="ev-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject"'+(d.tpl?'':' disabled')+'>'
-      +(d.tpl?'':'<div class="ea-hint">Pick a Template first.</div>')+'</div>';
+      +'<input class="ep-form-input" id="ev-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject" oninput="evPreviewLive()"'+(d.tpl?'':' disabled')+'>'
+      +(d.tpl?'':'<div class="ea-hint">Pick a Template first.</div>')+'</div>'
+    +'<div class="ep-form-group ep-form-full et-pv-wrap">'
+      +'<button type="button" class="btn-outline" id="ev-pv-btn" onclick="evPreviewToggle()"'+(d.tpl?'':' disabled title="Pick a Template first"')+'>'+(evPreviewOpen?'Hide Preview':'Preview Email')+'</button>'
+      +'<div class="et-pv" id="ev-pv">'+evPreviewBody()+'</div></div>';
 }
 function evCheck(d){
   const need=[['type','Event Type'],['number','Event Number'],['cat','Event Category'],['sub','Event Sub Category'],['aud','Event For'],
@@ -408,7 +429,7 @@ function startAddEv(){
   evModalOpen=true;
   renderADTPage();
 }
-function cancelAddEv(){evModalOpen=false;evDraft=null;evAddOpen='';renderADTPage();}
+function cancelAddEv(){evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;renderADTPage();}
 function buildAddEvModalHTML(){
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
@@ -431,7 +452,7 @@ function submitAddEv(){
   e.logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:e.status,action:'Event created as '+e.status+'.'}];
   eventsData.unshift(e);
   lpLanded('events',e.id);
-  evModalOpen=false;evDraft=null;evAddOpen='';
+  evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;
   renderADTPage();
   showToast('Event added','success',evKey(e)+' · No. '+e.number+' for '+e.aud+'.');
 }

@@ -7,83 +7,83 @@
 <title>ADT Agent &amp; Support Mode — V2</title>
 
 
-<link rel="stylesheet" href="css/fonts.css?v=20261106b">
-<link rel="stylesheet" href="css/cost-calc.css?v=20261106b">
-<link rel="stylesheet" href="css/main.css?v=20261106b">
-<link rel="stylesheet" href="css/leaves.css?v=20261106b">
-<link rel="stylesheet" href="css/dashboard-multiview.css?v=20261106b">
+<link rel="stylesheet" href="css/fonts.css?v=20261106c">
+<link rel="stylesheet" href="css/cost-calc.css?v=20261106c">
+<link rel="stylesheet" href="css/main.css?v=20261106c">
+<link rel="stylesheet" href="css/leaves.css?v=20261106c">
+<link rel="stylesheet" href="css/dashboard-multiview.css?v=20261106c">
 <!-- Loaded last: the button system is authoritative over every legacy button rule. -->
-<link rel="stylesheet" href="css/buttons.css?v=20261106b">
+<link rel="stylesheet" href="css/buttons.css?v=20261106c">
 <!-- After buttons.css on purpose. These two add motion and inline row actions
      on top of the finished component set; neither redefines a colour or a
      size, so order only matters for the transitions they layer on. -->
-<link rel="stylesheet" href="css/motion.css?v=20261106b">
-<link rel="stylesheet" href="css/sidebar-icons.css?v=20261106b">
-<link rel="stylesheet" href="css/quick-actions.css?v=20261106b">
+<link rel="stylesheet" href="css/motion.css?v=20261106c">
+<link rel="stylesheet" href="css/sidebar-icons.css?v=20261106c">
+<link rel="stylesheet" href="css/quick-actions.css?v=20261106c">
 <!-- The timesheet's export drawer. Additive: it defines only .tsx-* selectors
      and reuses the shared tokens, so it can load anywhere after main.css. -->
-<link rel="stylesheet" href="css/export-panel.css?v=20261106b">
+<link rel="stylesheet" href="css/export-panel.css?v=20261106c">
 <!-- Company Settings' Attendance tab, plus apMS (the multi-select). Additive:
      .csa-* / .ms-* selectors only, everything else borrowed from main.css. -->
-<link rel="stylesheet" href="css/attendance-settings.css?v=20261106b">
+<link rel="stylesheet" href="css/attendance-settings.css?v=20261106c">
 <!-- The Holidays page's "View Optional Holidays" overlay. Additive: .oh-* /
      .tb-opt-hol selectors only; the tabs are main.css's own .cc-tab. -->
-<link rel="stylesheet" href="css/optional-holidays.css?v=20261106b">
+<link rel="stylesheet" href="css/optional-holidays.css?v=20261106c">
 <!-- Claiming attendance on a weekly off or holiday. Additive: .ar-* only,
      plus one .ts-day-pill.closed the timesheet grid now needs. -->
-<link rel="stylesheet" href="css/attendance-request.css?v=20261106b">
+<link rel="stylesheet" href="css/attendance-request.css?v=20261106c">
 <!-- Leaves tab: one scoped height correction; everything else is shared. -->
-<link rel="stylesheet" href="css/leave-settings.css?v=20261106b">
+<link rel="stylesheet" href="css/leave-settings.css?v=20261106c">
 <!-- How a day is judged: the rail colour, the day-panel tag and the legend. -->
-<link rel="stylesheet" href="css/day-status.css?v=20261106b">
-<link rel="stylesheet" href="css/cs-agreements.css?v=20261106b">
-<link rel="stylesheet" href="css/cs-roles.css?v=20261106b">
-<link rel="stylesheet" href="css/esign.css?v=20261106b">
+<link rel="stylesheet" href="css/day-status.css?v=20261106c">
+<link rel="stylesheet" href="css/cs-agreements.css?v=20261106c">
+<link rel="stylesheet" href="css/cs-roles.css?v=20261106c">
+<link rel="stylesheet" href="css/esign.css?v=20261106c">
 <!-- The four-step Create New Employee wizard. Builds on the form system in
      main.css; adds only the stepper, chips, checklist and access preview. -->
-<link rel="stylesheet" href="css/employee-add.css?v=20261106b">
+<link rel="stylesheet" href="css/employee-add.css?v=20261106c">
 <!-- The Immigration and Contractor intake forms. Reuses main.css's colour, shape
      and toggle tokens; owns its own field and checklist chrome. -->
-<link rel="stylesheet" href="css/contract-intake.css?v=20261106b">
+<link rel="stylesheet" href="css/contract-intake.css?v=20261106c">
 <!-- Governance → Admin Access: IT Access and Asset Allocation. -->
-<link rel="stylesheet" href="css/admin-access.css?v=20261106b">
+<link rel="stylesheet" href="css/admin-access.css?v=20261106c">
 <!-- Governance → HR Docs: letter types, templates, drafts and the preview page. -->
-<link rel="stylesheet" href="css/hr-docs.css?v=20261106b">
-<link rel="stylesheet" href="css/expenses.css?v=20261106b">
+<link rel="stylesheet" href="css/hr-docs.css?v=20261106c">
+<link rel="stylesheet" href="css/expenses.css?v=20261106c">
 <!-- Governance → RBAC Templates: the permission picker and Permissions tab. -->
-<link rel="stylesheet" href="css/rbac-templates.css?v=20261106b">
+<link rel="stylesheet" href="css/rbac-templates.css?v=20261106c">
 <!-- Governance → RBAC → Workspaces: Teams and Members tabs. -->
-<link rel="stylesheet" href="css/rbac-workspaces.css?v=20261106b">
+<link rel="stylesheet" href="css/rbac-workspaces.css?v=20261106c">
 <!-- Governance → Events and Email Templates: event form sections, email editor, mail preview. -->
-<link rel="stylesheet" href="css/events.css?v=20261106b">
+<link rel="stylesheet" href="css/events.css?v=20261106c">
 <!-- Employee lifecycle: log blocks, document picker, Asset / IT sections,
      the dashboard tracker and Requested Docs. After leaves.css, whose shared
      row-menu rules it extends. -->
-<link rel="stylesheet" href="css/employee-lifecycle.css?v=20261106b">
-<link rel="stylesheet" href="css/announcements.css?v=20261106b">
-<link rel="stylesheet" href="css/announcement-admin.css?v=20261106b">
-<link rel="stylesheet" href="css/dash-preview.css?v=20261106b">
-<link rel="stylesheet" href="css/req-docs-popup.css?v=20261106b">
-<link rel="stylesheet" href="css/leave-balance.css?v=20261106b">
-<link rel="stylesheet" href="css/logs-view.css?v=20261106b">
-<link rel="stylesheet" href="css/form-page.css?v=20261106b">
-<link rel="stylesheet" href="css/apply-application.css?v=20261106b">
-<link rel="stylesheet" href="css/at-salary.css?v=20261106b">
-<link rel="stylesheet" href="css/at-requests.css?v=20261106b">
+<link rel="stylesheet" href="css/employee-lifecycle.css?v=20261106c">
+<link rel="stylesheet" href="css/announcements.css?v=20261106c">
+<link rel="stylesheet" href="css/announcement-admin.css?v=20261106c">
+<link rel="stylesheet" href="css/dash-preview.css?v=20261106c">
+<link rel="stylesheet" href="css/req-docs-popup.css?v=20261106c">
+<link rel="stylesheet" href="css/leave-balance.css?v=20261106c">
+<link rel="stylesheet" href="css/logs-view.css?v=20261106c">
+<link rel="stylesheet" href="css/form-page.css?v=20261106c">
+<link rel="stylesheet" href="css/apply-application.css?v=20261106c">
+<link rel="stylesheet" href="css/at-salary.css?v=20261106c">
+<link rel="stylesheet" href="css/at-requests.css?v=20261106c">
 <!-- Timesheet month grid, "soft tiles" redesign. Remove this line to restore
      the original grid design (main.css / day-status.css are unchanged). -->
-<link rel="stylesheet" href="css/timesheet-calendar.css?v=20261106b">
+<link rel="stylesheet" href="css/timesheet-calendar.css?v=20261106c">
 <!-- Timesheet billing: week lock states, submission, approval, invoice drafts.
      After timesheet-calendar.css so the rail chips win on load order. -->
-<link rel="stylesheet" href="css/ts-billing.css?v=20261106b">
+<link rel="stylesheet" href="css/ts-billing.css?v=20261106c">
 <!-- LAST: settles control height and button shape across every creation form,
      popup and page alike. Must win over the per-screen sheets above. -->
-<link rel="stylesheet" href="css/form-system.css?v=20261106b">
+<link rel="stylesheet" href="css/form-system.css?v=20261106c">
 <!-- Small screens (tablet / phone). Last, so it only ever narrows the rules above. -->
-<link rel="stylesheet" href="css/responsive.css?v=20261106b">
+<link rel="stylesheet" href="css/responsive.css?v=20261106c">
 <!-- No bold text in listing rows; loaded last so it wins over per-cell weights. -->
-<link rel="stylesheet" href="css/login.css?v=20261106b">
-<link rel="stylesheet" href="css/listing-weight.css?v=20261106b"></head>
+<link rel="stylesheet" href="css/login.css?v=20261106c">
+<link rel="stylesheet" href="css/listing-weight.css?v=20261106c"></head>
 <body>
 <!-- ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â ADT DASHBOARD ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚ÂÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢Ãƒâ€šÃ‚Â -->
 <!-- ═══ SIGN IN ═══ The first view on load (js/login.js). Sign in hands over to
@@ -2265,94 +2265,94 @@
   </div>
 </div>
 
-<script src="js/contract-types.js?v=20261106b"></script>
-<script src="js/core.js?v=20261106b"></script>
-<script src="js/logs-view.js?v=20261106b"></script>
-<script src="js/form-page.js?v=20261106b"></script>
-<script src="js/workflow-plan.js?v=20261106b"></script>
-<script src="js/contract-events.js?v=20261106b"></script>
+<script src="js/contract-types.js?v=20261106c"></script>
+<script src="js/core.js?v=20261106c"></script>
+<script src="js/logs-view.js?v=20261106c"></script>
+<script src="js/form-page.js?v=20261106c"></script>
+<script src="js/workflow-plan.js?v=20261106c"></script>
+<script src="js/contract-events.js?v=20261106c"></script>
 <!-- After core.js: it registers its log tones into SB_STATUS_TONE and settles
      every employee onto its log at parse time. Before pages.js, which renders
      both employee Logs tabs through renderEmpLogsTab(). -->
-<script src="js/employee-lifecycle.js?v=20261106b"></script>
-<script src="js/announcements.js?v=20261106b"></script>
+<script src="js/employee-lifecycle.js?v=20261106c"></script>
+<script src="js/announcements.js?v=20261106c"></script>
 <!-- Governance → Announcements: the admin module that writes what the dashboard
      panel above reads. Before history.js, which wraps its save. -->
-<script src="js/announcement-admin.js?v=20261106b"></script>
-<script src="js/req-docs-popup.js?v=20261106b"></script>
-<script src="js/dash-preview.js?v=20261106b"></script>
-<script src="js/leave-balance.js?v=20261106b"></script>
+<script src="js/announcement-admin.js?v=20261106c"></script>
+<script src="js/req-docs-popup.js?v=20261106c"></script>
+<script src="js/dash-preview.js?v=20261106c"></script>
+<script src="js/leave-balance.js?v=20261106c"></script>
 <!-- After core.js for apCS/apCD and teamsData. The Create New Employee popup;
      the employee listings in pages.js paint it with buildAddEmployeeModalHTML(). -->
-<script src="js/employee-add.js?v=20261106b"></script>
+<script src="js/employee-add.js?v=20261106c"></script>
 <!-- Before pages.js only for tidiness: the timesheet builders call
      tsxExportBtn() at RENDER time, long after every file here has parsed. -->
-<script src="js/ts-export.js?v=20261106b"></script>
+<script src="js/ts-export.js?v=20261106c"></script>
 <!-- Owns the Attendance tab body that renderCsSidebar() calls into, and apMS.
      Order is immaterial: both are called at render time. -->
-<script src="js/attendance-settings.js?v=20261106b"></script>
+<script src="js/attendance-settings.js?v=20261106c"></script>
 <!-- Reads holidaysData and hdEntityRows() from core.js at render time. -->
-<script src="js/optional-holidays.js?v=20261106b"></script>
+<script src="js/optional-holidays.js?v=20261106c"></script>
 <!-- Read by the timesheet grid and day panel at render time; governed by
      csAtt (attendance-settings.js) and the entity holiday calendar. -->
-<script src="js/attendance-request.js?v=20261106b"></script>
+<script src="js/attendance-request.js?v=20261106c"></script>
 <!-- Owns the Leaves tab body renderCsSidebar() calls into. Borrows the
      generic form helpers from css/attendance-settings.css; adds no CSS. -->
-<script src="js/leave-settings.js?v=20261106b"></script>
+<script src="js/leave-settings.js?v=20261106c"></script>
 <!-- Leaves & Holidays tab (Employees panel, My Profile), Company Settings →
      Leave Balance, and the balance shown while applying for leave. Reads
      lbRows() from leave-balance.js; styles in css/leave-balance.css. -->
-<script src="js/leaves-holidays.js?v=20261106b"></script>
+<script src="js/leaves-holidays.js?v=20261106c"></script>
 <!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
-<script src="js/day-status.js?v=20261106b"></script>
-<script src="js/pages.js?v=20261106b"></script>
+<script src="js/day-status.js?v=20261106c"></script>
+<script src="js/pages.js?v=20261106c"></script>
 <!-- All Timesheet Salary tab + payslip. Reads atPeriod/atEmp (pages.js, core.js)
      and payheadsData for the PF / PT slabs. -->
-<script src="js/at-salary.js?v=20261106b"></script>
+<script src="js/at-salary.js?v=20261106c"></script>
 <!-- All Timesheet Requests tab. Reads arRequests (attendance-request.js) and
      tsChangeLog (core.js). -->
-<script src="js/at-requests.js?v=20261106b"></script>
+<script src="js/at-requests.js?v=20261106c"></script>
 <!-- Timesheet submit / approve / invoice (Sales Order Timesheets + Receivable
      tabs). After at-salary.js: the invoice reuses its AT_COMPANY and .psl look. -->
-<script src="js/ts-billing.js?v=20261106b"></script>
-<script src="js/apply-application.js?v=20261106b"></script>
+<script src="js/ts-billing.js?v=20261106c"></script>
+<script src="js/apply-application.js?v=20261106c"></script>
 <!-- After pages.js (it calls apCD, showToast and aiGenCommercial) and before
      renderer.js, which dispatches contract-immigration and contract-contractor
      to the two builders in here. -->
-<script src="js/contract-intake.js?v=20261106b"></script>
+<script src="js/contract-intake.js?v=20261106c"></script>
 <!-- Pay Run and Create Invoice forms. After pages.js (customSelect, apCD,
      lpLanded) and before renderer.js, whose listings read their open flags. -->
-<script src="js/pay-create.js?v=20261106b"></script>
-<script src="js/cs-agreements.js?v=20261106b"></script>
-<script src="js/cs-roles.js?v=20261106b"></script>
-<script src="js/esign.js?v=20261106b"></script>
-<script src="js/esign-settings.js?v=20261106b"></script>
-<script src="js/admin-access.js?v=20261106b"></script>
-<script src="js/hr-docs.js?v=20261106b"></script>
-<script src="js/expenses.js?v=20261106b"></script>
-<script src="js/capping-limit.js?v=20261106b"></script>
-<script src="js/rbac-templates.js?v=20261106b"></script>
+<script src="js/pay-create.js?v=20261106c"></script>
+<script src="js/cs-agreements.js?v=20261106c"></script>
+<script src="js/cs-roles.js?v=20261106c"></script>
+<script src="js/esign.js?v=20261106c"></script>
+<script src="js/esign-settings.js?v=20261106c"></script>
+<script src="js/admin-access.js?v=20261106c"></script>
+<script src="js/hr-docs.js?v=20261106c"></script>
+<script src="js/expenses.js?v=20261106c"></script>
+<script src="js/capping-limit.js?v=20261106c"></script>
+<script src="js/rbac-templates.js?v=20261106c"></script>
 <!-- After rbac-templates.js: a team names the template it applies. -->
-<script src="js/rbac-workspaces.js?v=20261106b"></script>
+<script src="js/rbac-workspaces.js?v=20261106c"></script>
 <!-- Events: an event names a category and a template. -->
-<script src="js/email-templates.js?v=20261106b"></script>
-<script src="js/event-categories.js?v=20261106b"></script>
-<script src="js/events.js?v=20261106b"></script>
-<script src="js/row-logs.js?v=20261106b"></script>
-<script src="js/row-logs-modules.js?v=20261106b"></script>
-<script src="js/renderer.js?v=20261106b"></script>
+<script src="js/email-templates.js?v=20261106c"></script>
+<script src="js/event-categories.js?v=20261106c"></script>
+<script src="js/events.js?v=20261106c"></script>
+<script src="js/row-logs.js?v=20261106c"></script>
+<script src="js/row-logs-modules.js?v=20261106c"></script>
+<script src="js/renderer.js?v=20261106c"></script>
 <!-- After renderer.js: it enhances what the renderer paints, and needs the
      page data arrays and open*Sidebar handlers to already exist. -->
-<script src="js/quick-actions.js?v=20261106b"></script>
+<script src="js/quick-actions.js?v=20261106c"></script>
 <!-- Reads layout only. The action column is pinned in CSS and stays pinned
      without this; all this decides is whether the edge shadow is earned. -->
-<script src="js/sticky-actions.js?v=20261106b"></script>
+<script src="js/sticky-actions.js?v=20261106c"></script>
 <!-- Also layout-only: moves the detail panel's active-tab box between tabs. -->
-<script src="js/tab-slide.js?v=20261106b"></script>
+<script src="js/tab-slide.js?v=20261106c"></script>
 <!-- History tab: wraps the save functions above to record field changes. Last. -->
-<script src="js/history.js?v=20261106b"></script>
+<script src="js/history.js?v=20261106c"></script>
 <!-- Sign in: the first view, and Sign Out in the profile menu. -->
-<script src="js/login.js?v=20261106b"></script>
+<script src="js/login.js?v=20261106c"></script>
 <script>
 function switchDashboard(tab){
   window.activeDashboardTab=tab;

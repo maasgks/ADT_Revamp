@@ -101,6 +101,8 @@ let etEditing=false,etDraft=null,etDraftOrig='',etModalOpen=false;
 /* + Add from the event form: the template is made there, so saving goes back
    to that event's form with it picked instead of to this listing. */
 let etFromEvent=false;
+/* The form's preview: open or shut, never saved with the template. */
+let etPreviewOpen=false;
 
 /* ── Filters ───────────────────────────────────────────────────────────── */
 function etRows(){
@@ -131,7 +133,7 @@ function applyEtFilters(){
 function resetEtFilters(){etForF='';etServiceF='';etTypeF='';etStatusF='';etQ='';etSelectedId=null;renderADTPage();}
 
 /* ── Detail panel ──────────────────────────────────────────────────────── */
-function etDropEdit(){etEditing=false;etDraft=null;}
+function etDropEdit(){etEditing=false;etDraft=null;etPreviewOpen=false;}
 function openEtSidebar(id,tab){
   if(etSelectedId!=null&&etSelectedId!==id&&sbLeaveGuard('et',function(){openEtSidebar(id,tab);}))return;
   if(etSelectedId!==id)etDropEdit();
@@ -250,7 +252,7 @@ function etCmd(cmd,val){
 /* A merge field goes wherever the caret is: the Subject box or the body. */
 function etInsertField(name){
   const tag='['+name+']',s=document.activeElement;
-  if(s&&s.id==='et-e-subject'){s.setRangeText(tag,s.selectionStart,s.selectionEnd,'end');return;}
+  if(s&&s.id==='et-e-subject'){s.setRangeText(tag,s.selectionStart,s.selectionEnd,'end');etPreviewLive();return;}
   etCmd('insertText',tag);
 }
 function etPaste(e){
@@ -321,9 +323,34 @@ function etEditorHTML(html){
     +'<div class="et-fields"><span class="et-fields-l">Insert field</span>'
       +ET_FIELDS.map(function(f){return '<button type="button" class="et-chip" onmousedown="event.preventDefault();etInsertField(\''+f+'\')">'+f+'</button>';}).join('')
     +'</div>'
-    +'<div class="et-body" id="et-e-body" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-ph="Write the email here" onpaste="etPaste(event)">'+(html||'')+'</div>'
+    +'<div class="et-body" id="et-e-body" contenteditable="true" spellcheck="true" role="textbox" aria-multiline="true" data-ph="Write the email here" onpaste="etPaste(event)" oninput="etPreviewLive()">'+(html||'')+'</div>'
     +'</div>';
 }
+
+/* ── Preview in the form ───────────────────────────────────────────────────
+   The mail as it stands, unsaved. It opens under the editor rather than in a
+   popup, and only its own box is repainted, so the caret stays in the editor
+   and the preview follows what is typed. */
+function etPreviewBody(){
+  const d=etDraft;
+  if(!etPreviewOpen||!d)return '';
+  const has=etText(d.content)||/<img/i.test(d.content);
+  return etPreviewHTML({aud:d.aud||'Not selected',type:d.type,content:has?d.content:'<p>Nothing written yet.</p>'},d.subject||'No subject yet');
+}
+function etPreviewPaint(){
+  const box=document.getElementById('et-pv'),btn=document.getElementById('et-pv-btn');
+  if(box)box.innerHTML=etPreviewBody();
+  if(btn)btn.textContent=etPreviewOpen?'Hide Preview':'Preview Email';
+}
+function etPreviewToggle(){
+  etSync();
+  etPreviewOpen=!etPreviewOpen;
+  etPreviewPaint();
+  if(etPreviewOpen)etPreviewShow('et-pv');
+}
+function etPreviewLive(){if(etPreviewOpen){etSync();etPreviewPaint();}}
+/* It opens at the foot of a long form, so it is brought into view. */
+function etPreviewShow(id){const el=document.getElementById(id);if(el)el.scrollIntoView({block:'nearest',behavior:'smooth'});}
 
 /* ── The form: panel Edit and + Add share it ───────────────────────────── */
 function etStartEdit(){
@@ -343,20 +370,23 @@ function etSync(){
 }
 function etFieldsHTML(){
   const d=etDraft;
-  const sel=function(id,label,opts,val,ph,req){
-    return '<div class="ep-form-group"><label class="ep-form-label">'+label+(req?' <span class="req">*</span>':'')+'</label>'+apCS(id,opts,val,ph)+'</div>';
+  const sel=function(id,label,opts,val,ph,req,hook){
+    return '<div class="ep-form-group"><label class="ep-form-label">'+label+(req?' <span class="req">*</span>':'')+'</label>'+apCS(id,opts,val,ph,hook)+'</div>';
   };
   return '<div class="ep-form-group"><label class="ep-form-label" for="et-e-name">Template Name <span class="req">*</span></label>'
       +'<input class="ep-form-input" id="et-e-name" value="'+attrSafe(d.name)+'" placeholder="e.g. Employee Welcome"></div>'
-    +sel('et-e-for','Template For',ET_FOR,d.aud,'Select Template For',true)
+    +sel('et-e-for','Template For',ET_FOR,d.aud,'Select Template For',true,'etPreviewLive')
     +sel('et-e-process','Process Type',ET_PROCESS,d.process,'Select Process Type')
     +sel('et-e-service','Service Group',ET_SERVICES,d.service,'Select Service Group',true)
-    +sel('et-e-type','Template Type',ET_TYPES,d.type,'Select Template Type',true)
+    +sel('et-e-type','Template Type',ET_TYPES,d.type,'Select Template Type',true,'etPreviewLive')
     +(etModalOpen?sel('et-e-status','Status',ET_TILES,d.status,'Select Status',true):'')
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="et-e-subject">Subject <span class="req">*</span></label>'
-      +'<input class="ep-form-input" id="et-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject"></div>'
+      +'<input class="ep-form-input" id="et-e-subject" value="'+attrSafe(d.subject)+'" placeholder="Template Subject" oninput="etPreviewLive()"></div>'
     +'<div class="ep-form-group ep-form-full"><label class="ep-form-label">Template Content <span class="req">*</span></label>'
-      +etEditorHTML(d.content)+'</div>';
+      +etEditorHTML(d.content)+'</div>'
+    +'<div class="ep-form-group ep-form-full et-pv-wrap">'
+      +'<button type="button" class="btn-outline" id="et-pv-btn" onclick="etPreviewToggle()">'+(etPreviewOpen?'Hide Preview':'Preview Email')+'</button>'
+      +'<div class="et-pv" id="et-pv">'+etPreviewBody()+'</div></div>';
 }
 function etCheck(d,selfId){
   const need=[['name','Template Name'],['aud','Template For'],['service','Service Group'],['type','Template Type'],['subject','Subject']];
@@ -387,10 +417,11 @@ function startAddEt(fromEvent){
   if(!etFromEvent&&page!=='email-templates')navigatePage('email-templates');
   if(!etFromEvent)etDropEdit();
   etDraft={name:'',aud:'',process:'All',service:'All',type:'Plain',status:'Inactive',subject:'',content:''};
+  etPreviewOpen=false;
   etModalOpen=true;
   renderADTPage();
 }
-function cancelAddEt(){etModalOpen=false;etFromEvent=false;etDraft=null;renderADTPage();}
+function cancelAddEt(){etModalOpen=false;etFromEvent=false;etDraft=null;etPreviewOpen=false;renderADTPage();}
 function buildAddEtModalHTML(){
   return '<div class="ct-modal-overlay">'
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
@@ -413,7 +444,7 @@ function submitAddEt(){
   t.logs=[{date:s.date,time:s.time,user:CURRENT_USER,status:t.status,action:'Email template created as '+t.status+'.'}];
   emailTemplatesData.unshift(t);
   const back=etFromEvent;
-  etModalOpen=false;etFromEvent=false;etDraft=null;
+  etModalOpen=false;etFromEvent=false;etDraft=null;etPreviewOpen=false;
   if(back)evTemplateMade(t);else lpLanded('email-templates',t.id);
   renderADTPage();
   showToast('Email template added','success',etKey(t)+' · '+t.name+(back?' is selected on this event.':'.'));
