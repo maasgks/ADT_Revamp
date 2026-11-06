@@ -111,6 +111,39 @@ rlRegister('capping-limit',{pre:'cap',
   sub:function(r){return capKey(r)+' &middot; '+r.name;}});
 
 // ── Governance ──
+rlRegister('events',{pre:'ev',
+  rec:function(id){return evRec(Number(id));},
+  status:function(r){return r.status;},
+  moves:function(r){return evMoves(r);},
+  label:function(v){return EV_MOVE_LABELS[v]||v;},
+  save:function(id){evSaveLog(Number(id));},
+  count:function(r){return len(r.logs);},
+  open:function(id){openEvSidebar(Number(id));},
+  logs:function(id){openEvSidebar(Number(id),'logs');},
+  sub:function(r){return evKey(r)+' &middot; No. '+r.number;}});
+[['event-categories','cat','ecat'],['event-sub-categories','sub','esub']].forEach(function(x){
+  var k=x[1];
+  rlRegister(x[0],{pre:x[2],
+    rec:function(id){return ecRec(k,Number(id));},
+    status:function(r){return r.status;},
+    moves:function(r){return ecMoves(k,r);},
+    label:function(v){return EC_MOVE_LABELS[v]||v;},
+    save:function(id){ecSaveLog(k,Number(id));},
+    count:function(r){return len(r.logs);},
+    open:function(id){ecOpen(k,Number(id));},
+    logs:function(id){ecOpen(k,Number(id),'logs');},
+    sub:function(r){return ecKey(k,r)+' &middot; '+r.name;}});
+});
+rlRegister('email-templates',{pre:'et',
+  rec:function(id){return etRec(Number(id));},
+  status:function(r){return r.status;},
+  moves:function(r){return etMoves(r);},
+  label:function(v){return ET_MOVE_LABELS[v]||v;},
+  save:function(id){etSaveLog(Number(id));},
+  count:function(r){return len(r.logs);},
+  open:function(id){openEtSidebar(Number(id));},
+  logs:function(id){openEtSidebar(Number(id),'logs');},
+  sub:function(r){return etKey(r)+' &middot; '+r.name;}});
 rlRegister('rbac-templates',{pre:'rb',
   rec:function(id){return rbRec(Number(id));},
   status:function(r){return r.status;},

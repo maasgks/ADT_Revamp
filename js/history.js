@@ -167,6 +167,18 @@ watch('rbSaveEdit',function(){return rbEditing?rbRec(rbSelectedId):null;},{state
   return {'Template Name':t.name,'Module':t.module,'Description':t.desc,'Permissions':t.perms.length+' ('+t.perms.join(', ')+')'};
 }});
 watch('wsSaveEdit',function(){return wsEditing?wsRec(wsSelectedId):null;},{labels:function(){return {name:'Workspace Name',module:'Module',email:'Contact Email',desc:'Description'};}});
+watch('etSaveEdit',function(){return etEditing?etRec(etSelectedId):null;},{state:function(t){
+  return {'Template Name':t.name,'Template For':t.aud,'Process Type':t.process,'Service Group':t.service,'Template Type':t.type,'Subject':t.subject,'Template Content':etText(t.content)};
+}});
+watch('evSaveEdit',function(){return evEditing?evRec(evSelectedId):null;},{state:function(e){
+  const t=evTemplate(e);
+  return {'Event Type':e.type,'Event Number':e.number,'Event Category':ecCatName(e.catId),'Event Sub Category':ecSubName(e.subId),'Event For':e.aud,
+    'Service Group':e.service,'Process Type':e.process,'Fires When':evWhen(e),'Business Rule':e.rule,'Trigger Comment':e.comment,
+    'Schedule Event':e.schedule,'Promotion':e.promo,'Event Template':t?t.name:'','Template Subject':e.subject};
+}});
+watch('ecSaveEdit',function(k){return ecState[k].editing?ecRec(k,ecState[k].sel):null;},{state:function(r){
+  const o={'Name':r.name,'Description':r.desc};if(r.catId)o['Category']=ecCatName(r.catId);return o;
+}});
 watch('astConfirmReceipt',function(id){return assetsData.find(function(a){return a.id===id;});});
 // Every module's status move from Logs goes through lpCommitLog(rec, ...); its
 // after-snapshot waits for the rest of that save (an asset's holder, say).

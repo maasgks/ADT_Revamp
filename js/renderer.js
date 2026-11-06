@@ -69,6 +69,10 @@ function renderPageContent(target){
   if(page==='capping-limit'){el.innerHTML=buildCappingLimitHTML();return;}
   if(page==='rbac-templates'){el.innerHTML=buildRbacTemplatesHTML();return;}
   if(page==='rbac-workspaces'){el.innerHTML=buildRbacWorkspacesHTML();return;}
+  if(page==='events'){el.innerHTML=buildEventsHTML();return;}
+  if(page==='event-categories'){el.innerHTML=buildEventCategoriesHTML();return;}
+  if(page==='event-sub-categories'){el.innerHTML=buildEventSubCategoriesHTML();return;}
+  if(page==='email-templates'){el.innerHTML=buildEmailTemplatesHTML();return;}
   if(page==='payments'){el.innerHTML=buildPaymentsHTML();return;}
   if(page==='compliance'){el.innerHTML=buildComplianceItemsHTML();return;}
   if(page==='rates-rules'){el.innerHTML=buildRatesRulesHTML();return;}
@@ -242,7 +246,7 @@ function renderADTPage(){
     const show=!noAddPages.includes(page);
     addBtn.style.display=show?'':'none';
     if(show){
-      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense(),'capping-limit':()=>startAddCap(),'rbac-templates':()=>startAddRb(),'rbac-workspaces':()=>startAddWs()};
+      const specialHandlers={'leave-policies':()=>startAddLeavePolicy(),'announcements':()=>anmStartCreate(),'expenses':()=>startAddExpense(),'capping-limit':()=>startAddCap(),'rbac-templates':()=>startAddRb(),'rbac-workspaces':()=>startAddWs(),'events':()=>startAddEv(),'event-categories':()=>ecStartAdd('cat'),'event-sub-categories':()=>ecStartAdd('sub'),'email-templates':()=>startAddEt()};
       addBtn.onclick=specialHandlers[page]||(()=>addListingItem(page));
     }
   }
@@ -840,6 +844,8 @@ var PALETTE_EXTRA=[
   {label:'Create a team',group:'Create',keys:'new team group department',run:function(){startAddTeam();}},
   {label:'Add a compliance requirement',group:'Create',keys:'new compliance requirement item',run:function(){navigatePage('compliance');complianceModalOpen=true;renderADTPage();}},
   {label:'Add a rate or rule',group:'Create',keys:'new rate rule tax statutory',run:function(){navigatePage('rates-rules');ratesRuleModalOpen=true;renderADTPage();}},
+  {label:'Add an event',group:'Create',keys:'new event trigger notification',run:function(){startAddEv();}},
+  {label:'Add an email template',group:'Create',keys:'new email template mail notification',run:function(){startAddEt();}},
   {label:'Add a contract template',group:'Create',keys:'new template contract document',run:function(){navigatePage('contract-templates');ctpModalOpen=true;renderADTPage();}},
 
   /* Tools. */
