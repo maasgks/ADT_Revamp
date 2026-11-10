@@ -1,22 +1,19 @@
-/* ══ GOVERNANCE → ANNOUNCEMENTS ═══════════════════════════════════════════
+/* ══ EVENTS → ANNOUNCEMENTS ════════════════════════════════════════════════
    Where HR and managers WRITE what the employee dashboard's Announcements
    panel READS (js/announcements.js). One store, annData, is the record; the
    dashboard's empAnnouncements is rebuilt from it by anmSync(), so a post
    created, pinned, scheduled or switched off here is what employees see.
 
-   Built from the app's standard parts, so it behaves like every listing:
-     · listing  — lp filter bar, count tiles that double as filters, lp-table
-     · panel    — lp-split-sb with Basic Details / Logs / History
-                  (no Workflow tab — an announcement has no approval
-                  stages; Logs and History cover what happened to it);
-                  sbHero header with Edit
-     · form     — create is Events → Add Event with the Announcement
-                  category picked (js/events.js draws these fields with
-                  anmEvFieldsHTML); edit is the panel's Basic Details
-
-   ONE STATE COLUMN in the listing: Visibility. Live, Scheduled and Expired
-   all mean Status = Active and Inactive means Inactive, so a second Status
-   column would repeat it. The panel shows both.
+   THERE IS NO ANNOUNCEMENTS PAGE. An announcement is an event under the
+   Announcement category, so it lives on Events → All Events:
+     · listing  — its rows are drawn by js/events.js beside the events
+                  (Visibility - Live / Scheduled / Expired - under Status)
+     · panel    — this file's, hosted in All Events' split: Basic Details /
+                  Logs / History (no Workflow tab — an announcement has no
+                  approval stages); sbHero header with Edit
+     · form     — create is Add Event with the Announcement category picked
+                  (fields drawn by anmEvFieldsHTML); edit is the panel's
+                  Basic Details
 
    THE RULES THIS FILE ENFORCES (FR-05.x):
      · Title, Message, Category, Target Audience and Valid From are required;
@@ -75,7 +72,7 @@ const ANM_TITLE_MAX=120,ANM_MSG_MAX=1000;
 const ANM_STATE_TONE={Live:'ok',Scheduled:'wait',Expired:'idle',Inactive:'idle'};
 
 // ── The store ──
-let anmSeq=9;
+let anmSeq=13;
 const annData=[
   {id:1,annId:'ANN-1001',title:'Diwali holiday announced',category:'Holiday',audType:'All Employees',audValues:[],
    message:'The office will remain closed on 8 Nov for Diwali. Please plan your deliverables and update your timesheets before the break.',
@@ -112,7 +109,23 @@ const annData=[
   {id:9,annId:'ANN-1009',title:'New expense portal goes live',category:'Portal Update',audType:'All Employees',audValues:[],
    message:'Expense claims are moving to the new portal. Drafted ahead of the rollout and held back until Finance confirms the go-live date.',
    validFrom:'2026-11-01T09:00',validTo:'',pinned:false,status:'Inactive',from:'hr',
-   createdBy:'Shaun Test1',createdAt:'26 Oct 2026 | 12:05:50 PM',updatedBy:'Shaun Test1',updatedAt:'26 Oct 2026 | 12:05:50 PM'}
+   createdBy:'Shaun Test1',createdAt:'26 Oct 2026 | 12:05:50 PM',updatedBy:'Shaun Test1',updatedAt:'26 Oct 2026 | 12:05:50 PM'},
+  {id:10,annId:'ANN-1010',title:'New attendance regularisation window',category:'Leave & Attendance',audType:'All Employees',audValues:[],
+   message:'Missed punches can now be regularised up to 5 working days after the date. Requests older than that need your manager to raise them.',
+   validFrom:'2026-11-04T09:00',validTo:'2026-11-30T23:59',pinned:false,status:'Active',from:'hr',
+   createdBy:'Priya Sharma',createdAt:'3 Nov 2026 | 04:12:08 PM',updatedBy:'Priya Sharma',updatedAt:'3 Nov 2026 | 04:12:08 PM'},
+  {id:11,annId:'ANN-1011',title:'Welcome our new HR Business Partner',category:'HR Update',audType:'Branch',audValues:['Hyderabad'],
+   message:'Please welcome Ananya Rao, who joins as HR Business Partner for the Hyderabad office. She will run the weekly HR desk hours from Monday.',
+   validFrom:'2026-11-06T10:00',validTo:'2026-11-20T18:00',pinned:false,status:'Active',from:'hr',
+   createdBy:'Priya Sharma',createdAt:'5 Nov 2026 | 11:40:27 AM',updatedBy:'Priya Sharma',updatedAt:'5 Nov 2026 | 11:40:27 AM'},
+  {id:12,annId:'ANN-1012',title:'Year-end team offsite – save the date',category:'Event',audType:'All Employees',audValues:[],
+   message:'Our year-end offsite is on 12 Dec at the Novotel, Hyderabad. Travel and stay are covered; RSVP on the form shared by your manager by 25 Nov.',
+   validFrom:'2026-11-07T09:00',validTo:'2026-12-12T23:59',pinned:true,status:'Active',from:'hr',
+   createdBy:'Shaun Test1',createdAt:'7 Nov 2026 | 08:55:14 AM',updatedBy:'Shaun Test1',updatedAt:'7 Nov 2026 | 08:55:14 AM'},
+  {id:13,annId:'ANN-1013',title:'Data privacy refresher for managers',category:'Training',audType:'Role',audValues:['Managers'],
+   message:'Managers handling employee records must finish the 30-minute data privacy refresher. Sessions run on 18 and 19 Nov; pick a slot in the LMS.',
+   validFrom:'2026-11-14T09:00',validTo:'2026-11-19T18:00',pinned:false,status:'Active',from:'hr',
+   createdBy:'Shaun Test1',createdAt:'9 Nov 2026 | 02:30:41 PM',updatedBy:'Shaun Test1',updatedAt:'9 Nov 2026 | 02:30:41 PM'}
 ];
 
 // ── Time ──
@@ -183,101 +196,33 @@ function anmSync(){
   });
 }
 
-// ══ LISTING ═══════════════════════════════════════════════════════════════
+// ══ STATE (the panel is drawn on Events → All Events) ═════════════════════
 let anmSelectedId=null,anmTab='basic-details',anmEditId=null;
 /* Editing happens in the panel's Basic Details tab, not on the create page:
    the record stays in view beside the list, the way Holidays edits. The
    create page (Add Event, Announcement category) is for new ones only. */
 let anmEditMode=false;
-let anmQ='',anmCatF='',anmAudF='',anmStatusF='',anmStateF='';
-function anmRows(){
-  return annData.filter(function(a){
-    return (!anmCatF||a.category===anmCatF)&&(!anmAudF||(anmAudF===ANM_AUD_ALL)===anmIsAll(a))
-      &&(!anmStatusF||a.status===anmStatusF)&&(!anmStateF||anmState(a)===anmStateF);
-  }).sort(function(a,b){
-    // Pinned first, then the most recent Valid From.
-    return (b.pinned?1:0)-(a.pinned?1:0)||(anmParse(b.validFrom)-anmParse(a.validFrom));
-  });
-}
-function anmToggleState(v){anmStateF=anmStateF===v?'':v;anmSelectedId=null;renderADTPage();}
-function applyAnmFilters(){
-  const c=getCSValue('anm-f-cat'),au=getCSValue('anm-f-aud'),s=getCSValue('anm-f-status');
-  anmCatF=c&&c!=='All Sub Categories'?c:'';
-  anmAudF=au&&au!=='All Audiences'?au:'';
-  anmStatusF=s&&s!=='All Statuses'?s:'';
-  anmQ=lpSearchValue('anm-f-q');
-  anmSelectedId=null;renderADTPage();
-}
-function resetAnmFilters(){anmQ='';anmCatF='';anmAudF='';anmStatusF='';anmStateF='';anmSelectedId=null;renderADTPage();}
-
-function buildAnnouncementsHTML(){
-  anmSync();
-  const dotsIco='<svg width="16" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="2" x2="17" y2="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="1" y1="12" x2="17" y2="12"/></svg>';
-  const count=function(st){return annData.filter(function(a){return anmState(a)===st;}).length;};
-  const tile=function(st,color){
-    return '<div class="listing-stat'+(anmStateF===st?' stat-selected':'')+'" onclick="anmToggleState(\''+st+'\')">'
-      +'<div class="listing-stat-count" style="color:'+color+'">'+count(st)+'</div><div class="listing-stat-label">'+st+'</div></div>';
-  };
-  const rows=anmRows();
-  if(anmSelectedId&&!rows.some(function(a){return a.id===anmSelectedId;}))anmSelectedId=null;
-  const pgn=listPage('announcements',[anmQ,anmCatF,anmAudF,anmStatusF,anmStateF].join('|'),
-    lpSearchRows(rows,anmQ).map(function(a,i){
-      return '<tr class="anm-row'+(anmSelectedId===a.id?' lp-row-selected':'')+'" id="anm-row-'+a.id+'" style="cursor:pointer" onclick="openAnmSidebar('+a.id+')">'
-        +'<td class="lp-c-n">'+(i+1)+'</td>'
-        +'<td><div class="anm-cell-title">'
-          +(a.pinned?'<span class="anm-pin" title="Pinned — shown first">'+ANN_PIN+'</span>':'')
-          +'<span class="anm-cell-name">'+sbEsc(a.title)+'</span></div>'
-          +'<div class="anm-cell-sub">'+a.annId+'</div></td>'
-        +'<td style="white-space:nowrap">'+sbEsc(a.category)+'</td>'
-        +'<td><span class="anm-aud'+(anmIsAll(a)?' is-all':'')+'" title="'+sbEsc(anmAudText(a))+'">'+sbEsc(anmAudText(a))+'</span></td>'
-        // Valid From / To are on the panel's Basic Details.
-        +'<td>'+anmStateBadge(a)+'</td>'
-        +'<td onclick="event.stopPropagation()">'+rowLogCell('announcements',a.id)+'</td>'
-        +'</tr>';
-    }),'<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray)">No announcements match this filter.</td></tr>');
-  return '<div class="lp-page">'
-    +dashboardBackHTML()
-    +'<div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:4px">'
-    +'<div class="lp-filter-bar" style="flex:1;min-width:0;padding:0">'
-    +'<div class="lp-filter-bar-label">Select Filter</div>'
-    +'<div class="lp-filter-bar-row">'
-    +lpSearchField('anm-f-q',anmQ,'Search','applyAnmFilters()')
-    +apCS('anm-f-cat',anmCats(anmCatF),anmCatF,'All Sub Categories')
-    +apCS('anm-f-aud',[ANM_AUD_ALL,ANM_AUD_PICK],anmAudF,'All Audiences')
-    +apCS('anm-f-status',['Active','Inactive'],anmStatusF,'All Statuses')
-    +clearFiltersBtn([anmQ,anmCatF,anmAudF,anmStatusF,anmStateF],'resetAnmFilters()')
-    +'<button class="lp-pill-search" onclick="applyAnmFilters()">Search</button>'
-    +'</div></div>'
-    +'<div class="listing-stats">'
-      +tile('Live','var(--st-ok-fg)')+tile('Scheduled','var(--st-wait-fg)')
-      +tile('Expired','var(--st-idle-fg)')+tile('Inactive','var(--st-idle-fg)')
-    +'</div></div>'
-    +'<div class="lp-split-wrap" style="margin-top:14px" id="anm-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:840px"><thead><tr><th>S. No</th><th>Announcement</th><th>Sub Category</th><th>Target Audience</th>'
-      +'<th>Visibility</th><th>Action</th></tr></thead>'
-    +'<tbody>'+pgn.rows+'</tbody></table>'
-    +pgn.pager
-    +'</div></div>'
-    +'<div class="lp-split-sb'+(anmSelectedId?' open':'')+'" id="anm-split-sb"><div class="lp-isb" id="anm-isb-inner">'+(anmSelectedId?sbRender(renderAnmSidebar,'anm'):'')+'</div></div>'
-    +'</div></div>';
-}
-
 // ══ DETAIL PANEL ══════════════════════════════════════════════════════════
 const ANM_TABS=[{id:'basic-details',label:'Basic Details'},{id:'logs',label:'Logs'},{id:'history',label:'History'}];
 function anmRec(id){return annData.find(function(a){return a.id===id;})||null;}
+/* All Events holds two panels side by side in its split: the event's and
+   this one. Only one is open at a time, so opening this closes the event's. */
 function openAnmSidebar(id,tab){
   if(anmSelectedId!=null&&anmSelectedId!==id&&sbLeaveGuard('anm',function(){openAnmSidebar(id,tab);}))return;
+  if(typeof evSelectedId!=='undefined'&&evSelectedId!=null){
+    if(sbLeaveGuard('ev',function(){openAnmSidebar(id,tab);}))return;
+    evDropEdit();evSelectedId=null;
+    const es=document.getElementById('ev-split-sb');if(es)es.classList.remove('open');
+  }
   anmTab=tab||sbKeepTab(anmSelectedId,anmTab);anmSelectedId=id;anmEditMode=false;anmEditId=null;
   const sb=document.getElementById('anm-split-sb');if(sb)sb.classList.add('open');
-  const wrap=document.getElementById('anm-split-wrap');if(wrap)wrap.classList.add('has-sb');
   isbTab('anm',renderAnmSidebar);
-  document.querySelectorAll('.anm-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='anm-row-'+id);});
+  document.querySelectorAll('.ev-row').forEach(function(r){r.classList.toggle('lp-row-selected',r.id==='anm-row-'+id);});
 }
 function closeAnmSidebar(){
   if(sbLeaveGuard('anm',closeAnmSidebar))return;
   anmSelectedId=null;anmEditMode=false;anmEditId=null;
   const sb=document.getElementById('anm-split-sb');if(sb)sb.classList.remove('open');
-  const wrap=document.getElementById('anm-split-wrap');if(wrap)wrap.classList.remove('has-sb');
   document.querySelectorAll('.anm-row').forEach(function(r){r.classList.remove('lp-row-selected');});
 }
 function navAnmTab(tab){
@@ -331,7 +276,7 @@ function renderAnmSidebar(){
       +'<div class="anm-msg">'+sbEsc(a.message)+'</div>'
       +'<div class="anm-sec-title">Details</div>'
       +'<div class="lp-sb-detail-grid">'
-        +fc(ANM_ICO.tag,'Sub Category',sbEsc(a.category)+' <span class="ax-sub">Announcement</span>')
+        +fc(ANM_ICO.tag,'Sub Category',sbEsc(a.category))
         +fc(ANM_ICO.users,'Target Audience',sbEsc(anmAudText(a)))
         +fc(ANM_ICO.start,'Valid From',anmFmt(a.validFrom))
         +fc(ANM_ICO.end,'Valid To',a.validTo?anmFmt(a.validTo):'<span style="color:var(--gray)">No end date</span>')
@@ -450,10 +395,8 @@ function anmUsedByHTML(rows,empty){
         +'<td>'+a.annId+'</td><td>'+sbEsc(a.category)+'</td><td>'+anmStateBadge(a)+'</td></tr>';
     }).join('')+'</tbody></table></div>';
 }
-function anmGoTo(id){
-  resetAnmFilters();
-  anmSelectedId=id;anmTab='basic-details';anmEditMode=false;anmEditId=null;
-  navigatePage('announcements');
+function anmGoTo(id,tab){
+  evShowAnm(id,tab);
 }
 function anmStartEdit(id){
   const a=anmRec(id);if(!a)return;
@@ -623,7 +566,7 @@ function anmCheck(f){
   return true;
 }
 /* A new announcement, from the Add Event form. It lands selected on the
-   Announcements listing, with the filters cleared so it is in view. */
+   All Events listing (evShowAnm), with its panel open. */
 function anmCreate(f){
   const stamp=anmStampNow(),id=++anmSeq;
   const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,depts:f.depts,branches:f.branches,types:f.types,roles:f.roles,
@@ -631,8 +574,6 @@ function anmCreate(f){
     createdBy:CURRENT_USER,createdAt:stamp,updatedBy:CURRENT_USER,updatedAt:stamp};
   annData.push(a);
   anmDraft=null;
-  anmQ='';anmCatF='';anmAudF='';anmStatusF='';anmStateF='';
-  lpLanded('announcements',id);
   anmSelectedId=id;anmTab='basic-details';
   anmSync();
   return a;

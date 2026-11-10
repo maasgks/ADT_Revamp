@@ -29,7 +29,7 @@
    for the announcement's own fields - title, message, audience, validity -
    drawn by js/announcement-admin.js. Its sub categories are what the
    announcement is filed under. Saving publishes it to the employee dashboard
-   and lands on Events → Announcements, where it is then managed. An existing
+   and lands on its row here, with its panel open. An existing
    event cannot be turned into an announcement, so Edit leaves the category out.
 
    THE SUBJECT COMES FROM THE TEMPLATE. Picking a template fills Template
@@ -98,8 +98,41 @@ function evDataOf(table,field){return EV_TABLES[table]&&EV_TABLES[table][field]|
 function evPlural(n,w){return n+' '+w+(n===1?'':'s');}
 /* The Add Event form, with Announcement picked as its category. */
 function evIsAnm(){return !!(evModalOpen&&evDraft&&evDraft.cat&&ecIsAnmName(evDraft.cat));}
-/* Category names an event can be filtered or filed under. */
-function evCatNames(){return ecLive('cat').filter(function(c){return !c.anm;}).map(function(c){return c.name;}).reverse();}
+/* Category names for the listing's filter. */
+function evCatNames(){return ecLive('cat').map(function(c){return c.name;}).reverse();}
+/* ANNOUNCEMENTS ARE LISTED HERE TOO, as rows under the Announcement category.
+   They have no Process Type or Service Group, so either filter hides them,
+   and their Event For is the employees they are posted to. A row opens the
+   announcement's own panel (js/announcement-admin.js) in this page's split,
+   in place of the event panel - there is no separate Announcements page. */
+const EV_ANM_FOR='Employee';
+function evAnmRows(){
+  if(typeof annData==='undefined'||evProcessF||evServiceF)return [];
+  if(evForF&&evForF!==EV_ANM_FOR)return [];
+  if(evCatF&&!ecIsAnmName(evCatF))return [];
+  return annData.filter(function(a){return (!evSubF||a.category===evSubF)&&(!evStatusF||a.status===evStatusF);});
+}
+/* To an announcement from anywhere (a category's list, a new publish): the
+   filters are cleared, the listing turns to the page it is on, its panel opens. */
+function evShowAnm(id,tab){
+  evForF='';evCatF='';evSubF='';evProcessF='';evServiceF='';evStatusF='';evQ='';
+  evDropEdit();evSelectedId=null;
+  anmSelectedId=id;anmTab=tab||'basic-details';anmEditMode=false;anmEditId=null;
+  const at=evMergeRows(evRows(),evAnmRows()).findIndex(function(x){return x.a&&x.a.id===id;});
+  if(at>=0)lpLandedAt('events',at);
+  if(page!=='events')navigatePage('events');else renderADTPage();
+}
+function evStamp(x){return Date.parse(String(x.createdAt||'').replace(' | ',' '))||0;}
+/* Events keep their order; announcements, newest first, go in by date. */
+function evMergeRows(evs,anns){
+  anns=anns.slice().sort(function(a,b){return evStamp(b)-evStamp(a);});
+  const out=[];let i=0,j=0;
+  while(i<evs.length||j<anns.length){
+    if(j>=anns.length||(i<evs.length&&evStamp(evs[i])>=evStamp(anns[j])))out.push({e:evs[i++]});
+    else out.push({a:anns[j++]});
+  }
+  return out;
+}
 
 const EV_ICO={
   hero:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
@@ -143,7 +176,7 @@ function applyEvFilters(){
 function resetEvFilters(){evForF='';evCatF='';evSubF='';evProcessF='';evServiceF='';evStatusF='';evQ='';evSelectedId=null;renderADTPage();}
 /* Picking a category narrows the Sub Category filter to it straight away. */
 function evFilterSubHTML(cat,cur){
-  const opts=cat?ecSubOptions(cat,cur):ecLive('sub').filter(function(s){return !ecIsAnm('sub',s);}).map(function(s){return s.name;}).reverse().filter(function(n,i,a){return a.indexOf(n)===i;});
+  const opts=cat?ecSubOptions(cat,cur):ecLive('sub').map(function(s){return s.name;}).reverse().filter(function(n,i,a){return a.indexOf(n)===i;});
   return apCS('ev-f-sub',opts,cur,'Sub Category');
 }
 function evFilterCatHook(val){
@@ -154,6 +187,12 @@ function evFilterCatHook(val){
 function evDropEdit(){evEditing=false;evDraft=null;evAddOpen='';evPreviewOpen=false;}
 function openEvSidebar(id,tab){
   if(evSelectedId!=null&&evSelectedId!==id&&sbLeaveGuard('ev',function(){openEvSidebar(id,tab);}))return;
+  /* One panel at a time: an open announcement panel closes first. */
+  if(anmSelectedId!=null){
+    if(sbLeaveGuard('anm',function(){openEvSidebar(id,tab);}))return;
+    anmSelectedId=null;anmEditMode=false;anmEditId=null;
+    const as=document.getElementById('anm-split-sb');if(as)as.classList.remove('open');
+  }
   if(evSelectedId!==id)evDropEdit();
   evTab=tab||sbKeepTab(evSelectedId,evTab);evSelectedId=id;
   const sb=document.getElementById('ev-split-sb');if(sb)sb.classList.add('open');
@@ -452,7 +491,7 @@ function evSaveEdit(){
 
 /* ── + Add ─────────────────────────────────────────────────────────────── */
 /* mode 'anm' opens it with the Announcement category already picked
-   (Events → Announcements → + Add). */
+   (anmStartCreate, the quick action "Create an announcement"). */
 function startAddEv(mode){
   if(page!=='events')navigatePage('events');
   evDropEdit();
@@ -486,7 +525,7 @@ function submitAddEv(){
     if(!anmCheck(f))return;
     const a=anmCreate(f);
     evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;
-    navigatePage('announcements');
+    evShowAnm(a.id);
     anmPublishedToast(a);
     return;
   }
@@ -506,13 +545,29 @@ function submitAddEv(){
    and where it is filed. Event Type, Event Number, Sub Category, Business Rule
    and the date are on the panel, and the search box still finds them. */
 function buildEventsHTML(){
-  const live=evLive();
-  const count=function(s){return live.filter(function(e){return e.status===s;}).length;};
+  const live=evLive(),anns=typeof annData!=='undefined'?annData:[];
+  const count=function(s){return live.filter(function(e){return e.status===s;}).length+anns.filter(function(a){return a.status===s;}).length;};
   const shown=evSearchRows(evRows(),evQ);
+  const q=String(evQ||'').trim().toLowerCase();
+  const shownAnm=evAnmRows().filter(function(a){return !q||lpSearchMatch(q,a)||a.annId.toLowerCase().indexOf(q)>=0;});
   if(evSelectedId&&!shown.some(function(e){return e.id===evSelectedId;}))evSelectedId=null;
+  if(anmSelectedId&&(evSelectedId||!shownAnm.some(function(a){return a.id===anmSelectedId;}))){anmSelectedId=null;anmEditMode=false;anmEditId=null;}
   const sig=[evForF,evCatF,evSubF,evProcessF,evServiceF,evStatusF,evQ].join('|');
-  const pgn=listPage('events',sig,shown.map(function(e,i){
-    const sub=evName(e);
+  const pgn=listPage('events',sig,evMergeRows(shown,shownAnm).map(function(x,i){
+    if(x.a){
+      const a=x.a,aud=anmAudText(a);
+      /* Drawn like an event row, with the audience under Event For. Pin and
+         Visibility (Live / Scheduled / Expired) are on the panel only. */
+      return '<tr class="ev-row anm-row'+(anmSelectedId===a.id?' lp-row-selected':'')+'" id="anm-row-'+a.id+'" style="cursor:pointer" onclick="openAnmSidebar('+a.id+')">'
+        +'<td class="lp-c-n">'+(i+1)+'</td>'
+        +'<td><div class="lp-c-main ax-c-link ax-c-trunc" title="'+attrSafe(a.title)+'">'+sbEsc(a.title)+'</div><div class="lp-c-sub">'+a.annId+'</div></td>'
+        +'<td><div class="lp-c-plain">'+EV_ANM_FOR+'</div><div class="lp-c-sub ax-c-trunc" title="'+attrSafe(aud)+'">'+sbEsc(aud)+'</div></td>'
+        +'<td><div class="lp-c-plain">'+sbEsc((ecAnmCat()||{name:'Announcement'}).name)+'</div><div class="lp-c-sub">'+sbEsc(a.category)+'</div></td>'
+        +'<td>'+axBadge(statusTone(a.status),a.status)+'</td>'
+        +'<td onclick="event.stopPropagation()">'+rowLogCell('announcements',a.id)+'</td>'
+        +'</tr>';
+    }
+    const e=x.e,sub=evName(e);
     return '<tr class="ev-row'+(evSelectedId===e.id?' lp-row-selected':'')+'" id="ev-row-'+e.id+'" style="cursor:pointer" onclick="openEvSidebar('+e.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
       +'<td><div class="lp-c-main ax-c-link ax-c-trunc" title="'+attrSafe(sub)+'">'+sbEsc(sub)+'</div><div class="lp-c-sub">'+evKey(e)+'</div></td>'
@@ -533,7 +588,7 @@ function buildEventsHTML(){
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('ev-f-q',evQ,'Search events','applyEvFilters()')
-    +apCS('ev-f-for',ET_FOR,evForF,'Event For')
+    +apCS('ev-f-for',ET_FOR.concat([EV_ANM_FOR]),evForF,'Event For')
     +apCS('ev-f-cat',evCatNames(),evCatF,'Category','evFilterCatHook')
     +evFilterSubHTML(evCatF,evSubF)
     +apCS('ev-f-process',ET_PROCESS,evProcessF,'Process Type')
@@ -549,6 +604,8 @@ function buildEventsHTML(){
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(evSelectedId?' open':'')+'" id="ev-split-sb"><div class="lp-isb" id="ev-isb-inner">'+(evSelectedId?sbRender(renderEvSidebar,'ev'):'')+'</div></div>'
+    /* An announcement row opens its own panel here, in the event panel's place. */
+    +'<div class="lp-split-sb'+(anmSelectedId?' open':'')+'" id="anm-split-sb"><div class="lp-isb" id="anm-isb-inner">'+(anmSelectedId?sbRender(renderAnmSidebar,'anm'):'')+'</div></div>'
     +'</div></div>'
     /* Add Template from the event form takes the form's place, then hands back. */
     +(etModalOpen?buildAddEtModalHTML():evModalOpen?buildAddEvModalHTML():'');
