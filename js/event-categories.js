@@ -13,13 +13,21 @@
    EVENTS POINT AT THESE BY ID, so renaming a category renames it on every
    event. Delete is offered only when nothing uses the record: a category
    needs its sub categories and events moved first, a sub category its events.
-   The Logs form says what is still in the way. */
+   The Logs form says what is still in the way.
+
+   ANNOUNCEMENT IS A CATEGORY. Its sub categories are what an announcement is
+   filed under (General, Holiday, Payroll...), and picking it on the Add Event
+   form turns the form into the announcement form (js/announcement-admin.js).
+   The category carries anm:true, so a rename does not break that. Its rows
+   count announcements, not events, and an announcement is held by its sub
+   category's name, so a rename reaches every announcement filed there. */
 
 /* ── Seed data ─────────────────────────────────────────────────────────── */
 function ecSeed(id,name,desc,status,by,at,catId){
   return {id:id,key:id,name:name,desc:desc||'',status:status,createdBy:by,createdAt:at,catId:catId||null};
 }
 const eventCategoriesData=[
+  Object.assign(ecSeed(6,'Announcement','Notices posted to the employee dashboard for an audience and a window of dates.','Active','Priya Sharma','1 Oct 2026 | 09:00:00 AM'),{anm:true}),
   ecSeed(5,'Promotional','Offers and announcements sent to a chosen audience.','Inactive','Meera Iyer','3 Mar 2026 | 09:15:00 AM'),
   ecSeed(4,'Payroll Flow','Timesheets, payslips and pay runs.','Active','Meera Iyer','8 Jan 2026 | 11:00:00 AM'),
   ecSeed(3,'Compliance Flow','Reminders and checks that keep an entity compliant.','Active','Syed Ayaz','18 Aug 2023 | 03:11:00 PM'),
@@ -27,6 +35,17 @@ const eventCategoriesData=[
   ecSeed(1,'Core Flow','What users and vendors are told as they move through ADT.','Active','Tarak Swain','2 Jan 2023 | 10:00:00 AM')
 ];
 const eventSubCategoriesData=[
+  ecSeed(21,'Portal Update','','Active','Priya Sharma','1 Oct 2026 | 09:20:00 AM',6),
+  ecSeed(20,'Event','','Active','Priya Sharma','1 Oct 2026 | 09:19:00 AM',6),
+  ecSeed(19,'Training','','Active','Priya Sharma','1 Oct 2026 | 09:18:00 AM',6),
+  ecSeed(18,'Benefits','','Active','Priya Sharma','1 Oct 2026 | 09:17:00 AM',6),
+  ecSeed(17,'Compliance','','Active','Priya Sharma','1 Oct 2026 | 09:16:00 AM',6),
+  ecSeed(16,'Policy','','Active','Priya Sharma','1 Oct 2026 | 09:15:00 AM',6),
+  ecSeed(15,'Leave & Attendance','','Active','Priya Sharma','1 Oct 2026 | 09:14:00 AM',6),
+  ecSeed(14,'Payroll','','Active','Priya Sharma','1 Oct 2026 | 09:13:00 AM',6),
+  ecSeed(13,'Holiday','','Active','Priya Sharma','1 Oct 2026 | 09:12:00 AM',6),
+  ecSeed(12,'HR Update','','Active','Priya Sharma','1 Oct 2026 | 09:11:00 AM',6),
+  ecSeed(11,'General','','Active','Priya Sharma','1 Oct 2026 | 09:10:00 AM',6),
   ecSeed(10,'Campaigns','One-off campaigns.','Inactive','Meera Iyer','3 Mar 2026 | 09:30:00 AM',5),
   ecSeed(9,'Payslips','','Active','Meera Iyer','8 Jan 2026 | 11:30:00 AM',4),
   ecSeed(8,'Timesheets','','Active','Meera Iyer','8 Jan 2026 | 11:20:00 AM',4),
@@ -40,9 +59,9 @@ const eventSubCategoriesData=[
 ];
 
 const EC_KIND={
-  cat:{pre:'ecat',page:'event-categories',data:eventCategoriesData,noun:'Category',low:'category',code:'CAT',next:6,hero:'tag',
+  cat:{pre:'ecat',page:'event-categories',data:eventCategoriesData,noun:'Category',low:'category',code:'CAT',next:7,hero:'tag',
     apply:'applyEcatFilters',reset:'resetEcatFilters',stat:'ecatToggleStat',open:'openEcatSidebar',close:'closeEcatSidebar',nav:'navEcatTab'},
-  sub:{pre:'esub',page:'event-sub-categories',data:eventSubCategoriesData,noun:'Sub Category',low:'sub category',code:'SUB',next:11,hero:'tags',
+  sub:{pre:'esub',page:'event-sub-categories',data:eventSubCategoriesData,noun:'Sub Category',low:'sub category',code:'SUB',next:22,hero:'tags',
     apply:'applyEsubFilters',reset:'resetEsubFilters',stat:'esubToggleStat',open:'openEsubSidebar',close:'closeEsubSidebar',nav:'navEsubTab'}
 };
 const EC_TILES=['Active','Inactive'];
@@ -64,20 +83,32 @@ function ecLive(k){return EC_KIND[k].data.filter(function(r){return r.status!=='
 function ecSubsOf(catId){return eventSubCategoriesData.filter(function(s){return s.status!=='Deleted'&&s.catId===catId;});}
 function ecEvents(k,r){return typeof evForTaxonomy==='function'?evForTaxonomy(k,r.id):[];}
 function ecPlural(n,one,many){return n+' '+(n===1?one:many);}
+/* The Announcement category, and whether a record is it or sits under it. */
+function ecAnmCat(){return eventCategoriesData.find(function(c){return c.anm&&c.status!=='Deleted';})||null;}
+function ecIsAnmName(catName){const c=ecCatByName(catName);return !!(c&&c.anm);}
+function ecIsAnm(k,r){return k==='cat'?!!r.anm:!!(ecRec('cat',r.catId)||{}).anm;}
+function ecAnns(k,r){return ecIsAnm(k,r)&&typeof anmFiledUnder==='function'?anmFiledUnder(k,r):[];}
+/* What is filed under a record: events, or announcements under Announcement. */
+function ecUsed(k,r){
+  return ecIsAnm(k,r)?{rows:ecAnns(k,r),one:'announcement',many:'announcements',tab:'Announcements'}
+    :{rows:ecEvents(k,r),one:'event',many:'events',tab:'Events'};
+}
 /* What has to move before this record can be deleted, in words. */
 function ecBlockers(k,r){
-  const out=[],ev=ecEvents(k,r).length,subs=k==='cat'?ecSubsOf(r.id).length:0;
+  const out=[],ev=ecEvents(k,r).length,an=ecAnns(k,r).length,subs=k==='cat'?ecSubsOf(r.id).length:0;
   if(subs)out.push(ecPlural(subs,'sub category','sub categories'));
   if(ev)out.push(ecPlural(ev,'event','events'));
+  if(an)out.push(ecPlural(an,'announcement','announcements'));
   return out;
 }
 function ecMoves(k,r){
   const stuck=ecBlockers(k,r).length>0;
   return (EC_MOVES[r.status]||[]).filter(function(m){return m!=='Deleted'||!stuck;});
 }
-/* Options for the event form: what is active, plus what the event already has. */
-function ecCatOptions(cur){
-  return ecLive('cat').filter(function(c){return c.status==='Active'||c.name===cur;}).map(function(c){return c.name;}).reverse();
+/* Options for the event form: what is active, plus what the event already has.
+   noAnm leaves Announcement out, where an event cannot become one. */
+function ecCatOptions(cur,noAnm){
+  return ecLive('cat').filter(function(c){return (c.status==='Active'||c.name===cur)&&!(noAnm&&c.anm);}).map(function(c){return c.name;}).reverse();
 }
 function ecSubOptions(catName,cur){
   const c=ecCatByName(catName);if(!c)return [];
@@ -159,11 +190,11 @@ function ecWorkflow(k,r){
 }
 function ecRender(k){
   const s=ecState[k],K=EC_KIND[k],r=ecRec(k,s.sel);if(!r)return '';
-  const used=ecEvents(k,r),subs=k==='cat'?ecSubsOf(r.id):[];
-  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'events',label:'Events'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
+  const u=ecUsed(k,r),used=u.rows,subs=k==='cat'?ecSubsOf(r.id):[];
+  const tabs=[{id:'basic-details',label:'Basic Details'},{id:'events',label:u.tab},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar(K.pre,tabs,s.tab,K.nav,K.close);
   const hero=function(editing,edit){return sbHero({icon:EC_ICO[K.hero],name:sbEsc(r.name),
-    meta:[ecKey(k,r),k==='sub'?ecCatName(r.catId):null,ecPlural(used.length,'event','events')],
+    meta:[ecKey(k,r),k==='sub'?ecCatName(r.catId):null,ecPlural(used.length,u.one,u.many)],
     status:axBadge(statusTone(r.status),r.status),editing:editing,onEdit:edit});};
   const startEdit=K.pre+'StartEdit()';
   let body='';
@@ -175,14 +206,15 @@ function ecRender(k){
       +axField(AX_ICO.fTag,K.noun+' Name',sbEsc(r.name))
       +(k==='sub'?axField(EC_ICO.tag,'Category',sbEsc(ecCatName(r.catId)))
         :axField(EC_ICO.tags,'Sub Categories',subs.length?sbEsc(subs.map(function(x){return x.name;}).reverse().join(', ')):'None yet'))
-      +axField(AX_ICO.fHash,'Events',used.length?ecPlural(used.length,'event','events')+' <span class="ax-sub"><a class="rb-link" onclick="'+K.nav+'(\'events\')">See the list</a></span>':'Not used by any event yet')
+      +axField(AX_ICO.fHash,u.tab,used.length?ecPlural(used.length,u.one,u.many)+' <span class="ax-sub"><a class="rb-link" onclick="'+K.nav+'(\'events\')">See the list</a></span>':'Not used by any '+u.one+' yet')
       +axField(AX_ICO.fUser,'Created By',r.createdBy)
       +axField(AX_ICO.fCal,'Created On',String(r.createdAt).split(' | ')[0])
       +axField(EC_ICO.note,'Description',sbEsc(r.desc),true)
       +'</div>';
   }else if(s.tab==='events'){
-    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">Events Filed Here</span><span class="ax-count">'+ecPlural(used.length,'event','events')+'</span></div>'
-      +evUsedByHTML(used,'No event is filed under this '+K.low+' yet.');
+    const none='No '+u.one+' is filed under this '+K.low+' yet.';
+    body='<div class="lp-sb-view-header"><span class="lp-sb-section-title">'+u.tab+' Filed Here</span><span class="ax-count">'+ecPlural(used.length,u.one,u.many)+'</span></div>'
+      +(ecIsAnm(k,r)?anmUsedByHTML(used,none):evUsedByHTML(used,none));
   }else if(s.tab==='logs'){
     body=lpLogsView(ecSeedLogs(k,r),ecLogFormHTML(k,r),{labels:EC_MOVE_LABELS});
   }else if(s.tab==='history'){
@@ -258,7 +290,14 @@ function ecSaveEdit(k){
   ecSync(k);
   const d=s.draft;
   if(!ecCheck(k,d,r.id))return;
+  const was=r.name,to=k==='sub'?ecCatByName(d.cat):null;
+  /* Events and announcements are different records: a sub category holding
+     either cannot cross between Announcement and the other categories. */
+  if(to&&to.id!==r.catId&&!!to.anm!==ecIsAnm('sub',r)&&(ecEvents('sub',r).length||ecAnns('sub',r).length)){
+    showToast('Cannot move to '+to.name,'error','Move what is filed under '+r.name+' first.');return;
+  }
   r.name=d.name;r.desc=d.desc;
+  if(k==='sub'&&was!==r.name&&ecIsAnm('sub',r)&&typeof anmRenameSub==='function')anmRenameSub(was,r.name);
   if(k==='sub'){
     const c=ecCatByName(d.cat);
     /* Moved to another category: its events move with it. */
@@ -321,7 +360,7 @@ function ecRowHTML(k,r,i){
     +(k==='cat'
       ?'<td>'+ecCount(ecSubsOf(r.id).length,'sub category','sub categories')+'</td>'
       :'<td><div class="lp-c-plain">'+sbEsc(ecCatName(r.catId))+'</div></td>')
-    +'<td>'+ecCount(ecEvents(k,r).length,'event','events')+'</td>'
+    +'<td>'+(function(u){return ecCount(u.rows.length,u.one,u.many);})(ecUsed(k,r))+'</td>'
     +'<td>'+axBadge(statusTone(r.status),r.status)+'</td>'
     +'<td onclick="event.stopPropagation()">'+rowLogCell(K.page,r.id)+'</td>'
     +'</tr>';

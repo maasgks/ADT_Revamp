@@ -149,11 +149,12 @@ const sidebarItems=[
   {dropdown:'Events',color:'slate',icon:sbIco.bolt,children:[
     {id:'events',label:'All Events',color:'slate',icon:sbIco.bolt},
     {id:'event-categories',label:'Categories',color:'slate',icon:sbIco.tag},
-    {id:'event-sub-categories',label:'Sub Categories',color:'slate',icon:sbIco.listTree}
+    {id:'event-sub-categories',label:'Sub Categories',color:'slate',icon:sbIco.listTree},
+    // Events filed under the Announcement category: added from All Events → + Add,
+    // managed here, read on the employee dashboard (js/announcement-admin.js).
+    {id:'announcements',label:'Announcements',color:'slate',icon:sbIco.megaphone}
   ]},
   {id:'email-templates',label:'Email Templates',color:'slate',icon:sbIco.mail},
-  // Written here, read on the employee dashboard (js/announcement-admin.js).
-  {id:'announcements',label:'Announcements',color:'slate',icon:sbIco.megaphone},
 
   {section:'Support'},
   {id:'chats',label:'Chats',color:'indigo',icon:sbIco.chatLines},

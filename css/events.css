@@ -75,3 +75,13 @@
 .et-mail-row b{font-weight:600}
 .et-mail-body{padding:18px 20px}
 .et-tag{font-size:.92em;color:#334155;background:#f1f5f9;border:1px solid var(--border);border-radius:4px;padding:0 4px}
+
+/* Add Event with the Announcement category picked (js/announcement-admin.js
+   draws the fields). The note says where it goes; .anm-grp lets the
+   character counters sit under their field as on the announcement panel. */
+.ev-anm-note{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:9px;
+  background:var(--ol);font-size:12.5px;line-height:1.45;color:#475569}
+.ev-anm-note svg{flex-shrink:0;width:16px;height:16px;margin-top:1px;color:var(--navy)}
+.ev-form-card .anm-grp{position:relative}
+.ev-form-card .anm-grp>.ep-form-label{display:flex;align-items:baseline;gap:4px}
+.ev-form-card .anm-audit{margin:0}

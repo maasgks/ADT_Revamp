@@ -10,7 +10,9 @@
                   (no Workflow tab — an announcement has no approval
                   stages; Logs and History cover what happened to it);
                   sbHero header with Edit
-     · form     — .ct-modal--form (shown as a page by js/form-page.js)
+     · form     — create is Events → Add Event with the Announcement
+                  category picked (js/events.js draws these fields with
+                  anmEvFieldsHTML); edit is the panel's Basic Details
 
    ONE STATE COLUMN in the listing: Visibility. Live, Scheduled and Expired
    all mean Status = Active and Inactive means Inactive, so a second Status
@@ -29,7 +31,18 @@
        & Time are stamped by the save, never typed. */
 
 // ── Vocabulary ──
+/* What an announcement is filed under: the sub categories of Events →
+   Categories → Announcement (js/event-categories.js), so they are added,
+   renamed and switched off there. This list is only the fallback. */
 const ANM_CATS=['General','HR Update','Holiday','Payroll','Leave & Attendance','Policy','Compliance','Benefits','Training','Event','Portal Update'];
+function anmCats(cur){
+  const c=typeof ecAnmCat==='function'?ecAnmCat():null;
+  if(!c)return ANM_CATS.slice();
+  return ecSubsOf(c.id).filter(function(s){return s.status==='Active'||s.name===cur;}).map(function(s){return s.name;}).reverse();
+}
+/* The Announcement category, or one of its sub categories, asks what is filed under it. */
+function anmFiledUnder(k,r){return k==='cat'?annData.slice():annData.filter(function(a){return a.category===r.name;});}
+function anmRenameSub(from,to){annData.forEach(function(a){if(a.category===from)a.category=to;});anmSync();}
 /* Who an announcement is for: everyone, or the people who match the groups
    picked. Four kinds of group - Department, Branch, Employment Type, Role.
    Within one kind it is OR (Engineering or HR); across kinds it is AND
@@ -171,10 +184,10 @@ function anmSync(){
 }
 
 // ══ LISTING ═══════════════════════════════════════════════════════════════
-let anmSelectedId=null,anmTab='basic-details',anmModalOpen=false,anmEditId=null;
+let anmSelectedId=null,anmTab='basic-details',anmEditId=null;
 /* Editing happens in the panel's Basic Details tab, not on the create page:
    the record stays in view beside the list, the way Holidays edits. The
-   create page (anmModalOpen) is for new announcements only. */
+   create page (Add Event, Announcement category) is for new ones only. */
 let anmEditMode=false;
 let anmQ='',anmCatF='',anmAudF='',anmStatusF='',anmStateF='';
 function anmRows(){
@@ -189,7 +202,7 @@ function anmRows(){
 function anmToggleState(v){anmStateF=anmStateF===v?'':v;anmSelectedId=null;renderADTPage();}
 function applyAnmFilters(){
   const c=getCSValue('anm-f-cat'),au=getCSValue('anm-f-aud'),s=getCSValue('anm-f-status');
-  anmCatF=c&&c!=='All Categories'?c:'';
+  anmCatF=c&&c!=='All Sub Categories'?c:'';
   anmAudF=au&&au!=='All Audiences'?au:'';
   anmStatusF=s&&s!=='All Statuses'?s:'';
   anmQ=lpSearchValue('anm-f-q');
@@ -229,7 +242,7 @@ function buildAnnouncementsHTML(){
     +'<div class="lp-filter-bar-label">Select Filter</div>'
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('anm-f-q',anmQ,'Search','applyAnmFilters()')
-    +apCS('anm-f-cat',ANM_CATS,anmCatF,'All Categories')
+    +apCS('anm-f-cat',anmCats(anmCatF),anmCatF,'All Sub Categories')
     +apCS('anm-f-aud',[ANM_AUD_ALL,ANM_AUD_PICK],anmAudF,'All Audiences')
     +apCS('anm-f-status',['Active','Inactive'],anmStatusF,'All Statuses')
     +clearFiltersBtn([anmQ,anmCatF,anmAudF,anmStatusF,anmStateF],'resetAnmFilters()')
@@ -240,14 +253,13 @@ function buildAnnouncementsHTML(){
       +tile('Expired','var(--st-idle-fg)')+tile('Inactive','var(--st-idle-fg)')
     +'</div></div>'
     +'<div class="lp-split-wrap" style="margin-top:14px" id="anm-split-wrap"><div class="lp-split-main"><div class="lp-table-card" style="border:none;border-radius:0;box-shadow:none">'
-    +'<table class="lp-table" style="min-width:840px"><thead><tr><th>S. No</th><th>Announcement</th><th>Category</th><th>Target Audience</th>'
+    +'<table class="lp-table" style="min-width:840px"><thead><tr><th>S. No</th><th>Announcement</th><th>Sub Category</th><th>Target Audience</th>'
       +'<th>Visibility</th><th>Action</th></tr></thead>'
     +'<tbody>'+pgn.rows+'</tbody></table>'
     +pgn.pager
     +'</div></div>'
     +'<div class="lp-split-sb'+(anmSelectedId?' open':'')+'" id="anm-split-sb"><div class="lp-isb" id="anm-isb-inner">'+(anmSelectedId?sbRender(renderAnmSidebar,'anm'):'')+'</div></div>'
-    +'</div></div>'
-    +(anmModalOpen?buildAnmFormHTML():'');
+    +'</div></div>';
 }
 
 // ══ DETAIL PANEL ══════════════════════════════════════════════════════════
@@ -319,7 +331,7 @@ function renderAnmSidebar(){
       +'<div class="anm-msg">'+sbEsc(a.message)+'</div>'
       +'<div class="anm-sec-title">Details</div>'
       +'<div class="lp-sb-detail-grid">'
-        +fc(ANM_ICO.tag,'Category',sbEsc(a.category))
+        +fc(ANM_ICO.tag,'Sub Category',sbEsc(a.category)+' <span class="ax-sub">Announcement</span>')
         +fc(ANM_ICO.users,'Target Audience',sbEsc(anmAudText(a)))
         +fc(ANM_ICO.start,'Valid From',anmFmt(a.validFrom))
         +fc(ANM_ICO.end,'Valid To',a.validTo?anmFmt(a.validTo):'<span style="color:var(--gray)">No end date</span>')
@@ -371,14 +383,77 @@ function anmSaveLog(id){
 
 // ══ CREATE / EDIT FORM ════════════════════════════════════════════════════
 let anmDraft=null;     // the audience being picked, held while the form is open
-function anmStartCreate(){
+/* A new announcement is an event under the Announcement category: + Add here
+   opens Add Event with that category picked (js/events.js). */
+function anmStartCreate(){startAddEv('anm');}
+/* The fields the event form keeps for an announcement while it is open. */
+function anmEvBlank(){
   // The panel's edit form uses the same field ids, so it is closed first.
   anmEditId=null;anmEditMode=false;
+  anmDraft={mode:ANM_AUD_ALL,aud:anmAudBlank()};
   // Valid From starts at the current 5-minute mark, so "publish now" is the default.
   const n=new Date();n.setMinutes(Math.floor(n.getMinutes()/5)*5);
-  anmDraft={mode:ANM_AUD_ALL,aud:anmAudBlank(),
-    fromDate:n.getFullYear()+'-'+anmPad(n.getMonth()+1)+'-'+anmPad(n.getDate()),fromTime:anmPad(n.getHours())+':'+anmPad(n.getMinutes())};
-  anmModalOpen=true;renderADTPage();anmFormSync();
+  return {title:'',message:'',pinned:false,
+    fromD:n.getFullYear()+'-'+anmPad(n.getMonth()+1)+'-'+anmPad(n.getDate()),fromT:anmPad(n.getHours())+':'+anmPad(n.getMinutes()),toD:'',toT:''};
+}
+/* Read back off the form, untrimmed, so a repaint keeps what was typed. */
+function anmEvRead(){
+  if(!document.getElementById('anm-title'))return null;
+  const v=function(id){const el=document.getElementById(id);return el?el.value:'';};
+  return {title:v('anm-title'),message:v('anm-msg'),pinned:ciPicked('anm-pin','No')==='Yes',
+    fromD:getCDValue('anm-from-d'),fromT:v('anm-from-t'),toD:getCDValue('anm-to-d'),toT:v('anm-to-t')};
+}
+/* The Add Event form's sections for an announcement, built with the event
+   form's own section helper so the two read as one form. */
+function anmEvFieldsHTML(v,sec){
+  const d=anmDraft||{mode:ANM_AUD_ALL};
+  const grp=function(label,req,html,full,extra){
+    return '<div class="ep-form-group anm-grp'+(full?' ep-form-full':'')+'"><label class="ep-form-label">'+label
+      +(req?' <span class="req">*</span>':' <span class="ep-optional">(optional)</span>')+(extra||'')+'</label>'+html+'</div>';
+  };
+  return sec('Announcement',
+      grp('Announcement Title',true,
+        '<input type="text" class="ep-form-input" id="anm-title" maxlength="'+ANM_TITLE_MAX+'" placeholder="e.g. Office closed for Diwali on 8 Nov" value="'+sbEsc(v.title)+'" oninput="anmFormSync()">'
+        +'<span class="anm-count" id="anm-title-n">'+v.title.length+' / '+ANM_TITLE_MAX+'</span>',true)
+      +grp('Message',true,
+        '<textarea class="ep-form-input anm-ta" id="anm-msg" maxlength="'+ANM_MSG_MAX+'" placeholder="Write the announcement employees will read" oninput="anmFormSync()">'+sbEsc(v.message)+'</textarea>'
+        +'<span class="anm-count" id="anm-msg-n">'+v.message.length+' / '+ANM_MSG_MAX+'</span>',true)
+      +grp('Pin Announcement',true,ciRadio('anm-pin',['No','Yes'],v.pinned?'Yes':'No'),true,
+        '<span class="anm-lbl-tip" title="Pinned announcements are shown first — still only to their audience, and only while valid.">Shown first on the dashboard</span>'))
+    +sec('Audience',
+      grp('Target Audience',true,anmAudModeHTML())
+      +'<div class="ep-form-group"><label class="ep-form-label">Reach</label>'+anmReachBlockHTML()+'</div>'
+      +'<div class="ep-form-group ep-form-full" id="anm-aud-vals"'+(d.mode===ANM_AUD_PICK?'':' hidden')+'>'+anmAudPickHTML()+'</div>')
+    +sec('Validity',
+      grp('Valid From Date &amp; Time',true,
+        '<div class="anm-dt">'+apCD('anm-from-d',v.fromD,'Select date','anmFormSync')+tsTimeField('anm-from-t',v.fromT||'09:00')+'</div>')
+      +grp('Valid To Date &amp; Time',false,
+        '<div class="anm-dt">'+apCD('anm-to-d',v.toD,'No end date','anmFormSync')+tsTimeField('anm-to-t',v.toT)+'</div>')
+      +'<div class="ep-form-group ep-form-full"><div class="anm-when" id="anm-when"></div></div>'
+      +'<div class="anm-audit ep-form-full">'+ANM_ICO.clock+'<span>Created By, Created Date &amp; Time, Last Updated By and Last Updated Date &amp; Time are recorded automatically when you publish.</span></div>');
+}
+/* The record the event form would publish, filed under sub category `sub`. */
+function anmEvRecord(v,sub){
+  return {title:v.title.trim(),message:v.message.trim(),category:sub,
+    depts:anmPicked('depts'),branches:anmPicked('branches'),types:anmPicked('types'),roles:anmPicked('roles'),
+    audMode:anmDraft?anmDraft.mode:ANM_AUD_ALL,
+    validFrom:anmJoin(v.fromD,v.fromT),validTo:v.toD?anmJoin(v.toD,v.toT||'23:59'):'',
+    pinned:!!v.pinned,status:'Active'};
+}
+/* The list the Announcement category and its sub categories show. */
+function anmUsedByHTML(rows,empty){
+  if(!rows.length)return '<div class="lp-wf-empty">'+empty+'</div>';
+  return '<div class="sb-hist-wrap"><table class="ax-hist ev-used"><thead><tr><th>S. No</th><th>Announcement</th><th>Key</th><th>Sub Category</th><th>Visibility</th></tr></thead><tbody>'
+    +rows.map(function(a,i){
+      return '<tr onclick="anmGoTo('+a.id+')"><td>'+(i+1)+'</td>'
+        +'<td class="ev-used-name" title="'+sbEsc(a.title)+'"><b>'+sbEsc(a.title)+'</b></td>'
+        +'<td>'+a.annId+'</td><td>'+sbEsc(a.category)+'</td><td>'+anmStateBadge(a)+'</td></tr>';
+    }).join('')+'</tbody></table></div>';
+}
+function anmGoTo(id){
+  resetAnmFilters();
+  anmSelectedId=id;anmTab='basic-details';anmEditMode=false;anmEditId=null;
+  navigatePage('announcements');
 }
 function anmStartEdit(id){
   const a=anmRec(id);if(!a)return;
@@ -388,7 +463,6 @@ function anmStartEdit(id){
   isbTab('anm',renderAnmSidebar);anmFormSync();
 }
 function anmCancelEdit(){anmEditMode=false;anmEditId=null;anmDraft=null;isbTab('anm',renderAnmSidebar);}
-function anmCloseForm(){anmModalOpen=false;anmEditId=null;anmDraft=null;renderADTPage();}
 
 /* The same fields as the create page, laid out in the panel's own edit form
    (.lp-sb-edit-form, as Holidays uses) and keeping the same ids, so one
@@ -409,7 +483,7 @@ function anmEditPanelHTML(a){
     +f('Message',true,
       '<textarea class="ep-form-input anm-ta" id="anm-msg" maxlength="'+ANM_MSG_MAX+'" oninput="anmFormSync()">'+sbEsc(a.message)+'</textarea>'
       +'<span class="anm-count" id="anm-msg-n">'+a.message.length+' / '+ANM_MSG_MAX+'</span>',true)
-    +f('Category',true,apCS('anm-cat',ANM_CATS,a.category,'Select category'))
+    +f('Sub Category',true,apCS('anm-cat',anmCats(a.category),a.category,'Select Sub Category'))
     +f('Target Audience',true,anmAudModeHTML()+anmReachBlockHTML(),true)
     +'<div class="lp-sb-field" style="grid-column:1/-1" id="anm-aud-vals"'+(anmDraft.mode===ANM_AUD_PICK?'':' hidden')+'>'+anmAudPickHTML()+'</div>'
     +f('Valid From Date &amp; Time',true,
@@ -532,95 +606,53 @@ function anmFormSync(){
   box.innerHTML=ANM_ICO.info+'<span>'+txt+'</span>';
 }
 
-function buildAnmFormHTML(){
-  const a=anmEditId?anmRec(anmEditId):null;
-  const xSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  const split=function(dt){const p=(dt||'').split('T');return {d:p[0]||'',t:p[1]||''};};
-  const d=anmDraft||{};
-  const from=a?split(a.validFrom):{d:d.fromDate||'',t:d.fromTime||''};
-  const to=a?split(a.validTo):{d:'',t:''};
-  const grp=function(label,req,html,full,extra){
-    return '<div class="ep-form-group'+(full?' ep-form-full':'')+'"><label class="ep-form-label">'+label
-      +(req?' <span class="req">*</span>':' <span class="ep-optional">(optional)</span>')+(extra||'')+'</label>'+html+'</div>';
-  };
-  const sec=function(title,sub,inner){
-    return '<div class="ep-form-card anm-sec"><div class="anm-sec-head"><span class="ep-form-title">'+title+'</span>'
-      +'<span class="anm-sec-sub">'+sub+'</span></div>'+inner+'</div>';
-  };
-  const audit=a
-    ? '<div class="anm-audit">'
-        +'<span><b>Created</b> '+sbEsc(a.createdBy)+' · '+sbEsc(anmStampText(a.createdAt))+'</span>'
-        +'<span><b>Last updated</b> '+sbEsc(a.updatedBy)+' · '+sbEsc(anmStampText(a.updatedAt))+'</span></div>'
-    : '<div class="anm-audit">'+ANM_ICO.clock+'<span>Created By, Created Date &amp; Time, Last Updated By and Last Updated Date &amp; Time are recorded automatically when you save.</span></div>';
-
-  return '<div class="ct-modal-overlay">'
-    +'<div class="ct-modal ct-modal--form anm-form" onclick="event.stopPropagation()">'
-    +'<div class="ct-modal-hdr"><span class="ct-modal-title">'+(a?'Edit Announcement':'Create Announcement')+'</span>'
-      +'<button class="ct-modal-close" onclick="anmCloseForm()">'+xSvg+'</button></div>'
-    +'<p class="ct-modal-sub">Posted to the Announcements panel on the employee dashboard, for the audience and dates you set here.</p>'
-
-    /* One two-column grid throughout: full-width fields for what is long
-       (title, message, the group panel), and pairs for what is short
-       (Category | Pin, Target Audience | who it reaches, From | To), so no
-       field sits alone beside an empty half. */
-    +sec('Announcement','What it says',
-      '<div class="ep-form-grid">'
-      +grp('Announcement Title',true,
-        '<input type="text" class="ep-form-input" id="anm-title" maxlength="'+ANM_TITLE_MAX+'" placeholder="e.g. Office closed for Diwali on 8 Nov" value="'+(a?sbEsc(a.title):'')+'" oninput="anmFormSync()">'
-        +'<span class="anm-count" id="anm-title-n">'+(a?a.title.length:0)+' / '+ANM_TITLE_MAX+'</span>',true)
-      +grp('Category',true,apCS('anm-cat',ANM_CATS,a?a.category:'','Select category'))
-      +grp('Pin Announcement',true,ciRadio('anm-pin',['No','Yes'],a&&a.pinned?'Yes':'No'),false,
-        '<span class="anm-lbl-tip" title="Pinned announcements are shown first — still only to their audience, and only while valid.">Shown first on the dashboard</span>')
-      +grp('Message',true,
-        '<textarea class="ep-form-input anm-ta" id="anm-msg" maxlength="'+ANM_MSG_MAX+'" placeholder="Write the announcement employees will read" oninput="anmFormSync()">'+(a?sbEsc(a.message):'')+'</textarea>'
-        +'<span class="anm-count" id="anm-msg-n">'+(a?a.message.length:0)+' / '+ANM_MSG_MAX+'</span>',true)
-      +'</div>')
-
-    +sec('Audience','Who sees it',
-      '<div class="ep-form-grid">'
-      +grp('Target Audience',true,anmAudModeHTML())
-      +'<div class="ep-form-group"><label class="ep-form-label">Reach</label>'+anmReachBlockHTML()+'</div>'
-      +'<div class="ep-form-group ep-form-full" id="anm-aud-vals"'+(d.mode===ANM_AUD_PICK?'':' hidden')+'>'+anmAudPickHTML()+'</div>'
-      +'</div>')
-
-    +sec('Validity','When it starts and stops showing',
-      '<div class="ep-form-grid">'
-      +grp('Valid From Date &amp; Time',true,
-        '<div class="anm-dt">'+apCD('anm-from-d',from.d,'Select date','anmFormSync')+tsTimeField('anm-from-t',from.t||'09:00')+'</div>')
-      +grp('Valid To Date &amp; Time',false,
-        '<div class="anm-dt">'+apCD('anm-to-d',to.d,'No end date','anmFormSync')+tsTimeField('anm-to-t',to.t)+'</div>')
-      +'<div class="ep-form-group ep-form-full"><div class="anm-when" id="anm-when"></div></div>'
-      +'</div>')
-
-    +audit
-    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
-      +'<button class="ep-cancel-btn" onclick="anmCloseForm()">Cancel</button>'
-      +'<button class="ep-save-btn" onclick="anmSubmit()">'+(a?'Save changes':'Publish Announcement')+'</button>'
-    +'</div></div>'
-    +'</div></div>';
-}
-
-function anmSubmit(){
-  const f=anmReadForm();
+/* The rules both forms share (FR-05.x). False after saying what is wrong. */
+function anmCheck(f){
   const bad=function(msg,sub,focusId){
     showToast(msg,'error',sub||'');
     const el=focusId&&document.getElementById(focusId);if(el)el.focus();
+    return false;
   };
+  if(!f.category)return bad('Sub Category is required','Pick what this announcement is filed under.');
   if(!f.title)return bad('Announcement Title is required','','anm-title');
   if(!f.message)return bad('Message is required','Write what employees should read.','anm-msg');
-  if(!f.category)return bad('Category is required','Pick the category this belongs to.');
   if(f.audMode===ANM_AUD_PICK&&anmIsAll(f))
     return bad('Pick at least one group','Tick a department, branch, employment type or role — or set Target Audience to All Employees.');
   if(!anmParse(f.validFrom))return bad('Valid From is required','Pick the date and time it should start showing.');
   if(f.validTo&&anmParse(f.validTo)<=anmParse(f.validFrom))return bad('Valid To must be after Valid From','Check the two dates.');
-
+  return true;
+}
+/* A new announcement, from the Add Event form. It lands selected on the
+   Announcements listing, with the filters cleared so it is in view. */
+function anmCreate(f){
+  const stamp=anmStampNow(),id=++anmSeq;
+  const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,depts:f.depts,branches:f.branches,types:f.types,roles:f.roles,
+    message:f.message,validFrom:f.validFrom,validTo:f.validTo,pinned:f.pinned,status:f.status,from:'hr',
+    createdBy:CURRENT_USER,createdAt:stamp,updatedBy:CURRENT_USER,updatedAt:stamp};
+  annData.push(a);
+  anmDraft=null;
+  anmQ='';anmCatF='';anmAudF='';anmStatusF='';anmStateF='';
+  lpLanded('announcements',id);
+  anmSelectedId=id;anmTab='basic-details';
+  anmSync();
+  return a;
+}
+function anmPublishedToast(a){
+  const st=anmState(a);
+  showToast(st==='Live'?'Announcement published':'Announcement saved','success',
+    '"'+a.title+'" — '+(st==='Live'?'live now for '+anmAudText(a):st==='Scheduled'?'goes live '+anmFmt(a.validFrom):'saved as Inactive')+'.');
+}
+/* Save from the panel's Edit. */
+function anmSubmit(){
+  const f=anmReadForm();
+  if(!anmCheck(f))return;
   const stamp=anmStampNow();
   if(anmEditId){
     const a=anmRec(anmEditId);
     const changes=[];
     if(a.title!==f.title)changes.push('title changed');
     if(a.message!==f.message)changes.push('message edited');
-    if(a.category!==f.category)changes.push('category '+a.category+' → '+f.category);
+    if(a.category!==f.category)changes.push('sub category '+a.category+' → '+f.category);
     if(anmAudText(a)!==anmAudText(f))changes.push('audience now '+anmAudText(f));
     if(a.validFrom!==f.validFrom||a.validTo!==f.validTo)changes.push('validity now '+anmFmt(f.validFrom)+' – '+(f.validTo?anmFmt(f.validTo):'no end date'));
     if(a.pinned!==f.pinned)changes.push(f.pinned?'pinned':'unpinned');
@@ -633,19 +665,6 @@ function anmSubmit(){
     showToast('Announcement updated','success','"'+a.title+'" — '+anmState(a)+'.');
     return;
   }
-  const id=++anmSeq;
-  const a={id:id,annId:'ANN-'+(1000+id),title:f.title,category:f.category,depts:f.depts,branches:f.branches,types:f.types,roles:f.roles,
-    message:f.message,validFrom:f.validFrom,validTo:f.validTo,pinned:f.pinned,status:f.status,from:'hr',
-    createdBy:CURRENT_USER,createdAt:stamp,updatedBy:CURRENT_USER,updatedAt:stamp};
-  annData.push(a);
-  anmModalOpen=false;anmDraft=null;
-  anmQ='';anmCatF='';anmAudF='';anmStatusF='';anmStateF='';
-  lpLanded('announcements',id);
-  anmSelectedId=id;anmTab='basic-details';
-  renderADTPage();
-  const st=anmState(a);
-  showToast(st==='Live'?'Announcement published':'Announcement saved','success',
-    '"'+a.title+'" — '+(st==='Live'?'live now for '+anmAudText(a):st==='Scheduled'?'goes live '+anmFmt(a.validFrom):'saved as Inactive')+'.');
 }
 
 anmSync();

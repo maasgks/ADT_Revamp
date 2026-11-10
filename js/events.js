@@ -24,6 +24,14 @@
    data has several events on one number. The key (EVT-334) is what identifies
    an event.
 
+   AN ANNOUNCEMENT IS ADDED HERE. Category is the form's first section, and
+   picking Announcement (js/event-categories.js) swaps the rest of the form
+   for the announcement's own fields - title, message, audience, validity -
+   drawn by js/announcement-admin.js. Its sub categories are what the
+   announcement is filed under. Saving publishes it to the employee dashboard
+   and lands on Events → Announcements, where it is then managed. An existing
+   event cannot be turned into an announcement, so Edit leaves the category out.
+
    THE SUBJECT COMES FROM THE TEMPLATE. Picking a template fills Template
    Subject; it can then be reworded for this event without touching the
    template. Categories and templates are held by id, so a rename reaches every
@@ -45,25 +53,25 @@ const EV_MOVES={'Active':['Inactive','Deleted'],'Inactive':['Active','Deleted'],
 const EV_MOVE_LABELS={'Active':'Mark Active','Inactive':'Mark Inactive','Deleted':'Delete'};
 
 /* ── Seed data (the old screen's rows, then one for each other audience) ── */
-function evSeed(id,key,number,type,aud,catId,subId,service,process,table,c,rule,comment,tplId,subject,status,by,at,opts){
-  return Object.assign({id:id,key:key,number:number,type:type,aud:aud,catId:catId,subId:subId,service:service,process:process,
+function evSeed(id,key,number,name,type,aud,catId,subId,service,process,table,c,rule,comment,tplId,subject,status,by,at,opts){
+  return Object.assign({id:id,key:key,number:number,name:name,type:type,aud:aud,catId:catId,subId:subId,service:service,process:process,
     table:table,f1:c[0]||'',d1:c[1]||'',f2:c[2]||'',d2:c[3]||'',rule:rule,comment:comment,tplId:tplId,subject:subject,
     schedule:false,promo:false,status:status,createdBy:by,createdAt:at},opts||{});
 }
 const eventsData=[
-  evSeed(13,334,3500,'Admin master','Admin',2,5,'All','All','Entity',['Entity Status','Created'],'testant','testant',12,'testant','Active','Tarak Swain','4 Nov 2026 | 04:36:10 PM'),
-  evSeed(12,333,2995,'Customer master','User',1,1,'All','Onboarding','Entity',['Entity Status','Verified'],'This email is trigger when entity successfully created and user land on dashboard','Sent once, on the first sign-in after the entity is created.',10,'[First_Name] – Let\'s Get [Company_Name] Started on ADT','Active','Tarak Swain','6 Apr 2026 | 06:03:17 PM'),
-  evSeed(11,326,3001,'Employee master','User',4,8,'All','Payroll','Timesheet',['Timesheet Status','Draft'],'Reminds an employee whose timesheet is still in draft two days before the cycle closes','Runs on schedule.',11,'Your timesheet is due, [First_Name]','Active','Meera Iyer','2 Oct 2023 | 10:20:00 AM',{schedule:true}),
-  evSeed(10,325,3000,'Consultant master','Consultant',1,1,'Contractor','Onboarding','Employee',['Employee Status','Onboarding','Employment Type','Contractor'],'Welcomes a consultant once their agreement is active','Sent to the consultant, copied to the account manager.',6,'Welcome aboard, [First_Name]','Active','Syed Ayaz','21 Jun 2023 | 09:45:00 AM'),
-  evSeed(9,324,2999,'Vendor master','Sub Contracting',3,7,'Contractor','Compliance','Vendor',['Vendor Status','Active'],'Sends the sub contractor the work order to confirm','Sent when a work order is raised.',7,'New work order for [Company_Name]','Active','Syed Ayaz','2 Aug 2023 | 03:25:00 PM'),
-  evSeed(8,332,3005,'Admin master','Admin',2,4,'All','Compliance','Document',['Document Status','Uploaded'],'Document Change Notification: Employee [Employee_Name]','Sent to HR for review.',5,'Document Change Notification: Employee [Employee_Name]','Inactive','Tarak Swain','16 May 2023 | 06:06:38 PM'),
-  evSeed(7,331,3005,'Admin master','Admin',2,3,'All','All','Deal Log',['Deal Status','Closed','Region','USA'],'This event will be a trigger to HR when Closing team update status in deal log USA','Sent to HR.',4,'Template for Admin','Active','Tarak Swain','16 May 2023 | 06:06:38 PM'),
-  evSeed(6,330,3005,'Admin master','Admin',2,6,'All','All','Deal Log',['Region','USA'],'This event will be a trigger to HR templates MSA for USA','Sent to HR.',4,'Template for Admin','Active','Tarak Swain','16 May 2023 | 06:04:20 PM'),
-  evSeed(5,329,3004,'Vendor master','Vendor',1,2,'All','Payroll','Vendor',['Vendor Status','Active'],'Vendor Salary email for HR','Sent to HR.',3,'Template for Vendor','Active','Tarak Swain','12 May 2023 | 12:33:00 PM'),
-  evSeed(4,328,3003,'Vendor master','Vendor',1,2,'All','Payroll','Vendor',['Payment Cycle','Monthly'],'Vendor salary email','Sent to the vendor.',3,'Template for Vendor','Active','Tarak Swain','12 May 2023 | 12:31:08 PM'),
-  evSeed(3,327,3002,'Admin master','Admin',2,3,'All','All','Deal Log',['Deal Status','Pending for Approval'],'This event is trigger for Deal is Pending for Approval','Sent to the approver.',4,'Template for Admin','Active','Tarak Swain','24 Apr 2023 | 11:02:00 AM'),
-  evSeed(2,323,2998,'Customer master','Education',4,9,'All','Onboarding','Employee',['Employee Status','Onboarding'],'Confirms a learner\'s enrolment','Sent to the learner.',8,'You are enrolled, [First_Name]','Active','Syed Ayaz','8 Sep 2023 | 11:15:00 AM'),
-  evSeed(1,322,2997,'Admin master','Admin',3,7,'EOR','Compliance','Entity',['Entity Status','Created','Entity Type','EOR Entity'],'Asks the compliance team to verify a new EOR entity','Sent to the compliance team.',1,'Verify [Entity_Name]','Active','Tarak Swain','20 Jan 2023 | 10:05:00 AM')
+  evSeed(13,334,3500,'New Entity Created','Admin master','Admin',2,5,'All','All','Entity',['Entity Status','Created'],'Tells the admin team when a new entity is created so its setup can be checked','Sent to the admin team once, when the entity is created.',12,'New entity created: [Entity_Name]','Active','Tarak Swain','4 Nov 2026 | 04:36:10 PM'),
+  evSeed(12,333,2995,'Customer Welcome on First Sign-in','Customer master','User',1,1,'All','Onboarding','Entity',['Entity Status','Verified'],'Welcomes the customer once their entity is set up and they first land on the dashboard','Sent once, on the first sign-in after the entity is created.',10,'[First_Name] – Let\'s Get [Company_Name] Started on ADT','Active','Tarak Swain','6 Apr 2026 | 06:03:17 PM'),
+  evSeed(11,326,3001,'Timesheet Due Reminder','Employee master','User',4,8,'All','Payroll','Timesheet',['Timesheet Status','Draft'],'Reminds an employee whose timesheet is still in draft two days before the cycle closes','Runs on schedule.',11,'Your timesheet is due, [First_Name]','Active','Meera Iyer','2 Oct 2023 | 10:20:00 AM',{schedule:true}),
+  evSeed(10,325,3000,'Consultant Welcome','Consultant master','Consultant',1,1,'Contractor','Onboarding','Employee',['Employee Status','Onboarding','Employment Type','Contractor'],'Welcomes a consultant once their agreement is active','Sent to the consultant, copied to the account manager.',6,'Welcome aboard, [First_Name]','Active','Syed Ayaz','21 Jun 2023 | 09:45:00 AM'),
+  evSeed(9,324,2999,'Sub Contractor Work Order','Vendor master','Sub Contracting',3,7,'Contractor','Compliance','Vendor',['Vendor Status','Active'],'Sends the sub contractor the work order to confirm','Sent when a work order is raised.',7,'New work order for [Company_Name]','Active','Syed Ayaz','2 Aug 2023 | 03:25:00 PM'),
+  evSeed(8,332,3005,'Employee Document Changed','Admin master','Admin',2,4,'All','Compliance','Document',['Document Status','Uploaded'],'Tells HR when an employee uploads or changes a document on their profile','Sent to HR for review.',5,'Document changed: [Employee_Name]','Inactive','Tarak Swain','16 May 2023 | 06:06:38 PM'),
+  evSeed(7,331,3005,'USA Deal Closed','Admin master','Admin',2,3,'All','All','Deal Log',['Deal Status','Closed','Region','USA'],'Tells HR when the closing team marks a USA deal as Closed in the deal log','Sent to HR.',4,'Deal closed for [Company_Name]','Active','Tarak Swain','16 May 2023 | 06:06:38 PM'),
+  evSeed(6,330,3005,'USA Deal – MSA for HR','Admin master','Admin',2,6,'All','All','Deal Log',['Region','USA'],'Sends HR the MSA template when a deal is logged for the USA region','Sent to HR.',4,'MSA needed for [Company_Name]','Active','Tarak Swain','16 May 2023 | 06:04:20 PM'),
+  evSeed(5,329,3004,'Vendor Salary – HR Copy','Vendor master','Vendor',1,2,'All','Payroll','Vendor',['Vendor Status','Active'],'Sends HR the vendor salary details once the vendor is active','Sent to HR.',3,'Vendor salary processed: [Company_Name]','Active','Tarak Swain','12 May 2023 | 12:33:00 PM'),
+  evSeed(4,328,3003,'Vendor Monthly Salary','Vendor master','Vendor',1,2,'All','Payroll','Vendor',['Payment Cycle','Monthly'],'Sends the vendor their salary details at the close of each monthly cycle','Sent to the vendor.',3,'Your salary details for this cycle','Active','Tarak Swain','12 May 2023 | 12:31:08 PM'),
+  evSeed(3,327,3002,'Deal Pending Approval','Admin master','Admin',2,3,'All','All','Deal Log',['Deal Status','Pending for Approval'],'Asks the approver to review a deal that is pending for approval','Sent to the approver.',4,'Deal awaiting your approval: [Company_Name]','Active','Tarak Swain','24 Apr 2023 | 11:02:00 AM'),
+  evSeed(2,323,2998,'Course Enrolment Confirmed','Customer master','Education',4,9,'All','Onboarding','Employee',['Employee Status','Onboarding'],'Confirms a learner\'s enrolment','Sent to the learner.',8,'You are enrolled, [First_Name]','Active','Syed Ayaz','8 Sep 2023 | 11:15:00 AM'),
+  evSeed(1,322,2997,'EOR Entity Verification','Admin master','Admin',3,7,'EOR','Compliance','Entity',['Entity Status','Created','Entity Type','EOR Entity'],'Asks the compliance team to verify a new EOR entity','Sent to the compliance team.',1,'Verify [Entity_Name]','Active','Tarak Swain','20 Jan 2023 | 10:05:00 AM')
 ];
 let evNextId=14,evNextKey=335;
 
@@ -75,6 +83,8 @@ function evForTemplate(tplId){return evLive().filter(function(e){return e.tplId=
 function evForTaxonomy(k,id){return evLive().filter(function(e){return (k==='cat'?e.catId:e.subId)===id;});}
 function evMoveSubCategory(subId,catId){eventsData.forEach(function(e){if(e.subId===subId)e.catId=catId;});}
 function evSubject(e){return e.subject||(e.tplId?'':'No template linked');}
+/* What a person calls the event; a record without one falls back to the subject. */
+function evName(e){return e.name||evSubject(e);}
 function evTemplate(e){return e.tplId?etRec(e.tplId):null;}
 /* The conditions as a sentence. */
 function evWhen(e){
@@ -86,6 +96,10 @@ function evWhen(e){
 function evFieldsOf(table){return EV_TABLES[table]?Object.keys(EV_TABLES[table]):[];}
 function evDataOf(table,field){return EV_TABLES[table]&&EV_TABLES[table][field]||[];}
 function evPlural(n,w){return n+' '+w+(n===1?'':'s');}
+/* The Add Event form, with Announcement picked as its category. */
+function evIsAnm(){return !!(evModalOpen&&evDraft&&evDraft.cat&&ecIsAnmName(evDraft.cat));}
+/* Category names an event can be filtered or filed under. */
+function evCatNames(){return ecLive('cat').filter(function(c){return !c.anm;}).map(function(c){return c.name;}).reverse();}
 
 const EV_ICO={
   hero:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
@@ -129,7 +143,7 @@ function applyEvFilters(){
 function resetEvFilters(){evForF='';evCatF='';evSubF='';evProcessF='';evServiceF='';evStatusF='';evQ='';evSelectedId=null;renderADTPage();}
 /* Picking a category narrows the Sub Category filter to it straight away. */
 function evFilterSubHTML(cat,cur){
-  const opts=cat?ecSubOptions(cat,cur):ecLive('sub').map(function(s){return s.name;}).reverse().filter(function(n,i,a){return a.indexOf(n)===i;});
+  const opts=cat?ecSubOptions(cat,cur):ecLive('sub').filter(function(s){return !ecIsAnm('sub',s);}).map(function(s){return s.name;}).reverse().filter(function(n,i,a){return a.indexOf(n)===i;});
   return apCS('ev-f-sub',opts,cur,'Sub Category');
 }
 function evFilterCatHook(val){
@@ -165,7 +179,7 @@ function evUsedByHTML(rows,empty){
   return '<div class="sb-hist-wrap"><table class="ax-hist ev-used"><thead><tr><th>S. No</th><th>Event</th><th>Key</th><th>Event For</th><th>Status</th></tr></thead><tbody>'
     +rows.map(function(e,i){
       return '<tr onclick="evGoTo('+e.id+')"><td>'+(i+1)+'</td>'
-        +'<td class="ev-used-name" title="'+attrSafe(evSubject(e))+'"><b>'+sbEsc(evSubject(e))+'</b></td>'
+        +'<td class="ev-used-name" title="'+attrSafe(evName(e))+'"><b>'+sbEsc(evName(e))+'</b></td>'
         +'<td>'+evKey(e)+'</td><td>'+e.aud+'</td><td>'+axBadge(statusTone(e.status),e.status)+'</td></tr>';
     }).join('')+'</tbody></table></div>';
 }
@@ -189,7 +203,7 @@ function renderEvSidebar(){
   const tpl=evTemplate(e);
   const tabs=[{id:'basic-details',label:'Basic Details'},{id:'email',label:'Email'},{id:'logs',label:'Logs'},{id:'history',label:'History'},{id:'workflow',label:'Workflow'}];
   const tabBar=axTabBar('ev',tabs,evTab,'navEvTab','closeEvSidebar');
-  const hero=function(editing,edit){return sbHero({icon:EV_ICO.hero,name:sbEsc(evSubject(e)),meta:[evKey(e),'No. '+e.number,'For '+e.aud],
+  const hero=function(editing,edit){return sbHero({icon:EV_ICO.hero,name:sbEsc(evName(e)),meta:[evKey(e),'No. '+e.number,'For '+e.aud],
     status:axBadge(statusTone(e.status),e.status),editing:editing,onEdit:edit});};
   const opts=[e.schedule?'Schedule Event':'',e.promo?'Promotion':''].filter(Boolean);
   let body='';
@@ -256,10 +270,10 @@ function evSaveLog(id){
 /* ── The form: panel Edit and + Add share it ───────────────────────────── */
 function evDraftOf(e){
   const t=e?evTemplate(e):null;
-  return e?{type:e.type,number:String(e.number),cat:ecCatName(e.catId),sub:ecSubName(e.subId),aud:e.aud,service:e.service,process:e.process,
+  return e?{name:e.name||'',type:e.type,number:String(e.number),cat:ecCatName(e.catId),sub:ecSubName(e.subId),aud:e.aud,service:e.service,process:e.process,
       table:e.table,f1:e.f1,d1:e.d1,f2:e.f2,d2:e.d2,rule:e.rule,comment:e.comment,schedule:e.schedule,promo:e.promo,tpl:t?t.name:'',subject:e.subject}
-    :{type:'',number:'',cat:'',sub:'',aud:'',service:'',process:'',table:'',f1:'',d1:'',f2:'',d2:'',rule:'',comment:'',
-      schedule:false,promo:false,tpl:'',subject:'',status:'Inactive'};
+    :{name:'',type:'',number:'',cat:'',sub:'',aud:'',service:'',process:'',table:'',f1:'',d1:'',f2:'',d2:'',rule:'',comment:'',
+      schedule:false,promo:false,tpl:'',subject:'',status:'Inactive',anm:null};
 }
 function evStartEdit(){
   const e=evRec(evSelectedId);if(!e)return;
@@ -271,22 +285,23 @@ function evStartEdit(){
 function evCancelEdit(){evDropEdit();renderADTPage();}
 function evSync(){
   if(!evDraft)return;
-  [['number','ev-e-number'],['rule','ev-e-rule'],['comment','ev-e-comment'],['subject','ev-e-subject']]
+  [['name','ev-e-name'],['number','ev-e-number'],['rule','ev-e-rule'],['comment','ev-e-comment'],['subject','ev-e-subject']]
     .forEach(function(p){const el=document.getElementById(p[1]);if(el)evDraft[p[0]]=el.value.trim();});
   [['type','ev-e-type'],['cat','ev-e-cat'],['sub','ev-e-sub'],['aud','ev-e-for'],['status','ev-e-status'],['service','ev-e-service'],['process','ev-e-process'],
    ['table','ev-e-table'],['f1','ev-e-f1'],['d1','ev-e-d1'],['f2','ev-e-f2'],['d2','ev-e-d2'],['tpl','ev-e-tpl']]
     .forEach(function(p){if(document.getElementById('csw-'+p[1]))evDraft[p[0]]=getCSValue(p[1]);});
   [['schedule','ev-e-schedule'],['promo','ev-e-promo']].forEach(function(p){const el=document.getElementById(p[1]);if(el)evDraft[p[0]]=el.checked;});
+  if(evDraft.anm){const v=anmEvRead();if(v)evDraft.anm=v;}
 }
 function evRepaint(){
-  if(evModalOpen&&formRepaintParts(buildAddEvModalHTML(),['ev-m-grid']))return;
-  renderADTPage();
+  if(!(evModalOpen&&formRepaintParts(buildAddEvModalHTML(),['ev-m-grid','ev-m-foot'])))renderADTPage();
+  if(evIsAnm())anmFormSync();
 }
 /* A pick that decides what the next field can hold clears what no longer fits. */
 function evFormHook(val,csid){
   evSync();
   const d=evDraft;
-  if(csid==='ev-e-cat')d.sub='';
+  if(csid==='ev-e-cat'){d.sub='';if(evModalOpen&&ecIsAnmName(val)&&!d.anm)d.anm=anmEvBlank();}
   if(csid==='ev-e-table'){d.f1='';d.d1='';d.f2='';d.d2='';}
   if(csid==='ev-e-f1'){d.d1='';if(!val||d.f2===val){d.f2='';d.d2='';}}
   if(csid==='ev-e-f2')d.d2='';
@@ -330,6 +345,7 @@ function evSaveAdd(key){
   const twin=list.find(function(x){return x.name.toLowerCase()===val.toLowerCase();});
   if(twin){
     if(twin.status!=='Active'){showToast(twin.name+' is '+twin.status,'info','Mark it Active from its own page to use it.');return;}
+    if(twin.anm&&!evModalOpen){showToast('An event cannot become an announcement','error','Add the announcement from + Add instead.');return;}
     showToast(val+' already exists','info','It has been selected for you.');
     if(key==='cat'){d.cat=twin.name;d.sub='';}else d.sub=twin.name;
   }else{
@@ -337,6 +353,7 @@ function evSaveAdd(key){
     if(key==='cat'){d.cat=r.name;d.sub='';}else d.sub=r.name;
     showToast(EC_KIND[key].noun+' added','success','"'+val+'" is now an option.');
   }
+  if(evModalOpen&&ecIsAnmName(d.cat)&&!d.anm)d.anm=anmEvBlank();
   evAddOpen='';evRepaint();
 }
 /* Back from the Add Email Template form with the new template picked. */
@@ -356,20 +373,28 @@ function evFieldsHTML(){
   const fields=evFieldsOf(d.table);
   const fields2=fields.filter(function(f){return f!==d.f1;});
   const tplOpts=emailTemplatesData.filter(function(t){return t.status==='Active'||t.name===d.tpl;}).map(function(t){return t.name;}).reverse();
-  return sec('Event Details',
-      sel('ev-e-type','Event Type',EV_TYPES,d.type,'Select Event Type',true)
+  /* First, because it decides the rest: Announcement turns the form into the
+     announcement form. Edit leaves Announcement out of the list. */
+  const anm=evIsAnm();
+  const catSec=sec('Category',
+      '<div class="ep-form-group">'+axAddLabel('Event Category',true,'cat','evOpenAdd')
+        +apCS('ev-e-cat',ecCatOptions(d.cat,!evModalOpen),d.cat,'Select Category','evFormHook')
+        +axInlineAdd('ev','cat',evAddOpen,'Category Name','evSaveAdd','evCancelAdd')+'</div>'
+      +dep(!!d.cat,axAddLabel('Event Sub Category',true,d.cat?'sub':'','evOpenAdd')
+        +axCS('ev-e-sub',ecSubOptions(d.cat,d.sub),d.sub,'Select Sub Category')
+        +axInlineAdd('ev','sub',evAddOpen,'Sub Category Name','evSaveAdd','evCancelAdd'),'Pick a Category first.')
+      +(anm?'<div class="ep-form-group ep-form-full"><div class="ev-anm-note">'+ANM_ICO.megaphone
+        +'<span>Posted to the Announcements panel on the employee dashboard, for the audience and dates below. The sub category is what it is filed under.</span></div></div>':''));
+  if(anm)return catSec+anmEvFieldsHTML(d.anm,sec);
+  return catSec+sec('Event Details',
+      '<div class="ep-form-group ep-form-full"><label class="ep-form-label" for="ev-e-name">Event Name <span class="req">*</span></label>'
+        +'<input class="ep-form-input" id="ev-e-name" value="'+attrSafe(d.name)+'" placeholder="e.g. Deal Pending Approval"></div>'
+      +sel('ev-e-type','Event Type',EV_TYPES,d.type,'Select Event Type',true)
       +'<div class="ep-form-group"><label class="ep-form-label" for="ev-e-number">Event Number <span class="req">*</span></label>'
         +'<input class="ep-form-input" id="ev-e-number" type="number" min="1" step="1" value="'+attrSafe(d.number)+'" placeholder="Event Number"></div>'
       /* Status is only asked when adding; alone on its row, Event For takes the width. */
       +'<div class="ep-form-group'+(evModalOpen?'':' ep-form-full')+'">'+label('Event For',true)+apCS('ev-e-for',ET_FOR,d.aud,'Select Event For')+'</div>'
       +(evModalOpen?sel('ev-e-status','Status',EV_TILES,d.status,'Select Status',true):''))
-    +sec('Category',
-      '<div class="ep-form-group">'+axAddLabel('Event Category',true,'cat','evOpenAdd')
-        +apCS('ev-e-cat',ecCatOptions(d.cat),d.cat,'Select Category','evFormHook')
-        +axInlineAdd('ev','cat',evAddOpen,'Category Name','evSaveAdd','evCancelAdd')+'</div>'
-      +dep(!!d.cat,axAddLabel('Event Sub Category',true,d.cat?'sub':'','evOpenAdd')
-        +axCS('ev-e-sub',ecSubOptions(d.cat,d.sub),d.sub,'Select Sub Category')
-        +axInlineAdd('ev','sub',evAddOpen,'Sub Category Name','evSaveAdd','evCancelAdd'),'Pick a Category first.'))
     +sec('Trigger',
       sel('ev-e-service','Service Group',ET_SERVICES,d.service,'Select Service Group',true)
       +sel('ev-e-process','Process Type',ET_PROCESS,d.process,'Select Process Type',true)
@@ -398,7 +423,7 @@ function evFieldsHTML(){
         +'<div class="et-pv" id="ev-pv">'+evPreviewBody()+'</div></div>');
 }
 function evCheck(d){
-  const need=[['type','Event Type'],['number','Event Number'],['cat','Event Category'],['sub','Event Sub Category'],['aud','Event For'],
+  const need=[['name','Event Name'],['type','Event Type'],['number','Event Number'],['cat','Event Category'],['sub','Event Sub Category'],['aud','Event For'],
     ['service','Service Group'],['process','Process Type'],['table','Table Level'],['rule','Business Rule'],['comment','Trigger Comment']];
   if(evModalOpen)need.push(['status','Status']);
   if(d.f1)need.push(['d1','Data Level One']);
@@ -411,7 +436,7 @@ function evCheck(d){
 /* The draft holds names, as the dropdowns do; the record holds ids. */
 function evFromDraft(d){
   const c=ecCatByName(d.cat),s=c?ecSubByName(c.id,d.sub):null,t=d.tpl?etByName(d.tpl):null;
-  return {type:d.type,number:Number(d.number),catId:c?c.id:null,subId:s?s.id:null,aud:d.aud,service:d.service,process:d.process,
+  return {name:d.name,type:d.type,number:Number(d.number),catId:c?c.id:null,subId:s?s.id:null,aud:d.aud,service:d.service,process:d.process,
     table:d.table,f1:d.f1,d1:d.d1,f2:d.f2,d2:d.d2,rule:d.rule,comment:d.comment,schedule:!!d.schedule,promo:!!d.promo,
     tplId:t?t.id:null,subject:t?d.subject:''};
 }
@@ -422,16 +447,21 @@ function evSaveEdit(){
   Object.assign(e,evFromDraft(evDraft));
   evDropEdit();
   renderADTPage();
-  showToast('Event updated','success',evKey(e)+' saved.');
+  showToast('Event updated','success',e.name+' saved.');
 }
 
 /* ── + Add ─────────────────────────────────────────────────────────────── */
-function startAddEv(){
+/* mode 'anm' opens it with the Announcement category already picked
+   (Events → Announcements → + Add). */
+function startAddEv(mode){
   if(page!=='events')navigatePage('events');
   evDropEdit();
   evDraft=evDraftOf(null);
+  const ac=mode==='anm'?ecAnmCat():null;
+  if(ac&&ac.status==='Active'){evDraft.cat=ac.name;evDraft.anm=anmEvBlank();}
   evModalOpen=true;
   renderADTPage();
+  if(evIsAnm())anmFormSync();
 }
 function cancelAddEv(){evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;renderADTPage();}
 function buildAddEvModalHTML(){
@@ -439,17 +469,27 @@ function buildAddEvModalHTML(){
     +'<div class="ct-modal ct-modal--form ax-modal" onclick="event.stopPropagation()">'
     +'<div class="ct-modal-hdr"><span class="ct-modal-title">Add Event</span>'
       +'<button class="ct-modal-close" onclick="cancelAddEv()">'+AX_ICO.x+'</button></div>'
-    +'<p class="ct-modal-sub">When a record reaches a state, send an email to an audience. Fields marked <span class="req">*</span> are required.</p>'
+    +'<p class="ct-modal-sub">When a record reaches a state, send an email to an audience - or, under Announcement, post a notice to the employee dashboard. Fields marked <span class="req">*</span> are required.</p>'
     +'<div class="ep-form-card ev-form-card" id="ev-m-grid">'+evFieldsHTML()+'</div>'
-    +'<div class="ct-modal-foot"><div class="ct-modal-btns">'
+    +'<div class="ct-modal-foot" id="ev-m-foot"><div class="ct-modal-btns">'
       +'<button class="ep-cancel-btn" onclick="cancelAddEv()">Cancel</button>'
-      +'<button class="ep-save-btn" onclick="submitAddEv()">Add Event</button>'
+      +'<button class="ep-save-btn" onclick="submitAddEv()">'+(evIsAnm()?'Publish Announcement':'Add Event')+'</button>'
     +'</div></div>'
     +'</div></div>';
 }
 function submitAddEv(){
   evSync();
   const d=evDraft;
+  if(evIsAnm()){
+    if(!d.sub){showToast('Event Sub Category is required','error','Pick what this announcement is filed under.');return;}
+    const f=anmEvRecord(d.anm,d.sub);
+    if(!anmCheck(f))return;
+    const a=anmCreate(f);
+    evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;
+    navigatePage('announcements');
+    anmPublishedToast(a);
+    return;
+  }
   if(!evCheck(d))return;
   const s=stampNow();
   const e=Object.assign({id:evNextId++,key:evNextKey++,status:d.status,createdBy:CURRENT_USER,createdAt:axStamp()},evFromDraft(d));
@@ -458,11 +498,11 @@ function submitAddEv(){
   lpLanded('events',e.id);
   evModalOpen=false;evDraft=null;evAddOpen='';evPreviewOpen=false;
   renderADTPage();
-  showToast('Event added','success',evKey(e)+' · No. '+e.number+' for '+e.aud+'.');
+  showToast('Event added','success',e.name+' · '+evKey(e)+' for '+e.aud+'.');
 }
 
 /* ── Listing ───────────────────────────────────────────────────────────── */
-/* THE ROW IDENTIFIES, THE PANEL EXPLAINS. A row is the subject, who it is for
+/* THE ROW IDENTIFIES, THE PANEL EXPLAINS. A row is the event's name, who it is for
    and where it is filed. Event Type, Event Number, Sub Category, Business Rule
    and the date are on the panel, and the search box still finds them. */
 function buildEventsHTML(){
@@ -472,7 +512,7 @@ function buildEventsHTML(){
   if(evSelectedId&&!shown.some(function(e){return e.id===evSelectedId;}))evSelectedId=null;
   const sig=[evForF,evCatF,evSubF,evProcessF,evServiceF,evStatusF,evQ].join('|');
   const pgn=listPage('events',sig,shown.map(function(e,i){
-    const sub=evSubject(e);
+    const sub=evName(e);
     return '<tr class="ev-row'+(evSelectedId===e.id?' lp-row-selected':'')+'" id="ev-row-'+e.id+'" style="cursor:pointer" onclick="openEvSidebar('+e.id+')">'
       +'<td class="lp-c-n">'+(i+1)+'</td>'
       +'<td><div class="lp-c-main ax-c-link ax-c-trunc" title="'+attrSafe(sub)+'">'+sbEsc(sub)+'</div><div class="lp-c-sub">'+evKey(e)+'</div></td>'
@@ -494,7 +534,7 @@ function buildEventsHTML(){
     +'<div class="lp-filter-bar-row">'
     +lpSearchField('ev-f-q',evQ,'Search events','applyEvFilters()')
     +apCS('ev-f-for',ET_FOR,evForF,'Event For')
-    +apCS('ev-f-cat',ecLive('cat').map(function(c){return c.name;}).reverse(),evCatF,'Category','evFilterCatHook')
+    +apCS('ev-f-cat',evCatNames(),evCatF,'Category','evFilterCatHook')
     +evFilterSubHTML(evCatF,evSubF)
     +apCS('ev-f-process',ET_PROCESS,evProcessF,'Process Type')
     +apCS('ev-f-service',ET_SERVICES,evServiceF,'Service Group')
