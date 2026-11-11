@@ -2140,7 +2140,7 @@ var DASH_CARD_LINK={
   'Total Workforce':              ['employees'],
   'Active People':                ['employees'],
   'My Team':                      ['teams'],
-  'Present Today':                ['attendance'],
+  'Present Today':                ['timesheet'],   /* attendance lives on Timesheets; there is no 'attendance' page */
   /* leave */
   'Leave Balance':                ['all-leaves'],
   'On Leave today':               ['all-leaves','Approved'],
