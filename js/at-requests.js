@@ -227,9 +227,12 @@ function atReqDecide(empId,id,ok){
   atReqNotifDone(id);
   renderADTPage();
   const emp=atEmp(empId);
-  showToast('Request '+status.toLowerCase(),ok?'success':'info',
+  // Approved is green, Rejected is red: the same tones as the status badge.
+  // A rejection is a finished action, not a failure, so it closes on its own
+  // (duration) instead of staying up like an error.
+  showToast('Request '+status.toLowerCase(),ok?'success':'error',
     (AT_REQ_TYPE[r.type]||{}).label+' · '+arDateLabel(r.date)+(emp?' · '+emp.name:'')
-    +(!ok&&r.type==='change'?' · previous times restored':''));
+    +(!ok&&r.type==='change'?' · previous times restored':''),ok?null:{duration:5000});
 }
 
 /* ══ ATTENDANCE CORRECTION → HEADER NOTIFICATION ═══════════════════════════

@@ -9,15 +9,15 @@
 
 <link rel="stylesheet" href="css/fonts.css?v=20261106f">
 <link rel="stylesheet" href="css/cost-calc.css?v=20261106f">
-<link rel="stylesheet" href="css/main.css?v=20261106f">
+<link rel="stylesheet" href="css/main.css?v=20261117d">
 <link rel="stylesheet" href="css/leaves.css?v=20261106f">
 <link rel="stylesheet" href="css/dashboard-multiview.css?v=20261106f">
 <!-- Loaded last: the button system is authoritative over every legacy button rule. -->
-<link rel="stylesheet" href="css/buttons.css?v=20261106f">
+<link rel="stylesheet" href="css/buttons.css?v=20261117a">
 <!-- After buttons.css on purpose. These two add motion and inline row actions
      on top of the finished component set; neither redefines a colour or a
      size, so order only matters for the transitions they layer on. -->
-<link rel="stylesheet" href="css/motion.css?v=20261106f">
+<link rel="stylesheet" href="css/motion.css?v=20261117b">
 <link rel="stylesheet" href="css/sidebar-icons.css?v=20261106f">
 <link rel="stylesheet" href="css/quick-actions.css?v=20261106f">
 <!-- The timesheet's export drawer. Additive: it defines only .tsx-* selectors
@@ -2266,7 +2266,9 @@
 </div>
 
 <script src="js/contract-types.js?v=20261106f"></script>
-<script src="js/core.js?v=20261110d"></script>
+<!-- Ding toasts (MIT). Loads before core.js, whose showToast() drives it. -->
+<script src="vendor/ding/ding.js?v=0.0.7"></script>
+<script src="js/core.js?v=20261117b"></script>
 <script src="js/logs-view.js?v=20261106f"></script>
 <script src="js/form-page.js?v=20261106f"></script>
 <script src="js/workflow-plan.js?v=20261106f"></script>
@@ -2305,13 +2307,13 @@
 <script src="js/leaves-holidays.js?v=20261106f"></script>
 <!-- Reads csAtt (the shift and its grace) and the entity holiday calendar. -->
 <script src="js/day-status.js?v=20261106f"></script>
-<script src="js/pages.js?v=20261106f"></script>
+<script src="js/pages.js?v=20261117a"></script>
 <!-- All Timesheet Salary tab + payslip. Reads atPeriod/atEmp (pages.js, core.js)
      and payheadsData for the PF / PT slabs. -->
 <script src="js/at-salary.js?v=20261106f"></script>
 <!-- All Timesheet Requests tab. Reads arRequests (attendance-request.js) and
      tsChangeLog (core.js). -->
-<script src="js/at-requests.js?v=20261106f"></script>
+<script src="js/at-requests.js?v=20261117a"></script>
 <!-- Timesheet submit / approve / invoice (Sales Order Timesheets + Receivable
      tabs). After at-salary.js: the invoice reuses its AT_COMPANY and .psl look. -->
 <script src="js/ts-billing.js?v=20261106f"></script>
@@ -2459,8 +2461,6 @@ function initDashboardTabsBar(){
 <!-- CONTRACTS MODAL -->
 <div id="ct-modal-overlay" class="ct-modal-overlay" style="display:none"></div>
 
-<!-- AI TOAST NOTIFICATIONS -->
-<div id="ai-toast-stack" class="ai-toast-stack"></div>
 
 <!-- COST CALCULATOR MODAL -->
 <div id="cost-calc-overlay" class="cost-calc-overlay hidden">

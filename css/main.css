@@ -2275,13 +2275,6 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .skel-avatar{width:40px;height:40px;border-radius:50%;flex-shrink:0}
 .skel-line{height:12px}
 @keyframes skeleton-sweep{0%{background-position:100% 50%}100%{background-position:0 50%}}
-.ai-toast-stack{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:10px;z-index:200;pointer-events:none}
-.ai-toast{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(15,23,42,.14);padding:14px 16px;max-width:320px;animation:fadeUp .25s ease}
-.ai-toast-out{animation:ai-toast-out .25s ease forwards}
-@keyframes ai-toast-out{to{opacity:0;transform:translateY(6px)}}
-.ai-toast-icon{width:22px;height:22px;border-radius:50%;background:var(--st-ok-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.ai-toast-title{font-size:12.5px;font-weight:700;color:var(--navy);line-height:1.4}
-.ai-toast-sub{font-size:11px;color:var(--gray);margin-top:2px;line-height:1.4}
 .aicj-bar{display:flex;align-items:flex-start;background:#fff;border:1px solid var(--border);border-radius:16px;padding:18px 24px 16px;margin-bottom:22px}
 .aicj-step{display:flex;flex-direction:column;align-items:center;flex-shrink:0}
 .aicj-dot-wrap{position:relative;width:20px;height:20px;flex-shrink:0}
@@ -2355,26 +2348,25 @@ tr.lp-row-new>td{animation:lp-row-new-in 1.9s ease-out both}
 .ai-scope-row-manual{background:#fafbfc}
 .ai-scope-manual-badge{flex:0 0 auto;font-size:11px;font-weight:600;color:#64748b;background:#f1f5f9;border:1px solid var(--border);border-radius:var(--r-status);padding:6px 14px}
 
-/* ── TOAST NOTIFICATIONS ── */
+/* ── TOAST NOTIFICATIONS ── Ding (vendor/ding/ding.js) injects its own styles.
+   Keep the app's global type rules (* Inter, body smoothing and Inter features)
+   off it so the pill renders exactly as the library ships it. */
+.tst-viewport,.tst-viewport *{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.tst-viewport{-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto;text-rendering:auto;font-feature-settings:normal}
+/* Placement: top-right, just under the 56px topbar, lined up with its 20px
+   side padding. `body` lifts these over the rules Ding injects at runtime. */
+body .tst-viewport[data-position^=top] .tst-slot{top:calc(56px + 12px + env(safe-area-inset-top,0px))}
+body .tst-viewport[data-position$=right] .tst-slot{right:20px}
+/* Corners: the system control radius (8px, same as buttons and the panel x),
+   not Ding's 22px pill. Ding reads --tst-radius in JS too, so the open/close
+   morph keeps these corners. */
+body .tst-viewport{--tst-radius:var(--r-control)}
+/* Colours: the system status tokens, not Ding's own palette. One green
+   (--st-ok-fg), one red (--st-bad-fg), same as the status badges. */
+body .tst-viewport{--tst-fg:var(--navy);--tst-success:var(--st-ok-fg);--tst-error:var(--st-bad-fg);--tst-warning:var(--st-wait-fg);--tst-info:var(--st-info-fg)}
+body .tst-viewport .tst-close,body .tst-viewport .tst-action{border-radius:var(--r-control)}
 /* Above every overlay (popups sit at 9000, search at 9999): feedback for an
    action taken inside a popup has to be seen over that popup. */
-#toast-stack{position:fixed;top:74px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none;max-width:360px}
-.toast{display:flex;align-items:flex-start;gap:11px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(15,23,42,.12);pointer-events:auto;min-width:280px;max-width:360px;animation:toastIn .28s cubic-bezier(.21,1.02,.73,1) both}
-.toast.toast-leaving{animation:toastOut .22s ease forwards}
-@keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
-@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(24px)}}
-.toast-ico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.toast-ico svg{width:14px;height:14px}
-.toast.success .toast-ico{background:var(--st-ok-bg);color:var(--st-ok-fg)}
-.toast.error .toast-ico{background:#fee2e2;color:#b83a3a}
-.toast.info .toast-ico{background:#e0e7ff;color:#4f46e5}
-.toast-body{flex:1;min-width:0}
-.toast-title{font-size:13px;font-weight:600;color:var(--navy);line-height:1.35}
-.toast-sub{font-size:12px;color:var(--gray);margin-top:2px;line-height:1.4}
-.toast-close{background:none;border:none;cursor:pointer;color:#9ca3af;padding:2px;flex-shrink:0;display:flex;align-items:center;border-radius:6px;font-family:inherit}
-.toast-close:hover{background:var(--btn-ghost-bg);color:var(--btn-accent)}
-.toast-close svg{width:12px;height:12px}
-@media(max-width:640px){#toast-stack{left:16px;right:16px;max-width:none}.toast{max-width:none;width:100%}}
 
 /* ── MODULE SUB-TABS (Employees, Timesheet) ── */
 .mod-page{display:flex;flex-direction:column;width:100%;min-width:0}

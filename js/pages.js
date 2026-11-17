@@ -11219,18 +11219,8 @@ function aiScheduleAutoAdvance(expectedPage,fn,delay){
   if(_aiAutoAdvanceTimer)clearTimeout(_aiAutoAdvanceTimer);
   _aiAutoAdvanceTimer=setTimeout(function(){_aiAutoAdvanceTimer=null;if(page===expectedPage)fn();},delay||1300);
 }
-function showAiToast(title,sub){
-  const stack=document.getElementById('ai-toast-stack');if(!stack)return;
-  const el=document.createElement('div');
-  el.className='ai-toast';
-  el.innerHTML='<div class="ai-toast-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>'
-    +'<div><div class="ai-toast-title">'+title+'</div>'+(sub?'<div class="ai-toast-sub">'+sub+'</div>':'')+'</div>';
-  stack.appendChild(el);
-  setTimeout(function(){
-    el.classList.add('ai-toast-out');
-    setTimeout(function(){el.remove();},250);
-  },3200);
-}
+// AI journey notices use the same Ding toast as the rest of the app.
+function showAiToast(title,sub){showToast(title,'success',sub);}
 function buildAIProposalCreatedHTML(){
   const d=aiProposalDraft||{};
   return '<div class="ep-page" style="max-width:680px;margin:40px auto">'

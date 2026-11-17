@@ -47,7 +47,10 @@
 }
 
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{
+  /* Ding toasts are left out: the library has its own reduced-motion fade. */
+  *:not(.tst-viewport):not(.tst-viewport *),
+  *:not(.tst-viewport *)::before,
+  *:not(.tst-viewport *)::after{
     animation-duration:.01ms!important;
     animation-iteration-count:1!important;
     transition-duration:.01ms!important;
@@ -409,9 +412,7 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{
 /* ── 7. FEEDBACK ──────────────────────────────────────────────────────────
    The three ways the app tells you something happened.                    */
 
-/* a. Toast. Already animates; this only re-times it onto the shared curves. */
-.toast{animation:toastIn var(--t-base) var(--e-out) both}
-.toast.toast-leaving{animation:toastOut var(--t-fast) var(--e-in-out) forwards}
+/* a. Toast. Ding (vendor/ding) animates it with its own springs. */
 
 /* b. Row flash. After an inline action changes a row in place, the row
    itself confirms it - so the eye never has to leave the row to find out

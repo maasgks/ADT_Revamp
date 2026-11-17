@@ -1578,32 +1578,50 @@ function buildTimesheetHTML(){
 
 // ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ NOTIFICATION POPOVER ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚ÂÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬
 // ── TOAST NOTIFICATIONS ──
-function showToast(title,type,sub){
-  type=type||'success';
-  let stack=document.getElementById('toast-stack');
-  if(!stack){stack=document.createElement('div');stack.id='toast-stack';document.body.appendChild(stack);}
-  const icons={
-    success:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
-    error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
-  };
-  const el=document.createElement('div');
-  el.className='toast '+type;
-  el.innerHTML='<div class="toast-ico">'+(icons[type]||icons.success)+'</div>'
-    +'<div class="toast-body"><div class="toast-title">'+title+'</div>'+(sub?'<div class="toast-sub">'+sub+'</div>':'')+'</div>'
-    +'<button class="toast-close" onclick="dismissToast(this)" title="Dismiss"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-  stack.appendChild(el);
-  while(stack.children.length>4)stack.removeChild(stack.firstChild);
-  el._timer=setTimeout(function(){dismissToastEl(el);},3400);
-  return el;
+// Every notification in the app goes through Ding (vendor/ding/ding.js, MIT,
+// https://ding.yusufcengiz.dev): a spring-physics pill that morphs in place
+// instead of stacking cards. A quick toast is replaced by the next one; an
+// error stays until it is closed (x button or Esc) or the next toast takes
+// its place. Hover pauses the timer,
+// Alt+T focuses the toast. The signature showToast(title, type, sub) is the
+// one the 400+ call sites already use, so nothing else had to change.
+//   type: 'success' (default) | 'error' | 'info' | 'warning' | 'loading'
+//   opts: any Ding option - action, secondary, duration, progress, meta ...
+// Returns the Ding id, which toast update / dismissToast(id) take.
+// Sound is on: soft built-in tones, no audio files. To mute, set sound:false.
+const TOAST_TYPES={success:1,error:1,info:1,warning:1,loading:1};
+let toastMounted=false;
+function adtToast(){
+  const D=window.Ding;
+  if(!D||!document.body)return null;
+  if(!toastMounted){
+    toastMounted=true;
+    D.mountToaster({position:'top-right',theme:'light'}); // offset below the topbar in css/main.css
+    // held:'replace' matches the live Ding site: a new toast takes over an
+    // error still on screen instead of opening a second slot beside it.
+    D.toast.configure({sound:true,volume:0.35,held:'replace'});
+  }
+  return D.toast;
 }
-function dismissToast(btn){dismissToastEl(btn.closest('.toast'));}
-function dismissToastEl(el){
-  if(!el||el.classList.contains('toast-leaving'))return;
-  clearTimeout(el._timer);
-  el.classList.add('toast-leaving');
-  setTimeout(function(){el.remove();},240);
+// Ding writes text, not HTML. A few callers pass entities (&rarr; &middot;)
+// or sbEsc()-escaped names, so decode those to plain text first.
+function toastText(s){
+  if(s==null)return '';
+  s=String(s);
+  if(!/[<&]/.test(s))return s;
+  return (new DOMParser().parseFromString(s,'text/html').body.textContent||'').trim();
 }
+function showToast(title,type,sub,opts){
+  const t=adtToast();
+  if(!t)return null;
+  const o=Object.assign({},opts||{});
+  const d=toastText(sub);
+  if(d)o.description=d;
+  return t[TOAST_TYPES[type]?type:'success'](toastText(title),o);
+}
+function dismissToast(id){const t=adtToast();if(t)t.dismiss(typeof id==='string'?id:undefined);}
+// Mount at page load, like the reference, so the first toast has no setup frame.
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',adtToast);else adtToast();
 
 // ── DEMO ACTION DELEGATION ──
 // Buttons in this mockup with no dedicated handler get plausible demo
@@ -1617,7 +1635,7 @@ document.addEventListener('click',function(e){
   const btn=e.target.closest('button');
   if(!btn||btn.disabled)return;
   if(btn.onclick||btn.getAttribute('onclick'))return;
-  if(btn.closest('#toast-stack'))return;
+  if(btn.closest('.tst-viewport'))return; // Ding's own close / action buttons
   const cls=btn.classList;
   const txt=(btn.textContent||'').replace(/\s+/g,' ').trim();
   // Notifications panel

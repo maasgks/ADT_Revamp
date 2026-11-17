@@ -61,7 +61,7 @@
      GHOST    transparent at rest -> a tint appears, ink goes --btn-accent.
               .sidebar-toggle .tb-icon .icon-btn .np-iconbtn .row-action
               .lp-action-btn .ct-dots-btn .lp-isb-nav-btn .lp-isb-back
-              .ts-mp-nav .ccp-back .toast-close .prof-att-upload
+              .ts-mp-nav .ccp-back .prof-att-upload
               .emp-sel-filter/-remove/-clear .lp-sb-emp-remove .ep-emp-tag button
      TINT     already sits on --ol (#f1f5f9) at rest, so the ghost tint would
               be no change - it goes one step deeper instead.
